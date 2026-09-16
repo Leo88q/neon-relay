@@ -1,1 +1,13 @@
-src/game/editor/mapitems/map_io.cpp @Patiga
+# Neon Relay code ownership.
+# Upstream DDNet's CODEOWNERS referenced upstream maintainers; that mapping does
+# not apply to this standalone repository. The original line is preserved in
+# ci/upstream-reference/CODEOWNERS.upstream for attribution.
+* @Leo88q
+
+# Reward-critical paths need an explicit review.
+/backend/ @Leo88q
+/onchain/ @Leo88q
+/src/neonrelay/ @Leo88q
+/android/app/src/main/java/com/leo88q/neonrelay/wallet/ @Leo88q
+/docs/REWARD_SECURITY.md @Leo88q
+/docs/THREAT_MODEL.md @Leo88q
