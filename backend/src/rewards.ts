@@ -356,7 +356,8 @@ export class RewardService {
 
   // ---------------------------------------------------------------- claims
 
-  claimIntent(binding: BindingRow, epochId: number, now: number = Date.now()): IntentRow {
+  claimIntent(binding: BindingRow, epochId: number,
+    now: number = Date.now()): IntentRow & { leaf_index: number } {
     const epoch = this.db.get<EpochRow>("SELECT * FROM reward_epochs WHERE id = ?", epochId);
     if (!epoch) throw new RewardsError(404, "epoch-not-found", `no epoch ${epochId}`);
     if (epoch.state !== "sealed" || !epoch.merkle_root) {
@@ -366,7 +367,16 @@ export class RewardService {
     const existing = this.db.get<IntentRow>(
       "SELECT * FROM claim_intents WHERE wallet_binding_id = ? AND epoch_id = ?",
       binding.id, epochId);
-    if (existing) return existing;
+    if (existing) {
+      const priorLeaf = this.db.get<LeafRow>(
+        "SELECT * FROM reward_leaves WHERE epoch_id = ? AND wallet_binding_id = ?",
+        epochId, binding.id);
+      if (!priorLeaf) {
+        throw new RewardsError(500, "proof-mismatch",
+          "intent exists but its epoch leaf is missing");
+      }
+      return { ...existing, leaf_index: priorLeaf.leaf_index };
+    }
     const { tree, leaves } = this.treeForSealedEpoch(epochId);
     const index = leaves.findIndex((l) => l.wallet_binding_id === binding.id);
     if (index < 0) {
@@ -386,7 +396,9 @@ export class RewardService {
        VALUES (?, ?, ?, ?, ?, ?, 'created', NULL, ?, ?)`,
       id, binding.id, epochId, leaf.amount_micro, leaf.leaf_hash,
       JSON.stringify(proof), now, now);
-    return this.db.get<IntentRow>("SELECT * FROM claim_intents WHERE id = ?", id) as IntentRow;
+    const created = this.db.get<IntentRow>("SELECT * FROM claim_intents WHERE id = ?",
+      id) as IntentRow;
+    return { ...created, leaf_index: leaf.leaf_index };
   }
 
   claimConfirmation(binding: BindingRow, intentId: string, transactionId: string,

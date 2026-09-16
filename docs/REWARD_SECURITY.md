@@ -93,9 +93,13 @@ Sealing (`POST /v1/rewards/epochs/seal`, operator token only):
 Claiming:
 
 1. `POST /v1/rewards/claim-intent {epoch_id}` (wallet session) returns
-   `{intent_id, amount_micro, leaf_hash, merkle_proof}`; the backend verifies its
-   own proof against the stored root before returning it;
-2. the client submits the proof to the Anchor program (stage 9);
+   `{intent_id, amount_micro, leaf_hash, leaf_index, merkle_proof}`; the backend
+   verifies its own proof against the stored root before returning it;
+2. the client submits `claim(epoch_id, amount_micro, leaf_index, proof)` to the
+   Anchor program (`onchain/programs/neonrelay-rewards`), signed by the wallet
+   whose pubkey is bound into the leaf; the program re-verifies the proof
+   against the operator-published root, creates the `(epoch, wallet)` claim PDA
+   (a repeat claim fails) and transfers from the program vault;
 3. `POST /v1/rewards/claim-confirmation` records `submitted` / `confirmed` /
    `failed` with the transaction id. The intent is unique per
    `(wallet_binding_id, epoch_id)`, so the backend never issues two proofs for
@@ -123,9 +127,12 @@ from stored leaves — anyone can re-derive a root and detect ledger tampering.
 
 ## 8. Key handling
 
-The backend holds **no** signing key of its own: it only verifies. Stage 9 adds
-the operator authority that signs epoch roots for the program. Treasury/mainnet
-credentials never appear in this repository, its CI variables or its logs.
+The backend holds **no** signing key of its own: it only verifies. The operator
+authority lives in the Anchor program (`config.authority`, set once at
+`initialize`): only that Solana keypair can publish epoch roots or pause
+claims; the backend's seal API is gated by its own operator token, so a root
+reaches the chain only when both sides agree. Treasury/mainnet credentials
+never appear in this repository, its CI variables or its logs.
 
 The game-server signer (stage 8) is **off by default** and inert until an
 operator opts in:
@@ -154,6 +161,16 @@ rejections with reasons, pending→available→claimed balance transitions,
 seal/claim-intent proof verification against the stored root, confirmation
 state machine, and 404/409/403 paths for foreign wallets, unsealed epochs and
 missing operator tokens.
+
+Stage-9 program evidence: `cd onchain && npm test` → **12/12 passing** —
+the TS Merkle mirror is asserted byte-identical to `backend/src/merkle.ts` on
+randomized trees, golden leaf vectors are pinned identically for the Rust unit
+test (`programs/neonrelay-rewards/tests/golden_leaf.txt`), tamper negatives
+(amount, index direction, outsider leaf) fail, and static conformance tests
+bind PDA seeds, caps, the pause/double-claim guards and the no-hardcoded-mint /
+no-SKR policy between `lib.rs`, `Anchor.toml` and the client constants. The
+program itself cannot be compiled in the sandbox — see `KNOWN_LIMITATIONS.md`
+BL-03 for the exact commands to run on a connected machine.
 
 Stage-8 signer evidence: `scripts/neonrelay_signer_test.sh` builds the vendored
 ed25519-donna, `match_signer.cpp` and the CLI tool with plain gcc/g++, signs a

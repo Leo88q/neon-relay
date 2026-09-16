@@ -142,13 +142,14 @@ test("reward lifecycle: sign, ingest, caps, seal, claim, confirm", async () => {
     const leaf = leafHash(wallet.rawPublicKey, 1_200);
     assert.equal(intent.json.leaf_hash, leaf);
     assert.equal(
-      verifyProofIndexed(leaf, 0, intent.json.merkle_proof as string[],
+      verifyProofIndexed(leaf, intent.json.leaf_index as number, intent.json.merkle_proof as string[],
         sealed.json.epoch.merkle_root as string),
       true);
 
     const intentAgain = await postJson(base, "/v1/rewards/claim-intent",
       { epoch_id: epochId }, token);
     assert.equal(intentAgain.json.intent_id, intent.json.intent_id);
+    assert.equal(intentAgain.json.leaf_index, intent.json.leaf_index);
 
     // ---- confirmation transitions
     const submitted = await postJson(base, "/v1/rewards/claim-confirmation", {

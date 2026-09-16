@@ -24,8 +24,15 @@ Kotlin wallet layer and unit tests in `android/` are therefore **uncompiled** he
 (commit `25296e124c5fdc30dc89f1ac0622b8cffefc5c8e`); see [`ANDROID_SEEKER.md`](ANDROID_SEEKER.md) §3.
 
 ### BL-03 — Solana / Anchor build impossible in the sandbox
-No Rust toolchain, so the Anchor program and its TS tests (stage 9) cannot be built or run
-here; devnet deployment is a runbook, not an executed procedure.
+No Rust/Solana/Anchor toolchain and no crates.io route, so the stage-9 program in `onchain/`
+was **written but never compiled** here: `cargo test`, `anchor build`, `anchor test` and the
+devnet deployment are a documented runbook (`onchain/README.md`), not executed procedures.
+What *is* executed offline: `cd onchain && npm test` (12/12 — Merkle parity with the backend,
+tamper negatives, static conformance of `lib.rs`/`Anchor.toml` against the TS constants) and a
+golden leaf vector pinned identically for the Rust unit test, the backend and the TS client.
+The pinned `anchor-lang`/`anchor-spl` 0.30.1 coordinates are unverified offline (BL-06). The
+`declare_id!` value is a generated PLACEHOLDER to be replaced with `anchor keys list` output
+before any deployment.
 
 ### BL-06 — dependency coordinates pinned but unverifiable offline
 `android/gradle/libs.versions.toml` pins `com.solana:mobile-wallet-adapter-clientlib:2.2.0`

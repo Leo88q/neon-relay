@@ -1125,7 +1125,7 @@ docs/DEBUGGING.md,41,historical-documentation,document that describes the upstre
 docs/DEBUGGING.md,47,historical-documentation,document that describes the upstream derivation,- Open a terminal in the `ddnet` project folder and run the following:
 docs/DEBUGGING.md,54,historical-documentation,document that describes the upstream derivation,"- Download and unpack the debug symbols archive from https://ddnet.org/downloads/symbols/ with matching git commit revision and platform (win32/win64/win-arm64, steam/non-steam)."
 docs/DEBUGGING.md,57,historical-documentation,document that describes the upstream derivation,- Open a terminal in the `ddnet` project folder and run the following:
-docs/KNOWN_LIMITATIONS.md,71,historical-documentation,document that describes the upstream derivation,import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
+docs/KNOWN_LIMITATIONS.md,78,historical-documentation,document that describes the upstream derivation,import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
 docs/REBRANDING.md,1,historical-documentation,document that describes the upstream derivation,# Rebranding: DDNet → Neon Relay
 docs/REBRANDING.md,7,historical-documentation,document that describes the upstream derivation,* Upstream: https://github.com/ddnet/ddnet @ `a853d333ac9e61ebfa2899b4641f8b0658ba60d5`
 docs/REBRANDING.md,25,historical-documentation,document that describes the upstream derivation,"| `project(DDNet …)` | `project(NeonRelay …)` | `CMakeLists.txt:44,46` | `PROJECT_NAME` only feeds package/artifact names and the `${CMAKE_PROJECT_NAME}` text in configure errors. No source file depends on the literal project name. |"

@@ -176,6 +176,7 @@ export function buildRouter(deps: {
       epoch_id: intent.epoch_id,
       amount_micro: intent.amount_micro,
       leaf_hash: intent.leaf_hash,
+      leaf_index: intent.leaf_index,
       merkle_proof: JSON.parse(intent.merkle_proof) as string[],
       status: intent.status,
     };

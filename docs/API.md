@@ -121,7 +121,9 @@ wrong token → `403`, already sealed → `409`.
 
 ### POST /v1/rewards/claim-intent  (bearer)
 Body `{ "epoch_id": n }` → `{ intent_id, epoch_id, amount_micro, leaf_hash,
-merkle_proof[], status }`. `409 epoch-not-sealed` before sealing,
+leaf_index, merkle_proof[], status }`. `leaf_index` is the leaf's position in the
+sealed epoch tree; the on-chain claim instruction needs it to fold the proof in
+the right direction. `409 epoch-not-sealed` before sealing,
 `404 no-rewards-in-epoch` for bindings without accepted rewards. Idempotent per
 binding+epoch.
 
@@ -134,6 +136,8 @@ All intents of the session's wallet binding.
 
 ## On-chain hand-off (stage 9)
 
-The `merkle_proof` + `leaf_hash` from a claim intent are what the Anchor program
-verifies; confirmation statuses mirror the transaction lifecycle and are
-recorded for audit only — double-payment is prevented on-chain.
+The `merkle_proof` + `leaf_hash` + `leaf_index` from a claim intent are what the
+Anchor program (`onchain/`, stage 9) verifies against the published epoch root;
+confirmation statuses mirror the transaction lifecycle and are recorded for
+audit only — double-payment is prevented on-chain by the per-(epoch, wallet)
+claim PDA.
