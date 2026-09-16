@@ -1,0 +1,13 @@
+{
+  "name": "@neonrelay/onchain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Neon Relay Anchor program: client-side Merkle helpers and offline tests (stage 9). Zero runtime dependencies.",
+  "scripts": {
+    "test": "node --experimental-strip-types --test \"test/**/*.test.ts\""
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

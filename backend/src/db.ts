@@ -1,0 +1,86 @@
+/**
+ * SQLite access (node:sqlite, Node >= 22) and forward-only migrations.
+ *
+ * Migrations are plain SQL files in `backend/migrations`, applied in
+ * lexicographic order and recorded in `schema_migrations`. There is no
+ * downgrade path by design: production changes go through a new migration.
+ */
+import { DatabaseSync } from "node:sqlite";
+import { readFileSync, readdirSync, mkdirSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+export const MIGRATIONS_DIR = resolve(HERE, "..", "migrations");
+
+export class Db {
+  readonly raw: DatabaseSync;
+
+  constructor(path: string) {
+    if (path !== ":memory:") {
+      mkdirSync(dirname(path), { recursive: true });
+    }
+    this.raw = new DatabaseSync(path);
+    this.raw.exec("PRAGMA journal_mode = WAL;");
+    this.raw.exec("PRAGMA foreign_keys = ON;");
+  }
+
+  exec(sql: string): void {
+    this.raw.exec(sql);
+  }
+
+  run(sql: string, ...args: (string | number | null)[]): void {
+    this.raw.prepare(sql).run(...args);
+  }
+
+  get<T>(sql: string, ...args: (string | number | null)[]): T | undefined {
+    return this.raw.prepare(sql).get(...args) as T | undefined;
+  }
+
+  all<T>(sql: string, ...args: (string | number | null)[]): T[] {
+    return this.raw.prepare(sql).all(...args) as T[];
+  }
+
+  close(): void {
+    this.raw.close();
+  }
+}
+
+export interface MigrationRow {
+  id: string;
+  applied_at: number;
+}
+
+/** Apply every not-yet-applied migration; returns the ids applied now. */
+export function migrate(db: Db, dir: string = MIGRATIONS_DIR): string[] {
+  db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
+    id TEXT PRIMARY KEY,
+    applied_at INTEGER NOT NULL
+  );`);
+  const applied = new Set(
+    db.all<MigrationRow>("SELECT id FROM schema_migrations").map((r) => r.id),
+  );
+  const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+  const now: string[] = [];
+  for (const file of files) {
+    if (applied.has(file)) continue;
+    const sql = readFileSync(join(dir, file), "utf8");
+    db.raw.exec("BEGIN");
+    try {
+      db.raw.exec(sql);
+      db.raw.prepare("INSERT INTO schema_migrations (id, applied_at) VALUES (?, ?)")
+        .run(file, Date.now());
+      db.raw.exec("COMMIT");
+    } catch (err) {
+      db.raw.exec("ROLLBACK");
+      throw new Error(`migration ${file} failed: ${(err as Error).message}`);
+    }
+    now.push(file);
+  }
+  return now;
+}
+
+export function migrationCount(db: Db): number {
+  const row = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM schema_migrations");
+  return row?.n ?? 0;
+}

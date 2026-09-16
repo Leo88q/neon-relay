@@ -1,0 +1,10 @@
+ed25519-donna, vendored unmodified from
+https://github.com/floodyberry/ed25519-donna @ 8757bd4cd209cb032853ece0ce413f122eef212c
+
+License: public domain (Andrew M. <liquidsun@gmail.com>), see the header of
+ed25519.c. The SHA-512 used when ED25519_REFHASH is defined is part of the same
+public-domain distribution.
+
+Neon Relay builds this translation unit with -DED25519_REFHASH so that no
+OpenSSL dependency is required; signing volume is tiny (match events), so the
+reference hash is acceptable.

@@ -1,0 +1,13 @@
+Original icon artwork: (c) 2026 The Neon Relay Authors.
+Licensed under the same terms as the Neon Relay source code; see
+../../license.txt (zlib/libpng-style license).
+
+The icons shipped here (NeonRelay*.png/.ico/.icns, NeonRelay-Server*.png/.ico/.icns)
+are original artwork generated for this project from the master files in
+assets-src/brand/ by scripts/build_brand_assets.py. They are not derived from any
+upstream artwork.
+
+History: before the rebrand this directory contained the DDNet icons
+("Icons by Ravie", no free license grant). Those files were removed and replaced
+in place; the record of that upstream artwork and of every other third-party work
+in the tree is kept in docs/THIRD_PARTY_NOTICES.md and docs/ASSET_MANIFEST.csv.

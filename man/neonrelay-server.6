@@ -1,0 +1,107 @@
+'\" t
+.\"     Title: neonrelay-server
+.\"    Author: Neon Relay Contributors
+.\" Generator: hand-maintained roff; regenerate from NeonRelayServer.adoc with a2x (asciidoc) when available
+.\"      Date: 2026-09-15
+.\"    Manual: Neon Relay Server Manual
+.\"    Source: Neon Relay 20\&.1
+.\"  Language: English
+.\"
+.TH "NEONRELAY\-SERVER" "6" "2026\-09\-15" "Neon Relay 20\&.1" "Neon Relay Server Manual"
+.\" -----------------------------------------------------------------
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.nh
+.ad l
+.\" -----------------------------------------------------------------
+.SH "NAME"
+neonrelay\-server \- starts the Neon Relay game server
+.SH "SYNOPSIS"
+.sp
+\fBneonrelay\-server\fR [\fIOPTION\fR]\&... [\-f \fICONFIG_FILE\fR]\&...
+.SH "DESCRIPTION"
+.sp
+The Neon Relay game server is authoritative for gameplay and for every signal that the
+reward service accepts\&. It is a standalone derivative of the upstream DDNet server
+(see \fIUPSTREAM_BASE\&.md\fR and \fIlicense\&.txt\fR)\&.
+.sp
+By default the server does \fBnot\fR register with any master server
+(\fCsv_register 0\fR, empty \fCsv_register_url\fR) and does not contact third\-party
+services\&. Point \fCsv_register_url\fR at your own master server deployment to make a
+server public\&.
+.SH "OPTIONS"
+.PP
+\fB\-f\fR \fICONFIGURATION_FILE\fR
+.RS 4
+Load
+\fICONFIGURATION_FILE\fR
+instead of the default
+\fIautoexec_server\&.cfg\fR\&.
+.RE
+.sp
+All other options are configuration variables, documented in
+\fIdata/autoexec_server\&.cfg\fR
+and in
+\fIsrc/engine/shared/config_variables\&.h\fR\&.
+.SH "EXAMPLES"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+neonrelay\-server \-f myfile\&.cfg
+neonrelay\-server \*(Aqsv_register 0\*(Aq \*(Aqsv_name "Neon Relay server"\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.SH "REWARDS"
+.sp
+Server\-side reward events are produced by the optional
+\fIsrc/neonrelay\fR
+module and are disabled unless the server is started with a signing key and a reward
+endpoint\&. The module signs match results; it never decides eligibility\&. See
+\fIdocs/REWARD_SECURITY\&.md\fR\&.
+.SH "RESOURCES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Source: https://github\&.com/Leo88q/neon\-relay
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Documentation: https://github\&.com/Leo88q/neon\-relay/tree/main/docs
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Upstream project: https://github\&.com/ddnet/ddnet
+.RE
+.SH "REPORTING BUGS"
+.sp
+Report issues at https://github\&.com/Leo88q/neon\-relay/issues
+.SH "COPYRIGHT"
+.sp
+The Neon Relay source code is distributed under the zlib/libpng\-style license in
+\fIlicense\&.txt\fR, which also carries the Teeworlds, DDRace and DDNet copyright
+notices required by that license\&. Content under \fIdata/\fR is licensed separately;
+see \fIdocs/THIRD_PARTY_NOTICES\&.md\fR and \fIdocs/ASSET_MANIFEST\&.csv\fR\&.

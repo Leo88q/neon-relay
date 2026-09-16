@@ -1,0 +1,24 @@
+# Neon Relay on-chain rewards program (stage 9).
+#
+# CLUSTER POLICY: devnet only. The reward mint is NOT part of this file —
+# it is passed to `initialize` at deployment time and must be a throwaway
+# devnet test mint (onchain/scripts/create_test_mint.sh). No mainnet mint is
+# configured anywhere in this repository.
+[toolchain]
+anchor_version = "0.30.1"
+
+[features]
+seeds = false
+skip-lint = false
+
+[programs.devnet]
+# PLACEHOLDERS — replace with the output of `anchor keys list` before deploying.
+neonrelay_rewards = "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj"
+neonrelay_features = "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "npm run test"

@@ -1,0 +1,65 @@
+= neonrelay(6)
+Neon Relay Contributors
+v1.0.0
+// User defined variables
+:relay-version: 20.1
+// man page variables
+:doctype: manpage
+:man manual: Neon Relay Manual
+:man source: Neon Relay
+:man version: {relay-version}
+:page-layout: base
+:man-linkstyle: pass:[blue R < >]
+
+== NAME
+neonrelay - Starts the Neon Relay client.
+
+== SYNOPSIS
+*neonrelay* [_OPTION_]... [-f _CONFIG_FILE_]...
+
+== DESCRIPTION
+Neon Relay is a cooperative 2D platform/race game with a built-in reward rail for
+Solana Mobile (Seeker) players. It is a standalone derivative of the upstream DDNet
+project, which is itself an actively maintained version of *DDRace*, a *Teeworlds*
+modification. See the repository files `UPSTREAM_BASE.md` and `license.txt` for the
+exact upstream commit and for attribution.
+
+Rewards are always decided by the game server and the reward service, never by the
+client; the wallet connection is optional and the game is fully playable without it.
+
+== EXAMPLES
+*neonrelay* -f myfile.cfg
+
+*neonrelay* -f myfile.cfg -f myfile2.cfg
+
+*neonrelay* \'cl_showhud 0' \'player_name "nameless tee"'
+
+== Options
+
+=== Configuration file
+*-f* _CONFIGURATION_FILE_::
+Load _CONFIGURATION_FILE_ instead of the default _settings_neonrelay.cfg_
+
+=== Other options
+Every option is documented in-game (Settings) and in `src/engine/shared/config_variables.h`.
+The upstream reference list of settings and commands is available from the DDNet project.
+
+== RESOURCES
+- *Source*: https://github.com/Leo88q/neon-relay
+- *Documentation*: https://github.com/Leo88q/neon-relay/tree/main/docs
+- *Upstream project*: https://github.com/ddnet/ddnet
+
+== REPORTING BUGS
+Report issues here: https://github.com/Leo88q/neon-relay/issues
+
+== CONTRIBUTING
+Contribute by opening a pull request here: https://github.com/Leo88q/neon-relay/pulls
+
+== COPYRIGHT
+The Neon Relay source code is distributed under the zlib/libpng-style license in
+`license.txt` of the repository, which also carries the Teeworlds, DDRace and DDNet
+copyright notices required by that license. Content under `data/` is licensed
+separately (CC-BY-SA 3.0, CC-BY, SIL OFL 1.1 and others); see
+`docs/THIRD_PARTY_NOTICES.md` and `docs/ASSET_MANIFEST.csv`.
+
+Read the code license here: https://github.com/Leo88q/neon-relay/blob/main/license.txt

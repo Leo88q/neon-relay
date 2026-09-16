@@ -1,0 +1,15 @@
+{
+  "name": "neonrelay-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Neon Relay reward backend: wallet authentication (stage 6) and reward ledger (stage 7). Zero runtime dependencies: Node 22 built-ins only (node:http, node:crypto, node:sqlite).",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "start": "node --experimental-strip-types src/server.ts",
+    "migrate": "node --experimental-strip-types scripts/migrate.ts",
+    "test": "node --experimental-strip-types --test \"test/**/*.test.ts\""
+  }
+}
