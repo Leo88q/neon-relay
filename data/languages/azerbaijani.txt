@@ -514,8 +514,8 @@ Browser
 Ghost
 == Ruh
 
-Loading DDNet Client
-== DDNet Klient Yüklənir
+Loading Neon Relay
+== Neon Relay Klient Yüklənir
 
 Reconnect in %d sec
 == %d saniyə ərzində yenidən qoşulacaq
@@ -538,11 +538,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Dummy Bağlantını kəsmək istədiyinizə əminsiniz?
 
-Welcome to DDNet
-== DDNet’ə xoş gəldiniz!
+Welcome to Neon Relay
+== Neon Relay’ə xoş gəldiniz!
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork korperativ onlayn oyundur, bu xəritədə məqsəd siz və sizin qrupunuzun ən qısa zamanda finiş nöqtəsinə çatmağıdır. Yeni gələn oyunçular üçün asan xəritələrdə yəni  Novice(Təcrübəsiz) serverlərdə oynamağını tövsiyyə edirik. Hər hansı bir server seçmədən əvvəl, sizə yaxın bir server seçmək üçün ping-i nəzərdən keçirin.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay korperativ onlayn oyundur, bu xəritədə məqsəd siz və sizin qrupunuzun ən qısa zamanda finiş nöqtəsinə çatmağıdır. Yeni gələn oyunçular üçün asan xəritələrdə yəni  Novice(Təcrübəsiz) serverlərdə oynamağını tövsiyyə edirik. Hər hansı bir server seçmədən əvvəl, sizə yaxın bir server seçmək üçün ping-i nəzərdən keçirin.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == İntihar etmək (yenidən başlamaq) üçün k düyməsi, oyunu dayandırıb digər oyunçuları izləmək üçün q düyməsini istifadə edə bilərsiniz. Digər düymələrə parametrlərdən baxa bilərsiniz.
@@ -555,12 +555,6 @@ Please enter your nickname below.
 
 Video name:
 == Video adı:
-
-Show DDNet map finishes in server browser
-== Tamamlanan DDNet xəritələrini server listində göstər
-
-transmits your player name to info.ddnet.org
-== istifadəçi adını info.ddnet.org ilə paylaş
 
 Search
 == Ara
@@ -586,8 +580,8 @@ Countries
 Types
 == Növləri
 
-DDNet %s is out!
-== DDNet %s nəşr olundu!
+Neon Relay %s is out!
+== Neon Relay %s nəşr olundu!
 
 Downloading %s:
 == Endirilir %s:
@@ -595,8 +589,8 @@ Downloading %s:
 Update failed! Check log…
 == Yeniləmə zamanı xəta baş verdi!
 
-DDNet Client updated!
-== DDNet Klient yeniləndi!
+Neon Relay client updated!
+== Neon Relay Klient yeniləndi!
 
 Update now
 == yeniləmə
@@ -763,10 +757,10 @@ Map sound volume
 HUD
 == interfeys
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
-DDNet Client needs to be restarted to complete update!
+Neon Relay needs to be restarted to complete the update!
 == Yeniləmənin tamamlanması üçün oyunu yenidən başlatmaq lazımdır!
 
 Show score
@@ -853,8 +847,8 @@ Show other players' hook collision lines
 Show tiles layers from BG map
 == Show tiles layers from BG map
 
-DDNet %s is available:
-== DDNet %s Nəşr olundu:
+Neon Relay %s is available:
+== Neon Relay %s Nəşr olundu:
 
 Updating…
 == Yenilənir…
@@ -922,12 +916,12 @@ Auto
 Replay
 == Yeniden oynatma
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -946,8 +940,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Failed to swap framebuffers. Try to update your GPU drivers.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1401,12 +1395,6 @@ Hook Collisions
 Show health, shields and ammo
 == Can, qalxan və sursatı göstər
 
-DDRace HUD
-== DDRace interfeysi
-
-Show DDRace HUD
-== DDRace interfeysi göstər
-
 Show jumps indicator
 == Neçə tullanma qaldığını göstər
 
@@ -1530,11 +1518,8 @@ Assets directory
 Open the directory to add custom assets
 == Xüsusi mənbə əlavə etmək üçün qovluq açın
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Tutorial
 == Təlimat
@@ -1795,8 +1780,8 @@ Round %d/%d
 Team %d (%d/%d)
 == Komanda %d (%d/%d
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Could not resolve connect address '%s'. See local console for details.
 == '%s' Link ünvanını həll etmək mümkün olmadı. Ətraflı məlumat üçün yerli konsola baxın
@@ -1978,7 +1963,7 @@ Active: Fire
 Active: Hook
 == Aktiv: Qarmaq
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == "%s" pnglite ilə uyğun gəlmir və köhnə DDnet versiyaları tərəfindən yüklənə bilmir.
 
 [Spectating Camera Mode Icon]
@@ -1988,8 +1973,8 @@ AUTO
 Toggle auto camera
 == Avtomatik kameraya keç
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Show client IDs in name plates
 == Müştəri ID-sini ad bölməsində göstər
@@ -2078,7 +2063,7 @@ Renders your frame rate in the top right
 == Üst sağda FPS-i göstərir
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Azərbaycan dilinə tərcümə: seishiroon, Aykhan [EN07Z] və Gokturk tərəfindən
 
 Show spectator cursor
@@ -2357,12 +2342,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Save all changes before switching selected button?

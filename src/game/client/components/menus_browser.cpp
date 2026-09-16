@@ -1186,7 +1186,7 @@ void CMenus::RenderServerbrowserInfo(CUIRect View)
 					aInfo,
 					sizeof(aInfo),
 					"%s\n"
-					"Address: ddnet://%s\n",
+					"Address: neonrelay://%s\n",
 					pSelectedServer->m_aName,
 					pSelectedServer->m_aAddress);
 				Input()->SetClipboardText(aInfo);

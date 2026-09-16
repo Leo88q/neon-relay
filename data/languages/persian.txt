@@ -319,7 +319,7 @@ Browser
 Ghost
 == ﺡﻭﺭ ﺖﻟﺎﺣ
 
-Loading DDNet Client
+Loading Neon Relay
 == ﺖﻨﯾﺪﯾﺩ ﺖﻨﯾﻼﮐ ﻥﺩﺮﮐ ﻩﺩﺎﻣﺁ ﻝﺎﺣﺭﺩ
 
 Reconnect in %d sec
@@ -358,11 +358,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == ؟ﯽﻨﮐ ﻊﻄﻗ ﻭﺭ ﯽﻣﺍﺩ ﯼﺍﻮﺨﯿﻣ ﯽﻨﺌﻤﻄﻣ
 
-Welcome to DDNet
+Welcome to Neon Relay
 == ﯼﺪﻣﺁ ﺵﻮﺧ ﺖﻨﯾﺪﯾﺩ ﻪﺑ
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== ﺪﯿﻨﮐ ﻩﺩﺎﻔﺘﺳﺍ ﺪﻫﺪﯿﻣ ﺍﺭ ﮓﻨﯿﭘ ﻦﯾﺮﺗ ﻦﯿﯾﺎﭘ ﻪﮐ ﯼﺭﻭﺮﺳ ﺎﻤﺘﺣ ﻭ ﺪﯿﻨﮑﺑ ﻥﺩﺮﮐ ﯼﺯﺎﺑ ﻪﺑ ﻉﻭﺮﺷ Novice ﯼﺎﻫ ﺭﻭﺮﺳ ﺯﺍ ﺪﯾﺎﺑ ﺪﯿﺘﺴﻫ ﺩﺭﺍﻭ ﻩﺯﺎﺗ ﻪﮐ ﺎﻤﺷ.ﺖﺳﺍ ﻥﺎﯾﺎﭘ ﻂﺧ ﻪﺑ ﻉﻭﺮﺷ ﻂﺧ ﺯﺍ ﻥﺎﺘﻤﯿﺗ ﻭ ﺎﻤﺷ ﻥﺪﯿﺳﺭ ﻥﺁ ﻑﺪﻫ ﻪﮐ ﺖﺳﺍ ﯽﻤﯿﺗ ﻦﯾﻼﻧﺁ ﯼﺯﺎﺑ ﮏﯾ DDraceNetwork
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== ﺪﯿﻨﮐ ﻩﺩﺎﻔﺘﺳﺍ ﺪﻫﺪﯿﻣ ﺍﺭ ﮓﻨﯿﭘ ﻦﯾﺮﺗ ﻦﯿﯾﺎﭘ ﻪﮐ ﯼﺭﻭﺮﺳ ﺎﻤﺘﺣ ﻭ ﺪﯿﻨﮑﺑ ﻥﺩﺮﮐ ﯼﺯﺎﺑ ﻪﺑ ﻉﻭﺮﺷ Novice ﯼﺎﻫ ﺭﻭﺮﺳ ﺯﺍ ﺪﯾﺎﺑ ﺪﯿﺘﺴﻫ ﺩﺭﺍﻭ ﻩﺯﺎﺗ ﻪﮐ ﺎﻤﺷ.ﺖﺳﺍ ﻥﺎﯾﺎﭘ ﻂﺧ ﻪﺑ ﻉﻭﺮﺷ ﻂﺧ ﺯﺍ ﻥﺎﺘﻤﯿﺗ ﻭ ﺎﻤﺷ ﻥﺪﯿﺳﺭ ﻥﺁ ﻑﺪﻫ ﻪﮐ ﺖﺳﺍ ﯽﻤﯿﺗ ﻦﯾﻼﻧﺁ ﯼﺯﺎﺑ ﮏﯾ Neon Relay
 
 Existing Player
 == ﺩﺭﺍﺩ ﺩﻮﺟﻭ ﻦﮑﯾﺯﺎﺑ
@@ -399,9 +399,6 @@ Show ingame HUD
 
 Video name:
 == ﻮﯾﺪﯾﻭ ﻢﺳﺍ
-
-Show DDNet map finishes in server browser
-== ﺪﯾﺍ ﻩﺪﻧﺎﺳﺭ ﻡﺎﻤﺗﺍ ﻪﺑ ﻪﮐ ﯽﯾﺎﻫ ﭗﻣ ﻥﺩﺍﺩ ﻥﺎﺸﻧ
 
 Theme
 == ﻢﺗ
@@ -724,9 +721,6 @@ No updates available
 Check now
 == ﻦﮐ ﮏﭼ ﻥﻻﺍ ﻦﯿﻤﻫ
 
-Discord
-== ﺩﺭﻮﮑﺴﯾﺩ
-
 Learn
 == ﺵﺯﻮﻣﺁ
 
@@ -777,8 +771,8 @@ Follow
 == ﻥﺩﺮﮐ ﻝﺎﺒﻧﺩ
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== .ﺪﯿﻨﮐ ﺵﻼﺗ ﻩﺭﺎﺑﻭﺩ ﻭ ﺪﯿﻫﺩ ﺮﯿﯿﻐﺗ Vulkan ﺎﯾ OpenGL ﻪﺑ ﺍﺭ gfx_backend ، settings_ddnet.cfg ﺭﺩ ،ﮓﯿﻔﻧﺎﮐ ﻪﺷﻮﭘ ﺭﺩ ﺪﯿﻨﮐ ﯽﻌﺳ. ﯼﺯﺍﺪﻧﺍ ﻩﺍﺭ ﻡﺎﮕﻨﻫ ﺭﺩ ﺎﻄﺧ
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== .ﺪﯿﻨﮐ ﺵﻼﺗ ﻩﺭﺎﺑﻭﺩ ﻭ ﺪﯿﻫﺩ ﺮﯿﯿﻐﺗ Vulkan ﺎﯾ OpenGL ﻪﺑ ﺍﺭ gfx_backend ، settings_neonrelay.cfg ﺭﺩ ،ﮓﯿﻔﻧﺎﮐ ﻪﺷﻮﭘ ﺭﺩ ﺪﯿﻨﮐ ﯽﻌﺳ. ﯼﺯﺍﺪﻧﺍ ﻩﺍﺭ ﻡﺎﮕﻨﻫ ﺭﺩ ﺎﻄﺧ
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -797,8 +791,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == .ﺪﯿﻨﮐ ﺖﯾﺪﭘﺁ ﺍﺭ ﮏﯿﻓﺍﺮﮔ ﯼﺎﻫ ﺭﻮﯾﺍﺭﺩ .ﺮﻓﺎﺑ ﻢﯾﺮﻓ ﺾﯾﻮﻌﺗ ﺭﺩ ﺎﻄﺧ
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== .ﺪﯿﻨﮐ ﺵﻼﺗ ﻩﺭﺎﺑﻭﺩ ﻭ ﺪﯿﻫﺩ ﺮﯿﯿﻐﺗ Vulkan ﺎﯾ OpenGL ﻪﺑ ﺍﺭ gfx_backend ، settings_ddnet.cfg ﺭﺩ ،ﮓﯿﻔﻧﺎﮐ ﻪﺷﻮﭘ ﺭﺩ ﺪﯿﻨﮐ ﯽﻌﺳ .ﺺﺨﺸﻣﺎﻧ ﯼﺎﻄﺧ
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== .ﺪﯿﻨﮐ ﺵﻼﺗ ﻩﺭﺎﺑﻭﺩ ﻭ ﺪﯿﻫﺩ ﺮﯿﯿﻐﺗ Vulkan ﺎﯾ OpenGL ﻪﺑ ﺍﺭ gfx_backend ، settings_neonrelay.cfg ﺭﺩ ،ﮓﯿﻔﻧﺎﮐ ﻪﺷﻮﭘ ﺭﺩ ﺪﯿﻨﮐ ﯽﻌﺳ .ﺺﺨﺸﻣﺎﻧ ﯼﺎﻄﺧ
 
 Preparing demo playback
 == ﻮﻣﺩ ﺶﺨﭘ ﯼﺯﺎﺳ ﻩﺩﺎﻣﺁ ﻝﺎﺣ ﺭﺩ
@@ -880,9 +874,6 @@ Join Tutorial Server
 
 Skip Tutorial
 == ﺵﺯﻮﻣﺁ ﺯﺍ ﻥﺩﺮﮐ ﺭﺬﮔ
-
-transmits your player name to info.ddnet.org
-== ﺪﻨﮐ ﯽﻣ ﻞﻘﺘﻨﻣ info.ddnet.org ﻪﺑ ﺍﺭ ﺩﻮﺧ ﺭﺎﻌﺘﺴﻣ ﻡﺎﻧ
 
 The server is running a non-standard tuning on a pure game type.
 == .ﺖﺳﺍ ﺺﻟﺎﺧ ﯼﺯﺎﺑ ﻉﻮﻧ ﮏﯾ ﯼﻭﺭ ﺩﺭﺍﺪﻧﺎﺘﺳﺍ ﺮﯿﻏ ﻢﯿﻈﻨﺗ ﮏﯾ ﯼﺍﺮﺟﺍ ﻝﺎﺣ ﺭﺩ ﺭﻭﺮﺳ
@@ -1147,13 +1138,13 @@ Enable highlighted chat sound
 Appearance
 == ﺮﻫﺎﻇ
 
-DDNet
+Neon Relay
 == ﺖﻨﯾﺪﯾﺩ
 
 Assets
 == ﺎﻫ ﯽﯾﺍﺭﺍﺩ
 
-DDNet Client needs to be restarted to complete update!
+Neon Relay needs to be restarted to complete the update!
 == !ﺩﻮﺷ ﺕﺭﺎﺘﺳﺍ ﯼﺭ ﺪﯾﺎﺑ ﯽﻧﺎﺳﺭﺯﻭﺭ‌ﻪﺑ ﻞﯿﻤﮑﺗ ﯼﺍﺮﺑ ﺖﻨﯾﺪﯾﺩ ﺖﻨﯾﻼﮐ
 
 You must restart the game for all settings to take effect.
@@ -1191,12 +1182,6 @@ Show kill messages
 
 Show votes window after voting
 == ﯼﺮﯿﮔ ﯼﺍﺭ ﺯﺍ ﺲﭘ ﺀﺍﺭﺁ ﻩﺮﺠﻨﭘ ﺶﯾﺎﻤﻧ
-
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== DDRace HUD ﺶﯾﺎﻤﻧ
 
 Show jumps indicator
 == ﺎﻫ ﺵﺮﭘ ﺮﮕﻧﺎﺸﻧ ﺶﯾﺎﻤﻧ
@@ -1360,10 +1345,10 @@ Run on join
 Chat command (e.g. showall 1)
 == (showall ١ ﻝﺎﺜﻣ ﻥﺍﻮﻨﻋ ﻪﺑ) ﺖﭼ ﻥﺎﻣﺮﻓ
 
-DDNet %s is available:
+Neon Relay %s is available:
 == :ﺖﺳﺍ ﺩﻮﺟﻮﻣ ﺖﻨﯾﺪﯾﺩ %s
 
-DDNet Client updated!
+Neon Relay client updated!
 == !ﺪﺷ ﺯﻭﺭ ﻪﺑ ﺖﻨﯾﺪﯾﺩ ﺖﻨﯾﻼﮐ
 
 Emoticons
@@ -1384,11 +1369,11 @@ Assets directory
 Open the directory to add custom assets
 == ﻦﮐ ﺯﺎﺑ ﯽﺷﺭﺎﻔﺳ ﯼﺎﻫ ﯽﯾﺍﺭﺍﺩ ﻥﺩﻭﺰﻓﺍ ﯼﺍﺮﺑ ﺍﺭ ﯽﯾﺍﺭﺍﺩ ﯼ ﻪﺷﻮﭘ
 
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Tutorial
 == ﺵﺯﻮﻣﺁ
@@ -1396,7 +1381,7 @@ Tutorial
 Server executable not found, can't run server
 == ﺩﺮﮐ ﺍﺮﺟﺍ ﻥﺍﻮﺗ ﯽﻤﻧ ﺍﺭ ﺭﻭﺮﺳ ،ﺪﺸﻧ ﺍﺪﯿﭘ ﺭﻭﺮﺳ ﯽﯾﺍﺮﺟﺍ ﻞﯾﺎﻓ
 
-DDNet %s is out!
+Neon Relay %s is out!
 == !ﺪﺷ ﺮﺸﺘﻨﻣ %s ﺖﻨﯾﺪﯾﺩ
 
 Loading race demo files
@@ -1871,7 +1856,7 @@ Moved ingame
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == ﺖﺳﺍ ﻦﻜﻤﻣ ﻪﻛ ،ﺖﺴﯿﻧ ﺐﺳﺎﻨﺘﻣ %s ﺎﺑ ﻥﺁ ﻉﺎﻔﺗﺭﺍ ﺎﯾ ﺖﺴﯿﻧ ﺐﺳﺎﻨﺘﻣ %d ﺎﺑ %d ﺮﭽﺴﻜﺗ ﺽﺮﻋ .ﺩﻮﺷ ىﺮﺼﺑ ىﺎﻫﮒﺎﺑ ﺩﺎﺠﯾﺍ ﺚﻋﺎﺑ ﺖﺳﺍ
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == ىﺭﺍﺬﮔﺭﺎﺑ ﺖﻧﺪﯾﺩ ﯽﻤﯾﺪﻗ ىﺎﻫﻪﺨﺴﻧ ﻂﺳﻮﺗ ﺪﻧﺍﻮﺗﯽﻤﻧ ﻭ ﺖﺴﯿﻧ ﺭﺎﮔﺯﺎﺳ pnglite ﺎﺑ "%s" .ﺩﻮﺷ
 
 Some fonts could not be loaded. Check the local console for details.
@@ -2004,7 +1989,7 @@ Active: Hook
 == ﺏﻼﻗ :ﻝﺎﻌﻓ
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Persian translation by OneShadow, Quick, younesdevil, Player, ArAsH and Fàłłéñ
 
 Add clan
@@ -2167,7 +2152,7 @@ Are you sure that you want to disconnect and play this demo?
 Save all changes before turning off the editor?
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -2339,12 +2324,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Save all changes before switching selected button?
@@ -2690,5 +2669,5 @@ Unmute emoticons
 Mute emoticons
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

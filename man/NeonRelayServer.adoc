@@ -1,0 +1,70 @@
+= neonrelay-server(6)
+Neon Relay Contributors
+v1.0.0
+// User defined variables
+:relay-version: 20.1
+// man page variables
+:doctype: manpage
+:man manual: Neon Relay Server Manual
+:man source: Neon Relay Server
+:man version: {relay-version}
+:page-layout: base
+:man-linkstyle: pass:[blue R < >]
+
+== NAME
+neonrelay-server - Starts the Neon Relay game server.
+
+== SYNOPSIS
+*neonrelay-server* [_OPTION_]... [-f _CONFIG_FILE_]...
+
+== DESCRIPTION
+The Neon Relay game server is authoritative for gameplay and for every signal the reward
+service accepts. It is a standalone derivative of the upstream DDNet server; see
+`UPSTREAM_BASE.md` and `license.txt` in the repository for the exact upstream commit and
+for attribution.
+
+By default the server does *not* register with any master server (`sv_register 0`, empty
+`sv_register_url`) and does not contact third-party services. Point `sv_register_url` at
+your own master server deployment to list a server publicly.
+
+== EXAMPLES
+*neonrelay-server* -f myfile.cfg
+
+*neonrelay-server* -f myfile.cfg -f myfile2.cfg
+
+*neonrelay-server* \'sv_register 0' \'sv_name "Neon Relay server"'
+
+== Options
+
+=== Configuration file
+*-f* _CONFIGURATION_FILE_::
+Load _CONFIGURATION_FILE_ instead of the default _autoexec_server.cfg_
+
+=== Other options
+All options are documented in `data/autoexec_server.cfg` and in
+`src/engine/shared/config_variables.h`.
+
+== REWARDS
+Server-side reward events are produced by the optional `src/neonrelay` module. The module
+signs match results that the server itself observed; it never decides eligibility and it
+never trusts client-reported scores. See `docs/REWARD_SECURITY.md` and `docs/API.md`.
+
+== RESOURCES
+- *Source*: https://github.com/Leo88q/neon-relay
+- *Documentation*: https://github.com/Leo88q/neon-relay/tree/main/docs
+- *Upstream project*: https://github.com/ddnet/ddnet
+
+== REPORTING BUGS
+Report any issues here: https://github.com/Leo88q/neon-relay/issues
+
+== CONTRIBUTING
+You can contribute by opening a pull request here: https://github.com/Leo88q/neon-relay/pulls
+
+== COPYRIGHT
+The Neon Relay source code is distributed under the zlib/libpng-style license in
+`license.txt` of the repository, which also carries the Teeworlds, DDRace and DDNet
+copyright notices required by that license. Content under `data/` is licensed separately
+(CC-BY-SA 3.0, CC-BY, SIL OFL 1.1 and others); see `docs/THIRD_PARTY_NOTICES.md` and
+`docs/ASSET_MANIFEST.csv`.
+
+Read the code license here: https://github.com/Leo88q/neon-relay/blob/main/license.txt

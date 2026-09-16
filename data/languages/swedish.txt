@@ -520,8 +520,8 @@ Show kill messages
 Reset
 == Nollställ
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Suicides
 == Självmord
@@ -586,8 +586,8 @@ Enable server message sound
 Show votes window after voting
 == Visa röstnings fönster efter röstning
 
-DDNet Client needs to be restarted to complete update!
-== DDNet Klienten behövs startas om för att genomföra uppdateringen!
+Neon Relay needs to be restarted to complete the update!
+== Neon Relay Klienten behövs startas om för att genomföra uppdateringen!
 
 Kill
 == Dö
@@ -595,17 +595,11 @@ Kill
 Personal best:
 == Personligt bästa:
 
-Show DDNet map finishes in server browser
-== Visa DDNet bana avklarningar i server bläddraren
-
-transmits your player name to info.ddnet.org
-== skickar ditt spel namn till info.ddnet.org
-
 9+ new mentions
 == 9+ nya nämningar
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork är ett kooperativ online spel där målet är för dig och en grupp av tees att nå banas mål. Som en nykomling, så borde du starta på Novice serverna, vilket har bara de enklaste banorna. Kom ihåg att använda ping till att välja en server som är nära dig.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay är ett kooperativ online spel där målet är för dig och en grupp av tees att nå banas mål. Som en nykomling, så borde du starta på Novice serverna, vilket har bara de enklaste banorna. Kom ihåg att använda ping till att välja en server som är nära dig.
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == Det är rekommenderad att du kollar igenom inställningarna och ändra dem, så de passar dig innan du ansluter till en server.
@@ -631,8 +625,8 @@ Enable highlighted chat sound
 Deactivate
 == Avaktivera
 
-Welcome to DDNet
-== Välkommen till DDNet
+Welcome to Neon Relay
+== Välkommen till Neon Relay
 
 may cause delay
 == kan orsaka fördröjning
@@ -676,8 +670,8 @@ FPM
 System message
 == System meddelande
 
-DDNet %s is available:
-== DDNet %s har släppts:
+Neon Relay %s is available:
+== Neon Relay %s har släppts:
 
 Markers
 == Markeringar
@@ -775,8 +769,8 @@ Demo
 Show only chat messages from friends
 == Visa bara chatt meddelanden från kompisar
 
-DDNet Client updated!
-== DDNet Klienten uppdaterades!
+Neon Relay client updated!
+== Neon Relay Klienten uppdaterades!
 
 Converse
 == Konversera
@@ -832,8 +826,8 @@ Save the best demo of each race
 Frags
 == Frags
 
-DDNet %s is out!
-== DDNet %s har släppts!
+Neon Relay %s is out!
+== Neon Relay %s har släppts!
 
 Highlighted message
 == Betona meddelande
@@ -862,8 +856,8 @@ Enable regular chat sound
 Gameplay
 == Spelet
 
-Loading DDNet Client
-== Laddar DDNet Klienten
+Loading Neon Relay
+== Laddar Neon Relay Klienten
 
 Show HUD
 == Visa HUD
@@ -934,8 +928,8 @@ Download skins
 Client message
 == Klientmeddelande
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Website
 == Hemsida
@@ -1100,15 +1094,12 @@ Particles
 Assets directory
 == Assets mapp
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Misslyckades under uppstart. Testa att ändra gfx_backend till OpenGL eller Vulkan i settings_ddnet.cfg i konfig nappen och försök igen.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Misslyckades under uppstart. Testa att ändra gfx_backend till OpenGL eller Vulkan i settings_neonrelay.cfg i konfig nappen och försök igen.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1127,8 +1118,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Misslyckades att "swap framebuffers". Testa att uppdatera ditt grafikkorts drivrutiner.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Okänt fel. Testa att ändra gfx_backend till OpenGL eller Vulkan i settings_ddnet.cfg i konfig nappen och försök igen.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Okänt fel. Testa att ändra gfx_backend till OpenGL eller Vulkan i settings_neonrelay.cfg i konfig nappen och försök igen.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1458,12 +1449,6 @@ Hook Collisions
 
 Show health, shields and ammo
 == Visa hälsa, sköldar och ammunition
-
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== Visa DDRace HUD
 
 Show jumps indicator
 == Visa hopp indikator
@@ -1795,8 +1780,8 @@ Round %d/%d
 Team %d (%d/%d)
 == Lag %d (%d/%d)
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Could not resolve connect address '%s'. See local console for details.
 == Kunde inte förstå anslutnings adress '%s'. Se den lokala konsolen för detaljer.
@@ -1978,8 +1963,8 @@ Active: Fire
 Active: Hook
 == Läge: Hook
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" är inte en kompatibel med pnglite och kan inte laddas in av äldre versioner av DDNet:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" är inte en kompatibel med pnglite och kan inte laddas in av äldre versioner av Neon Relay:
 
 [Spectating Camera Mode Icon]
 AUTO
@@ -1988,8 +1973,8 @@ AUTO
 Toggle auto camera
 == Växla auto kamera
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Show client IDs in name plates
 == Visa klient IDs i namnskyltar
@@ -2062,7 +2047,7 @@ Open the saves file
 == Öppna saves filen
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Svensk översättning av matricks, Martin Pola, Kottizen, cur.ie och furo
 
 Show spectator cursor
@@ -2548,12 +2533,6 @@ Relative aim
 == 
 
 Preview visibilities
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 [Predefined touch button behaviors]

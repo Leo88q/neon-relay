@@ -517,8 +517,8 @@ Browser
 Ghost
 == Skygge
 
-Loading DDNet Client
-== Laster DDNet-klient
+Loading Neon Relay
+== Laster Neon Relay-klient
 
 Reconnect in %d sec
 == Koble til igjen om %d sek
@@ -541,11 +541,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Er du sikker på at du vil koble fra dummyen din?
 
-Welcome to DDNet
-== Velkommen til DDNet
+Welcome to Neon Relay
+== Velkommen til Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork er et kooperativt onlinespill der målet er at du og gruppen din skal nå banens målstrek. Som nybegynner anbefales det at du starter på Novice-serverne, som har de letteste banene. Se på serverens ping for å finne en som er nærme deg.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay er et kooperativt onlinespill der målet er at du og gruppen din skal nå banens målstrek. Som nybegynner anbefales det at du starter på Novice-serverne, som har de letteste banene. Se på serverens ping for å finne en som er nærme deg.
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == Det anbefales å sjekke innstillingene og justere dem slik det passer deg før du går inn på en server.
@@ -555,12 +555,6 @@ Please enter your nickname below.
 
 Video name:
 == Navn på video:
-
-Show DDNet map finishes in server browser
-== Vis fullførte DDNet-baner i serverlisten
-
-transmits your player name to info.ddnet.org
-== sender spillnavnet ditt til info.ddnet.org
 
 Search
 == Søk
@@ -583,8 +577,8 @@ Countries
 Types
 == Typer
 
-DDNet %s is out!
-== DDNet %s er ute!
+Neon Relay %s is out!
+== Neon Relay %s er ute!
 
 Downloading %s:
 == Laster ned %s:
@@ -592,8 +586,8 @@ Downloading %s:
 Update failed! Check log…
 == Oppdatering mislyktes! Sjekk logg…
 
-DDNet Client updated!
-== DDNet-klient oppdatert!
+Neon Relay client updated!
+== Neon Relay-klient oppdatert!
 
 Update now
 == Oppdater nå
@@ -760,11 +754,11 @@ Map sound volume
 HUD
 == HUD
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
-DDNet Client needs to be restarted to complete update!
-== DDNet-klienten må restartes for å fullføre oppdatering!
+Neon Relay needs to be restarted to complete the update!
+== Neon Relay-klienten må restartes for å fullføre oppdatering!
 
 Show score
 == Vis poeng
@@ -847,8 +841,8 @@ Show other players' hook collision lines
 Show tiles layers from BG map
 == Vis tile-lag fra BG-bane
 
-DDNet %s is available:
-== DDNet %s er tilgjengelig:
+Neon Relay %s is available:
+== Neon Relay %s er tilgjengelig:
 
 Updating…
 == Oppdaterer…
@@ -1006,8 +1000,8 @@ Particles
 Assets directory
 == Ressursmappe
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Website
 == Webside
@@ -1032,14 +1026,14 @@ Play
 == Spill
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Norwegian translation by MertenNor and nuborn
 
 Add friend
 == Legg til venn
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1063,7 +1057,7 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == 
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1107,7 +1101,7 @@ No demo with this filename exists
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 The format of texture %s is not RGBA which will cause visual bugs.
@@ -1683,7 +1677,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -1911,12 +1905,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2148,13 +2136,7 @@ Authed name color in scoreboard
 Same clan color in scoreboard
 == 
 
-DDRace HUD
-== 
-
 Show client IDs (scoreboard, chat, spectator)
-== 
-
-Show DDRace HUD
 == 
 
 Show jumps indicator
@@ -2610,10 +2592,7 @@ Delete skin
 Unable to delete skin
 == 
 
-Discord
-== 
-
-https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
 == 
 
 Tutorial
@@ -2690,5 +2669,5 @@ Active: Hook
 Moved ingame
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

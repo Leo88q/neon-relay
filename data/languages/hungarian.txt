@@ -499,8 +499,8 @@ Show kill messages
 Show ghost
 == Szellem mutatása
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 No updates available
 == Nincs elérhető frissítés
@@ -535,8 +535,8 @@ Deaths
 Enable game sounds
 == Játék hangok engedélyezése
 
-DDNet Client needs to be restarted to complete update!
-== Újra kell indítani a DDNet Klienst a frissítés befejezéséhez!
+Neon Relay needs to be restarted to complete the update!
+== Újra kell indítani a Neon Relay Klienst a frissítés befejezéséhez!
 
 Show others
 == Játékosok mutatása
@@ -607,8 +607,8 @@ System message
 Enable long pain sound (used when shooting in freeze)
 == Hosszú fájdalom hang lejátszása (mikor a játékos lő, ha lefagyott)
 
-DDNet %s is available:
-== DDNet %s verzió elérhető
+Neon Relay %s is available:
+== Neon Relay %s verzió elérhető
 
 Updating…
 == Frissítés…
@@ -637,8 +637,8 @@ Player country:
 Net
 == Net
 
-Loading DDNet Client
-== DDNet Kliens betöltése
+Loading Neon Relay
+== Neon Relay Kliens betöltése
 
 FPM
 == FPM
@@ -703,8 +703,8 @@ Enable highlighted chat sound
 AntiPing: predict weapons
 == Antiping: fegyverek előre kiszámolása
 
-DDNet Client updated!
-== DDNet Kliens frissítve van!
+Neon Relay client updated!
+== Neon Relay Kliens frissítve van!
 
 Highlighted message
 == Kiemelt üzenet
@@ -736,8 +736,8 @@ Unfinished map
 Deactivate
 == Deaktiválás
 
-Welcome to DDNet
-== Üdvözlet a DDNet-en
+Welcome to Neon Relay
+== Üdvözlet a Neon Relay-en
 
 Activate
 == Aktiválás
@@ -756,12 +756,6 @@ Vanilla skins only
 
 Date
 == Idő
-
-Show DDNet map finishes in server browser
-== Mutassa a befejezett pályákat a keresőben
-
-transmits your player name to info.ddnet.org
-== továbbítja a játékosnevedet az info.ddnet.org oldalra
 
 Hammerfly dummy
 == Másolat kalapácsolás
@@ -829,8 +823,8 @@ Successfully saved the replay!
 Zoom out
 == Kicsinyítés
 
-DDNet %s is out!
-== DDNet %s elérhető!
+Neon Relay %s is out!
+== Neon Relay %s elérhető!
 
 Statboard
 == Státusztábla
@@ -862,8 +856,8 @@ Server best:
 1 new mention
 == 1 új értesítés
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== A DDraceNetwork egy együttműködésen alapuló online játék, ahol a cél az, hogy te és a Tee csapatod elérje a célvonalat. Ha újonc vagy, a kezdő (Novice) szervereket ajánljuk, ahol a legegyszerűbb versenyeket tároljuk. Legkisebb ping választása alapján válassz egy szervert.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== A Neon Relay egy együttműködésen alapuló online játék, ahol a cél az, hogy te és a Tee csapatod elérje a célvonalat. Ha újonc vagy, a kezdő (Novice) szervereket ajánljuk, ahol a legegyszerűbb versenyeket tároljuk. Legkisebb ping választása alapján válassz egy szervert.
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == Ajánlott, hogy le ellenőrizd a beállításokat, hogy a kedvedre igazítsd őket, mielőtt csatlakoznál egy szerverhez. (Tipp: szűrők)
@@ -1079,14 +1073,11 @@ SA
 CHN
 == KíNA
 
-Discord
-== Discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
-https://ddnet.org/discord
-== https://ddnet.org/discord
-
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 The format of texture %s is not RGBA which will cause visual bugs.
 == A %s textúra formátuma nem RGBA, ami vizuális hibákat okozhat. (Nem megfelelően lesz elosztva a kép színvilága.)
@@ -1294,12 +1285,6 @@ Hook Collisions
 Show health, shields and ammo
 == Mutassa az életet, a pajzsot és a töltényt
 
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== Mutassa a DDRace HUD-ot (Speciális HUD)
-
 Show jumps indicator
 == Ugrás indikátor mutatása
 
@@ -1328,8 +1313,8 @@ Loading sound files
 == Hang fájlok betöltése
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Probléma derült fel inicializálás közben. Változtasson a "gfx_backend" parancson "OpenGL"-re vagy "Vulkan"-ra a "settings_ddnet.cfg" fájlon és próbálja meg újra.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Probléma derült fel inicializálás közben. Változtasson a "gfx_backend" parancson "OpenGL"-re vagy "Vulkan"-ra a "settings_neonrelay.cfg" fájlon és próbálja meg újra.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1348,8 +1333,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Probléma derült fel a framebuffer-nél. Nem sikerült framebuffer-t cserélni. Próbálja felújítani a Videókártyája driver-ét.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Ismeretlen probléma derült fel. Változtasson a "gfx_backend" parancson "OpenGL"-re vagy "Vulkan"-ra a "settings_ddnet.cfg" fájlon és próbálja meg újra.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Ismeretlen probléma derült fel. Változtasson a "gfx_backend" parancson "OpenGL"-re vagy "Vulkan"-ra a "settings_neonrelay.cfg" fájlon és próbálja meg újra.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1486,7 +1471,7 @@ Open the directory to add custom assets
 == Megnyitni az egyedi Képek helyét
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Magyar fordítást produkálta Feca, Boti., Cellegen és bencie
 
 [Graphics error]
@@ -1523,8 +1508,8 @@ No demo with this filename exists
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" nem kompatibilis pnglite-al és régi DDNet verziók nem tudják betölteni:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" nem kompatibilis pnglite-al és régi Neon Relay verziók nem tudják betölteni:
 
 Loading demo file from storage
 == Demó fájl betöltése tárolóból
@@ -1940,7 +1925,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -2159,12 +2144,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2690,5 +2669,5 @@ Active: Hook
 Moved ingame
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

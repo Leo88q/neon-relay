@@ -523,8 +523,8 @@ Deaths
 Enable game sounds
 == Habilitar sons do jogo
 
-DDNet Client needs to be restarted to complete update!
-== O Cliente DDNet precisa ser reiniciado para completar a atualização!
+Neon Relay needs to be restarted to complete the update!
+== O Cliente Neon Relay precisa ser reiniciado para completar a atualização!
 
 Max Screenshots
 == Máximo de capturas de tela
@@ -583,8 +583,8 @@ Check now
 Exclude
 == Excluir
 
-DDNet Client updated!
-== DDNet Client atualizado!
+Neon Relay client updated!
+== Neon Relay client atualizado!
 
 Internet
 == Internet
@@ -601,8 +601,8 @@ Automatically take statboard screenshot
 System message
 == Mensagem do sistema
 
-DDNet %s is available:
-== DDNet %s está disponível:
+Neon Relay %s is available:
+== Neon Relay %s está disponível:
 
 News
 == Novidades
@@ -640,8 +640,8 @@ Net
 Miscellaneous
 == Diversos
 
-Loading DDNet Client
-== Carregando DDNet Client
+Loading Neon Relay
+== Carregando Neon Relay client
 
 FPM
 == FPM
@@ -661,8 +661,8 @@ Best
 Enable regular chat sound
 == Habilitar som comum de chat
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Normal message
 == Mensagem normal
@@ -736,8 +736,8 @@ Unfinished map
 Deactivate
 == Desativar
 
-Welcome to DDNet
-== Bem-vindo ao DDNet
+Welcome to Neon Relay
+== Bem-vindo ao Neon Relay
 
 Activate
 == Ativar
@@ -756,12 +756,6 @@ Vanilla skins only
 
 Date
 == Data
-
-Show DDNet map finishes in server browser
-== Mostrar finalizações de mapas do DDNet no navegador do servidor
-
-transmits your player name to info.ddnet.org
-== transmite seu nome de jogador para info.ddnet.org
 
 Time
 == Tempo
@@ -784,8 +778,8 @@ Downloading %s:
 Filter connecting players
 == Filtrar jogadores se conectando
 
-DDNet %s is out!
-== DDNet %s está disponível!
+Neon Relay %s is out!
+== Neon Relay %s está disponível!
 
 Disconnect Dummy
 == Desconectar dummy
@@ -886,8 +880,8 @@ Render demo
 Replace video
 == Substituir vídeo
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork é um jogo online cooperativo cujo objetivo é você e seu grupo de tees chegarem à linha de chegada do mapa. Como um novato, você deve começar nos servidores Novice, que hospedam os mapas mais fáceis. Considere o ping para escolher um servidor próximo a você.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay é um jogo online cooperativo cujo objetivo é você e seu grupo de tees chegarem à linha de chegada do mapa. Como um novato, você deve começar nos servidores Novice, que hospedam os mapas mais fáceis. Considere o ping para escolher um servidor próximo a você.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Use a tecla k para se matar (reiniciar), q para pausar e assistir outros jogadores. Veja as configurações para outras combinações de teclas.
@@ -934,8 +928,8 @@ Skip the main menu
 Download skins
 == Baixar skins
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/pt-br
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/pt-br
 
 Website
 == Site
@@ -1082,11 +1076,8 @@ Windowed borderless
 Desktop fullscreen
 == Tela cheia de desktop
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Are you sure that you want to disconnect and switch to a different server?
 == Tem certeza que deseja desconectar e trocar para um servidor diferente?
@@ -1306,12 +1297,6 @@ Hook Collisions
 Show health, shields and ammo
 == Mostrar saúde, escudos e munição
 
-DDRace HUD
-== HUD do DDRace
-
-Show DDRace HUD
-== Mostrar HUD do DDRace
-
 Show jumps indicator
 == Mostrar indicador de pulos
 
@@ -1424,8 +1409,8 @@ Are you sure that you want to reset the controls to their defaults?
 == Tem certeza que deseja redefinir os controles para seu padrão?
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Falha durante a inicialização. Tente alterar gfx_backend para OpenGL ou Vulkan em settings_ddnet.cfg no diretório de configuração e tente novamente.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Falha durante a inicialização. Tente alterar gfx_backend para OpenGL ou Vulkan em settings_neonrelay.cfg no diretório de configuração e tente novamente.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1444,8 +1429,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Falha ao trocar framebuffers. Tente atualizar seus drivers de GPU.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Erro desconhecido. Tente alterar gfx_backend para OpenGL ou Vulkan em settings_ddnet.cfg no diretório de configuração e tente novamente.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Erro desconhecido. Tente alterar gfx_backend para OpenGL ou Vulkan em settings_neonrelay.cfg no diretório de configuração e tente novamente.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1795,8 +1780,8 @@ Round %d/%d
 Team %d (%d/%d)
 == Time %d (%d/%d)
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Could not resolve connect address '%s'. See local console for details.
 == Não foi possível resolver o endereço de conexão '%s'. Veja o console local para detalhes.
@@ -1978,8 +1963,8 @@ Active: Fire
 Active: Hook
 == Ativo: Gancho
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" não é compatível com pnglite e não pode ser carregado por versões antigas do DDNet:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" não é compatível com pnglite e não pode ser carregado por versões antigas do Neon Relay:
 
 [Spectating Camera Mode Icon]
 AUTO
@@ -1988,8 +1973,8 @@ AUTO
 Toggle auto camera
 == Alternar câmera automática
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Show client IDs in name plates
 == Mostrar IDs de clientes em placas de identificação
@@ -2078,7 +2063,7 @@ Renders your frame rate in the top right
 == Renderiza sua taxa de quadros no canto direito superior
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Tradução para português brasileiro por Isadora (slinack), yemDX, Ryomou Hentai Girl, HeroiAmarelo, Rafael Fontenelle, pv e DrafaKiller
 
 Show spectator cursor
@@ -2518,12 +2503,6 @@ You can select buttons directly in the list below, or long press on a touch butt
 
 Preview visibilities
 == Pré-visualizar visibilidades
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== Você pode gerenciar suas configurações de controles de toque nesta página. Somente alterações que estão salvas estarão disponíveis após reiniciar o cliente. Você pode compartilhar seus controles de toque com outros exportando-os para a área de transferências\n\nVocê pode encontrar informações mais detalhadas sobre os controles de toque no DDNet Wiki.
-
-Open DDNet Wiki
-== Abrir DDNet Wiki
 
 Buttons with this behavior execute console commands like regular key binds.
 == Botões com este comportamento executam comandos de console assim como associações de teclas.

@@ -520,8 +520,8 @@ Browser
 Ghost
 == Spøgelse
 
-Loading DDNet Client
-== Indlæser DDNet Klient
+Loading Neon Relay
+== Indlæser Neon Relay Klient
 
 Reconnect in %d sec
 == Tilslut igen om %d sek
@@ -544,11 +544,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Er du sikker på, at du vil afbryde din dummy?
 
-Welcome to DDNet
-== Velkommen til DDNet
+Welcome to Neon Relay
+== Velkommen til Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork er et samarbejdsvilligt onlinespil, hvor målet er, at du og din gruppe tees når målstregen på banen. Som nybegynder burde du starte på Novice-servere, som har de nemmeste maps. Overvej ping for at vælge en server tæt på dig.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay er et samarbejdsvilligt onlinespil, hvor målet er, at du og din gruppe tees når målstregen på banen. Som nybegynder burde du starte på Novice-servere, som har de nemmeste maps. Overvej ping for at vælge en server tæt på dig.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Brug k tasten til at dræbe (genstart), q for at sætte pause og se andre spillere. Se indstillinger for andre tastebindinger.
@@ -573,12 +573,6 @@ Speed
 
 Video name:
 == Video navn:
-
-Show DDNet map finishes in server browser
-== Vis gennemførte DDNet baner i serverbrowseren
-
-transmits your player name to info.ddnet.org
-== sender dit spillernavn til info.ddnet.org
 
 Theme
 == Tema
@@ -805,14 +799,14 @@ Background music volume
 HUD
 == HUD
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == Assets
 
-DDNet Client needs to be restarted to complete update!
-== DDNet Klient skal genstartes for at fuldføre opdateringen!
+Neon Relay needs to be restarted to complete the update!
+== Neon Relay Klient skal genstartes for at fuldføre opdateringen!
 
 Show score
 == Vis score
@@ -904,8 +898,8 @@ Use current map as background
 Show tiles layers from BG map
 == Vis fliselag fra baggrundsbanen
 
-DDNet %s is available:
-== DDNet %s er tilgængelig:
+Neon Relay %s is available:
+== Neon Relay %s er tilgængelig:
 
 Update now
 == Opdater nu
@@ -913,8 +907,8 @@ Update now
 Updating…
 == Opdaterer…
 
-DDNet Client updated!
-== DDNet Klient opdateret!
+Neon Relay client updated!
+== Neon Relay Klient opdateret!
 
 No updates available
 == Ingen opdateringer tilgængelige
@@ -940,8 +934,8 @@ Assets directory
 Learn
 == Lære
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Website
 == Internet side
@@ -965,8 +959,8 @@ Editor
 Play
 == Spil
 
-DDNet %s is out!
-== DDNet %s er ude!
+Neon Relay %s is out!
+== Neon Relay %s er ude!
 
 Downloading %s:
 == Downloader %s:
@@ -1032,8 +1026,8 @@ Grabs
 == 9+ ny omtaler
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Mislykkedes under initialisering. Prøv at ændre gfx_backend til OpenGL eller Vulkan i settings_ddnet.cfg i config-mappen og prøv igen.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Mislykkedes under initialisering. Prøv at ændre gfx_backend til OpenGL eller Vulkan i settings_neonrelay.cfg i config-mappen og prøv igen.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1052,8 +1046,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Kunne ikke udskifte framebuffers. Prøv at opdatere dine GPU-drivere.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Ukendt fejl. Prøv at ændre gfx_backend til OpenGL eller Vulkan i settings_ddnet.cfg i config-mappen og prøv igen.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Ukendt fejl. Prøv at ændre gfx_backend til OpenGL eller Vulkan i settings_neonrelay.cfg i config-mappen og prøv igen.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1090,8 +1084,8 @@ Error saving settings
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == Bredden af tekstur %s er ikke delelig med %d, eller højden er ikke delelig med %d, hvilket kan forårsage visuelle fejl.
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" er ikke kompatibel med pnglite og kan ikke indlæses af gamle DDNet-versioner:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" er ikke kompatibel med pnglite og kan ikke indlæses af gamle Neon Relay-versioner:
 
 The format of texture %s is not RGBA which will cause visual bugs.
 == Formatet på tekstur %s er ikke RGBA, hvilket vil forårsage visuelle fejl.
@@ -1524,8 +1518,8 @@ Edit touch controls
 Close
 == Luk
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Save changes
 == Gem ændringer
@@ -1785,7 +1779,7 @@ auto
 == auto
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Danske oversættelser af SnOrKilll, matiasmunk, Fin (b3z), z0rba og Anthony (danishgoat29)
 
 Tee
@@ -1818,14 +1812,8 @@ Authed name color in scoreboard
 Same clan color in scoreboard
 == Samme klanfarve i resultattavlen
 
-DDRace HUD
-== DDRace HUD
-
 Show client IDs (scoreboard, chat, spectator)
 == Vis klient-ID’er (resultattavle, chat, tilskuer)
-
-Show DDRace HUD
-== Vis DDRace HUD
 
 Show jumps indicator
 == Vis hoppe indikator
@@ -2013,11 +2001,8 @@ Loading assets
 Open the directory to add custom assets
 == Åbn biblioteket for at tilføje brugerdefinerede assets
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Tutorial
 == Tutorial
@@ -2081,8 +2066,8 @@ Active: Hook
 Moved ingame
 == Bevægede dig ingame
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Add clan
 == Tilføj klan
@@ -2357,12 +2342,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Save all changes before switching selected button?

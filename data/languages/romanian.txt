@@ -500,8 +500,8 @@ Name plates size
 == Dimensiune plăcuțe de nume
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Eșuat în timpul inițializării. Încercați să schimbați gfx_backend la OpenGL sau Vulkan în settings_ddnet.cfg din dosarul de configurare și încercați din nou.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Eșuat în timpul inițializării. Încercați să schimbați gfx_backend la OpenGL sau Vulkan în settings_neonrelay.cfg din dosarul de configurare și încercați din nou.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -520,8 +520,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == A eșuat schimbul tamponelor de cadre. Încercați să vă actualizați driverele plăcii grafice (GPU).
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Eroare necunoscută. Încercați să schimbați gfx_backend la OpenGL sau Vulkan în settings_ddnet.cfg din dosarul de configurare și încercați din nou.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Eroare necunoscută. Încercați să schimbați gfx_backend la OpenGL sau Vulkan în settings_neonrelay.cfg din dosarul de configurare și încercați din nou.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -582,8 +582,8 @@ Loading demo file from storage
 Some fonts could not be loaded. Check the local console for details.
 == Unele fonturi nu au putut fi încărcate. Verificați consola pentru detalii.
 
-Loading DDNet Client
-== Se încarcă client-ul DDNet
+Loading Neon Relay
+== Se încarcă client-ul Neon Relay
 
 Initializing components
 == Se inițializează componentele
@@ -724,11 +724,11 @@ Restart
 Are you sure that you want to restart?
 == Ești sigur că vrei să repornești?
 
-Welcome to DDNet
-== Bine ai venit pe DDNet
+Welcome to Neon Relay
+== Bine ai venit pe Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork este un joc online cooperativ în care scopul tău și al grupului tău este să ajungeți la linia de sosire a hărții. Ca începător, ar trebui să începi pe serverele Novice, care găzduiesc cele mai ușoare hărți. Ține cont de ping pentru a alege un server aproape de tine.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay este un joc online cooperativ în care scopul tău și al grupului tău este să ajungeți la linia de sosire a hărții. Ca începător, ar trebui să începi pe serverele Novice, care găzduiesc cele mai ușoare hărți. Ține cont de ping pentru a alege un server aproape de tine.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Folosește tasta k pentru a te "ucide" (reporni), q pentru a pune pauză și a privi alți jucători. Vezi setările pentru alte taste configurabile.
@@ -795,12 +795,6 @@ Join Tutorial Server
 
 Skip Tutorial
 == Sari peste tutorial
-
-Show DDNet map finishes in server browser
-== Afișează finalizările hărților DDNet în browserul de servere
-
-transmits your player name to info.ddnet.org
-== transmite numele tău de jucător către info.ddnet.org
 
 Unable to save the skin
 == Nu se poate salva costumul
@@ -1489,14 +1483,14 @@ Tee
 Appearance
 == Apariție
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == Resurse
 
-DDNet Client needs to be restarted to complete update!
-== Clientul DDNet trebuie repornit pentru a finaliza actualizarea!
+Neon Relay needs to be restarted to complete the update!
+== Clientul Neon Relay trebuie repornit pentru a finaliza actualizarea!
 
 HUD
 == Interfață
@@ -1522,14 +1516,8 @@ Show local time always
 Show votes window after voting
 == Arată fereastra de voturi după votare
 
-DDRace HUD
-== Interfață DDRace
-
 Show client IDs (scoreboard, chat, spectator)
 == Arată ID-urile de client (tabelă, chat, spectator)
-
-Show DDRace HUD
-== Arată interfața DDRace
 
 Show jumps indicator
 == Arată indicatorul săriturilor
@@ -1774,8 +1762,8 @@ Chat command (e.g. showall 1)
 Unregister protocol and file extensions
 == Deregistrează protocolul și extensiile fișierelor
 
-DDNet %s is available:
-== DDNet %s este disponibil:
+Neon Relay %s is available:
+== Neon Relay %s este disponibil:
 
 Update now
 == Actualizează acum
@@ -1783,8 +1771,8 @@ Update now
 Updating…
 == Se actualizează…
 
-DDNet Client updated!
-== Clientul DDNet a fost actualizat!
+Neon Relay client updated!
+== Clientul Neon Relay a fost actualizat!
 
 No updates available
 == Nu există actualizări disponibile
@@ -1825,17 +1813,14 @@ Assets directory
 Open the directory to add custom assets
 == Deschide dosarul pentru a adăuga resurse personalizate
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Learn
 == Învață
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Tutorial
 == Tutorial
@@ -1856,8 +1841,8 @@ Server executable not found, can't run server
 Play
 == Joacă
 
-DDNet %s is out!
-== DDNet %s a fost lansat!
+Neon Relay %s is out!
+== Neon Relay %s a fost lansat!
 
 Downloading %s:
 == Descarcă %s:
@@ -1975,11 +1960,11 @@ Active: Hook
 Moved ingame
 == Mutat în joc
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" nu este compatibilă cu pnglite și nu poate fi încărcată de versiunile vechi DDNet:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" nu este compatibilă cu pnglite și nu poate fi încărcată de versiunile vechi Neon Relay:
 
 [Spectating Camera Mode Icon]
 AUTO
@@ -1988,8 +1973,8 @@ AUTO
 Toggle auto camera
 == Comutează camera auto
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Show client IDs in name plates
 == Arată ID-urile de client pe etichetele de nume
@@ -2010,7 +1995,7 @@ Server could not be started. Make sure to grant the notification permission in t
 == Serverul nu a putut fi pornit. Acordă permisiunea pentru notificări în setările aplicației pentru a rula serverul în fundal.
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Traduceri în limba română de kneekoo, Sans3108
 
 Auto-sync player camera
@@ -2410,12 +2395,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Save all changes before switching selected button?

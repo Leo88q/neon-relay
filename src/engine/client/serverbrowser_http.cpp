@@ -554,7 +554,7 @@ IServerBrowserHttp *CreateServerBrowserHttp(IEngine *pEngine, IStorage *pStorage
 	const char **ppUrls = apUrls;
 	int NumUrls = 0;
 	CLineReader LineReader;
-	if(LineReader.OpenFile(pStorage->OpenFile("ddnet-serverlist-urls.cfg", IOFLAG_READ, IStorage::TYPE_ALL)))
+	if(LineReader.OpenFile(pStorage->OpenFile("neonrelay-serverlist-urls.cfg", IOFLAG_READ, IStorage::TYPE_ALL)))
 	{
 		while(const char *pLine = LineReader.Get())
 		{

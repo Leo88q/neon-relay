@@ -532,8 +532,8 @@ Show kill messages
 Show ghost
 == Mostrar el fantasma
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 No updates available
 == No hi ha actualitzacions disponibles
@@ -559,8 +559,8 @@ Deaths
 Enable game sounds
 == Activar sons del joc
 
-DDNet Client needs to be restarted to complete update!
-== El client DDNet necessita reiniciar-se per completar l'actualització!
+Neon Relay needs to be restarted to complete the update!
+== El client Neon Relay necessita reiniciar-se per completar l'actualització!
 
 Show others
 == Mostrar altres
@@ -622,8 +622,8 @@ System message
 Enable long pain sound (used when shooting in freeze)
 == Activar el so de dolor llarg (quan dispares congelat)
 
-DDNet %s is available:
-== DDNet %s està disponible:
+Neon Relay %s is available:
+== Neon Relay %s està disponible:
 
 Updating…
 == Actualitzant…
@@ -649,8 +649,8 @@ Suicides
 Net
 == Net
 
-Loading DDNet Client
-== Carregant el client DDNet
+Loading Neon Relay
+== Carregant el client Neon Relay
 
 FPM
 == FPM
@@ -706,8 +706,8 @@ Enable highlighted chat sound
 AntiPing: predict weapons
 == AntiPing: predir armes
 
-DDNet Client updated!
-== El client DDNet s'ha actualitzat!
+Neon Relay client updated!
+== El client Neon Relay s'ha actualitzat!
 
 Highlighted message
 == Missatge destacat
@@ -736,8 +736,8 @@ Unfinished map
 Deactivate
 == Desactivar
 
-Welcome to DDNet
-== Benvingut a DDNet
+Welcome to Neon Relay
+== Benvingut a Neon Relay
 
 Activate
 == Activar
@@ -756,12 +756,6 @@ Vanilla skins only
 
 Date
 == Data
-
-Show DDNet map finishes in server browser
-== Mostrar finalitzacions de mapes en el buscador de servidors
-
-transmits your player name to info.ddnet.org
-== retransmet el teu nom de jugar a info.ddnet.org
 
 Successfully saved the replay!
 == S'ha guardat la repetició correctament!
@@ -790,8 +784,8 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Estàs segur que vols desconnectar el teu dummy?
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork és un videojoc cooperatiu en línia on l'objectiu és que tu i el teu grup de tees arribin a la meta final del mapa. Com a nouvingut hauries de començar en els servidors Novice, que contenen els mapes més fàcils. Considera el teu ping per escollir un servidor a prop teu.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay és un videojoc cooperatiu en línia on l'objectiu és que tu i el teu grup de tees arribin a la meta final del mapa. Com a nouvingut hauries de començar en els servidors Novice, que contenen els mapes més fàcils. Considera el teu ping per escollir un servidor a prop teu.
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == És recomanat que miris la configuració i ho canviïs al teu gust abans d'entrar a un servidor.
@@ -805,8 +799,8 @@ Video name:
 Filter connecting players
 == Filtrar els jugadors connectant-se
 
-DDNet %s is out!
-== DDNet %s ja està disponible!
+Neon Relay %s is out!
+== Neon Relay %s ja està disponible!
 
 Downloading %s:
 == Descarregant %s:
@@ -1039,14 +1033,11 @@ Particles
 Assets directory
 == Directori d'arxius del joc
 
-Discord
-== Discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
-https://ddnet.org/discord
-== https://ddnet.org/discord
-
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/ca
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/ca
 
 Website
 == Página Web
@@ -1131,14 +1122,14 @@ Tutorial
 == Tutorial
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Catalan translation by Ryozuki
 
 Add friend
 == Afegir amic
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1162,7 +1153,7 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == 
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1203,7 +1194,7 @@ Error saving settings
 No demo with this filename exists
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 Preparing demo playback
@@ -1740,7 +1731,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -1965,12 +1956,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2202,13 +2187,7 @@ Authed name color in scoreboard
 Same clan color in scoreboard
 == 
 
-DDRace HUD
-== 
-
 Show client IDs (scoreboard, chat, spectator)
-== 
-
-Show DDRace HUD
 == 
 
 Show jumps indicator
@@ -2690,5 +2669,5 @@ Active: Hook
 Moved ingame
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

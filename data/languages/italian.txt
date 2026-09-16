@@ -490,8 +490,8 @@ LAN
 Name plates size
 == Dimensione nomi
 
-DDNet %s is out!
-== È uscito DDNet %s!
+Neon Relay %s is out!
+== È uscito Neon Relay %s!
 
 Disconnect Dummy
 == Disconnetti il dummy
@@ -547,8 +547,8 @@ Browser
 Ghost
 == Ghost
 
-Loading DDNet Client
-== Caricando Client DDNet
+Loading Neon Relay
+== Caricando Client Neon Relay
 
 Reconnect in %d sec
 == Riconnettiti in %d secondi
@@ -565,11 +565,11 @@ File already exists, do you want to overwrite it?
 Are you sure that you want to disconnect?
 == Sei sicuro di volerti disconnettere?
 
-Welcome to DDNet
-== Benvenuto in DDNet
+Welcome to Neon Relay
+== Benvenuto in Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork è un gioco online cooperativo dove l'obbiettivo è per te ed il tuo gruppo di tee di raggiungere la linea del traguardo della mappa. Da nuovo arrivato dovresti iniziare sui server Novice, dove sono ospitate le mappe più facili. Considera il ping per scegliere un server vicino a te.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay è un gioco online cooperativo dove l'obbiettivo è per te ed il tuo gruppo di tee di raggiungere la linea del traguardo della mappa. Da nuovo arrivato dovresti iniziare sui server Novice, dove sono ospitate le mappe più facili. Considera il ping per scegliere un server vicino a te.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Usa il tasto k per ucciderti (respawn), il tasto q per andare in modalità pausa e guardare altri giocatori. Guarda le impostazioni per gli altri tasti.
@@ -594,12 +594,6 @@ Speed
 
 Video name:
 == Nome del video:
-
-Show DDNet map finishes in server browser
-== Mostra le mappe finite in DDNet nel tuo browser dei server
-
-transmits your player name to info.ddnet.org
-== Trasmette il tuo nome da giocatore a info.ddnet.org
 
 Theme
 == Tema
@@ -808,14 +802,14 @@ Background music volume
 HUD
 == Interf. utente
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == Asset
 
-DDNet Client needs to be restarted to complete update!
-== Il Client DDNet deve essere riavviato per completare l'aggiornamento!
+Neon Relay needs to be restarted to complete the update!
+== Il Client Neon Relay deve essere riavviato per completare l'aggiornamento!
 
 Show score
 == Mostra punteggio/tempo
@@ -904,8 +898,8 @@ Use current map as background
 Show tiles layers from BG map
 == Mostra i layer dei tile dalla mappa in sfondo
 
-DDNet %s is available:
-== DDNet %s è disponibile:
+Neon Relay %s is available:
+== Neon Relay %s è disponibile:
 
 Update now
 == Aggiorna ora
@@ -913,8 +907,8 @@ Update now
 Updating…
 == Aggiornamento in corso…
 
-DDNet Client updated!
-== Client DDNet aggiornato!
+Neon Relay client updated!
+== Client Neon Relay aggiornato!
 
 No updates available
 == Non ci sono aggiornamenti disponibili
@@ -940,8 +934,8 @@ Assets directory
 Learn
 == Impara
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Website
 == Sito web
@@ -1200,9 +1194,6 @@ Hook Collisions
 Show health, shields and ammo
 == Mostra vita, scudi e munizioni
 
-Show DDRace HUD
-== Mostra l'HUD DDRace
-
 Show jumps indicator
 == Mostra indicatori salti
 
@@ -1282,7 +1273,7 @@ Moved ingame
 == Spostato in gioco
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Italian translation by Lanta, Carmine, Otacon, Apmox, NeXus and kio
 
 Add clan
@@ -1292,7 +1283,7 @@ Add friend
 == Aggiungi amico
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1316,7 +1307,7 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == 
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1360,7 +1351,7 @@ No demo with this filename exists
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 The format of texture %s is not RGBA which will cause visual bugs.
@@ -1819,7 +1810,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -2046,12 +2037,6 @@ Preview button visibility while the editor is active.
 Show all buttons
 == 
 
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
-== 
-
 Error saving touch controls
 == 
 
@@ -2273,9 +2258,6 @@ Authed name color in scoreboard
 == 
 
 Same clan color in scoreboard
-== 
-
-DDRace HUD
 == 
 
 Show client IDs (scoreboard, chat, spectator)
@@ -2616,10 +2598,7 @@ Delete skin
 Unable to delete skin
 == 
 
-Discord
-== 
-
-https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
 == 
 
 Tutorial
@@ -2690,5 +2669,5 @@ Active: Fire
 Active: Hook
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

@@ -526,8 +526,8 @@ Browser
 Ghost
 == Kummitus
 
-Loading DDNet Client
-== DDNet Kliendi laadimine
+Loading Neon Relay
+== Neon Relay Kliendi laadimine
 
 Reconnect in %d sec
 == Taasühendamine %d sekundi pärast
@@ -550,11 +550,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Kas olete kindel, et tahate oma dummy ühenduse katkestada?
 
-Welcome to DDNet
-== Tere tulemast DDNet-i
+Welcome to Neon Relay
+== Tere tulemast Neon Relay-i
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork on koostööpõhine interneti mäng, mille eesmärk on, et teie ja teie grupp teesid jõuaksid kaardi finišisse. Uue mängijana peaksite alustama Novice serveritest, kus on kõige lihtsamad kaardid. Leia pingi abil sinule lähim server.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay on koostööpõhine interneti mäng, mille eesmärk on, et teie ja teie grupp teesid jõuaksid kaardi finišisse. Uue mängijana peaksite alustama Novice serveritest, kus on kõige lihtsamad kaardid. Leia pingi abil sinule lähim server.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Kasutage klahvi k tapmiseks (uuesti proovimiseks), q teiste mängijate pealtvaatamiseks. Vaadake sätteid muude klahvide jaoks.
@@ -579,12 +579,6 @@ Speed
 
 Video name:
 == Video nimi:
-
-Show DDNet map finishes in server browser
-== Näita DDNet kaardi lõpetusi serveri brauseris
-
-transmits your player name to info.ddnet.org
-== edastab teie mängija nime veebilehele info.ddnet.org
 
 Theme
 == Teema
@@ -823,11 +817,11 @@ Background music volume
 HUD
 == HUD
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
-DDNet Client needs to be restarted to complete update!
-== DDNet Klient peab taaskäivitama, et uuendus lõpetada!
+Neon Relay needs to be restarted to complete the update!
+== Neon Relay Klient peab taaskäivitama, et uuendus lõpetada!
 
 Show score
 == Näita punkte
@@ -913,8 +907,8 @@ Background
 Use current map as background
 == Kasuta praegust kaarti tagataustana
 
-DDNet %s is available:
-== DDNet %s on saadaval:
+Neon Relay %s is available:
+== Neon Relay %s on saadaval:
 
 Update now
 == Uuenda nüüd
@@ -922,8 +916,8 @@ Update now
 Updating…
 == Uuendamine…
 
-DDNet Client updated!
-== DDNet Klient on uuendatud!
+Neon Relay client updated!
+== Neon Relay Klient on uuendatud!
 
 No updates available
 == Ühtegi uuendust pole saadaval
@@ -934,17 +928,14 @@ Check now
 Emoticons
 == Emotikonid
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Learn
 == Õppige
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Website
 == Veebileht
@@ -965,8 +956,8 @@ Editor
 Play
 == Mängi
 
-DDNet %s is out!
-== DDNet %s on väljas!
+Neon Relay %s is out!
+== Neon Relay %s on väljas!
 
 Downloading %s:
 == Allalaadimine %s:
@@ -1020,8 +1011,8 @@ Best
 == 9+ uut mainimist
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Ebaõnnestumine initsialiseerimise ajal. Üritage gfx_backend muuta OpenGL-iks või Vulkan-iks settings_ddnet.cfg failis konfig. asukohas ja proovige uuesti.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Ebaõnnestumine initsialiseerimise ajal. Üritage gfx_backend muuta OpenGL-iks või Vulkan-iks settings_neonrelay.cfg failis konfig. asukohas ja proovige uuesti.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1040,8 +1031,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Kaadripuhvrite vahetus ebaõnnestus. Üritage uuendada oma GPU draivereid.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Tundmatu error. Üritage gfx_backend muuta OpenGL-iks või Vulkan-iks settings_ddnet.cfg failis konfig. asukohas ja proovige uuesti.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Tundmatu error. Üritage gfx_backend muuta OpenGL-iks või Vulkan-iks settings_neonrelay.cfg failis konfig. asukohas ja proovige uuesti.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1555,12 +1546,6 @@ Show health, shields and ammo
 Show local time always
 == Näita alati kohalikku aega
 
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== Näita DDRace HUD-i
-
 Show jumps indicator
 == Näita hüpete indikaatorit
 
@@ -1796,7 +1781,7 @@ Team %d (%d/%d)
 == Tiim %d (%d/%d)
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Estonian translation by Cammodude
 
 Add clan
@@ -1824,7 +1809,7 @@ Could not connect dummy
 No demo with this filename exists
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 Some fonts could not be loaded. Check the local console for details.
@@ -2035,7 +2020,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -2239,12 +2224,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2690,5 +2669,5 @@ Active: Fire
 Active: Hook
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

@@ -1,6 +1,9 @@
-//! DDNet's base library, Rust part.
+//! Base library, Rust part.
 //!
-//! DDNet's code base is separated into three major parts, `base`, `engine` and
+//! Neon Relay, derived from the upstream DDNet project (see `license.txt` and
+//! `UPSTREAM_BASE.md` in the repository root).
+//!
+//! The code base is separated into three major parts, `base`, `engine` and
 //! `game`.
 //!
 //! The base library consists of operating system abstractions, and

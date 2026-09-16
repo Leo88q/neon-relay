@@ -523,8 +523,8 @@ Show kill messages
 Show ghost
 == Mostrar fantasma
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 No updates available
 == Sem atualizações disponíveis
@@ -550,8 +550,8 @@ Deaths
 Enable game sounds
 == Ativar os sons do jogo
 
-DDNet Client needs to be restarted to complete update!
-== O cliente DDNet precisa de ser reiniciado para completar a atualização!
+Neon Relay needs to be restarted to complete the update!
+== O cliente Neon Relay precisa de ser reiniciado para completar a atualização!
 
 Show others
 == Mostrar outros
@@ -604,8 +604,8 @@ Automatically take statboard screenshot
 System message
 == Mensagem do sistema
 
-DDNet %s is available:
-== DDNet %s está disponível:
+Neon Relay %s is available:
+== Neon Relay %s está disponível:
 
 Updating…
 == A atualizar…
@@ -622,8 +622,8 @@ New random timeout code
 Suicides
 == Suicídios
 
-Loading DDNet Client
-== A carregar o cliente DDNet
+Loading Neon Relay
+== A carregar o cliente Neon Relay
 
 Default zoom
 == Zoom predefinido
@@ -670,8 +670,8 @@ Enable highlighted chat sound
 AntiPing: predict weapons
 == AntiPing: prever as armas
 
-DDNet Client updated!
-== Cliente DDNet atualizado!
+Neon Relay client updated!
+== Cliente Neon Relay atualizado!
 
 Highlighted message
 == Mensagem em destaque
@@ -697,8 +697,8 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Tens a certeza que queres desconectar o teu dummy?
 
-Welcome to DDNet
-== Bem-vindo ao DDNet
+Welcome to Neon Relay
+== Bem-vindo ao Neon Relay
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == É recomendado que verifiques as definições para ajustá-las a teu gosto antes de te juntares a um servidor.
@@ -723,9 +723,6 @@ Speed
 
 Video name:
 == Nome do vídeo:
-
-transmits your player name to info.ddnet.org
-== transmite o teu nome de jogador para info.ddnet.org
 
 Theme
 == Tema
@@ -805,17 +802,14 @@ Background
 Particles
 == Partículas
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Learn
 == Aprender
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/pt
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/pt
 
 Website
 == Website
@@ -830,8 +824,8 @@ Editor
 == Editor
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Falhou durante a inicialização. Tenta mudar gfx_backend para OpenGL ou Vulkan em settings_ddnet.cfg no diretório de configuração e tenta novamente.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Falhou durante a inicialização. Tenta mudar gfx_backend para OpenGL ou Vulkan em settings_neonrelay.cfg no diretório de configuração e tenta novamente.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -850,8 +844,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Falha ao trocar os buffers de frames. Tenta atualizar os drivers da tua GPU.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Erro desconhecido. Tenta mudar gfx_backend para OpenGL ou Vulkan em settings_ddnet.cfg no diretório de configuração e tenta novamente.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Erro desconhecido. Tenta mudar gfx_backend para OpenGL ou Vulkan em settings_neonrelay.cfg no diretório de configuração e tenta novamente.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -894,8 +888,8 @@ Replay feature is disabled!
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == A largura da textura %s não é divisível por %d, ou a altura não é divisível por %d, o que pode causar bugs visuais.
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" não é compatível com pnglite e não pode ser carregado por versões antigas do DDNet:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" não é compatível com pnglite e não pode ser carregado por versões antigas do Neon Relay:
 
 The format of texture %s is not RGBA which will cause visual bugs.
 == O formato da textura %s não é RGBA, o que causará bugs visuais.
@@ -1031,7 +1025,7 @@ Render complete
 Are you sure that you want to restart?
 == Tens a certeza que queres reiniciar?
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
 == DDRaceNetwork é um jogo cooperativo online onde o objetivo é tu e o teu grupo de tees alcançarem a linha de chegada do mapa. Como recém-chegado, deves começar nos servidores Novice, que têm os mapas mais fáceis. Considera o ping para escolher um servidor perto de ti.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
@@ -1078,9 +1072,6 @@ Join Tutorial Server
 
 Skip Tutorial
 == Pular o Tutorial
-
-Show DDNet map finishes in server browser
-== Mostrar as conclusões dos mapas DDNet no navegador de servidores
 
 Unable to save the skin
 == Não foi possível guardar a skin
@@ -1652,14 +1643,8 @@ Authed name color in scoreboard
 Same clan color in scoreboard
 == Mesma cor de clã no placar de pontuação
 
-DDRace HUD
-== Visualização de DDRace
-
 Show client IDs (scoreboard, chat, spectator)
 == Mostrar IDs de cliente (placar de pontuação, chat, espectador)
-
-Show DDRace HUD
-== Mostrar interface de DDRace
 
 Show jumps indicator
 == Mostrar indicador de saltos
@@ -1890,8 +1875,8 @@ Run server
 Play
 == Jogar
 
-DDNet %s is out!
-== DDNet %s está disponível!
+Neon Relay %s is out!
+== Neon Relay %s está disponível!
 
 Downloading %s:
 == A transferir %s:
@@ -2004,7 +1989,7 @@ Moved ingame
 == Movido no jogo
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Portuguese translation by HeroiAmarelo, rockuS and DrafaKiller
 
 [Graphics error]
@@ -2167,8 +2152,8 @@ Play the selected demo
 Save all changes before turning off the editor?
 == Gravar todas as alterações antes de desligar o editor?
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Community
 == Comunidade
@@ -2336,12 +2321,6 @@ Preview button visibility while the editor is active.
 
 Show all buttons
 == Mostrar todos os botões
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== Pode gerir as suas configurações de controlos de toque nesta página. Somente alterações que estão gravadas estarão disponíveis após reiniciar o cliente. Pode partilhar os seus controlos de toque com outros exportando-os para a área de transferências\n\nPode encontrar informações mais detalhadas sobre os controlos de toque no DDNet Wiki.
-
-Open DDNet Wiki
-== Abrir DDNet Wiki
 
 Save all changes before switching selected button?
 == Gravar todas as alterações antes de trocar o botão selecionado?
@@ -2661,8 +2640,8 @@ Unmute emoticons
 Mute emoticons
 == Silenciar emoticons
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 [Direct touch input]
 Relative aim

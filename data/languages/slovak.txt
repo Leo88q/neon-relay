@@ -494,8 +494,8 @@ Name plates size
 == Veľkosť menoviek
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Inicializácia zlyhala. Skúste zmeniť gfx_backend na OpenGL alebo Vulkan v settings_ddnet.cfg v adresári s konfiguráciou a skúste to znova.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Inicializácia zlyhala. Skúste zmeniť gfx_backend na OpenGL alebo Vulkan v settings_neonrelay.cfg v adresári s konfiguráciou a skúste to znova.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -514,8 +514,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Zámena framebufferov zlyhala. Skúste aktualizovať ovládače GPU.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Neznáma chyba. Skúste zmeniť gfx_backend na OpenGL alebo Vulkan v settings_ddnet.cfg v adresári s konfiguráciou a skúste to znova.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Neznáma chyba. Skúste zmeniť gfx_backend na OpenGL alebo Vulkan v settings_neonrelay.cfg v adresári s konfiguráciou a skúste to znova.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -561,8 +561,8 @@ Connected
 Loading map file from storage
 == Načítanie súboru mapy z úložiska
 
-Loading DDNet Client
-== Načítanie DDNet Klienta
+Loading Neon Relay
+== Načítanie Neon Relay Klienta
 
 Why are you slowmo replaying to read this?
 == Prečo prehrávate pomaly kvôli tomuto?
@@ -717,11 +717,11 @@ Restart
 Are you sure that you want to restart?
 == Naozaj chcete reštartovať hru?
 
-Welcome to DDNet
-== Vitajte na DDNete
+Welcome to Neon Relay
+== Vitajte na Neon Relaye
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork je kooperatívna online hra, kde je cieľom pre vás a vašu skupinu dosiahnuť cieľovú čiaru mapy. Ako nováčik by ste mali začať na začínajúcich serveroch, ktoré hosťujú najjednoduchšie mapy. Zvážte ping a vyberte si server, ktorý je vám najbližšie.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay je kooperatívna online hra, kde je cieľom pre vás a vašu skupinu dosiahnuť cieľovú čiaru mapy. Ako nováčik by ste mali začať na začínajúcich serveroch, ktoré hosťujú najjednoduchšie mapy. Zvážte ping a vyberte si server, ktorý je vám najbližšie.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Pomocou klávesy k sa zabijete (reštartujte), pomocou q pauznete a môžete sledovať ostatných hráčov. Otvorte nastavenie pre ďalšie klávesové skratky.
@@ -782,12 +782,6 @@ Join Tutorial Server
 
 Skip Tutorial
 == Preskočiť výuku
-
-Show DDNet map finishes in server browser
-== Zobraziť dokončenie DDNet máp v prehliadači servera
-
-transmits your player name to info.ddnet.org
-== prenesie vaše meno hráča na info.ddnet.org
 
 Theme
 == Téma
@@ -1344,14 +1338,14 @@ Background music volume
 Appearance
 == Vzhľad
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == Aktíva
 
-DDNet Client needs to be restarted to complete update!
-== Na dokončenie aktualizácie je nutné reštartovať klienta DDNet!
+Neon Relay needs to be restarted to complete the update!
+== Na dokončenie aktualizácie je nutné reštartovať klienta Neon Relay!
 
 HUD
 == HUD
@@ -1376,12 +1370,6 @@ Show local time always
 
 Show votes window after voting
 == Zobraziť okno hlasovania po odhlasovaní
-
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== Zobraziť DDRace HUD
 
 Show jumps indicator
 == Zobraziť indikátor skoku
@@ -1599,8 +1587,8 @@ Chat command (e.g. showall 1)
 Unregister protocol and file extensions
 == Odregistrovať protokol a prípony súborov
 
-DDNet %s is available:
-== DDNet %s je k dispozícii:
+Neon Relay %s is available:
+== Neon Relay %s je k dispozícii:
 
 Update now
 == Aktualizovať teraz
@@ -1608,8 +1596,8 @@ Update now
 Updating…
 == Aktualizácia…
 
-DDNet Client updated!
-== DDNet Klient aktualizovaný!
+Neon Relay client updated!
+== Neon Relay Klient aktualizovaný!
 
 No updates available
 == Nie sú k dispozícii žiadne aktualizácie
@@ -1635,17 +1623,14 @@ Assets directory
 Open the directory to add custom assets
 == Pre pridanie vlastných aktív otvorte adresár
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Learn
 == Učiť sa
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Tutorial
 == Výuka
@@ -1666,8 +1651,8 @@ Server executable not found, can't run server
 Play
 == Hrať
 
-DDNet %s is out!
-== DDNet %s je vonku!
+Neon Relay %s is out!
+== Neon Relay %s je vonku!
 
 Downloading %s:
 == Sťahovanie %s:
@@ -1828,8 +1813,8 @@ Round %d/%d
 Team %d (%d/%d)
 == Tím %d (%d/%d)
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Save skin
 == Uložiť skin
@@ -1875,7 +1860,7 @@ Eyes
 == Oči
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Slovenský preklad od LimiT, Petr a dobrykafe
 
 [Graphics error]
@@ -1885,8 +1870,8 @@ Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom
 No demo with this filename exists
 == Neexistuje žiadny záznam s týmto názvom
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" nie je kompatibilný s pnglite a nemožno ho načítať starými DDNet verziami:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" nie je kompatibilný s pnglite a nemožno ho načítať starými Neon Relay verziami:
 
 Some fonts could not be loaded. Check the local console for details.
 == Niektoré písma nemohli byť načítané. Podrobnosti nájdete v miestnej konzole.
@@ -1958,8 +1943,8 @@ Edit touch controls
 Close
 == Zavrieť
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Save changes
 == Uložiť zmeny
@@ -2548,12 +2533,6 @@ Relative aim
 == 
 
 Preview visibilities
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 [Predefined touch button behaviors]

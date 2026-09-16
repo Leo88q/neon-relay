@@ -1,5 +1,5 @@
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" не сумісний з pnglite і не може бути завантажений на старих версіях DDNet:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" не сумісний з pnglite і не може бути завантажений на старих версіях Neon Relay:
 
 %.2f KiB
 == %.2f КіБ
@@ -461,26 +461,23 @@ Cut length
 Date
 == Дата
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
-DDNet %s is available:
-== Доступний DDNet %s:
+Neon Relay %s is available:
+== Доступний Neon Relay %s:
 
-DDNet %s is out!
-== Вийшов DDNet %s!
+Neon Relay %s is out!
+== Вийшов Neon Relay %s!
 
-DDNet Client needs to be restarted to complete update!
-== Потрібно перезапустити клієнт DDNet для завершення оновлення!
+Neon Relay needs to be restarted to complete the update!
+== Потрібно перезапустити клієнт Neon Relay для завершення оновлення!
 
-DDNet Client updated!
-== Клієнт DDNet оновлено!
+Neon Relay client updated!
+== Клієнт Neon Relay оновлено!
 
-DDRace HUD
-== HUD DDRace
-
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork — кооперативна мережева гра, ціль якої — дістатися разом зі своєю групою тії до фінішної прямої. Новачкам варто почати із серверів «Для новачків» (Novice), на яких є найпростіші мапи. Зважайте на затримку, коли вибираєте сервер.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay — кооперативна мережева гра, ціль якої — дістатися разом зі своєю групою тії до фінішної прямої. Новачкам варто почати із серверів «Для новачків» (Novice), на яких є найпростіші мапи. Зважайте на затримку, коли вибираєте сервер.
 
 Deactivate
 == Деактивувати
@@ -555,9 +552,6 @@ Disconnect Dummy
 
 Disconnected
 == Від’єднано
-
-Discord
-== Discord
 
 Door Laser Inner Color
 == Колір лазерних дверей
@@ -693,8 +687,8 @@ Eyes
 == Очі
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Помилка під час ініціалізації. Спробуйте змінити gfx_backend на OpenGL чи Vulkan у settings_ddnet.cfg у теці налаштувань і спробуйте ще раз.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Помилка під час ініціалізації. Спробуйте змінити gfx_backend на OpenGL чи Vulkan у settings_neonrelay.cfg у теці налаштувань і спробуйте ще раз.
 
 Failed saving the replay!
 == Не вдалося зберегти повтор!
@@ -897,17 +891,17 @@ Hook collisions
 Hook Strength
 == Сила гака
 
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 HUD
 == HUD
@@ -1012,8 +1006,8 @@ Loading assets
 Loading commands…
 == Завантаження команд…
 
-Loading DDNet Client
-== Завантаження клієнта DDNet
+Loading Neon Relay
+== Завантаження клієнта Neon Relay
 
 Loading demo file from storage
 == Завантаження демо-файлу зі сховища
@@ -1548,12 +1542,6 @@ Show client IDs (scoreboard, chat, spectator)
 Show client IDs in name plates
 == Показувати ID клієнта в ніках
 
-Show DDNet map finishes in server browser
-== Показувати пройдені мапи DDNet у браузері серверів
-
-Show DDRace HUD
-== Показувати HUD DDRace
-
 Show dummy actions
 == Показувати дії з даммі
 
@@ -1819,9 +1807,6 @@ Toggle ghost
 Toggle keyboard shortcuts
 == Перемкнути сполучення
 
-transmits your player name to info.ddnet.org
-== передає ваш нікнейм до info.ddnet.org
-
 Tries to predict other entities to give a feel of low latency
 == Намагається передбачувати інші сутності, щоб створити відчуття низької затримки
 
@@ -1880,8 +1865,8 @@ Unfinished map
 == Непройдені мапи
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Невідома помилка. Спробуйте змінити gfx_backend на OpenGL чи Vulkan у settings_ddnet.cfg у теці налаштувань і спробуйте ще раз.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Невідома помилка. Спробуйте змінити gfx_backend на OpenGL чи Vulkan у settings_neonrelay.cfg у теці налаштувань і спробуйте ще раз.
 
 Unregister protocol and file extensions
 == Розреєструвати протокол і розширення файлів
@@ -1964,8 +1949,8 @@ Weapons
 Website
 == Вебсайт
 
-Welcome to DDNet
-== Ласкаво просимо до DDNet
+Welcome to Neon Relay
+== Ласкаво просимо до Neon Relay
 
 When you cross the start line, show a ghost tee replicating the movements of your best time
 == Коли ви перетинаєте лінію старту, показувати привида, який повторює рухи вашого найкращого забігу
@@ -2078,7 +2063,7 @@ Renders your frame rate in the top right
 == Виводить частоту кадрів у верхньому правому куті
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Український переклад від .ua, Ivan., SwiatoslaW, 404_not_found, Andy Callisto, veydzh3r та NyrrCly
 
 Show spectator cursor
@@ -2518,12 +2503,6 @@ You can select buttons directly in the list below, or long press on a touch butt
 
 Preview visibilities
 == Передперегляд видимостей
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== На цій сторінці ви можете керувати налаштуваннями сенсорного керування. Після перезапуску клієнта будуть доступні лише збережені зміни. Ви можете ділитися своїми налаштуваннями сенсорного керування з іншими, експортувавши їх до буферу обміну.\n\nВи можете знайти детальнішу інформацію про сенсорне керування на вікі DDNet.
-
-Open DDNet Wiki
-== Відкрити вікі DDNet
 
 Buttons with this behavior execute console commands like regular key binds.
 == Кнопки з цією поведінкою виконують консольні команди, як звичайні прив'язки.

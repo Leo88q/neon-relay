@@ -18,8 +18,12 @@
 #include <functional>
 #include <optional>
 
-#define CONNECTLINK_DOUBLE_SLASH "ddnet://"
-#define CONNECTLINK_NO_SLASH "ddnet:"
+#define CONNECTLINK_DOUBLE_SLASH "neonrelay://"
+#define CONNECTLINK_NO_SLASH "neonrelay:"
+// Links produced by older builds (and by the upstream project this repository is
+// derived from) are still accepted so that shared server links keep working.
+#define CONNECTLINK_LEGACY_DOUBLE_SLASH "ddnet://"
+#define CONNECTLINK_LEGACY_NO_SLASH "ddnet:"
 
 class CSnapshot;
 class CSnapshotBuffer;

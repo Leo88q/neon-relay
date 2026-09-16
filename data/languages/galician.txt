@@ -520,8 +520,8 @@ Browser
 Ghost
 == Pantasma
 
-Loading DDNet Client
-== Cargando o cliente DDNet
+Loading Neon Relay
+== Cargando o cliente Neon Relay
 
 Reconnect in %d sec
 == Reconectando en %d seg
@@ -544,11 +544,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Estás seguro de que queres desconectar o teu dummy?
 
-Welcome to DDNet
-== Benvido a DDNet
+Welcome to Neon Relay
+== Benvido a Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork é un xogo cooperativo en liña onde o obxectivo é que ti e o voso grupo de tees cheguen á meta do mapa. Como recentemente chegado, deberías comezar nos servidores Novice, que aloxan os mapas máis fáciles. Considera o ping para elixir un servidor próximo
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay é un xogo cooperativo en liña onde o obxectivo é que ti e o voso grupo de tees cheguen á meta do mapa. Como recentemente chegado, deberías comezar nos servidores Novice, que aloxan os mapas máis fáciles. Considera o ping para elixir un servidor próximo
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == Recoméndase que verifiques a configuración para axustala ao teu gusto antes de unirche a un servidor.
@@ -558,12 +558,6 @@ Please enter your nickname below.
 
 Video name:
 == Nome do vídeo:
-
-Show DDNet map finishes in server browser
-== Marcar os mapas DDNet acabados no navegador de servidores
-
-transmits your player name to info.ddnet.org
-== transmite o teu nome de xogador a info.ddnet.org
 
 Search
 == Buscar
@@ -586,8 +580,8 @@ Countries
 Types
 == Tipos
 
-DDNet %s is out!
-== DDNet %s xa esta dispoñible!
+Neon Relay %s is out!
+== Neon Relay %s xa esta dispoñible!
 
 Downloading %s:
 == Descargando %s:
@@ -595,8 +589,8 @@ Downloading %s:
 Update failed! Check log…
 == Actualización errada! Comproba o rexistro…
 
-DDNet Client updated!
-== Cliente DDNet actualizado!
+Neon Relay client updated!
+== Cliente Neon Relay actualizado!
 
 Update now
 == Actualizar agora
@@ -760,10 +754,10 @@ Map sound volume
 HUD
 == Aparencia
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
-DDNet Client needs to be restarted to complete update!
+Neon Relay needs to be restarted to complete the update!
 == Utilizar o marcador DDRace
 
 Show score
@@ -844,8 +838,8 @@ Show other players' hook collision lines
 Show tiles layers from BG map
 == Mostrar capas de tiles do mapa de fondo
 
-DDNet %s is available:
-== DDNet %s está dispoñible:
+Neon Relay %s is available:
+== Neon Relay %s está dispoñible:
 
 Updating…
 == Actualizando…
@@ -991,8 +985,8 @@ Particles
 Assets directory
 == Directorio de recursos
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/es
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/es
 
 Website
 == Páxina web
@@ -1079,11 +1073,8 @@ Preview
 Background
 == Fondo
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Are you sure that you want to disconnect and switch to a different server?
 == Seguro que queres desconectarche e cambiar de servidor?
@@ -1319,12 +1310,6 @@ Hook Collisions
 Show health, shields and ammo
 == Mostrar saúde, escudos e munición
 
-DDRace HUD
-== HUD DDRace
-
-Show DDRace HUD
-== Mostrar o HUD DDRace
-
 Show jumps indicator
 == Mostrar indicador de saltos
 
@@ -1413,8 +1398,8 @@ Are you sure that you want to reset the controls to their defaults?
 == Estás seguro de que queres restablecer aos controis predeterminados?
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Erro durante a iniciación. Tenta cambiar gfx_backend a OpenGL ou Vulkan desde settings_ddnet.cfg no cartafol de configuracións e téntao outra vez.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Erro durante a iniciación. Tenta cambiar gfx_backend a OpenGL ou Vulkan desde settings_neonrelay.cfg no cartafol de configuracións e téntao outra vez.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1433,8 +1418,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Erro ao intercambiar búferes de fotogramas. Tenta actualizar os controladores do teu GPU.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Erro descoñecido. Tenta cambiar gfx_backend a OpenGL ou Vulkan desde settings_ddnet.cfg no directorio de configuracións e téntao outra vez.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Erro descoñecido. Tenta cambiar gfx_backend a OpenGL ou Vulkan desde settings_neonrelay.cfg no directorio de configuracións e téntao outra vez.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1502,7 +1487,7 @@ Absolute
 == Absoluto
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Galician translation by TormentaDeFacha and Mercadona
 
 Add clan
@@ -1542,7 +1527,7 @@ Error saving settings
 No demo with this filename exists
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 Loading demo file from storage
@@ -1937,7 +1922,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -2156,12 +2141,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2690,5 +2669,5 @@ Active: Hook
 Moved ingame
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

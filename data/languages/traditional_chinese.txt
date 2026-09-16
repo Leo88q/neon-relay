@@ -199,8 +199,8 @@ Kick player
 Language
 == 語言
 
-DDNet Client needs to be restarted to complete update!
-== DDNet客戶端需要重新啟動才能完成更新！
+Neon Relay needs to be restarted to complete the update!
+== Neon Relay客戶端需要重新啟動才能完成更新！
 
 MOTD
 == 公告
@@ -622,8 +622,8 @@ Show other players' hook collision lines
 Show tiles layers from BG map
 == 顯示實體層背景地圖的圖塊層
 
-DDNet %s is available:
-== DDNet %s 現已可用：
+Neon Relay %s is available:
+== Neon Relay %s 現已可用：
 
 Update now
 == 現在更新
@@ -631,8 +631,8 @@ Update now
 Updating…
 == 更新中…
 
-DDNet Client updated!
-== DDNet 客戶端更新成功！
+Neon Relay client updated!
+== Neon Relay 客戶端更新成功！
 
 No updates available
 == 沒有可用的更新
@@ -640,8 +640,8 @@ No updates available
 Check now
 == 檢查更新
 
-Loading DDNet Client
-== 正在載入 DDNet 客戶端
+Loading Neon Relay
+== 正在載入 Neon Relay 客戶端
 
 Browser
 == 瀏覽
@@ -673,8 +673,8 @@ Reconnect in %d sec
 Grabs
 == 得旗數
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Deaths
 == 死亡數
@@ -745,8 +745,8 @@ Unfinished map
 Deactivate
 == 停用
 
-Welcome to DDNet
-== 歡迎來到 DDNet
+Welcome to Neon Relay
+== 歡迎來到 Neon Relay
 
 Activate
 == 啟用
@@ -762,12 +762,6 @@ Save
 
 Date
 == 日期
-
-Show DDNet map finishes in server browser
-== 在伺服器瀏覽器中顯示已完成的 DDNet 地圖
-
-transmits your player name to info.ddnet.org
-== 將會發送你的玩家名稱到 info.ddnet.org
 
 Enable replays
 == 啟用短時回放
@@ -799,8 +793,8 @@ Are you sure that you want to disconnect your dummy?
 Hook collisions
 == 鉤索輔助線
 
-DDNet %s is out!
-== DDNet %s 已經更新了！
+Neon Relay %s is out!
+== Neon Relay %s 已經更新了！
 
 Markers
 == 標記
@@ -877,8 +871,8 @@ Skin prefix
 Toggle dyncam
 == 動態鏡頭開關
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork 是以到達地圖終點為目標，單人或組隊的線上合作遊戲。如果你是新手，你可以從有入門級地圖的 Novice 伺服器開始。記得選擇 Ping 值低的伺服器。
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay 是以到達地圖終點為目標，單人或組隊的線上合作遊戲。如果你是新手，你可以從有入門級地圖的 Novice 伺服器開始。記得選擇 Ping 值低的伺服器。
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == 推薦在加入伺服器前，先將設定調整到符合你的習慣。
@@ -916,8 +910,8 @@ Show others (own team only)
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == 使用 K鍵 自殺以重新開始，使用 Q鍵 可以暫停以旁觀他人或檢視地圖。 請在設定中檢視其他按鍵。
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/zh
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/zh
 
 Warning
 == 警告
@@ -969,10 +963,10 @@ Existing Player
 == 玩家已存在
 
 Your nickname '%s' is already used (%d points). Do you still want to use it?
-== 你使用的暱稱 "%s" 在 DDNet 中有 %d 分的記錄，這可能代表這個暱稱已經被其他人使用過。確認要使用這個名字嗎？
+== 你使用的暱稱 "%s" 在 Neon Relay 中有 %d 分的記錄，這可能代表這個暱稱已經被其他人使用過。確認要使用這個名字嗎？
 
 Checking for existing player with your name
-== 正在查詢該暱稱的DDNet記錄
+== 正在查詢該暱稱的Neon Relay記錄
 
 Theme
 == 主題
@@ -1088,11 +1082,8 @@ Preview
 Background
 == 背景
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Are you sure that you want to disconnect and switch to a different server?
 == 確定要中斷此伺服器並嘗試加入其他伺服器嗎？
@@ -1312,12 +1303,6 @@ Hook Collisions
 Show health, shields and ammo
 == 顯示生命、護甲與彈藥欄
 
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== 顯示 DDRace HUD
-
 Show jumps indicator
 == 顯示跳躍次數
 
@@ -1433,8 +1418,8 @@ Are you sure that you want to reset the controls to their defaults?
 == 確定要將當前的控制恢復至預設設定？
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== 初始化失敗。請嘗試打開配置目錄中的設定檔案 (settings_ddnet.cfg) 并將 “gfx_backend” 設定為 “gfx_backend OpenGL” 或 “gfx_backend Vulkan” 再重試。
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== 初始化失敗。請嘗試打開配置目錄中的設定檔案 (settings_neonrelay.cfg) 并將 “gfx_backend” 設定為 “gfx_backend OpenGL” 或 “gfx_backend Vulkan” 再重試。
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1453,8 +1438,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == 幀緩存交替失敗。請嘗試更新顯示卡驅動程式。
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== 未知錯誤。請嘗試打開配置目錄中的設定檔案 (settings_ddnet.cfg) 并將 “gfx_backend” 設定為 “gfx_backend OpenGL” 或 “gfx_backend Vulkan” 再重試。
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== 未知錯誤。請嘗試打開配置目錄中的設定檔案 (settings_neonrelay.cfg) 并將 “gfx_backend” 設定為 “gfx_backend OpenGL” 或 “gfx_backend Vulkan” 再重試。
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1804,8 +1789,8 @@ Round %d/%d
 Team %d (%d/%d)
 == 隊伍 %d (%d/%d)
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/index.php?title=Mapping/zh&variant=zh-hant
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docsindex.php?title=Mapping/zh&variant=zh-hant
 
 Could not resolve connect address '%s'. See local console for details.
 == 無法解析連線地址 "%s" 。檢查本機控制台以取得詳情。
@@ -1987,8 +1972,8 @@ Active: Fire
 Active: Hook
 == 當前：鉤索
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" 與 pnglite 不兼容，無法被舊版本 DDNet 加載：
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" 與 pnglite 不兼容，無法被舊版本 Neon Relay 加載：
 
 [Spectating Camera Mode Icon]
 AUTO
@@ -1997,8 +1982,8 @@ AUTO
 Toggle auto camera
 == 切換自動視角
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/index.php?title=Touch_controls/zh&variant=zh-hant
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/tree/main/docsindex.php?title=Touch_controls/zh&variant=zh-hant
 
 Show client IDs in name plates
 == 顯示客戶端 ID
@@ -2099,7 +2084,7 @@ Renders your frame rate in the top right
 == 在右上角顯示幀率
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == 繁體中文翻譯由以下人員貢獻：SiuFu, TsFreddie, Dan_cao, cheeser0613, By, Pioooooo, 豆腐渣, XCWQW1, Bamcane, ZerolAcqua
 
 Show spectator cursor
@@ -2518,12 +2503,6 @@ You can select buttons directly in the list below, or long press on a touch butt
 
 Preview visibilities
 == 預覽可見狀態
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 在此管理觸控設定。只有已儲存的更改在重啟客戶端後可用。你可以另存到剪貼簿與他人分享觸控設定。\n\n你可以在DDNet Wiki上查看觸控詳情。
-
-Open DDNet Wiki
-== 打開DDNet Wiki
 
 Buttons with this behavior execute console commands like regular key binds.
 == 該按鍵功能執行控制台指令，如一般按鍵綁定。

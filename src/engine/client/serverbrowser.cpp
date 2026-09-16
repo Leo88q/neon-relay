@@ -1391,7 +1391,7 @@ void CServerBrowser::LoadDDNetInfoJson()
 {
 	void *pBuf;
 	unsigned Length;
-	if(!m_pStorage->ReadFile(DDNET_INFO_FILE, IStorage::TYPE_SAVE, &pBuf, &Length))
+	if(!m_pStorage->ReadFile(RELAY_INFO_FILE, IStorage::TYPE_SAVE, &pBuf, &Length))
 	{
 		// Keep old info if available
 		return;

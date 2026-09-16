@@ -559,8 +559,8 @@ No updates available
 Show other players' hook collision lines
 == Показывать коллизии крюка других игроков
 
-DDNet Client needs to be restarted to complete update!
-== Перезапустите DDNet Client для завершения обновления!
+Neon Relay needs to be restarted to complete the update!
+== Перезапустите Neon Relay client для завершения обновления!
 
 Please use a different filename
 == Пожалуйста, используйте другое имя файла
@@ -595,8 +595,8 @@ Messages
 New random timeout code
 == Сгенерировать новый тайм-аут код
 
-Loading DDNet Client
-== Загрузка DDNet Client
+Loading Neon Relay
+== Загрузка Neon Relay client
 
 Normal message
 == Обычное
@@ -610,8 +610,8 @@ Update now
 Save ghost
 == Сохранять тень
 
-DDNet Client updated!
-== DDNet клиент обновлён!
+Neon Relay client updated!
+== Neon Relay клиент обновлён!
 
 Highlighted message
 == Выделенное
@@ -652,11 +652,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Вы уверены, что хотите отключить вашего дамми?
 
-Welcome to DDNet
-== Добро пожаловать в DDNet
+Welcome to Neon Relay
+== Добро пожаловать в Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork - кооперативная онлайн-игра, где Вашей главной целью и целью вашей команды является достижение конца карты. Как новенький, Вы должны начать свой путь на Novice, на которых есть лёгкие карты. Также учитывайте пинг и выбирайте ближайший к вам сервер.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay - кооперативная онлайн-игра, где Вашей главной целью и целью вашей команды является достижение конца карты. Как новенький, Вы должны начать свой путь на Novice, на которых есть лёгкие карты. Также учитывайте пинг и выбирайте ближайший к вам сервер.
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
 == Перед посещением сервера рекомендуем изменить настройки на Ваш вкус.
@@ -666,12 +666,6 @@ Please enter your nickname below.
 
 Video name:
 == Название:
-
-Show DDNet map finishes in server browser
-== Показывать пройденные карты в браузере
-
-transmits your player name to info.ddnet.org
-== передает ваш псевдоним на info.ddnet.org
 
 Exclude
 == Исключить
@@ -685,8 +679,8 @@ Indicate map finish
 Unfinished map
 == Только непройденные карты
 
-DDNet %s is out!
-== Вышел DDNet %s!
+Neon Relay %s is out!
+== Вышел Neon Relay %s!
 
 Downloading %s:
 == Скачивание %s:
@@ -805,8 +799,8 @@ Enable long pain sound (used when shooting in freeze)
 HUD
 == HUD
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Friend message
 == Дружеское
@@ -850,8 +844,8 @@ AntiPing: predict grenade paths
 Show tiles layers from BG map
 == Показывать тайловые слои фона
 
-DDNet %s is available:
-== Доступен DDNet %s:
+Neon Relay %s is available:
+== Доступен Neon Relay %s:
 
 Check now
 == Проверить
@@ -916,8 +910,8 @@ Markers
 Skip the main menu
 == Пропускать главное меню
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/ru
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/ru
 
 Website
 == Сайт
@@ -1049,11 +1043,8 @@ Background
 Chat command
 == Чат-команда
 
-Discord
-== Дискорд
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 AFR
 == AFR
@@ -1306,12 +1297,6 @@ Hook Collisions
 Show health, shields and ammo
 == Показывать здоровье, щиты и патроны
 
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== Показывать DDRace HUD
-
 Show jumps indicator
 == Показывать индикатор прыжка
 
@@ -1427,8 +1412,8 @@ Are you sure that you want to reset the controls to their defaults?
 == Вы уверены, что хотите сбросить игру до настроек по умолчанию?
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Ошибка во время инициализации. Попробуйте изменить gfx_backend на OpenGL или Vulkan в settings_ddnet.cfg в папке конфигурационных файлов и повторите попытку.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Ошибка во время инициализации. Попробуйте изменить gfx_backend на OpenGL или Vulkan в settings_neonrelay.cfg в папке конфигурационных файлов и повторите попытку.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1447,8 +1432,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Не удалось выполнить подкачку кадровых буферов. Попробуйте обновить драйверы видеокарты.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Неизвестная ошибка. Попробуйте изменить gfx_backend на OpenGL или Vulkan в settings_ddnet.cfg в папке config и повторите попытку.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Неизвестная ошибка. Попробуйте изменить gfx_backend на OpenGL или Vulkan в settings_neonrelay.cfg в папке config и повторите попытку.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1795,8 +1780,8 @@ Round %d/%d
 Team %d (%d/%d)
 == Команда %d (%d/%d)
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping/ru
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs/ru
 
 Could not resolve connect address '%s'. See local console for details.
 == Не удалось определить адрес подключения '%s'. Подробности в локальной консоли.
@@ -1978,8 +1963,8 @@ Active: Fire
 Active: Hook
 == Активно: Крюк
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" не совместим с pnglite и не может быть загружен старыми версиями DDNet:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" не совместим с pnglite и не может быть загружен старыми версиями Neon Relay:
 
 Auto-sync player camera
 == Автоматически синхронизировать камеру игрока
@@ -2014,8 +1999,8 @@ AUTO
 Toggle auto camera
 == Включить авто камеру
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 
 Community
 == Сообщество
@@ -2060,7 +2045,7 @@ Renders your frame rate in the top right
 == Отображает частоту кадров в правом верхнем углу
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Русский перевод выполнен: kaddyd, carzil, RaZeR[RT], BotanEgg, Bananbl4, Arion WT, gerdoe, Vy0x2, Anime.pdf, ban+eblan, ByFox, Sedonya, WTF, Риксед, oxyzo и 4ipset
 
 Show spectator cursor
@@ -2554,12 +2539,6 @@ Button browser
 
 You can select buttons directly in the list below, or long press on a touch button on the screen to select it. You can also move and resize buttons by touch.
 == Вы можете выбирать кнопки прямо в списке ниже или долго нажимать на кнопку на экране, чтобы выбрать её. Также можно перемещать и изменять размер кнопок с помощью сенсорного управления.
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== На этой странице вы можете управлять настройками сенсорного управления. Только сохранённые изменения будут доступны после перезапуска клиента. Вы можете поделиться своими настройками сенсорного управления с другими, экспортировав их в буфер обмена. \n\nБолее подробную информацию о сенсорном управлении вы можете найти на DDNet Wiki.
-
-Open DDNet Wiki
-== Открыть DDNet Wiki
 
 Buttons with this behavior execute console commands like regular key binds.
 == Кнопки с этим поведением выполняют консольные команды так же, как обычные клавиши.

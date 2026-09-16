@@ -498,8 +498,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Не атрымалася выканаць падпампоўку кадравых буфераў. Паспрабуйце абнавіць драйверы відэакарты.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Невядомая памылка. Паспрабуйце змяніць gfx_backend на OpenGL або Vulkan ў settings_ddnet.cfg ў тэчцы config і паспрабуйце зноў.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Невядомая памылка. Паспрабуйце змяніць gfx_backend на OpenGL або Vulkan ў settings_neonrelay.cfg ў тэчцы config і паспрабуйце зноў.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -533,8 +533,8 @@ Connected
 Loading map file from storage
 == Загрузка файла карты са сховішча
 
-Loading DDNet Client
-== Загрузка кліента DDNet
+Loading Neon Relay
+== Загрузка кліента Neon Relay
 
 Why are you slowmo replaying to read this?
 == Навошта вы запавольваеце прайграванне каб прачытаць гэта?
@@ -611,11 +611,11 @@ Reconnect in %d sec
 Render demo
 == Рэндэр дэма
 
-Welcome to DDNet
-== Запрашаем у DDNet
+Welcome to Neon Relay
+== Запрашаем у Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork — гэта кааператыўная анлайн гульня, дзе мэта для вас і вашай групы Tee — дабрацца да фінішнай лініі карты. Як навічку, вам варта пачаць на Novice серверах, дзе размешчаны самыя простыя карты. Улічвайце пінг, каб выбраць блізкі да вас сервер.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay — гэта кааператыўная анлайн гульня, дзе мэта для вас і вашай групы Tee — дабрацца да фінішнай лініі карты. Як навічку, вам варта пачаць на Novice серверах, дзе размешчаны самыя простыя карты. Улічвайце пінг, каб выбраць блізкі да вас сервер.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Выкарыстоўвайце клавішу k, каб забіць свайго Tee (пачаць нанова), q для паўзы і назірання за іншымі гульцамі. Паглядзіце налады для іншых біндоў клавіш.
@@ -655,12 +655,6 @@ Join Tutorial Server
 
 Skip Tutorial
 == Прапусціць навучанне
-
-Show DDNet map finishes in server browser
-== Пазначаць пройдзеныя карты ў браўзэры
-
-transmits your player name to info.ddnet.org
-== перадае ваша імя гульца на info.ddnet.org
 
 Theme
 == Тэма
@@ -1102,13 +1096,13 @@ Background music volume
 Appearance
 == Выгляд
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == Тэкстуры
 
-DDNet Client needs to be restarted to complete update!
+Neon Relay needs to be restarted to complete the update!
 == Патрабуецца перазапусціць кліент DDnet для завяршэння абнаўлення!
 
 HUD
@@ -1131,12 +1125,6 @@ Show score
 
 Show votes window after voting
 == Паказваць акно галасавання пасля выбару
-
-DDRace HUD
-== DDRace HUD
-
-Show DDRace HUD
-== Паказваць DDRace HUD
 
 Show jumps indicator
 == Паказваць індыкатар скачкоў
@@ -1327,8 +1315,8 @@ Chat command (e.g. showall 1)
 Unregister protocol and file extensions
 == Незарэгістраваны пратакол і пашырэнні файлаў
 
-DDNet %s is available:
-== Даступны DDNet %s:
+Neon Relay %s is available:
+== Даступны Neon Relay %s:
 
 Update now
 == Абнавіць зараз
@@ -1336,8 +1324,8 @@ Update now
 Updating…
 == Абнаўленне…
 
-DDNet Client updated!
-== Кліент DDNet абнаўлён!
+Neon Relay client updated!
+== Кліент Neon Relay абнаўлён!
 
 No updates available
 == Няма даступных абнаўленняў
@@ -1363,17 +1351,14 @@ Assets directory
 Open the directory to add custom assets
 == Адкрыць тэчку для дадання карыстацкіх тэкстур
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Learn
 == Вікі
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/be
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/be
 
 Tutorial
 == Навучанне
@@ -1400,8 +1385,8 @@ Editor
 Play
 == Гуляць
 
-DDNet %s is out!
-== Выйшаў DDNet %s!
+Neon Relay %s is out!
+== Выйшаў Neon Relay %s!
 
 Downloading %s:
 == Спампоўка %s:
@@ -1644,7 +1629,7 @@ A render command failed. Try to update your GPU drivers.
 == Каманда рэндэрынгу не выканана. Паспрабуйце абнавіць драйверы відэакарты.
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == Памылка падчас ініцыялізацыі. Паспрабуйце змяніць gfx_backend на OpenGL або Vulcan у settings_dnet.cfg ў тэчцы канфігурацыйных файлаў і паспрабуйце яшчэ раз.
 
 [Graphics error]
@@ -1795,11 +1780,11 @@ Round %d/%d
 Team %d (%d/%d)
 == Каманда %d (%d/%d)
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping/be
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs/be
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Перакладзена на беларускую: arionwt1997, Chill [TD] і PoKeMoN [TD]
 
 Could not resolve connect address '%s'. See local console for details.
@@ -1814,8 +1799,8 @@ Could not connect dummy
 No demo with this filename exists
 == Дэма з такім імем файла не існуе
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" не сумяшчальный з pnglite и не можа быць загружаны старымі версіямі DDNet
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" не сумяшчальный з pnglite и не можа быць загружаны старымі версіямі Neon Relay
 
 Some fonts could not be loaded. Check the local console for details.
 == Некаторыя шрыфты не атрымалася загрузіць. Для атрымання дэталей праверце лакальную кансоль.
@@ -1892,8 +1877,8 @@ Edit touch controls
 Close
 == Зачыніць
 
-https://wiki.ddnet.org/wiki/Touch_controls
-== https://wiki.ddnet.org/wiki/Touch_controls/be
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
+== https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md/be
 
 Save changes
 == Захаваць змены
@@ -2410,12 +2395,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Save all changes before switching selected button?

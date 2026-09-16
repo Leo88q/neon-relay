@@ -1235,7 +1235,7 @@ void CGameContext::OnTick()
 			{
 				if(!g_Config.m_SvVanillaConnections)
 				{
-					Server()->Kick(i, "Old Teeworlds 0.6 versions are unsupported. Use DDNet client or Teeworlds 0.7");
+					Server()->Kick(i, "Old 0.6 clients are unsupported. Use the Neon Relay client or a 0.7 client.");
 					continue;
 				}
 				m_apPlayers[i]->m_DDNetVersionKickTick = -1;
@@ -1579,7 +1579,7 @@ void CGameContext::OnClientDirectInput(int ClientId, const void *pInput)
 	int Flags = pPlayerInput->m_PlayerFlags;
 	if((Flags & 256) || (Flags & 512))
 	{
-		Server()->Kick(ClientId, "please update your client or use DDNet client");
+		Server()->Kick(ClientId, "please update your client or use the Neon Relay client");
 	}
 }
 
@@ -1754,7 +1754,7 @@ void CGameContext::OnClientEnter(int ClientId)
 		if(g_Config.m_SvShowOthersDefault > SHOW_OTHERS_OFF)
 		{
 			if(g_Config.m_SvShowOthers)
-				SendChatTarget(ClientId, "You can see other players. To disable this use DDNet client and type /showothers");
+				SendChatTarget(ClientId, "You can see other players. To disable this, type /showothers");
 
 			m_apPlayers[ClientId]->m_ShowOthers = g_Config.m_SvShowOthersDefault;
 		}
@@ -1978,7 +1978,7 @@ bool CGameContext::OnClientDDNetVersionKnown(int ClientId)
 	IServer::CClientInfo Info;
 	dbg_assert(Server()->GetClientInfo(ClientId, &Info), "failed to get client info");
 	int ClientVersion = Info.m_DDNetVersion;
-	dbg_msg("ddnet", "cid=%d version=%d", ClientId, ClientVersion);
+	dbg_msg("relay", "cid=%d version=%d", ClientId, ClientVersion);
 
 	if(m_TeeHistorianActive)
 	{
@@ -3583,7 +3583,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 	{
 		if(pResult->m_ClientId >= 0 && !pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 		{
-			log_error("server", "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
+			log_error("server", "Your client does not see the real client IDs of this server. Use a more recent Neon Relay client.");
 			return;
 		}
 		int KickId = str_toint(pValue);
@@ -3608,7 +3608,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 	{
 		if(pResult->m_ClientId >= 0 && !pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 		{
-			log_error("server", "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
+			log_error("server", "Your client does not see the real client IDs of this server. Use a more recent Neon Relay client.");
 			return;
 		}
 		int SpectateId = str_toint(pValue);
@@ -4865,7 +4865,7 @@ void CGameContext::SendSaveCode(int Team, int TeamSize, int State, const char *p
 				}
 				break;
 			case SAVESTATE_FALLBACKFILE:
-				SendBroadcast("Database connection failed, teamsave written to a file instead. On official DDNet servers this will automatically be inserted into the database every full hour.", MemberId);
+				SendBroadcast("Database connection failed, teamsave written to a file instead. It will be inserted into the database automatically on the next scheduled import.", MemberId);
 				if(str_comp(pServerName, g_Config.m_SvSqlServerName) == 0)
 				{
 					str_format(aBuf, sizeof(aBuf),

@@ -1230,9 +1230,9 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	}
 	else if(m_Popup == POPUP_FIRST_LAUNCH)
 	{
-		pTitle = Localize("Welcome to DDNet");
+		pTitle = Localize("Welcome to Neon Relay");
 		str_format(aBuf, sizeof(aBuf), "%s\n\n%s\n\n%s\n\n%s",
-			Localize("DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you."),
+			Localize("Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you."),
 			Localize("Use k key to kill (restart), q to pause and watch other players. See settings for other key binds."),
 			Localize("It's recommended that you check the settings to adjust them to your liking before joining a server."),
 			Localize("Please enter your nickname below."));
@@ -1740,8 +1740,8 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 
 		Part.VSplitLeft(30.0f, nullptr, &Part);
 		str_format(aBuf, sizeof(aBuf), "%s\n(%s)",
-			Localize("Show DDNet map finishes in server browser"),
-			Localize("transmits your player name to info.ddnet.org"));
+			Localize("Show map finishes in server browser"),
+			Localize("transmits your player name to the configured info service"));
 
 		if(DoButton_CheckBox(&g_Config.m_BrIndicateFinished, aBuf, g_Config.m_BrIndicateFinished, &Part))
 			g_Config.m_BrIndicateFinished ^= 1;
@@ -2552,7 +2552,7 @@ int CMenus::MenuImageScan(const char *pName, int IsDir, int DirType, void *pUser
 	str_truncate(MenuImage.m_aName, sizeof(MenuImage.m_aName), pName, str_length(pName) - str_length(pExtension));
 	pSelf->m_vMenuImages.push_back(MenuImage);
 
-	pSelf->RenderLoading(Localize("Loading DDNet Client"), Localize("Loading menu images"), 0);
+	pSelf->RenderLoading(Localize("Loading Neon Relay"), Localize("Loading menu images"), 0);
 
 	return 0;
 }

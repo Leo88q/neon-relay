@@ -496,8 +496,8 @@ Name plates size
 Enable game sounds
 == Activer les sons du jeu
 
-DDNet Client needs to be restarted to complete update!
-== Le client DDNet a besoin d'être redémarré pour finir la MAJ !
+Neon Relay needs to be restarted to complete the update!
+== Le client Neon Relay a besoin d'être redémarré pour finir la MAJ !
 
 Toggle dummy
 == Basculer vers le dummy
@@ -541,8 +541,8 @@ Enable team chat sound
 Browser
 == Navigateur
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Show all
 == Montrer tout le monde
@@ -550,8 +550,8 @@ Show all
 Vanilla skins only
 == Skins par défaut
 
-DDNet %s is out!
-== DDNet %s est disponible!
+Neon Relay %s is out!
+== Neon Relay %s est disponible!
 
 Show ghost
 == Afficher le fantôme
@@ -592,8 +592,8 @@ Enable server message sound
 Enable gun sound
 == Activer le son du pistolet
 
-Welcome to DDNet
-== Bienvenue sur DDNet
+Welcome to Neon Relay
+== Bienvenue sur Neon Relay
 
 Max CSVs
 == CSV maximum
@@ -619,8 +619,8 @@ Game paused
 Team message
 == Message d'équipe
 
-DDNet Client updated!
-== Le client DDNet est à jour!
+Neon Relay client updated!
+== Le client Neon Relay est à jour!
 
 Show entities
 == Afficher les entités
@@ -745,8 +745,8 @@ Net
 Show HUD
 == Afficher l'interface
 
-DDNet %s is available:
-== DDNet %s est disponible:
+Neon Relay %s is available:
+== Neon Relay %s est disponible:
 
 Search
 == Chercher
@@ -793,8 +793,8 @@ FPM
 Enable replays
 == Activer les replays
 
-Loading DDNet Client
-== Chargement du client DDNet
+Loading Neon Relay
+== Chargement du client Neon Relay
 
 Zoom in
 == Zoomer
@@ -886,7 +886,7 @@ Connect Dummy
 Reconnect in %d sec
 == Reconnexion dans %d sec
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
 == DDRaceNetwork est un jeu coopératif en ligne dont l'objectif est, pour vous ainsi que votre groupe de tees, d'atteindre la ligne d'arrivée d'une carte. En tant que nouveau joueur, il est préférable que vous commenciez sur les serveurs Novice, qui sont constitués des cartes les plus simples. Prenez en compte le ping afin de choisir un serveur proche de chez vous.
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
@@ -894,12 +894,6 @@ It's recommended that you check the settings to adjust them to your liking befor
 
 Please enter your nickname below.
 == Veuillez entrer votre pseudonyme ci-dessous.
-
-Show DDNet map finishes in server browser
-== Afficher les cartes de DDNet terminées dans le navigateur
-
-transmits your player name to info.ddnet.org
-== transmet votre pseudonyme à info.ddnet.org
 
 Warning
 == Alerte
@@ -970,8 +964,8 @@ Particles
 Assets directory
 == Répertoire des assets
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/wiki/Main_Page/fr
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docswiki/Main_Page/fr
 
 Website
 == Site web
@@ -1082,11 +1076,8 @@ Preview
 Background
 == Arrière-plan
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Are you sure that you want to disconnect and switch to a different server?
 == Êtes-vous sûr de vouloir vous déconnecter et changer de serveur ?
@@ -1270,12 +1261,6 @@ Appearance
 Show health, shields and ammo
 == Monter la vie, bouclier et les munitions
 
-DDRace HUD
-== HUD DDRace
-
-Show DDRace HUD
-== Montrer l'HUD DDrace
-
 Show jumps indicator
 == Montrer l'indicateur de sauts
 
@@ -1361,8 +1346,8 @@ Weapons
 == Armes
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Échec lors de l'initialisation. Essayez de changer gfx_backend à OpenGL ou Vulkan dans le fichier settings_ddnet.cfg dans le dossier de configuration et réessayez.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Échec lors de l'initialisation. Essayez de changer gfx_backend à OpenGL ou Vulkan dans le fichier settings_neonrelay.cfg dans le dossier de configuration et réessayez.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1381,8 +1366,8 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == Échec de l'échange de tampons d'images. Essayez de mettre à jour vos pilotes GPU.
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Erreur inconnue. Essayez de changer gfx_backend à OpenGL ou Vulkan dans le fichier settings_ddnet.cfg dans le dossier de configuration et réessayez.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Erreur inconnue. Essayez de changer gfx_backend à OpenGL ou Vulkan dans le fichier settings_neonrelay.cfg dans le dossier de configuration et réessayez.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1975,11 +1960,11 @@ Active: Fire
 Active: Hook
 == Actif : Grappin
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == French translation by lordskelethom, Ubu, Choupom, clecle226, SunnyPistache, Pipou, Chairn, T tee, NRK, Nouaa, Sucre, archimede67, Sukya, Emilcha and Yubel
 
 Add clan
@@ -1998,7 +1983,7 @@ Press Ctrl+Shift+G to disable debug graphs.
 No demo with this filename exists
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 Team save in progress. You'll be able to load with '/load %s'
@@ -2155,7 +2140,7 @@ Are you sure that you want to disconnect and play this demo?
 Save all changes before turning off the editor?
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -2327,12 +2312,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Save all changes before switching selected button?

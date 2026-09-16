@@ -18,8 +18,10 @@
 #include <unordered_set>
 #include <vector>
 
-static constexpr const char *DDNET_INFO_FILE = "ddnet-info.json";
-static constexpr const char *DDNET_INFO_URL = "https://info.ddnet.org/info";
+// Cache file for the optional info service (news, latest version, stun servers).
+// The endpoint itself is configurable via `cl_info_url` and empty by default, so a
+// standalone Neon Relay client never phones home to a third party.
+static constexpr const char *RELAY_INFO_FILE = "neonrelay-info.json";
 
 class CUIElement;
 

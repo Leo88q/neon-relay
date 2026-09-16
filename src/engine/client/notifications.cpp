@@ -29,7 +29,7 @@ void CNotifications::Notify(const char *pTitle, const char *pMessage)
 #if defined(CONF_PLATFORM_MACOS)
 	NotificationsNotifyMacOsInternal(pTitle, pMessage);
 #elif defined(NOTIFICATIONS_USE_LIBNOTIFY)
-	NotifyNotification *pNotif = notify_notification_new(pTitle, pMessage, "ddnet");
+	NotifyNotification *pNotif = notify_notification_new(pTitle, pMessage, "neonrelay");
 	if(pNotif)
 	{
 		notify_notification_show(pNotif, nullptr);

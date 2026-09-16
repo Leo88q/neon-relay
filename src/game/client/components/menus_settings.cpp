@@ -49,7 +49,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("Controls"),
 		Localize("Graphics"),
 		Localize("Sound"),
-		Localize("DDNet"),
+		Localize("Neon Relay"),
 		Localize("Assets"),
 		Localize("Credits")};
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
@@ -133,7 +133,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		if(m_NeedRestartUpdate)
 		{
 			TextRender()->TextColor(1.0f, 0.4f, 0.4f, 1.0f);
-			Ui()->DoLabel(&RestartWarning, Localize("DDNet Client needs to be restarted to complete update!"), 14.0f, TEXTALIGN_ML);
+			Ui()->DoLabel(&RestartWarning, Localize("Neon Relay needs to be restarted to complete the update!"), 14.0f, TEXTALIGN_ML);
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 		else

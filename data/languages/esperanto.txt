@@ -4,8 +4,8 @@ Connected
 Loading map file from storage
 == Ŝargas mapdosieron el konservejo
 
-Loading DDNet Client
-== Ŝargas DDNet-klienton
+Loading Neon Relay
+== Ŝargas Neon Relay-klienton
 
 Warning
 == Averto
@@ -121,8 +121,8 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Ĉu vi certas ke vi volas malkonektigi vian pupon?
 
-Welcome to DDNet
-== Bonvenon en DDNet
+Welcome to Neon Relay
+== Bonvenon en Neon Relay
 
 Please enter your nickname below.
 == Bonvolu entajpi vian kromnomon sube.
@@ -409,14 +409,14 @@ Graphics
 Sound
 == Sono
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == Bildoj
 
-DDNet Client needs to be restarted to complete update!
-== DDNet necesas esti relanĉota por kompletigi la ĝisdatigon!
+Neon Relay needs to be restarted to complete the update!
+== Neon Relay necesas esti relanĉota por kompletigi la ĝisdatigon!
 
 You must restart the game for all settings to take effect.
 == Vi devas relanci la ludon por aktivigi ĉiujn agordojn.
@@ -436,8 +436,8 @@ Normal message
 Preview
 == Antaŭrigardo
 
-DDNet %s is available:
-== DDNet %s estas disponebla:
+Neon Relay %s is available:
+== Neon Relay %s estas disponebla:
 
 Update now
 == Ĝisdatigi nun
@@ -448,17 +448,14 @@ Updating…
 Check now
 == Kontroli nun
 
-Discord
-== Diskordo
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Learn
 == Ekscii
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Tutorial
 == Lernilo
@@ -482,8 +479,8 @@ Editor
 Play
 == Ludi
 
-DDNet %s is out!
-== DDNet %s eldonita!
+Neon Relay %s is out!
+== Neon Relay %s eldonita!
 
 Downloading %s:
 == Elŝutado de %s:
@@ -516,12 +513,12 @@ Deaths
 == 9+ novaj mencioj
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Esperanta traduko de dannyhpy kaj Szafranek13
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Iniciado fiaskis. Provu ŝanĝi gfx_backend al OpenGL aŭ Vulkan en settings_ddnet.cfg en la konfigura dosierujo kaj reprovu.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Iniciado fiaskis. Provu ŝanĝi gfx_backend al OpenGL aŭ Vulkan en settings_neonrelay.cfg en la konfigura dosierujo kaj reprovu.
 
 [Graphics error]
 Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
@@ -1427,8 +1424,8 @@ Hook Strength
 == Hoka forto
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-== Nekonata eraro. Provu ŝanĝi gfx_backend al OpenGL aŭ Vulkan en settings_ddnet.cfg en la agordara dosierujo kaj reprovu.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
+== Nekonata eraro. Provu ŝanĝi gfx_backend al OpenGL aŭ Vulkan en settings_neonrelay.cfg en la agordara dosierujo kaj reprovu.
 
 [Graphics error]
 Could not initialize the given graphics backend, reverting to the default backend now.
@@ -1440,8 +1437,8 @@ Could not resolve connect address '%s'. See local console for details.
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == La larĝo de teksturo %s ne estas dividebla per %d aŭ la alto ne estas dividebla per %d, kio povas kaŭzi grafikajn erarojn.
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
-== "%s" ne kongruas kun pnglite kaj ne povas esti ŝargita per malnovaj DDNet versioj:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
+== "%s" ne kongruas kun pnglite kaj ne povas esti ŝargita per malnovaj Neon Relay versioj:
 
 The format of texture %s is not RGBA which will cause visual bugs.
 == La formo de teksturo %s ne estas RGBA kiu kaŭzos grafikajn erarojn.
@@ -1519,8 +1516,8 @@ Chat command (e.g. showall 1)
 Unregister protocol and file extensions
 == Malregistri protokolon kaj dosiersufikson
 
-DDNet Client updated!
-== DDNet-kliento ĝisdatigita!
+Neon Relay client updated!
+== Neon Relay-kliento ĝisdatigita!
 
 No updates available
 == Neniu ĝisdatigo disponebla
@@ -1748,8 +1745,8 @@ Active: Hook
 Moved ingame
 == Movis enlude
 
-https://wiki.ddnet.org/wiki/Mapping
-== https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Add clan
 == Aldoni klanon
@@ -1794,7 +1791,7 @@ Some map images could not be loaded. Check the local console for details.
 Uploading map data to GPU
 == 
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
 == 
 
 It's recommended that you check the settings to adjust them to your liking before joining a server.
@@ -1813,12 +1810,6 @@ There's an unsaved change in the touch controls editor, you might want to save i
 == 
 
 Show ingame HUD
-== 
-
-Show DDNet map finishes in server browser
-== 
-
-transmits your player name to info.ddnet.org
 == 
 
 Could not get server list from master server
@@ -2070,7 +2061,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Menu opened. Press Esc key again to close menu.
@@ -2118,12 +2109,6 @@ Preview visibilities
 == 
 
 Preview button visibility while the editor is active.
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2283,13 +2268,7 @@ Authed name color in scoreboard
 Same clan color in scoreboard
 == 
 
-DDRace HUD
-== 
-
 Show client IDs (scoreboard, chat, spectator)
-== 
-
-Show DDRace HUD
 == 
 
 Show jumps indicator

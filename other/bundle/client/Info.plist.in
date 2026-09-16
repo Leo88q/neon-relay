@@ -17,15 +17,15 @@
 		<key>CFBundleVersion</key>
 		<string>${PROJECT_VERSION}</string>
 		<key>CFBundleIdentifier</key>
-		<string>org.DDNetClient.app</string>
+		<string>com.leo88q.neonrelay</string>
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
 				<key>CFBundleURLName</key>
-				<string>DDNet server link</string>
+				<string>Neon Relay server link</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>ddnet</string>
+					<string>neonrelay</string>
 				</array>
 			</dict>
 		</array>
@@ -33,18 +33,18 @@
 		<array>
 			<dict>
 				<key>CFBundleTypeName</key>
-				<string>DDNet demo</string>
+				<string>Neon Relay demo</string>
 				<key>CFBundleTypeRole</key>
-				<string>DDNet demo viewer</string>
+				<string>Neon Relay demo viewer</string>
 				<key>LSItemContentTypes</key>
 				<array>
 					<string>dyn.ah62d4rv4ge80k3prr6</string>
 					<string>public.data</string>
 				</array>
 				<key>CFBundleTypeName</key>
-				<string>DDNet map</string>
+				<string>Neon Relay map</string>
 				<key>CFBundleTypeRole</key>
-				<string>DDNet map editor</string>
+				<string>Neon Relay map editor</string>
 				<key>LSItemContentTypes</key>
 				<array>
 					<string>dyn.ah62d4rv4ge8042pu</string>

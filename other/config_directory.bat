@@ -1,4 +1,11 @@
 @echo off
+rem Opens the Neon Relay user/config directory.
+rem Falls back to the directories used by earlier installations (DDNet, Teeworlds).
+
+if exist "%APPDATA%\NeonRelay\" (
+	start explorer "%APPDATA%\NeonRelay\"
+	exit /b
+)
 
 if exist "%APPDATA%\DDNet\" (
 	start explorer "%APPDATA%\DDNet\"

@@ -3,16 +3,20 @@
 #ifndef GAME_VERSION_H
 #define GAME_VERSION_H
 
-// ddnet
-#define GAME_NAME "DDNet"
-#define DDNET_VERSION_NUMBER 20010
+// Neon Relay product identity.
+// This file is derived from upstream DDNet's src/game/version.h (see license.txt
+// and UPSTREAM_BASE.md). GAME_NAME is what players see; the version *numbers* and
+// the network version strings below are protocol constants inherited from
+// Teeworlds/DDNet and must not be changed without breaking compatibility.
+#define GAME_NAME "Neon Relay"
+#define NEONRELAY_VERSION_NUMBER 20010
 extern const char *GIT_SHORTREV_HASH;
 #ifndef GAME_RELEASE_VERSION_INTERNAL
 #define GAME_RELEASE_VERSION_INTERNAL 20.1
 #endif
 #define GAME_RELEASE_VERSION STRINGIFY(GAME_RELEASE_VERSION_INTERNAL)
 
-// teeworlds
+// protocol constants inherited from Teeworlds 0.7 (do not rename)
 #define CLIENT_VERSION7 0x0705
 // For compatibility with DDNet client 15.8 and older we need to include the prefix `0.6` in the version string
 // because this was used for a "Compatible version" filter in the server browser.

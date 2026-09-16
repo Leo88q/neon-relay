@@ -523,8 +523,8 @@ Browser
 Ghost
 == ゴースト
 
-Loading DDNet Client
-== DDNet Client 読み込み中
+Loading Neon Relay
+== Neon Relay client 読み込み中
 
 Reconnect in %d sec
 == 再接続まであと %d 秒
@@ -547,11 +547,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == ダミーへの接続を切断しますか？
 
-Welcome to DDNet
-== DDNet へようこそ
+Welcome to Neon Relay
+== Neon Relay へようこそ
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork は、協力型のオンラインゲームです。チーム中の Tee と協力して、マップ上のゴールを目指しましょう！初心者の方は、最も簡単なマップを使っている Novice サーバーから始めることをおすすめします。サーバー選ぶ時は ping を考慮して、近くのサーバーを選んでください。
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay は、協力型のオンラインゲームです。チーム中の Tee と協力して、マップ上のゴールを目指しましょう！初心者の方は、最も簡単なマップを使っている Novice サーバーから始めることをおすすめします。サーバー選ぶ時は ping を考慮して、近くのサーバーを選んでください。
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == K ボタンでキル（やり直す）、Q ボタンで一時停止して観戦することができます。他のキーバインドは設定画面を参照してください。
@@ -566,7 +566,7 @@ Existing Player
 == 既存のプレーヤー
 
 Your nickname '%s' is already used (%d points). Do you still want to use it?
-== ハンドルネーム「%s」は DDNet で %d ポイントに記録があります。それでも使いたいですか？
+== ハンドルネーム「%s」は Neon Relay で %d ポイントに記録があります。それでも使いたいですか？
 
 Checking for existing player with your name
 == 既存のプレーヤーの中でハンドルネームを検索しています。
@@ -576,12 +576,6 @@ Speed
 
 Video name:
 == 動画の名前
-
-Show DDNet map finishes in server browser
-== サーバー・ブラウザーで完成した DDNet マップを表示する
-
-transmits your player name to info.ddnet.org
-== ハンドルネームを info.ddnet.org に送信します
 
 Theme
 == テーマ
@@ -832,14 +826,14 @@ Background music volume
 HUD
 == HUD
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == 素材
 
-DDNet Client needs to be restarted to complete update!
-== アップデートを完了するには、DDNet クライアントの再起動が必要です。
+Neon Relay needs to be restarted to complete the update!
+== アップデートを完了するには、Neon Relay クライアントの再起動が必要です。
 
 Show score
 == スコアを表示
@@ -937,8 +931,8 @@ Show tiles layers from BG map
 New random timeout code
 == ランダムにタイムアウト・コードを生成
 
-DDNet %s is available:
-== DDNet %s がリリースされました。
+Neon Relay %s is available:
+== Neon Relay %s がリリースされました。
 
 Update now
 == 今すぐ更新
@@ -946,8 +940,8 @@ Update now
 Updating…
 == 更新中…
 
-DDNet Client updated!
-== DDNet Client が更新しました!
+Neon Relay client updated!
+== Neon Relay client が更新しました!
 
 No updates available
 == 新しいバージョンはありません
@@ -967,17 +961,14 @@ Particles
 Assets directory
 == 素材ディレクトリー
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Learn
 == チュートリアル
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Website
 == ウェブ
@@ -1001,8 +992,8 @@ Editor
 Play
 == スタート
 
-DDNet %s is out!
-== DDNet %s がリリースされました！
+Neon Relay %s is out!
+== Neon Relay %s がリリースされました！
 
 Downloading %s:
 == %s をダウンロード中:
@@ -1068,7 +1059,7 @@ Grabs
 == 9+ 件の新しいメンション
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Japanese translation by orange and Eana Hufwe
 
 [skins]
@@ -1099,7 +1090,7 @@ Add friend
 == 友達追加
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1123,7 +1114,7 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == 
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1164,7 +1155,7 @@ Error saving settings
 No demo with this filename exists
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 The format of texture %s is not RGBA which will cause visual bugs.
@@ -1734,7 +1725,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -1959,12 +1950,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2196,13 +2181,7 @@ Authed name color in scoreboard
 Same clan color in scoreboard
 == 
 
-DDRace HUD
-== 
-
 Show client IDs (scoreboard, chat, spectator)
-== 
-
-Show DDRace HUD
 == 
 
 Show jumps indicator
@@ -2690,5 +2669,5 @@ Active: Hook
 Moved ingame
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

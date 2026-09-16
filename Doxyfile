@@ -1,5 +1,5 @@
-PROJECT_NAME           = "DDNet documentation"
-PROJECT_LOGO           = other/icons/DDNet_48x48x32.png
+PROJECT_NAME           = "Neon Relay documentation"
+PROJECT_LOGO           = other/icons/NeonRelay_48x48x32.png
 OUTPUT_DIRECTORY       = docs
 BUILTIN_STL_SUPPORT    = YES
 NUM_PROC_THREADS       = 0

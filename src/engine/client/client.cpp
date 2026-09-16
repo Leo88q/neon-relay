@@ -1787,8 +1787,8 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					char aUrl[256];
 					char aEscaped[256];
 					EscapeUrl(aEscaped, str_startswith(m_aMapdownloadFilename, "downloadedmaps/"));
-					bool UseConfigUrl = str_comp(g_Config.m_ClMapDownloadUrl, "https://maps.ddnet.org") != 0 || m_aMapDownloadUrl[0] == '\0';
-					str_format(aUrl, sizeof(aUrl), "%s/%s", UseConfigUrl ? g_Config.m_ClMapDownloadUrl : m_aMapDownloadUrl, aEscaped);
+					const char *pBaseUrl = g_Config.m_ClMapDownloadUrl[0] != '\0' ? g_Config.m_ClMapDownloadUrl : m_aMapDownloadUrl;
+					str_format(aUrl, sizeof(aUrl), "%s/%s", pBaseUrl, aEscaped);
 
 					m_pMapdownloadTask = HttpGetFile(pMapUrl ? pMapUrl : aUrl, Storage(), m_aMapdownloadFilenameTemp, IStorage::TYPE_SAVE);
 					m_pMapdownloadTask->Timeout(CTimeout{g_Config.m_ClMapDownloadConnectTimeoutMs, 0, g_Config.m_ClMapDownloadLowSpeedLimit, g_Config.m_ClMapDownloadLowSpeedTime});
@@ -3063,12 +3063,12 @@ void CClient::Update()
 		{
 			if(m_ServerBrowser.DDNetInfoSha256() == m_pDDNetInfoTask->ResultSha256())
 			{
-				log_debug("client/info", "DDNet info already up-to-date");
+				log_debug("client/info", "info service payload already up-to-date");
 				m_InfoState = EInfoState::SUCCESS;
 			}
 			else
 			{
-				log_debug("client/info", "Loading new DDNet info");
+				log_debug("client/info", "loading new info service payload");
 				LoadDDNetInfo();
 			}
 
@@ -3373,7 +3373,7 @@ void CClient::Run()
 		char aFile[IO_MAX_PATH_LENGTH];
 		if(Input()->GetDropFile(aFile, sizeof(aFile)))
 		{
-			if(str_startswith(aFile, CONNECTLINK_NO_SLASH))
+			if(str_startswith(aFile, CONNECTLINK_NO_SLASH) || str_startswith(aFile, CONNECTLINK_LEGACY_NO_SLASH))
 				HandleConnectLink(aFile);
 			else if(str_endswith(aFile, ".demo"))
 				HandleDemoPath(aFile);
@@ -4721,12 +4721,14 @@ void CClient::HandleConnectAddress(const NETADDR *pAddr)
 
 void CClient::HandleConnectLink(const char *pLink)
 {
-	// Chrome works fine with ddnet:// but not with ddnet:
-	// Check ddnet:// before ddnet: because we don't want the // as part of connect command
+	// Chrome works fine with neonrelay:// but not with neonrelay:
+	// Check neonrelay:// before neonrelay: because we don't want the // as part of connect command
 	const char *pConnectLink = nullptr;
-	if((pConnectLink = str_startswith(pLink, CONNECTLINK_DOUBLE_SLASH)))
+	if((pConnectLink = str_startswith(pLink, CONNECTLINK_DOUBLE_SLASH)) ||
+		(pConnectLink = str_startswith(pLink, CONNECTLINK_LEGACY_DOUBLE_SLASH)))
 		str_copy(m_aCmdConnect, pConnectLink);
-	else if((pConnectLink = str_startswith(pLink, CONNECTLINK_NO_SLASH)))
+	else if((pConnectLink = str_startswith(pLink, CONNECTLINK_NO_SLASH)) ||
+		(pConnectLink = str_startswith(pLink, CONNECTLINK_LEGACY_NO_SLASH)))
 		str_copy(m_aCmdConnect, pConnectLink);
 	else
 		str_copy(m_aCmdConnect, pLink);
@@ -4749,7 +4751,7 @@ void CClient::HandleMapPath(const char *pPath)
 static bool UnknownArgumentCallback(const char *pCommand, void *pUser)
 {
 	CClient *pClient = static_cast<CClient *>(pUser);
-	if(str_startswith(pCommand, CONNECTLINK_NO_SLASH))
+	if(str_startswith(pCommand, CONNECTLINK_NO_SLASH) || str_startswith(pCommand, CONNECTLINK_LEGACY_NO_SLASH))
 	{
 		pClient->HandleConnectLink(pCommand);
 		return true;
@@ -5338,8 +5340,13 @@ void CClient::RequestDDNetInfo()
 	if(m_pDDNetInfoTask && !m_pDDNetInfoTask->Done())
 		return;
 
+	// Optional info service: with an empty `cl_info_url` (the default) no request
+	// is made, so no player name, IP address or client version leaves the machine.
+	if(g_Config.m_ClInfoUrl[0] == '\0')
+		return;
+
 	char aUrl[256];
-	str_copy(aUrl, DDNET_INFO_URL);
+	str_copy(aUrl, g_Config.m_ClInfoUrl);
 
 	if(g_Config.m_BrIndicateFinished)
 	{
@@ -5349,7 +5356,7 @@ void CClient::RequestDDNetInfo()
 		str_append(aUrl, aEscaped);
 	}
 
-	m_pDDNetInfoTask = HttpGetFile(aUrl, Storage(), DDNET_INFO_FILE, IStorage::TYPE_SAVE);
+	m_pDDNetInfoTask = HttpGetFile(aUrl, Storage(), RELAY_INFO_FILE, IStorage::TYPE_SAVE);
 	m_pDDNetInfoTask->Timeout(CTimeout{10000, 0, 500, 10});
 	m_pDDNetInfoTask->SkipByFileTime(false); // Always re-download.
 	// Use ipv4 so we can know the ingame ip addresses of players before they join game servers
@@ -5551,8 +5558,8 @@ void CClient::ShellRegister()
 	}
 
 	bool Updated = false;
-	if(!windows_shell_register_protocol("ddnet", aFullPath, &Updated))
-		log_error("client", "Failed to register ddnet protocol");
+	if(!windows_shell_register_protocol("neonrelay", aFullPath, &Updated))
+		log_error("client", "Failed to register neonrelay protocol");
 	if(!windows_shell_register_extension(".map", "Map File", GAME_NAME, aFullPath, &Updated))
 		log_error("client", "Failed to register .map file extension");
 	if(!windows_shell_register_extension(".demo", "Demo File", GAME_NAME, aFullPath, &Updated))
@@ -5574,8 +5581,8 @@ void CClient::ShellUnregister()
 	}
 
 	bool Updated = false;
-	if(!windows_shell_unregister_class("ddnet", &Updated))
-		log_error("client", "Failed to unregister ddnet protocol");
+	if(!windows_shell_unregister_class("neonrelay", &Updated))
+		log_error("client", "Failed to unregister neonrelay protocol");
 	if(!windows_shell_unregister_class(GAME_NAME ".map", &Updated))
 		log_error("client", "Failed to unregister .map file extension");
 	if(!windows_shell_unregister_class(GAME_NAME ".demo", &Updated))

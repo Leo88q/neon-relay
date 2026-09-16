@@ -486,7 +486,7 @@ void CMenus::PopupConfirmTurnOffEditor()
 
 void CMenus::PopupConfirmOpenWiki()
 {
-	Client()->ViewLink(Localize("https://wiki.ddnet.org/wiki/Touch_controls"));
+	Client()->ViewLink(Localize("https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md"));
 }
 
 void CMenus::RenderPlayers(CUIRect MainView)
@@ -700,7 +700,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 				aInfo,
 				sizeof(aInfo),
 				"%s\n"
-				"Address: ddnet://%s\n"
+				"Address: neonrelay://%s\n"
 				"My IGN: %s\n",
 				CurrentServerInfo.m_aName,
 				CurrentServerInfo.m_aAddress,

@@ -81,7 +81,10 @@ static const char *GetUpdaterUrl(char *pBuf, int BufSize, const char *pFile)
 {
 	char aBuf[1024];
 	UrlEncodePath(pFile, aBuf, sizeof(aBuf));
-	str_format(pBuf, BufSize, "https://update.ddnet.org/%s", aBuf);
+	// TODO(release): replace the placeholder host with the real Neon Relay update
+	// service. `autoupdate` is OFF by default, so nothing is fetched unless an
+	// operator or player explicitly enables it.
+	str_format(pBuf, BufSize, "https://update.neonrelay.example/%s", aBuf);
 	return pBuf;
 }
 

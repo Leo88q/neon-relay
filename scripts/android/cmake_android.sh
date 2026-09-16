@@ -88,7 +88,7 @@ export TW_KEY_ALIAS=$DEFAULT_KEY_ALIAS
 
 ANDROID_VERSION_CODE=1
 if [ -z ${TW_VERSION_CODE+x} ]; then
-	ANDROID_VERSION_CODE=$(grep '#define DDNET_VERSION_NUMBER' src/game/version.h | awk '{print $3}')
+	ANDROID_VERSION_CODE=$(grep '#define NEONRELAY_VERSION_NUMBER' src/game/version.h | awk '{print $3}')
 	if [ -z ${ANDROID_VERSION_CODE+x} ]; then
 		ANDROID_VERSION_CODE=1
 	fi

@@ -544,8 +544,8 @@ Browser
 Ghost
 == Дух
 
-Loading DDNet Client
-== Учитавам DDNet клијент
+Loading Neon Relay
+== Учитавам Neon Relay клијент
 
 Reconnect in %d sec
 == Поново повезивање за %d секунди
@@ -568,11 +568,11 @@ Disconnect Dummy
 Are you sure that you want to disconnect your dummy?
 == Да ли сте сигурни да желите да прекинете копију?
 
-Welcome to DDNet
-== Добро дошли у DDNet
+Welcome to Neon Relay
+== Добро дошли у Neon Relay
 
-DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDraceNetwork је кооперативна онлајн игра у којој је циљ да ви и ваша група teeova дођете до циља на мапи. Као новајлија требали бисте започети на Novice серверима, на којима се налазе најједноставније мапе. Размислите о пингу да бисте изабрали сервер који вам је близу.
+Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
+== Neon Relay је кооперативна онлајн игра у којој је циљ да ви и ваша група teeova дођете до циља на мапи. Као новајлија требали бисте започети на Novice серверима, на којима се налазе најједноставније мапе. Размислите о пингу да бисте изабрали сервер који вам је близу.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Користите тастер к за убијање (поновно покретање), q за паузирање и гледање других играча. Погледајте подешавања за остале пречице тастера.
@@ -588,12 +588,6 @@ Speed
 
 Video name:
 == Назив видеа:
-
-Show DDNet map finishes in server browser
-== Прикажи завршетка DDNet мапе у прегледачу сервера
-
-transmits your player name to info.ddnet.org
-== преноси име вашег играча на info.ddnet.org
 
 Theme
 == Тема
@@ -793,14 +787,14 @@ Map sound volume
 HUD
 == HUD
 
-DDNet
-== DDNet
+Neon Relay
+== Neon Relay
 
 Assets
 == Средства
 
-DDNet Client needs to be restarted to complete update!
-== Потребно је поново покренути DDNet клијент да бисте довршили ажурирање!
+Neon Relay needs to be restarted to complete the update!
+== Потребно је поново покренути Neon Relay клијент да бисте довршили ажурирање!
 
 Show score
 == Прикажи бодове
@@ -880,8 +874,8 @@ Show other players' hook collision lines
 Show tiles layers from BG map
 == Прикажи слојеве плочица са BG мапе
 
-DDNet %s is available:
-== DDNet %s је доступан:
+Neon Relay %s is available:
+== Neon Relay %s је доступан:
 
 Update now
 == Унапреди сада
@@ -889,8 +883,8 @@ Update now
 Updating…
 == Унапређујем…
 
-DDNet Client updated!
-== DDNet клијент је унапређен!
+Neon Relay client updated!
+== Neon Relay клијент је унапређен!
 
 No updates available
 == Нема доступних унапређења
@@ -916,8 +910,8 @@ Assets directory
 Learn
 == Упутство
 
-https://wiki.ddnet.org/
-== https://wiki.ddnet.org/
+https://github.com/Leo88q/neon-relay/tree/main/docs
+== https://github.com/Leo88q/neon-relay/tree/main/docs
 
 Website
 == Веб сајт
@@ -935,8 +929,8 @@ Server executable not found, can't run server
 Play
 == Играј
 
-DDNet %s is out!
-== DDNet %s је изашао!
+Neon Relay %s is out!
+== Neon Relay %s је изашао!
 
 Downloading %s:
 == Преузимање %s:
@@ -1228,12 +1222,6 @@ Hook Collisions
 Show health, shields and ammo
 == Прикажи животе, штитове и меткове
 
-DDRace HUD
-== DDRace Приказ
-
-Show DDRace HUD
-== Прикажи DDRace Приказ
-
 Show jumps indicator
 == Прикажи индикатор скакања
 
@@ -1309,11 +1297,8 @@ Extras
 Loading assets
 == Учитавање средстава
 
-Discord
-== Discord
-
-https://ddnet.org/discord
-== https://ddnet.org/discord
+https://github.com/Leo88q/neon-relay
+== https://github.com/Leo88q/neon-relay
 
 Tutorial
 == Увод
@@ -1331,14 +1316,14 @@ Loading sound files
 == Учитавам звучне фајлове
 
 [Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
+English translation by the Neon Relay Team
 == Serbian Cyrillic translation by Veljko Radovanovic (VekiPro)
 
 Add friend
 == Додај пријатеља
 
 [Graphics error]
-Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1362,7 +1347,7 @@ Failed to swap framebuffers. Try to update your GPU drivers.
 == 
 
 [Graphics error]
-Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
+Unknown error. Try to change gfx_backend to OpenGL or Vulkan in settings_neonrelay.cfg in the config directory and try again.
 == 
 
 [Graphics error]
@@ -1403,7 +1388,7 @@ Error saving settings
 No demo with this filename exists
 == 
 
-"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+"%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
 == 
 
 Loading demo file from storage
@@ -1877,7 +1862,7 @@ Could not load default touch controls from file. See local console for details.
 Could not load touch controls from clipboard. See local console for details.
 == 
 
-https://wiki.ddnet.org/wiki/Touch_controls
+https://github.com/Leo88q/neon-relay/blob/main/docs/ANDROID_SEEKER.md
 == 
 
 Community
@@ -2099,12 +2084,6 @@ Preview button visibility while the editor is active.
 == 
 
 Show all buttons
-== 
-
-You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
-
-Open DDNet Wiki
 == 
 
 Error saving touch controls
@@ -2690,5 +2669,5 @@ Active: Hook
 Moved ingame
 == 
 
-https://wiki.ddnet.org/wiki/Mapping
+https://github.com/Leo88q/neon-relay/tree/main/docs
 == 

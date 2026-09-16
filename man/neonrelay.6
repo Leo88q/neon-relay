@@ -1,0 +1,117 @@
+'\" t
+.\"     Title: neonrelay
+.\"    Author: Neon Relay Contributors
+.\" Generator: hand-maintained roff; regenerate from NeonRelay.adoc with a2x (asciidoc) when available
+.\"      Date: 2026-09-15
+.\"    Manual: Neon Relay Manual
+.\"    Source: Neon Relay 20\&.1
+.\"  Language: English
+.\"
+.TH "NEONRELAY" "6" "2026\-09\-15" "Neon Relay 20\&.1" "Neon Relay Manual"
+.\" -----------------------------------------------------------------
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" disable hyphenation
+.nh
+.\" disable justification
+.ad l
+.\" -----------------------------------------------------------------
+.SH "NAME"
+neonrelay \- starts the Neon Relay client
+.SH "SYNOPSIS"
+.sp
+\fBneonrelay\fR [\fIOPTION\fR]\&... [\-f \fICONFIG_FILE\fR]\&...
+.SH "DESCRIPTION"
+.sp
+Neon Relay is a cooperative 2D platform/race game with an optional reward rail for
+Solana Mobile (Seeker) players\&. It is a standalone derivative of the upstream DDNet
+project, which is itself an actively maintained version of \fBDDRace\fR, a
+\fBTeeworlds\fR modification\&. See \fIUPSTREAM_BASE\&.md\fR and \fIlicense\&.txt\fR in
+the repository for the exact upstream commit and for attribution\&.
+.sp
+Rewards are decided by the game server and the reward service, never by the client\&.
+Connecting a wallet is optional; the game is fully playable without one\&.
+.SH "OPTIONS"
+.PP
+\fB\-f\fR \fICONFIGURATION_FILE\fR
+.RS 4
+Load
+\fICONFIGURATION_FILE\fR
+instead of the default
+\fIsettings_neonrelay\&.cfg\fR\&. Can be given multiple times; later files override
+earlier ones\&.
+.RE
+.sp
+All other options are configuration variables\&. They are documented in\-game under
+Settings and in
+\fIsrc/engine/shared/config_variables\&.h\fR\&.
+.SH "EXAMPLES"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+neonrelay \-f myfile\&.cfg
+neonrelay \-f myfile\&.cfg \-f myfile2\&.cfg
+neonrelay \*(Aqcl_showhud 0\*(Aq \*(Aqplayer_name "nameless tee"\*(Aq
+.fi
+.if n \{\
+.RE
+.\}
+.SH "FILES"
+.PP
+\fI$XDG_DATA_HOME/NeonRelay\fR (or \fI~/Library/Application Support/NeonRelay\fR,
+\fI%APPDATA%/NeonRelay\fR)
+.RS 4
+User directory: settings, downloaded maps, demos, screenshots\&. Existing
+\fIDDNet\fR
+and
+\fITeeworlds\fR
+directories are reused if the Neon Relay directory does not exist yet\&.
+.RE
+.SH "RESOURCES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Source: https://github\&.com/Leo88q/neon\-relay
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Documentation: https://github\&.com/Leo88q/neon\-relay/tree/main/docs
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Upstream project: https://github\&.com/ddnet/ddnet
+.RE
+.SH "REPORTING BUGS"
+.sp
+Report issues at https://github\&.com/Leo88q/neon\-relay/issues
+.SH "COPYRIGHT"
+.sp
+The Neon Relay source code is distributed under the zlib/libpng\-style license in
+\fIlicense\&.txt\fR, which also carries the Teeworlds, DDRace and DDNet copyright
+notices required by that license\&. Content under \fIdata/\fR is licensed separately
+(CC\-BY\-SA 3\&.0, CC\-BY, SIL OFL 1\&.1 and others); see
+\fIdocs/THIRD_PARTY_NOTICES\&.md\fR
+and
+\fIdocs/ASSET_MANIFEST\&.csv\fR\&.

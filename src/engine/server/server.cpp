@@ -156,7 +156,7 @@ void CServerBan::ConBanExt(IConsole::IResult *pResult, void *pUser)
 	{
 		int ClientId = str_toint(pStr);
 		if(pResult->m_ClientId >= 0 && !pThis->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (use a more recent DDNet client)");
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (use a more recent Neon Relay client)");
 		else if(ClientId < 0 || ClientId >= MAX_CLIENTS || pThis->Server()->m_aClients[ClientId].m_State == CServer::CClient::STATE_EMPTY)
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (invalid client id)");
 		else
@@ -864,7 +864,7 @@ int CServer::GetClientVersion(int ClientId) const
 {
 	// Assume latest client version for server demos
 	if(ClientId == SERVER_DEMO_CLIENT)
-		return DDNET_VERSION_NUMBER;
+		return NEONRELAY_VERSION_NUMBER;
 
 	CClientInfo Info;
 	if(GetClientInfo(ClientId, &Info))
@@ -2278,7 +2278,7 @@ void CServer::OnNetMsgRconAuth(int ClientId, const char *pName, const char *pPw,
 
 			if(!ClientSupportsServerMaxClients(ClientId))
 			{
-				SendRconLine(ClientId, "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
+				SendRconLine(ClientId, "Your client does not see the real client IDs of this server. Use a more recent Neon Relay client.");
 			}
 
 			// DDRace
@@ -3267,7 +3267,7 @@ void CServer::UpdateDebugDummies(bool ForceDisconnect)
 
 			GameServer()->OnClientConnected(ClientId, nullptr);
 			Client.m_State = CClient::STATE_INGAME;
-			Client.m_DDNetVersion = DDNET_VERSION_NUMBER;
+			Client.m_DDNetVersion = NEONRELAY_VERSION_NUMBER;
 			Client.m_GotDDNetVersionPacket = true;
 			Client.m_DDNetVersionSettled = true;
 			char aDummyName[MAX_NAME_LENGTH];

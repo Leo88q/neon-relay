@@ -45,9 +45,9 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 
 	ExtMenu.HSplitBottom(20.0f, &ExtMenu, &Button);
 	static CButtonContainer s_DiscordButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_DiscordButton, Localize("Discord"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	if(GameClient()->m_Menus.DoButton_Menu(&s_DiscordButton, Localize("Community"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Client()->ViewLink(Localize("https://ddnet.org/discord"));
+		Client()->ViewLink(Localize("https://github.com/Leo88q/neon-relay"));
 	}
 
 	ExtMenu.HSplitBottom(5.0f, &ExtMenu, nullptr); // little space
@@ -55,7 +55,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	static CButtonContainer s_LearnButton;
 	if(GameClient()->m_Menus.DoButton_Menu(&s_LearnButton, Localize("Learn"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Client()->ViewLink(Localize("https://wiki.ddnet.org/"));
+		Client()->ViewLink(Localize("https://github.com/Leo88q/neon-relay/tree/main/docs"));
 	}
 
 	ExtMenu.HSplitBottom(5.0f, &ExtMenu, nullptr); // little space
@@ -201,7 +201,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 
 	if(State == IUpdater::CLEAN && NeedUpdate)
 	{
-		str_format(aBuf, sizeof(aBuf), Localize("DDNet %s is out!"), Client()->LatestVersion());
+		str_format(aBuf, sizeof(aBuf), Localize("Neon Relay %s is out!"), Client()->LatestVersion());
 		TextRender()->TextColor(1.0f, 0.4f, 0.4f, 1.0f);
 	}
 	else if(State == IUpdater::CLEAN)
@@ -221,7 +221,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	}
 	else if(State == IUpdater::NEED_RESTART)
 	{
-		str_copy(aBuf, Localize("DDNet Client updated!"));
+		str_copy(aBuf, Localize("Neon Relay client updated!"));
 		TextRender()->TextColor(1.0f, 0.4f, 0.4f, 1.0f);
 	}
 	Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML);
@@ -240,7 +240,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		}
 
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), Localize("DDNet %s is out!"), Client()->LatestVersion());
+		str_format(aBuf, sizeof(aBuf), Localize("Neon Relay %s is out!"), Client()->LatestVersion());
 		SLabelProperties UpdateLabelProps;
 		UpdateLabelProps.SetColor(ColorRGBA(1.0f, 0.4f, 0.4f, 1.0f));
 		Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML, UpdateLabelProps);

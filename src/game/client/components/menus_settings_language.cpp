@@ -40,7 +40,7 @@ void CMenus::RenderLanguageSettings(CUIRect MainView)
 	const unsigned OldRenderFlags = TextRender()->GetRenderFlags();
 	TextRender()->SetRenderFlags(OldRenderFlags | TEXT_RENDER_FLAG_ONE_TIME_USE);
 	STextContainerIndex CreditsTextContainer;
-	TextRender()->CreateTextContainer(CreditsTextContainer, &Cursor, Localize("English translation by the DDNet Team", "Translation credits: Add your own name here when you update translations"));
+	TextRender()->CreateTextContainer(CreditsTextContainer, &Cursor, Localize("English translation by the Neon Relay Team", "Translation credits: Add your own name here when you update translations"));
 	TextRender()->SetRenderFlags(OldRenderFlags);
 	if(CreditsTextContainer.Valid())
 	{

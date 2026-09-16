@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Neon Relay
+GenericName=Platform Game
+Exec=neonrelay %u
+Icon=neonrelay
+Terminal=false
+Keywords=game;multiplayer;coop;race;
+Categories=Game;ArcadeGame;
+MimeType=x-scheme-handler/neonrelay;
+Comment=Launch Neon Relay
+# Neon Relay is a standalone derivative of the upstream DDNet project.
+# Attribution and the exact upstream commit are recorded in UPSTREAM_BASE.md and license.txt.

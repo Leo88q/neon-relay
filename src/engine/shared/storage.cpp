@@ -261,18 +261,29 @@ public:
 		str_copy(m_aUserdir, "user");
 #else
 		char aFallbackUserdir[IO_MAX_PATH_LENGTH];
-		if(fs_storage_path("DDNet", m_aUserdir, sizeof(m_aUserdir)))
+		if(fs_storage_path("NeonRelay", m_aUserdir, sizeof(m_aUserdir)))
 		{
 			log_error("storage", "could not determine user directory");
 		}
-		if(fs_storage_path("Teeworlds", aFallbackUserdir, sizeof(aFallbackUserdir)))
+		// Reuse the data directory of an already existing installation so that
+		// players do not lose maps, skins, demos and settings: first the upstream
+		// DDNet directory, then the even older Teeworlds directory.
+		const char *apLegacyAppdirs[] = {"DDNet", "Teeworlds"};
+		for(const char *pLegacyAppdir : apLegacyAppdirs)
 		{
-			log_error("storage", "could not determine fallback user directory");
-		}
-
-		if((m_aUserdir[0] == '\0' || !fs_is_dir(m_aUserdir)) && aFallbackUserdir[0] != '\0' && fs_is_dir(aFallbackUserdir))
-		{
-			str_copy(m_aUserdir, aFallbackUserdir);
+			if(m_aUserdir[0] != '\0' && fs_is_dir(m_aUserdir))
+			{
+				break;
+			}
+			if(fs_storage_path(pLegacyAppdir, aFallbackUserdir, sizeof(aFallbackUserdir)))
+			{
+				log_error("storage", "could not determine fallback user directory");
+				continue;
+			}
+			if(aFallbackUserdir[0] != '\0' && fs_is_dir(aFallbackUserdir))
+			{
+				str_copy(m_aUserdir, aFallbackUserdir);
+			}
 		}
 #endif
 	}
@@ -326,6 +337,14 @@ public:
 		// 4) check for all default locations
 		{
 			const char *apDirs[] = {
+				"/usr/share/neonrelay",
+				"/usr/share/games/neonrelay",
+				"/usr/local/share/neonrelay",
+				"/usr/local/share/games/neonrelay",
+				"/usr/pkg/share/neonrelay",
+				"/usr/pkg/share/games/neonrelay",
+				"/opt/neonrelay",
+				// legacy upstream locations, kept so existing packages still work
 				"/usr/share/ddnet",
 				"/usr/share/games/ddnet",
 				"/usr/local/share/ddnet",

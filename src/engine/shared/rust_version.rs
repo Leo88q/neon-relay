@@ -54,6 +54,6 @@ pub fn RustVersionRegister(console: Pin<&mut IConsole>) {
         CFGFLAG_CLIENT | CFGFLAG_SERVER,
         IConsole_FCommandCallback(PrintRustVersionCallback),
         user,
-        s!("Prints the Rust version used to compile DDNet"),
+        s!("Prints the Rust version used to compile Neon Relay"),
     );
 }

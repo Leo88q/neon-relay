@@ -3707,7 +3707,7 @@ void CEditor::RenderMenubar(CUIRect MenuBar)
 
 void CEditor::ShowHelp()
 {
-	const char *pLink = Localize("https://wiki.ddnet.org/wiki/Mapping");
+	const char *pLink = Localize("https://github.com/Leo88q/neon-relay/tree/main/docs");
 	if(!Client()->ViewLink(pLink))
 	{
 		ShowFileDialogError("Failed to open the link '%s' in the default web browser.", pLink);

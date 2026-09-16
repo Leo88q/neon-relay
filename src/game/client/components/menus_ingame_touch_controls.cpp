@@ -1058,8 +1058,8 @@ void CMenusIngameTouchControls::RenderTouchControlsEditor(CUIRect MainView)
 	if(Ui()->DoButton_FontIcon(&s_OpenHelpButton, FontIcon::QUESTION, 0, &Button, BUTTONFLAG_LEFT))
 	{
 		GameClient()->m_Menus.PopupConfirm(Localize("Info"),
-			Localize("You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki."),
-			Localize("Open DDNet Wiki"), Localize("Ok"), &CMenus::PopupConfirmOpenWiki);
+			Localize("You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls in the Neon Relay documentation."),
+			Localize("Open documentation"), Localize("Ok"), &CMenus::PopupConfirmOpenWiki);
 	}
 
 	MainView.HSplitTop(ROWSIZE, &Row, &MainView);
