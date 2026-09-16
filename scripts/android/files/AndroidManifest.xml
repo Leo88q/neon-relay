@@ -35,7 +35,7 @@
 		android:name="android.hardware.type.pc"
 		android:required="false" />
 
-	<!-- Teeworlds does broadcasts over local networks -->
+	<!-- the local server service announces itself over local networks -->
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -58,7 +58,7 @@
 		android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
 		android:hardwareAccelerated="true">
 		<activity
-			android:name="org.ddnet.client.ClientActivity"
+			android:name="com.leo88q.neonrelay.ClientActivity"
 			android:alwaysRetainTaskState="true"
 			android:exported="true"
 			android:process=":client_process"
@@ -77,14 +77,14 @@
 			</intent-filter>
 			<meta-data
 				android:name="android.app.lib_name"
-				android:value="DDNet" />
+				android:value="Neon Relay" />
 			<meta-data
 				android:name="android.app.shortcuts"
 				android:resource="@xml/shortcuts" />
 		</activity>
 		<!-- Server service must run in a different process because it needs to be terminated to restart the server -->
 		<service
-			android:name="org.ddnet.client.ServerService"
+			android:name="com.leo88q.neonrelay.ServerService"
 			android:exported="false"
 			android:process=":server_process"
 			android:foregroundServiceType="specialUse" />
@@ -93,6 +93,6 @@
 				android:value="This service is used for hosting a LAN server to play the game in a local area network as well as without internet. A foreground service is used because the server should also continue running while the client activity is not in the foreground as other players may be connected to the server." />
 			<meta-data
 				android:name="android.app.lib_name"
-				android:value="DDNet-Server" />
+				android:value="Neon Relay Server" />
 	</application>
 </manifest>

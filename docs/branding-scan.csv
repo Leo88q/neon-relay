@@ -31,21 +31,21 @@ CMakeLists.txt,1707,code/api-identifier,identifier kept for protocol/build compa
 CMakeLists.txt,1719,code/api-identifier,identifier kept for protocol/build compatibility ((editor|mapres|assets|skins7?|maps7?|themes|audi),mapres/font_teeworlds.png
 CMakeLists.txt,1720,code/api-identifier,identifier kept for protocol/build compatibility ((ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|r),mapres/font_teeworlds_alt.png
 CMakeLists.txt,2712,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),components/menus_settings_ddnet.cpp
-CMakeLists.txt,3132,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
-CMakeLists.txt,3133,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
-CMakeLists.txt,3162,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
-CMakeLists.txt,3163,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
-CMakeLists.txt,3588,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
-CMakeLists.txt,3727,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
-CMakeLists.txt,3984,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3986,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3987,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3988,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3989,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3990,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3991,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3992,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3993,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3141,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
+CMakeLists.txt,3142,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
+CMakeLists.txt,3171,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
+CMakeLists.txt,3172,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
+CMakeLists.txt,3597,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
+CMakeLists.txt,3736,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
+CMakeLists.txt,3993,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3995,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3996,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3997,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3998,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3999,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4000,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4001,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4002,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
 Cargo.lock,120,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-base"""
 Cargo.lock,124,legal-attribution,upstream/third-party license notice (must stay),"""ddnet-test"","
 Cargo.lock,129,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-engine"""
@@ -73,6 +73,8 @@ UPSTREAM_BASE.md,48,historical-documentation,document that describes the upstrea
 UPSTREAM_BASE.md,50,historical-documentation,document that describes the upstream derivation,"git update-index --add --cacheinfo 160000,c0e6703fbcdbe03df2f26875427ec3951ce4ec21,ddnet-libs"
 UPSTREAM_BASE.md,53,historical-documentation,document that describes the upstream derivation,git remote add upstream https://github.com/ddnet/ddnet.git   # fetch only
 UPSTREAM_BASE.md,93,historical-documentation,document that describes the upstream derivation,"artwork — `data/gui_logo.png`, the `other/icons/DDNet*` / `DDNet-Server*` raster icons."
+android/app/build.gradle.kts,73,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"// template, rebranded) plus the SDL Java bindings from ddnet-libs"
+android/app/build.gradle.kts,75,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"java.srcDir(""../../ddnet-libs/sdl/java"")"
 ci/upstream-reference/README.md,4,historical-documentation,document that describes the upstream derivation,(https://github.com/ddnet/ddnet @ `a853d333ac9e61ebfa2899b4641f8b0658ba60d5`).
 ci/upstream-reference/github-workflows/build-libraries-android.yml,29,historical-documentation,document that describes the upstream derivation,name: ddnet-libs-android
 ci/upstream-reference/github-workflows/build-libraries-android.yml,30,historical-documentation,document that describes the upstream derivation,path: build-android-libs/ddnet-libs
@@ -182,6 +184,8 @@ datasrc/network.py,655,code/api-identifier,"file contains protocol/asset/crate i
 datasrc/network.py,659,code/api-identifier,"file contains protocol/asset/crate identifiers, not user-facing text","NetMessageEx(""Sv_ModeratorAlert"", ""moderator-alert@netmsg.ddnet.org"", ["
 datasrc/network.py,663,code/api-identifier,"file contains protocol/asset/crate identifiers, not user-facing text","NetMessageEx(""Cl_EnableSpectatorCount"", ""enable-spectator-count@netmsg.ddnet.org"", ["
 datasrc/network.py,667,code/api-identifier,"file contains protocol/asset/crate identifiers, not user-facing text","NetMessageEx(""Sv_MapInfo"", ""map-info@netmsg.ddnet.org"", ["
+docs/ANDROID_SEEKER.md,111,historical-documentation,document that describes the upstream derivation,"the `ddnet-libs` submodule (SDL Java bindings), and Gradle 8.13+ (`gradle wrapper`"
+docs/ANDROID_SEEKER.md,115,historical-documentation,document that describes the upstream derivation,git submodule update --init ddnet-libs          # SDL java + prebuilt deps
 docs/ASSET_MANIFEST.csv,5,legal-attribution,upstream/third-party license notice (must stay),"data/announcement.txt,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,text/plain,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,https"
 docs/ASSET_MANIFEST.csv,6,legal-attribution,upstream/third-party license notice (must stay),"data/arrow.png,d279b393153a42cb3df1e73cf610ff5e17b42ceb8088294c0075a50e604be54b,image/png,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,https://githu"
 docs/ASSET_MANIFEST.csv,7,legal-attribution,upstream/third-party license notice (must stay),"data/assets/entities/comfort/ddnet.png,4cbf66df078a56ffaf245b658638a54f50b5dab5681e6bd6d7272dff42688e50,image/png,louis,Copyright louis,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/data/assets/en"
@@ -1121,6 +1125,7 @@ docs/DEBUGGING.md,41,historical-documentation,document that describes the upstre
 docs/DEBUGGING.md,47,historical-documentation,document that describes the upstream derivation,- Open a terminal in the `ddnet` project folder and run the following:
 docs/DEBUGGING.md,54,historical-documentation,document that describes the upstream derivation,"- Download and unpack the debug symbols archive from https://ddnet.org/downloads/symbols/ with matching git commit revision and platform (win32/win64/win-arm64, steam/non-steam)."
 docs/DEBUGGING.md,57,historical-documentation,document that describes the upstream derivation,- Open a terminal in the `ddnet` project folder and run the following:
+docs/KNOWN_LIMITATIONS.md,71,historical-documentation,document that describes the upstream derivation,import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
 docs/REBRANDING.md,1,historical-documentation,document that describes the upstream derivation,# Rebranding: DDNet → Neon Relay
 docs/REBRANDING.md,7,historical-documentation,document that describes the upstream derivation,* Upstream: https://github.com/ddnet/ddnet @ `a853d333ac9e61ebfa2899b4641f8b0658ba60d5`
 docs/REBRANDING.md,25,historical-documentation,document that describes the upstream derivation,"| `project(DDNet …)` | `project(NeonRelay …)` | `CMakeLists.txt:44,46` | `PROJECT_NAME` only feeds package/artifact names and the `${CMAKE_PROJECT_NAME}` text in configure errors. No source file depends on the literal project name. |"
@@ -1341,88 +1346,7 @@ other/dmgsettings.py,46,comment,brand appears only in a source comment,# volume_
 other/emscripten/index.html,353,code/api-identifier,identifier kept for protocol/build compatibility (startsWith\('ddnet://'\)),if (string.startsWith('neonrelay://') || string.startsWith('ddnet://')) {
 other/icons/license.txt,10,legal-attribution,upstream/third-party license notice (must stay),History: before the rebrand this directory contained the DDNet icons
 other/neonrelay.desktop,12,comment,"source comment, not shown to users",# Neon Relay is a standalone derivative of the upstream DDNet project.
-scripts/android/cmake_android.sh,226,code/api-identifier,identifier kept for protocol/build compatibility ((ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|r),cp ../other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher.png
-scripts/android/cmake_android.sh,227,code/api-identifier,identifier kept for protocol/build compatibility ((ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|r),cp ../other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher_round.png
-scripts/android/cmake_android.sh,234,code/api-identifier,brand appears only inside code identifiers,"cp ""$ANDROID_SUB_BUILD_DIR/$1/libDDNet.so"" ""lib/$2"""
-scripts/android/cmake_android.sh,235,code/api-identifier,brand appears only inside code identifiers,"cp ""$ANDROID_SUB_BUILD_DIR/$1/libDDNet-Server.so"" ""lib/$2"""
 scripts/android/cmake_android.sh,271,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),cp -R ../ddnet-libs/sdl/java/org src/main/java/
-scripts/android/files/AndroidManifest.xml,38,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,<!-- Teeworlds does broadcasts over local networks -->
-scripts/android/files/AndroidManifest.xml,61,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:name=""org.ddnet.client.ClientActivity"""
-scripts/android/files/AndroidManifest.xml,80,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:value=""DDNet"" />"
-scripts/android/files/AndroidManifest.xml,87,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:name=""org.ddnet.client.ServerService"""
-scripts/android/files/AndroidManifest.xml,96,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:value=""DDNet-Server"" />"
-scripts/android/files/build.gradle,23,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"applicationId ""org.ddnet.client"""
-scripts/android/files/build.gradle,24,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"namespace = ""org.ddnet.client"""
-scripts/android/files/build.sh,36,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/DDNet/${APK_BASENAME}/g"" settings.gradle"
-scripts/android/files/build.sh,38,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/org.ddnet.client/${APK_PACKAGE_NAME}/g"" build.gradle"
-scripts/android/files/build.sh,52,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/DDNet/${APK_BASENAME}/g"" ""$f/strings.xml"""
-scripts/android/files/build.sh,55,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/org.ddnet.client/${APK_PACKAGE_NAME}/g"" src/main/res/xml/shortcuts.xml"
-scripts/android/files/build.sh,57,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/\""DDNet\""/\""${APK_BASENAME}\""/g"" src/main/AndroidManifest.xml"
-scripts/android/files/build.sh,58,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/org.ddnet.client/${APK_PACKAGE_NAME}/g"" src/main/AndroidManifest.xml"
-scripts/android/files/build.sh,60,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"if [ ""${APK_PACKAGE_FOLDER}"" != ""org/ddnet/client"" ]; then"
-scripts/android/files/build.sh,61,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"mv src/main/java/org/ddnet/client src/main/java/""${APK_PACKAGE_FOLDER}"""
-scripts/android/files/build.sh,64,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/org.ddnet.client/${APK_PACKAGE_NAME}/g"" src/main/java/""${APK_PACKAGE_FOLDER}""/ClientActivity.java"
-scripts/android/files/build.sh,65,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/org.ddnet.client/${APK_PACKAGE_NAME}/g"" src/main/java/""${APK_PACKAGE_FOLDER}""/ServerService.java"
-scripts/android/files/build.sh,66,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"sed -i ""s/org.ddnet.client/${APK_PACKAGE_NAME}/g"" proguard-rules.pro"
-scripts/android/files/java/org/ddnet/client/ClientActivity.java,1,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",package org.ddnet.client;
-scripts/android/files/java/org/ddnet/client/ClientActivity.java,39,code/api-identifier,"identifier kept for protocol/build compatibility (""(DDNet|Teeworlds)""\s*,?\s*(//.*)?$)","""DDNet"","
-scripts/android/files/java/org/ddnet/client/ServerService.java,1,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",package org.ddnet.client;
-scripts/android/files/java/org/ddnet/client/ServerService.java,30,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"System.loadLibrary(""DDNet-Server"");"
-scripts/android/files/proguard-rules.pro,19,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"-keepclassmembers, allowoptimization public class org.ddnet.client.* {"
-scripts/android/files/res/values/strings.xml,3,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""app_name"">DDNet</string>"
-scripts/android/files/res/values/strings.xml,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_name"">DDNet-Server</string>"
-scripts/android/files/res/values/strings.xml,7,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_default"">DDNet-Server is running…</string>"
-scripts/android/files/res/values/strings.xml,8,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_stopping"">DDNet-Server is stopping…</string>"
-scripts/android/files/res/values/strings.xml,11,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_channel_description"">Notification to control the local DDNet-Server while it\'s running.</string>"
-scripts/android/files/res/values/strings.xml,12,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_external_files_inaccessible"">Error starting DDNet-Server: could not access external files directory.</string>"
-scripts/android/files/res/values/strings.xml,13,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_exit_code"">DDNet-Server stopped with error code \'%1$d\'.</string>"
-scripts/android/files/res/values-pt-rBR/strings.xml,3,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""app_name"">DDNet</string>"
-scripts/android/files/res/values-pt-rBR/strings.xml,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_name"">DDNet-Server</string>"
-scripts/android/files/res/values-pt-rBR/strings.xml,7,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_default"">DDNet-Server está em execução…</string>"
-scripts/android/files/res/values-pt-rBR/strings.xml,8,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_stopping"">DDNet-Server está sendo encerrado…</string>"
-scripts/android/files/res/values-pt-rBR/strings.xml,11,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_channel_description"">Notificação para controlar o DDNet-Server local enquanto está em execução.</string>"
-scripts/android/files/res/values-pt-rBR/strings.xml,12,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_external_files_inaccessible"">Erro ao iniciar DDNet-Server: não foi possível acessar o diretório de arquivos externos.</string>"
-scripts/android/files/res/values-pt-rBR/strings.xml,13,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_exit_code"">DDNet-Server encerrou com código de erro \'%1$d\'.</string>"
-scripts/android/files/res/values-pt-rPT/strings.xml,3,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""app_name"">DDNet</string>"
-scripts/android/files/res/values-pt-rPT/strings.xml,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_name"">DDNet-Server</string>"
-scripts/android/files/res/values-pt-rPT/strings.xml,7,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_default"">DDNet-Server está em execução…</string>"
-scripts/android/files/res/values-pt-rPT/strings.xml,8,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_stopping"">DDNet-Server está em encerramento…</string>"
-scripts/android/files/res/values-pt-rPT/strings.xml,11,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_channel_description"">Notificação para controlar o DDNet-Server local enquanto está em execução.</string>"
-scripts/android/files/res/values-pt-rPT/strings.xml,12,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_external_files_inaccessible"">Erro ao iniciar o DDNet-Server: não foi possível acessar o diretório de ficheiros externo.</string>"
-scripts/android/files/res/values-pt-rPT/strings.xml,13,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_exit_code"">DDNet-Server parou com o código de erro \'%1$d\'.</string>"
-scripts/android/files/res/values-sv-rSE/strings.xml,3,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""app_name"">DDNet</string>"
-scripts/android/files/res/values-sv-rSE/strings.xml,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_name"">DDNet-Server</string>"
-scripts/android/files/res/values-sv-rSE/strings.xml,7,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_default"">DDNet-Servern körs…</string>"
-scripts/android/files/res/values-sv-rSE/strings.xml,8,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_stopping"">DDNet-Servern avslutar…</string>"
-scripts/android/files/res/values-sv-rSE/strings.xml,11,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_channel_description"">Notifikation för att kontrollera den lokala DDNet-Servern medan den körs.</string>"
-scripts/android/files/res/values-sv-rSE/strings.xml,12,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_external_files_inaccessible"">Felmeddelande vid start av DDNet-Servern: kunde inte läsa av externa filer mappen.</string>"
-scripts/android/files/res/values-sv-rSE/strings.xml,13,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_exit_code"">DDNet-Servern avslutades med felkoden \'%1$d\'.</string>"
-scripts/android/files/res/values-tr-rTR/strings.xml,3,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""app_name"">DDNet</string>"
-scripts/android/files/res/values-tr-rTR/strings.xml,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_name"">DDNet-Sunucu</string>"
-scripts/android/files/res/values-tr-rTR/strings.xml,7,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_default"">DDNet-Sunucu çalıştırılıyor…</string>"
-scripts/android/files/res/values-tr-rTR/strings.xml,8,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_stopping"">DDNet-Sunucu durduruluyor…</string>"
-scripts/android/files/res/values-tr-rTR/strings.xml,11,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_channel_description"">Yerel DDNet-Sunucu çalışırken kontrol etmek için bildirim.</string>"
-scripts/android/files/res/values-tr-rTR/strings.xml,12,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_external_files_inaccessible"">DDNet-Sunucu çalıştırılırken hata oluştu: harici dosyalar dizinine erişilemedi.</string>"
-scripts/android/files/res/values-tr-rTR/strings.xml,13,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_exit_code"">DDNet-Sunucu \'%1$d\' hata kodu ile durduruldu.</string>"
-scripts/android/files/res/values-zh-rCN/strings.xml,3,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""app_name"">DDNet</string>"
-scripts/android/files/res/values-zh-rCN/strings.xml,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_name"">DDNet-Server</string>"
-scripts/android/files/res/values-zh-rCN/strings.xml,7,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_default"">DDNet 服务器正在运行…</string>"
-scripts/android/files/res/values-zh-rCN/strings.xml,8,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_stopping"">DDNet 服务器正在停止…</string>"
-scripts/android/files/res/values-zh-rCN/strings.xml,11,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_channel_description"">本地 DDNet 服务器控制用通知。</string>"
-scripts/android/files/res/values-zh-rCN/strings.xml,12,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_external_files_inaccessible"">启动 DDNet 服务器出错：无法访问外部文件目录。</string>"
-scripts/android/files/res/values-zh-rCN/strings.xml,13,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_exit_code"">DDNet 服务器异常退出，错误代码为 \'%1$d\'。</string>"
-scripts/android/files/res/values-zh-rTW/strings.xml,3,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""app_name"">DDNet</string>"
-scripts/android/files/res/values-zh-rTW/strings.xml,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_name"">DDNet-Server</string>"
-scripts/android/files/res/values-zh-rTW/strings.xml,7,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_default"">DDNet 伺服器正在運行…</string>"
-scripts/android/files/res/values-zh-rTW/strings.xml,8,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_description_stopping"">DDNet 伺服器正在停止…</string>"
-scripts/android/files/res/values-zh-rTW/strings.xml,11,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_notification_channel_description"">本地 DDNet 伺服器控制用通知。</string>"
-scripts/android/files/res/values-zh-rTW/strings.xml,12,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_external_files_inaccessible"">啟動 DDNet 伺服器錯誤：無法訪問外部文件目錄。</string>"
-scripts/android/files/res/values-zh-rTW/strings.xml,13,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"<string name=""server_error_exit_code"">DDNet 伺服器異常退出，錯誤代碼為 \'%1$d\'。</string>"
-scripts/android/files/res/xml/shortcuts.xml,9,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:targetPackage=""org.ddnet.client"""
-scripts/android/files/res/xml/shortcuts.xml,10,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:targetClass=""org.ddnet.client.ClientActivity"">"
-scripts/android/files/res/xml/shortcuts.xml,23,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:targetPackage=""org.ddnet.client"""
-scripts/android/files/res/xml/shortcuts.xml,24,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"android:targetClass=""org.ddnet.client.ClientActivity"">"
-scripts/android/files/settings.gradle,1,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,rootProject.name='DDNet'
 scripts/compile_libs/gen_libs.sh,141,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),# Copy files into ddnet-libs structure
 scripts/compile_libs/gen_libs.sh,142,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"log_info_header ""Copying files into ddnet-libs structure..."""
 scripts/compile_libs/gen_libs.sh,144,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),mkdir -p ddnet-libs

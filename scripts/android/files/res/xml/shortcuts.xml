@@ -6,8 +6,8 @@
 		android:shortcutShortLabel="@string/shortcut_play_vulkan_short">
 		<intent
 			android:action="android.intent.action.VIEW"
-			android:targetPackage="org.ddnet.client"
-			android:targetClass="org.ddnet.client.ClientActivity">
+			android:targetPackage="com.leo88q.neonrelay"
+			android:targetClass="com.leo88q.neonrelay.ClientActivity">
 			<extra
 				android:name="gfx-backend"
 				android:value="Vulkan" />
@@ -20,8 +20,8 @@
 		android:shortcutShortLabel="@string/shortcut_play_gles_short">
 		<intent
 			android:action="android.intent.action.VIEW"
-			android:targetPackage="org.ddnet.client"
-			android:targetClass="org.ddnet.client.ClientActivity">
+			android:targetPackage="com.leo88q.neonrelay"
+			android:targetClass="com.leo88q.neonrelay.ClientActivity">
 			<extra
 				android:name="gfx-backend"
 				android:value="GLES" />

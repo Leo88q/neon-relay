@@ -1,4 +1,4 @@
-package org.ddnet.client;
+package com.leo88q.neonrelay;
 
 import android.app.NativeActivity;
 import android.content.*;
@@ -36,7 +36,7 @@ public class ClientActivity extends SDLActivity {
 	@Override
 	protected String[] getLibraries() {
 		return new String[] {
-			"DDNet",
+			"neonrelay",
 		};
 	}
 

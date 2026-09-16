@@ -33,9 +33,9 @@ fi
 
 APK_PACKAGE_FOLDER=$(echo "$APK_PACKAGE_NAME" | sed 's/\./\//g')
 
-sed -i "s/DDNet/${APK_BASENAME}/g" settings.gradle
+sed -i "s/Neon Relay/${APK_BASENAME}/g" settings.gradle
 
-sed -i "s/org.ddnet.client/${APK_PACKAGE_NAME}/g" build.gradle
+sed -i "s/com.leo88q.neonrelay/${APK_PACKAGE_NAME}/g" build.gradle
 
 TW_KEY_NAME_ESCAPED=$(echo "$TW_KEY_NAME" | sed 's/\//\\\//g')
 TW_KEY_PW_ESCAPED=$(echo "$TW_KEY_PW" | sed 's/\//\\\//g')
@@ -49,21 +49,21 @@ sed -i "s/TW_VERSION_CODE/${TW_VERSION_CODE}/g" build.gradle
 sed -i "s/TW_VERSION_NAME/${TW_VERSION_NAME}/g" build.gradle
 
 for f in src/main/res/values*; do
-	sed -i "s/DDNet/${APK_BASENAME}/g" "$f/strings.xml"
+	sed -i "s/Neon Relay/${APK_BASENAME}/g" "$f/strings.xml"
 done
 
-sed -i "s/org.ddnet.client/${APK_PACKAGE_NAME}/g" src/main/res/xml/shortcuts.xml
+sed -i "s/com.leo88q.neonrelay/${APK_PACKAGE_NAME}/g" src/main/res/xml/shortcuts.xml
 
-sed -i "s/\"DDNet\"/\"${APK_BASENAME}\"/g" src/main/AndroidManifest.xml
-sed -i "s/org.ddnet.client/${APK_PACKAGE_NAME}/g" src/main/AndroidManifest.xml
+sed -i "s/\"Neon Relay\"/\"${APK_BASENAME}\"/g" src/main/AndroidManifest.xml
+sed -i "s/com.leo88q.neonrelay/${APK_PACKAGE_NAME}/g" src/main/AndroidManifest.xml
 
-if [ "${APK_PACKAGE_FOLDER}" != "org/ddnet/client" ]; then
-	mv src/main/java/org/ddnet/client src/main/java/"${APK_PACKAGE_FOLDER}"
+if [ "${APK_PACKAGE_FOLDER}" != "com/leo88q/neonrelay" ]; then
+	mv src/main/java/com/leo88q/neonrelay src/main/java/"${APK_PACKAGE_FOLDER}"
 fi
 
-sed -i "s/org.ddnet.client/${APK_PACKAGE_NAME}/g" src/main/java/"${APK_PACKAGE_FOLDER}"/ClientActivity.java
-sed -i "s/org.ddnet.client/${APK_PACKAGE_NAME}/g" src/main/java/"${APK_PACKAGE_FOLDER}"/ServerService.java
-sed -i "s/org.ddnet.client/${APK_PACKAGE_NAME}/g" proguard-rules.pro
+sed -i "s/com.leo88q.neonrelay/${APK_PACKAGE_NAME}/g" src/main/java/"${APK_PACKAGE_FOLDER}"/ClientActivity.java
+sed -i "s/com.leo88q.neonrelay/${APK_PACKAGE_NAME}/g" src/main/java/"${APK_PACKAGE_FOLDER}"/ServerService.java
+sed -i "s/com.leo88q.neonrelay/${APK_PACKAGE_NAME}/g" proguard-rules.pro
 
 # Disable HID manager as we compile SDL without hidapi and libusb support
 sed -i "s/mHIDDeviceManager = HIDDeviceManager.acquire(this);/mHIDDeviceManager=null;/g" src/main/java/org/libsdl/app/SDLActivity.java

@@ -20,8 +20,8 @@ android {
 	compileSdkVersion 36
 	buildToolsVersion "36.1.0"
 	defaultConfig {
-		applicationId "org.ddnet.client"
-		namespace = "org.ddnet.client"
+		applicationId "com.leo88q.neonrelay"
+		namespace = "com.leo88q.neonrelay"
 		minSdkVersion 24
 		targetSdkVersion 36
 		versionCode TW_VERSION_CODE

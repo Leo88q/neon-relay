@@ -16,7 +16,7 @@
 # debugging stack traces.
 -keepattributes SourceFile,LineNumberTable
 
--keepclassmembers, allowoptimization public class org.ddnet.client.* {
+-keepclassmembers, allowoptimization public class com.leo88q.neonrelay.* {
 	*;
 }
 

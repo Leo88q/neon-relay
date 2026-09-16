@@ -2913,6 +2913,15 @@ if(CLIENT)
     src/generated/client_data7.h
     # tidy-alphabetical-end
   )
+# Neon Relay: sanitized wallet event bridge (see docs/ANDROID_SEEKER.md).
+# The Kotlin wallet layer (android/app/.../wallet/) is the only code that talks
+# to wallets; native code receives events through this module exclusively.
+list(APPEND GAME_CLIENT src/neonrelay/wallet_bridge.cpp)
+if(TARGET_OS STREQUAL "android")
+  list(APPEND GAME_CLIENT android/app/src/main/cpp/neonrelay_wallet_jni.cpp)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/neonrelay)
+endif()
+
   set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_EDITOR} ${GAME_MAP} ${GAME_GENERATED_CLIENT})
 
   set(DEPS_CLIENT ${DEPS} ${GLEW_DEP})

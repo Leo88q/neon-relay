@@ -223,16 +223,16 @@ copy_project_files scripts/android/files/AndroidManifest.xml src/main/AndroidMan
 rm -rf src/main/res
 cp -R ../scripts/android/files/res src/main/
 mkdir -p src/main/res/mipmap
-cp ../other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher.png
-cp ../other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher_round.png
+cp ../other/icons/NeonRelay_256x256x32.png src/main/res/mipmap/ic_launcher.png
+cp ../other/icons/NeonRelay_256x256x32.png src/main/res/mipmap/ic_launcher_round.png
 chmod +x ./gradlew
 
 log_info "Copying libraries..."
 
 function copy_libs() {
 	mkdir -p "lib/$2"
-	cp "$ANDROID_SUB_BUILD_DIR/$1/libDDNet.so" "lib/$2"
-	cp "$ANDROID_SUB_BUILD_DIR/$1/libDDNet-Server.so" "lib/$2"
+	cp "$ANDROID_SUB_BUILD_DIR/$1/libneonrelay.so" "lib/$2"
+	cp "$ANDROID_SUB_BUILD_DIR/$1/libneonrelay-server.so" "lib/$2"
 }
 
 if [[ "${ANDROID_BUILD}" == "arm" || "${ANDROID_BUILD}" == "all" ]]; then

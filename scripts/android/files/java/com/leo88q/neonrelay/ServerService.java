@@ -1,4 +1,4 @@
-package org.ddnet.client;
+package com.leo88q.neonrelay;
 
 import java.io.File;
 
@@ -27,7 +27,7 @@ public class ServerService extends Service {
 	private static final String KEY_EXECUTE_TEXT_REPLY = "execute-command-reply";
 
 	static {
-		System.loadLibrary("DDNet-Server");
+		System.loadLibrary("neonrelay-server");
 	}
 
 	private class IncomingHandler extends Handler {
