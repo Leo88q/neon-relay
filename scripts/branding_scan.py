@@ -82,6 +82,7 @@ HISTORICAL_PATH_RES = [
 	re.compile(r"^man/"),
 	re.compile(r"^README\.md$"),
 	re.compile(r"^scripts/(check_assets|check_branding|check_secrets|local_syntax_probe)\.sh$"),
+	re.compile(r"^scripts/(gen_asset_manifest|asset_check|build_brand_assets)\.py$"),
 	re.compile(r"^docs/(SOLANA_ARCHITECTURE|ANDROID_SEEKER|WALLET_AUTH|REWARD_SECURITY|API|DEVNET_RUNBOOK)\.md$"),
 	re.compile(r"^\.github/pull_request_template\.md$"),
 	re.compile(r"^scripts/languages/README\.md$"),

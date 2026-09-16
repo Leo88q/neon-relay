@@ -29,6 +29,7 @@ import pathlib
 import struct
 import sys
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -40,6 +41,11 @@ SIZES = (16, 32, 48, 256)
 # icns OSTypes that carry PNG payloads (modern icns containers)
 ICNS_TYPES = {16: b"icp4", 32: b"icp5", 64: b"icp6", 128: b"ic07",
               256: b"ic08", 512: b"ic09", 1024: b"ic10"}
+
+BRAND_CYAN = (64, 232, 255)
+BRAND_MAGENTA = (255, 64, 214)
+BRAND_NAVY = (10, 16, 38)
+BRAND_ICE = (232, 241, 251)
 
 
 def unpremultiply_on_white(img: Image.Image, white_thresh: int = 238) -> Image.Image:
@@ -171,42 +177,191 @@ def checkerboard_to_alpha(img: Image.Image) -> Image.Image:
 
 
 def build_banner() -> list[pathlib.Path]:
-    master = checkerboard_to_alpha(Image.open(SRC / "neonrelay-banner-master.png"))
-    # keep only the left-hand mark: the master reserves the right side for
-    # typography and may contain faint generation artefacts there
-    w, h = master.size
-    left = Image.new("L", (w, h), 0)
-    left.paste(master.getchannel("A").crop((0, 0, int(w * 0.62), h)), (0, 0))
-    bbox = left.getbbox()
-    mark = master.crop(bbox)
-
-    # target: 1024x293 like the upstream banner slot
     target_w, target_h = 1024, 293
-    mark_h = int(target_h * 0.92)
-    scale = mark_h / mark.height
-    mark_w = int(mark.width * scale)
-    mark = mark.resize((mark_w, mark_h), Image.LANCZOS)
-
-    word = gradient_text("NEON RELAY", int(target_h * 0.52),
-                         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
-    gap = int(target_h * 0.10)
-    total_w = mark_w + gap + word.width
-    # scale everything down if it does not fit
-    if total_w > target_w - 24:
-        f = (target_w - 24) / total_w
-        mark = mark.resize((int(mark.width * f), int(mark.height * f)), Image.LANCZOS)
-        word = word.resize((int(word.width * f), int(word.height * f)), Image.LANCZOS)
-        mark_w, mark_h = mark.size
-        gap = int(gap * f)
-        total_w = mark_w + gap + word.width
-
+    logo = compose_logo(target_h)
+    if logo.width > target_w - 24:
+        f = (target_w - 24) / logo.width
+        logo = logo.resize((int(logo.width * f), int(logo.height * f)), Image.LANCZOS)
     out = Image.new("RGBA", (target_w, target_h), (0, 0, 0, 0))
-    x = (target_w - total_w) // 2
-    out.paste(mark, (x, (target_h - mark.height) // 2), mark)
-    out.paste(word, (x + mark_w + gap, (target_h - word.height) // 2), word)
+    out.paste(logo, ((target_w - logo.width) // 2, (target_h - logo.height) // 2), logo)
     path = DATA / "gui_logo.png"
     out.save(path, format="PNG", optimize=True)
     return [path]
+
+
+def h_gradient(w: int, h: int, c0, c1) -> Image.Image:
+    t = np.linspace(0.0, 1.0, w, dtype=np.float32)[None, :, None]
+    a = np.array(c0, np.float32) + (np.array(c1, np.float32) - np.array(c0, np.float32)) * t
+    arr = np.repeat(a, h, axis=0).astype(np.uint8)
+    out = np.dstack([arr, np.full((h, w, 1), 255, np.uint8)])
+    return Image.fromarray(out, "RGBA")
+
+
+def radial(w: int, h: int, c_center, c_edge) -> Image.Image:
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    dx = (xs - w / 2) / (w / 2)
+    dy = (ys - h / 2) / (h / 2)
+    d = np.clip(np.sqrt(dx * dx + dy * dy), 0, 1)[:, :, None]
+    a = np.array(c_center, np.float32) + (np.array(c_edge, np.float32) - np.array(c_center, np.float32)) * d
+    out = np.dstack([a, np.full((h, w, 1), 255, np.float32)]).astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
+def gradient_mask(mask: Image.Image, c0=BRAND_CYAN, c1=BRAND_MAGENTA) -> Image.Image:
+    """Fill a 1-bit/8-bit mask with the vertical brand gradient."""
+    grad = h_gradient(mask.width, mask.height, c0, c1).transpose(Image.ROTATE_90)
+    out = Image.new("RGBA", mask.size, (0, 0, 0, 0))
+    out.paste(grad, (0, 0), mask)
+    return out
+
+
+def logo_mark() -> Image.Image:
+    master = checkerboard_to_alpha(Image.open(SRC / "neonrelay-banner-master.png"))
+    w, h = master.size
+    left = Image.new("L", (w, h), 0)
+    left.paste(master.getchannel("A").crop((0, 0, int(w * 0.62), h)), (0, 0))
+    return master.crop(left.getbbox())
+
+
+def compose_logo(target_h: int) -> Image.Image:
+    mark = logo_mark()
+    mark_h = int(target_h * 0.92)
+    mark = mark.resize((int(mark.width * mark_h / mark.height), mark_h), Image.LANCZOS)
+    word = gradient_text("NEON RELAY", int(target_h * 0.52),
+                         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+    gap = int(target_h * 0.10)
+    total = mark.width + gap + word.width
+    canvas = Image.new("RGBA", (total, target_h), (0, 0, 0, 0))
+    canvas.paste(mark, (0, (target_h - mark.height) // 2), mark)
+    canvas.paste(word, (mark.width + gap, (target_h - word.height) // 2), word)
+    return canvas
+
+
+def _arrow(draw: ImageDraw.ImageDraw, box, color) -> None:
+    x0, y0, x1, y1 = box
+    my = (y0 + y1) / 2
+    draw.polygon([(x0, my - (y1 - y0) * 0.22), (x0 + (x1 - x0) * 0.55, my - (y1 - y0) * 0.22),
+                  (x0 + (x1 - x0) * 0.55, my - (y1 - y0) * 0.5), (x1, my),
+                  (x0 + (x1 - x0) * 0.55, my + (y1 - y0) * 0.5),
+                  (x0 + (x1 - x0) * 0.55, my + (y1 - y0) * 0.22),
+                  (x0, my + (y1 - y0) * 0.22)], fill=color)
+
+
+def build_dmg_backgrounds() -> list[pathlib.Path]:
+    logo = compose_logo(190)
+    produced = []
+    for name, single in (("dmgbackground.png", False), ("dmgbackground_single.png", True)):
+        w, h = 1280, 832
+        img = Image.new("RGBA", (w, h), BRAND_ICE + (255,))
+        img.paste(logo, ((w - logo.width) // 2, 56), logo)
+        d = ImageDraw.Draw(img)
+        rect_y0, rect_y1 = 470, 726
+        if single:
+            d.rounded_rectangle([(w // 2 - 128, rect_y0), (w // 2 + 128, rect_y1)],
+                                radius=24, fill=(250, 252, 255, 255))
+        else:
+            d.rounded_rectangle([(128, rect_y0), (384, rect_y1)], radius=24, fill=(250, 252, 255, 255))
+            d.rounded_rectangle([(416, rect_y0), (672, rect_y1)], radius=24, fill=(250, 252, 255, 255))
+            _arrow(d, (712, 512, 856, 684), (74, 163, 232, 255))
+            d.rounded_rectangle([(896, rect_y0), (1152, rect_y1)], radius=24, fill=(250, 252, 255, 255))
+        out = ICONS.parent / name
+        if name == "dmgbackground.png":
+            img.convert("RGB").save(out, format="PNG", optimize=True)
+        else:
+            img.save(out, format="PNG", optimize=True)
+        produced.append(out)
+    return produced
+
+
+def build_emscripten_background() -> list[pathlib.Path]:
+    w, h = 1920, 1080
+    img = radial(w, h, (56, 128, 196), (16, 42, 86))
+    overlay = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(overlay)
+    # faint hexagon lattice as texture
+    r = 90
+    for row in range(-1, h // (r * 2) + 2):
+        for col in range(-1, w // (r * 2) + 2):
+            cx = col * r * 3 + (r * 1.5 if row % 2 else 0)
+            cy = row * r * 2
+            pts = [(cx + r * np.cos(a), cy + r * np.sin(a))
+                   for a in np.linspace(np.pi / 6, 2 * np.pi + np.pi / 6, 7)[:-1]]
+            d.polygon(pts, outline=(255, 255, 255, 14), width=3)
+    img = Image.alpha_composite(img, overlay)
+    mark = logo_mark()
+    size = 460
+    mark = mark.resize((int(mark.width * size / mark.height), size), Image.LANCZOS)
+    glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    glow.paste(mark, ((w - mark.width) // 2, (h - size) // 2), mark)
+    img = Image.alpha_composite(img, glow.filter(ImageFilter.GaussianBlur(18)).point(lambda v: v))
+    img = Image.alpha_composite(img, glow)
+    out = ROOT / "other" / "emscripten" / "background.png"
+    img.convert("RGB").save(out, format="PNG", optimize=True)
+    return [out]
+
+
+def _motif_mask(kind: str, w: int, h: int) -> Image.Image:
+    mask = Image.new("L", (w, h), 0)
+    d = ImageDraw.Draw(mask)
+    cx, cy = w // 2, h // 2
+    if kind == "play_game":
+        d.polygon([(cx - 26, cy - 34), (cx - 26, cy + 34), (cx + 34, cy)], fill=255)
+    elif kind == "settings":
+        d.ellipse([(cx - 26, cy - 26), (cx + 26, cy + 26)], fill=255)
+        for a in np.linspace(0, 2 * np.pi, 9)[:-1]:
+            x = cx + 34 * np.cos(a)
+            y = cy + 34 * np.sin(a)
+            d.ellipse([(x - 9, y - 9), (x + 9, y + 9)], fill=255)
+        d.ellipse([(cx - 12, cy - 12), (cx + 12, cy + 12)], fill=0)
+    elif kind == "editor":
+        d.polygon([(cx - 34, cy + 34), (cx - 22, cy + 10), (cx + 18, cy - 30),
+                   (cx + 32, cy - 16), (cx - 8, cy + 24)], fill=255)
+    elif kind == "demos":
+        d.rounded_rectangle([(cx - 38, cy - 26), (cx + 38, cy + 26)], radius=8, fill=255)
+        for x in range(cx - 30, cx + 31, 20):
+            d.rectangle([(x - 5, cy - 22), (x + 5, cy - 14)], fill=0)
+            d.rectangle([(x - 5, cy + 14), (x + 5, cy + 22)], fill=0)
+    else:  # local_server
+        for i, y in enumerate((-30, -4, 22)):
+            d.rounded_rectangle([(cx - 36, cy + y - 10), (cx + 36, cy + y + 10)], radius=6, fill=255)
+            d.ellipse([(cx - 28, cy + y - 4), (cx - 20, cy + y + 4)], fill=0)
+    return mask
+
+
+def build_menuimages() -> list[pathlib.Path]:
+    produced = []
+    for name in ("play_game", "settings", "editor", "demos", "local_server"):
+        w, h = 512, 128
+        img = h_gradient(w, h, (16, 26, 58), (30, 52, 96))
+        streaks = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        d = ImageDraw.Draw(streaks)
+        for x in range(-40, w, 96):
+            d.polygon([(x, h), (x + 40, 0), (x + 64, 0), (x + 24, h)], fill=(255, 255, 255, 10))
+        img = Image.alpha_composite(img, streaks)
+        mask = _motif_mask(name, 120, 120)
+        motif = gradient_mask(mask)
+        glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        glow.paste(motif, (24, 4), motif)
+        img = Image.alpha_composite(img, glow.filter(ImageFilter.GaussianBlur(10)))
+        img = Image.alpha_composite(img, glow)
+        out = DATA / "menuimages" / f"{name}.png"
+        img.save(out, format="PNG", optimize=True)
+        produced.append(out)
+    return produced
+
+
+def build_community_none() -> list[pathlib.Path]:
+    w, h = 128, 64
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([(2, 2), (w - 3, h - 3)], radius=10, fill=(38, 44, 52, 255))
+    cx, cy = w // 2, h // 2
+    r = 20
+    d.ellipse([(cx - r, cy - r), (cx + r, cy + r)], outline=(168, 176, 184, 255), width=5)
+    d.line([(cx - r * 0.7, cy + r * 0.7), (cx + r * 0.7, cy - r * 0.7)], fill=(168, 176, 184, 255), width=5)
+    out = DATA / "communityicons" / "none.png"
+    img.save(out, format="PNG", optimize=True)
+    return [out]
 
 
 def main() -> int:
@@ -214,6 +369,10 @@ def main() -> int:
     produced += build_icon(SRC / "neonrelay-app-icon-master.png", "NeonRelay")
     produced += build_icon(SRC / "neonrelay-server-icon-master.png", "NeonRelay-Server")
     produced += build_banner()
+    produced += build_dmg_backgrounds()
+    produced += build_emscripten_background()
+    produced += build_menuimages()
+    produced += build_community_none()
     for p in produced:
         print(f"{sha256(p)}  {p.relative_to(ROOT)}")
     return 0

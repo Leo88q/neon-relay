@@ -130,9 +130,15 @@ asset-integrity index has to change):
 | `other/icons/NeonRelay_{16,32,48,256}x…x32.png` | DDNet client icons (author "Ravie", **no license grant** in `other/icons/license.txt`) | original Neon Relay icons |
 | `other/icons/NeonRelay.ico`, `.icns` | DDNet Windows/macOS icons | regenerated from the new artwork |
 | `other/icons/NeonRelay-Server_*`, `.ico`, `.icns` | DDNet server icons | original Neon Relay server icons |
+| `other/dmgbackground.png`, `other/dmgbackground_single.png` | DDRaceNetwork logo + Teeworlds tees (macOS DMG installer background) | original layout: Neon Relay logo, drop-zone rectangles, arrow |
+| `other/emscripten/background.png` | Teeworlds tee characters on a blue pattern | original radial gradient + hexagon lattice + Neon Relay mark |
+| `data/menuimages/{play_game,settings,editor,demos,local_server}.png` | Teeworlds character art | original gradient banners with a per-section motif |
+| `data/communityicons/none.png` | Teeworlds tee silhouette | original neutral placeholder glyph |
 
-Provenance, license and SHA-256 of every replacement are recorded in
-[`ASSET_MANIFEST.csv`](ASSET_MANIFEST.csv). Gameplay assets (maps, skins, sounds, fonts,
+All replacements are produced deterministically by `scripts/build_brand_assets.py` from the
+masters in `assets-src/brand/`. Provenance, license and SHA-256 of every replacement are
+recorded in [`ASSET_MANIFEST.csv`](ASSET_MANIFEST.csv) and enforced by
+`scripts/check_assets.sh`. Gameplay assets (maps, skins, sounds, fonts,
 country flags, mapres, themes, editor resources) are still the upstream ones and are marked
 `action=block-release` until the rights review in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 is completed — they are not shipped in a release build until then
