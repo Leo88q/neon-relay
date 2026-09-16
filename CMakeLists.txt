@@ -2526,6 +2526,14 @@ add_dependencies(game-shared generate_protocol)
 # tidy-alphabetical-end
 list(APPEND TARGETS_OWN engine-gfx engine-shared game-shared)
 
+# Neon Relay: vendored public-domain ed25519-donna (src/engine/external/ed25519),
+# used by the match-event signer and the neonrelay_match_sign tool. REFHASH uses
+# the bundled reference SHA-512 (no OpenSSL dependency); CUSTOMRANDOM avoids
+# openssl/rand.h (the randombytes symbol is never called by our code paths).
+add_library(neonrelay-ed25519 EXCLUDE_FROM_ALL OBJECT src/engine/external/ed25519/ed25519.c)
+target_compile_definitions(neonrelay-ed25519 PRIVATE ED25519_REFHASH ED25519_CUSTOMRANDOM)
+list(APPEND TARGETS_OWN neonrelay-ed25519)
+
 if(DISCORD AND NOT DISCORD_DYNAMIC)
   add_library(discord-shared SHARED IMPORTED)
   set_target_properties(discord-shared PROPERTIES
@@ -3202,7 +3210,8 @@ if(SERVER)
     src/generated/wordlist.h
     # tidy-alphabetical-end
   )
-  set(SERVER_SRC ${ENGINE_SERVER_WITHOUT_MAIN} ${GAME_SERVER} ${GAME_GENERATED_SERVER})
+  list(APPEND GAME_SERVER src/neonrelay/match_signer.cpp)
+  set(SERVER_SRC ${ENGINE_SERVER_WITHOUT_MAIN} ${GAME_SERVER} ${GAME_GENERATED_SERVER} $<TARGET_OBJECTS:neonrelay-ed25519>)
   if(TARGET_OS STREQUAL "windows")
     set(VERSION_EXECUTABLE "${SERVER_EXECUTABLE}")
     set(VERSION_COMPANY "${CLIENT_EXECUTABLE} Team")
@@ -3330,6 +3339,7 @@ if(TOOLS)
     map_replace_image.cpp
     map_resave.cpp
     map_test.cpp
+    neonrelay_match_sign.cpp
     packetgen.cpp
     stun.cpp
     twping.cpp
@@ -3354,6 +3364,10 @@ if(TOOLS)
       endif()
       if(TOOL MATCHES "^config_")
         list(APPEND EXTRA_TOOL_SRC "src/tools/config_common.h")
+      endif()
+      if(TOOL MATCHES "^neonrelay_match_sign$")
+        list(APPEND EXTRA_TOOL_SRC "src/neonrelay/match_signer.cpp")
+        list(APPEND TOOL_DEPS $<TARGET_OBJECTS:neonrelay-ed25519>)
       endif()
       if(TOOL MATCHES "^map_render$")
         list(APPEND TOOL_INCLUDE_DIRS ${PNG_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})

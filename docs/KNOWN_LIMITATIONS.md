@@ -71,3 +71,13 @@ A Neon Relay client starts with default settings (`settings_neonrelay.cfg`) and 
 import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
 legacy user-directory fallbacks in `src/engine/shared/storage.cpp`. Documented behaviour,
 not a defect; a migration wizard is a possible follow-up.
+
+### BL-11 — signed events identify players by in-game name
+Stage-8 match events (`src/game/server/neonrelay_events.cpp`) set `player_id` to the
+client's current in-game name, because the game server has no account system. Names are
+neither unique nor stable, so the reward backend treats `player_id` only as a correlation
+hint: actual payout requires a wallet link (`POST /v1/wallet/link` with a wallet-signed
+challenge, see [`WALLET_AUTH.md`](WALLET_AUTH.md)) and caps are enforced per linked
+player. A future stage should replace the name with a backend-issued player id fetched
+during wallet login. The signing itself is unaffected — signatures cover whatever
+`player_id` the server wrote.

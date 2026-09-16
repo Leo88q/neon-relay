@@ -32,6 +32,14 @@ anti-malleability rule as wallet challenges ([`WALLET_AUTH.md`](WALLET_AUTH.md) 
 
 * `NEONRELAY_SERVER_SIGNING_PUBLIC_KEY` configures the only accepted signer;
   **without it ingestion returns 503** — events are never accepted on trust.
+* The **producer** is the game server itself (stage 8): `CScore::SaveScore` calls
+  `neonrelay::EmitFinishEvent` (`src/game/server/neonrelay_events.cpp`), which
+  signs with `src/neonrelay/match_signer.cpp` over the vendored public-domain
+  ed25519-donna and appends one ingest-format JSONL line to
+  `sv_neonrelay_signing_outfile`. `match_id` is `<game uuid>:<map basename>`,
+  `event_type` is `map_finish`, `amount_micro` is
+  `sv_neonrelay_reward_per_match_micro`. `wallet_binding_id` is left empty —
+  the backend resolves the wallet link from the player record at payout time.
 * `reward_epoch` is assigned by the backend from its own clock at ingestion
   time; clients and servers cannot back-date events into older epochs.
 * `amount_micro` is micro units (1e-6) of the environment's reward mint; devnet
@@ -115,16 +123,45 @@ from stored leaves — anyone can re-derive a root and detect ledger tampering.
 
 ## 8. Key handling
 
-The backend holds **no** signing key of its own in stage 7: it only verifies.
-Stage 8 adds the game-server signer (C++ module, off by default); stage 9 adds
+The backend holds **no** signing key of its own: it only verifies. Stage 9 adds
 the operator authority that signs epoch roots for the program. Treasury/mainnet
 credentials never appear in this repository, its CI variables or its logs.
 
+The game-server signer (stage 8) is **off by default** and inert until an
+operator opts in:
+
+* `sv_neonrelay_signing 1` enables emission; with `0` (default) no code path
+  reads a key or writes a file.
+* `sv_neonrelay_signing_key_file` points at a file containing the Ed25519 seed
+  as 64 hex chars. The seed is read into memory once, never logged, never sent
+  anywhere and never embedded in a binary; the public key (base64url) is logged
+  once at load so it can be copied into
+  `NEONRELAY_SERVER_SIGNING_PUBLIC_KEY`.
+* `sv_neonrelay_signing_outfile` is the append-only JSONL pickup file; the
+  operator ships those lines to `POST /v1/rewards/events` out of band (the game
+  server itself makes no network calls for rewards).
+* Failure modes (missing key file, bad seed, unwritable outfile) are logged
+  once and disable signing — they never crash or block gameplay.
+* `src/tools/neonrelay_match_sign` reproduces the exact signing pipeline from
+  the command line (stdin TSV → ingest JSONL, `--pubkey` prints the public
+  key), used by the test harness and for operator drills.
+
 ## 9. Evidence
 
-`cd backend && npm test` → **27/27 passing** on Node v22.22.3, including:
+`cd backend && npm test` → **30/30 passing** on Node v22.22.3, including:
 forged-signature rejection, duplicate detection, per-match and daily cap
 rejections with reasons, pending→available→claimed balance transitions,
 seal/claim-intent proof verification against the stored root, confirmation
 state machine, and 404/409/403 paths for foreign wallets, unsealed epochs and
 missing operator tokens.
+
+Stage-8 signer evidence: `scripts/neonrelay_signer_test.sh` builds the vendored
+ed25519-donna, `match_signer.cpp` and the CLI tool with plain gcc/g++, signs a
+fixed test vector (including quotes, backslashes and multi-byte UTF-8 in
+`player_id`) and cross-verifies every signature with Node's `node:crypto` —
+the same Ed25519 the backend uses — plus negative tamper checks
+(log: [`baseline/neonrelay-signer-test.log`](baseline/neonrelay-signer-test.log)).
+`backend/test/rewards.crosscheck.test.ts` pins those C++-produced signatures as
+golden vectors and verifies them through the backend's own
+`canonicalEventBytes` + `verifySignature` path, proving both sides agree on the
+signed bytes.

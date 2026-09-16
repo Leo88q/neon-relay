@@ -23,6 +23,7 @@ Verbatim license texts live in [`../licenses/`](../licenses/).
 | `src/engine/external/glew` | Modified BSD (GLEW license) | `src/engine/external/glew/LICENSE.txt` + `important.txt` |
 | `src/engine/external/json-parser` | BSD-2-Clause | `src/engine/external/json-parser/LICENSE` |
 | `src/engine/external/md5` | public domain (Colin Plumb) | `important.txt` |
+| `src/engine/external/ed25519` | public domain (Andrew Moon, ed25519-donna @ `8757bd4`) | `src/engine/external/ed25519/IMPORTANT.txt`; vendored unmodified, built with `ED25519_REFHASH` (bundled reference SHA-512, no OpenSSL) |
 | `src/engine/external/zlib` | zlib license | `important.txt` |
 | Rust crates (`src/rust-bridge`, `ddnet_*` crates) | per-crate SPDX ids | `Cargo.toml` / `Cargo.lock` |
 

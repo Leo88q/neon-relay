@@ -1,0 +1,27 @@
+# Neon Relay match-event signer test
+# date:     2026-09-16T03:04:48Z
+# cc:       gcc (Debian 12.2.0-14+deb12u1) 12.2.0
+# cxx:      g++ (Debian 12.2.0-14+deb12u1) 12.2.0
+# node:     v22.22.3
+# build:    /tmp/neonrelay-signer-test
+
+## build
+  ok    src/engine/external/ed25519/ed25519.c
+  ok    src/neonrelay/match_signer.cpp
+  ok    src/tools/neonrelay_match_sign.cpp
+  ok    linked /tmp/neonrelay-signer-test/neonrelay_match_sign
+
+## sign
+  pubkey (base64url, test-only vector): _1dXXcevi_xNCDfMHOIBe2hqiBRdxVealY40Yv6akI4
+  signed 2 event(s) -> /tmp/neonrelay-signer-test/signed.jsonl
+
+## cross-verify with node:crypto (same Ed25519 as the reward backend)
+  ok    public key matches node:crypto derivation
+  ok    tool emitted 2 signed line(s)
+  ok    line 1: fields round-trip
+  ok    line 1: signature verifies over canonical JSON
+  ok    line 1: tampered amount fails verification
+  ok    line 2: fields round-trip
+  ok    line 2: signature verifies over canonical JSON
+  ok    line 2: tampered amount fails verification
+RESULT: PASS

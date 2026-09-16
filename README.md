@@ -73,7 +73,7 @@ in the documentation is presented as verified when it was not run.
 | Path | Contents |
 | --- | --- |
 | `src/engine`, `src/game`, `src/rust-bridge`, `src/mastersrv`, `src/masterping`, `src/tools`, `src/test` | upstream C++/Rust client, server, protocol, tools and tests |
-| `src/neonrelay/` | **new** server-side module: signed match results (stage 8) |
+| `src/neonrelay/` | **new** server-side modules: wallet event bridge (stage 5), Ed25519 match-event signer (stage 8; vendored public-domain `ed25519-donna` in `src/engine/external/ed25519`, signed events emitted by `src/game/server/neonrelay_events.cpp`, CLI helper `src/tools/neonrelay_match_sign.cpp`) |
 | `android/` | **new** Gradle module for Android / Solana Mobile: wallet adapter, JNI bridge, UI (stage 5) |
 | `backend/` | **new** TypeScript (Node 22) API: wallet auth, reward ledger, epochs, claim intents (stages 6–7) |
 | `onchain/` | **new** Anchor program + TS client/tests: epochs, Merkle root, claim PDAs, pause (stage 9) |

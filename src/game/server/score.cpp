@@ -1,3 +1,4 @@
+#include "neonrelay_events.h"
 #include "score.h"
 
 #include "player.h"
@@ -174,6 +175,9 @@ void CScore::SaveScore(int ClientId, int TimeTicks, const char *pTimestamp, cons
 		return;
 
 	GameServer()->TeehistorianRecordPlayerFinish(ClientId, TimeTicks);
+
+	// Neon Relay: sign the finish for the reward backend (off by default)
+	neonrelay::EmitFinishEvent(GameServer(), ClientId, TimeTicks);
 
 	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientId];
 	if(pCurPlayer->m_ScoreFinishResult != nullptr)

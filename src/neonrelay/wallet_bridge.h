@@ -1,18 +1,18 @@
-/* Neon Relay wallet event bridge.
- *
- * The Android wallet layer (android/app/.../wallet/*.kt, Mobile Wallet Adapter)
- * talks to wallets and to the reward backend. The C++ game code must never see
- * wallet secrets, so only a small, sanitized summary crosses this boundary:
- *
- *   { "connected": 0|1, "account_label": "<display name>",
- *     "public_key_base64": "<base64 of the account public key>",
- *     "error_message": "<short, user-safe text>" }
- *
- * Auth tokens, signatures, challenge payloads and anything else the wallet
- * returns are stripped on the Kotlin side before `neonrelay_wallet_push_event`
- * is called (see android/app/src/main/cpp/neonrelay_wallet_jni.cpp and
- * WalletManager.kt). No private key material ever exists in this process.
- */
+// Neon Relay wallet event bridge.
+//
+// The Android wallet layer (android/app/.../wallet/*.kt, Mobile Wallet Adapter)
+// talks to wallets and to the reward backend. The C++ game code must never see
+// wallet secrets, so only a small, sanitized summary crosses this boundary:
+//
+//   { "connected": 0|1, "account_label": "<display name>",
+//     "public_key_base64": "<base64 of the account public key>",
+//     "error_message": "<short, user-safe text>" }
+//
+// Auth tokens, signatures, challenge payloads and anything else the wallet
+// returns are stripped on the Kotlin side before `neonrelay_wallet_push_event`
+// is called (see android/app/src/main/cpp/neonrelay_wallet_jni.cpp and
+// WalletManager.kt). No private key material ever exists in this process.
+//
 #ifndef NEONRELAY_WALLET_BRIDGE_H
 #define NEONRELAY_WALLET_BRIDGE_H
 
