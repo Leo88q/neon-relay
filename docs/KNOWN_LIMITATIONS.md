@@ -93,6 +93,15 @@ increased."* This is an account-level blocker outside the repository. Once billi
 GitHub → Settings → Billing & plans, re-run with `gh run rerun 35052569158` or push any commit;
 no workflow change is expected to be needed.
 
+### BL-13 — features program has no gameplay producer yet; badge metadata is off-chain
+The stage-11 `neonrelay-features` program (achievements, badges, leaderboards, tournaments)
+is complete as a contract, but nothing in the game server emits achievements yet: an operator
+service must derive them from server-verified data (teehistorian/ledger) and call
+`record_achievement` — integration is future work. Badge tokens carry no on-chain metadata:
+no metaplex/token-metadata crate is vendored because its coordinates could not be verified
+offline (same class as BL-06); names/art are served by the backend until a reviewed dependency
+is added. The program itself shares BL-03 (written, never compiled in the sandbox).
+
 ### BL-11 — signed events identify players by in-game name
 Stage-8 match events (`src/game/server/neonrelay_events.cpp`) set `player_id` to the
 client's current in-game name, because the game server has no account system. Names are

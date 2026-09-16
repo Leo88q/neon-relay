@@ -20,3 +20,27 @@ export const EXPECTED_DECIMALS = 6;
 
 /** Maximum Merkle proof length accepted by `claim`. */
 export const MAX_PROOF_LEN = 32;
+
+/** --- neonrelay-features program (stage 11) --- */
+
+/** PLACEHOLDER program id from Anchor.toml; replace with `anchor keys list` output on deployment. */
+export const FEATURES_PROGRAM_ID_PLACEHOLDER = "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP";
+
+/** PDA seeds of the features program, exactly as in its lib.rs. */
+export const FEATURES_SEEDS = {
+	config: "neonrelay_features_config",
+	achievements: "neonrelay_achievements",
+	badge: "neonrelay_badge",
+	leaderboard: "neonrelay_leaderboard",
+	tournament: "neonrelay_tournament",
+	registration: "neonrelay_registration",
+} as const;
+
+/** Achievement ids are bits in a [u64; 4] bitmap. */
+export const ACHIEVEMENT_BITS = 256;
+
+/** Leaderboard snapshot cap. */
+export const MAX_LEADERBOARD_ENTRIES = 64;
+
+/** Tournament capacity cap. */
+export const MAX_TOURNAMENT_CAPACITY = 65535;

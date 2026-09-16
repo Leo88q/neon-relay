@@ -77,7 +77,7 @@ in the documentation is presented as verified when it was not run.
 | `src/neonrelay/` | **new** server-side modules: wallet event bridge (stage 5), Ed25519 match-event signer (stage 8; vendored public-domain `ed25519-donna` in `src/engine/external/ed25519`, signed events emitted by `src/game/server/neonrelay_events.cpp`, CLI helper `src/tools/neonrelay_match_sign.cpp`) |
 | `android/` | **new** Gradle module for Android / Solana Mobile: wallet adapter, JNI bridge, UI (stage 5) |
 | `backend/` | **new** TypeScript (Node 22) API: wallet auth, reward ledger, epochs, claim intents (stages 6–7) |
-| `onchain/` | **new** Anchor program (epochs, Merkle root publication, claim PDAs, pause, devnet test mints only) + dependency-free TS Merkle mirror and offline tests (stage 9; not compilable in the sandbox — BL-03) |
+| `onchain/` | **new** Anchor programs: rewards (epochs, Merkle roots, claim PDAs, pause, devnet test mints only) and features (achievements, unique supply-1 badges, leaderboards, tournaments) + dependency-free TS mirrors and offline tests (stages 9/11; not compilable in the sandbox — BL-03) |
 | `licenses/` | verbatim third-party license texts referenced by `docs/THIRD_PARTY_NOTICES.md` (stage 4) |
 | `scripts/android/files/**` | upstream Android template, superseded by `android/` |
 | `data/` | game assets: maps, skins, entities, sounds, languages, mapres, themes, editor resources |

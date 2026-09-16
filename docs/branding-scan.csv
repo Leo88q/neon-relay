@@ -1216,7 +1216,7 @@ docs/THIRD_PARTY_NOTICES.md,117,legal-attribution,upstream/third-party license n
 docs/THIRD_PARTY_NOTICES.md,118,legal-attribution,upstream/third-party license notice (must stay),| `data/communityicons/none.png` | Teeworlds tee silhouette | original neutral placeholder |
 docs/THIRD_PARTY_NOTICES.md,122,legal-attribution,upstream/third-party license notice (must stay),"DDNet, DDRaceNetwork and Teeworlds are the marks of the upstream projects. They appear in"
 docs/THREAT_MODEL.md,6,historical-documentation,document that describes the upstream derivation,map exploits) is upstream DDNet's anti-cheat domain and is only covered where
-docs/THREAT_MODEL.md,102,historical-documentation,document that describes the upstream derivation,* Upstream DDNet gameplay anti-cheat robustness.
+docs/THREAT_MODEL.md,104,historical-documentation,document that describes the upstream derivation,* Upstream DDNet gameplay anti-cheat robustness.
 docs/UPSTREAM_AUDIT.md,1,historical-documentation,document that describes the upstream derivation,# Upstream audit — DDNet → Neon Relay
 docs/UPSTREAM_AUDIT.md,7,historical-documentation,document that describes the upstream derivation,| Upstream | https://github.com/ddnet/ddnet |
 docs/UPSTREAM_AUDIT.md,10,historical-documentation,document that describes the upstream derivation,| Tracked files | 1852 + 1 submodule gitlink (`ddnet-libs` @ `c0e6703`) |

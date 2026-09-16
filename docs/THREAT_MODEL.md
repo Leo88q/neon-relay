@@ -82,6 +82,8 @@ after the mitigation.
 | Rogue upgrade drains vault | — | **real residual**: devnet deploy keeps the upgrade authority; checklist item: multisig/renounce before any mainnet consideration |
 | Griefing via pause spam | `set_paused` is authority-only | operator key compromise |
 | Compute exhaustion via huge proofs | `MAX_PROOF_LEN = 32` | none known |
+| Forged achievements / badge inflation (features program) | registry writes are authority-only and idempotent; badge mint requires the recorded bit and a per-(achievement, player) mint PDA with supply 1 | operator-key compromise (same residual as roots) |
+| Tournament griefing (spam registrations) | one registration per (tournament, wallet), capacity bound, free registration moves no funds; cancel frees the slot | sybil wallets filling capacity — bounded, operator can re-open a new tournament id |
 
 ## 7. Supply chain / repository (A6)
 

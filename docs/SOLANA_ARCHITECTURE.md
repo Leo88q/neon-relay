@@ -110,3 +110,22 @@ on a connected machine).
 
 Threats outside the chain (client tampering, wallet-auth phishing, backend
 abuse) are covered in `docs/THREAT_MODEL.md`.
+
+## 7. Features program (`onchain/programs/neonrelay-features`, stage 11)
+
+Non-simulation social/meta features, same trust model (operator authority
+writes curated data; players act only on their own behalf; `set_paused` stops
+player actions). Gameplay itself never touches the chain — this program only
+records facts the server-side pipeline already decided.
+
+| Feature | Accounts / rules |
+| --- | --- |
+| Achievement registry | per-player PDA (`neonrelay_achievements` ‖ wallet), `[u64; 4]` bitmap = 256 ids; operator service records (`create_registry`, idempotent `record_achievement`) from server-verified match data |
+| Badge tokens | a recorded achievement lets **the player** mint one unique collectible: 0-decimal SPL mint PDA (`neonrelay_badge` ‖ id ‖ wallet), supply exactly 1, mint authority = config PDA, second attempt fails on `init` — uniqueness without any external NFT standard; name/art metadata is served off-chain (BL-13: no metaplex dependency is vendored, it could not be verified offline) |
+| Epoch leaderboards | operator publishes a top-N snapshot (≤ 64 `(wallet, score)` rows) per epoch; one-way like reward roots |
+| Tournaments | operator opens a free-registration window (start/end/capacity ≤ 65535); players register (PDA ⇒ one per tournament+wallet, window + capacity enforced, no funds move); cancel frees the slot but re-registration for the same pair is intentionally unsupported |
+
+Client helpers: `onchain/src/achievements.ts` decodes the bitmap with the same
+word/bit arithmetic as the program; `onchain/test/features.test.ts` pins the
+parity plus the authority/uniqueness/pause guards statically (18/18 offline
+tests overall in `onchain/`).

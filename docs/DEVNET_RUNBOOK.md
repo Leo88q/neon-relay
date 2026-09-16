@@ -43,12 +43,13 @@ on-chain root → player claims.
 
 ```bash
 cd onchain
-cargo test -p neonrelay-rewards          # pure-Merkle unit tests + golden leaf
-anchor keys list                         # → real program id
-# put that id into BOTH Anchor.toml [programs.devnet] and lib.rs declare_id!,
-# and into onchain/src/constants.ts PROGRAM_ID_PLACEHOLDER (the conformance
-# test enforces that all three agree)
-anchor build
+cargo test -p neonrelay-rewards -p neonrelay-features   # pure-logic unit tests + golden leaf
+anchor keys list                         # → real program ids (BOTH programs)
+# put each id into Anchor.toml [programs.devnet], the matching lib.rs
+# declare_id!, and onchain/src/constants.ts (PROGRAM_ID_PLACEHOLDER /
+# FEATURES_PROGRAM_ID_PLACEHOLDER) — the conformance tests enforce that all
+# three agree per program
+anchor build                             # builds the whole workspace
 ./scripts/create_test_mint.sh            # → NEONRELAY_TEST_MINT=<devnet mint>
 export NEONRELAY_TEST_MINT=...
 solana airdrop 2                         # devnet SOL for the operator wallet
@@ -72,6 +73,9 @@ await program.methods.initialize()
 
 The mint must have **6 decimals** (`create_test_mint.sh` does); the program
 rejects anything else so that `amount_micro` equals SPL base units.
+
+The features program (stage 11) needs no mint at `initialize` — its authority
+may be the same operator keypair; see `docs/SOLANA_ARCHITECTURE.md` §7.
 
 ## 4. Run the reward backend ✅ (locally) / ⛓️ (hosted)
 
