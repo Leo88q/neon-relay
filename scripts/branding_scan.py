@@ -97,6 +97,8 @@ HISTORICAL_PATH_RES = [
 	re.compile(r"^src/game/client/components/mapimages\.h$"),
 	re.compile(r"^docs/THREAT_MODEL\.md$"),
 	re.compile(r"^docs/RELEASE_CHECKLIST\.md$"),
+	# the final audit report describes the derivation and blockers by name
+	re.compile(r"^docs/FINAL_REPORT\.md$"),
 	re.compile(r"^ci/upstream-reference/"),
 	re.compile(r"^docs/upstream/"),
 	# upstream developer documentation, kept as reference until rewritten

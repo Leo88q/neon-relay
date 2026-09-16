@@ -47,8 +47,8 @@ upstream tree at a pinned commit and has been diverging since — see
 ## Project status
 
 The project is delivered in stages; each stage is a separate, reviewable commit. This
-snapshot is complete through **stage 9**, with stage 10 in progress (CI and the in-game
-Wallet UI are committed; the remaining documents and the final audit report follow).
+snapshot is complete through **stage 10**: every stage is committed, and the final audit is
+[`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md).
 
 | Stage | Content | Status |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ Wallet UI are committed; the remaining documents and the final audit report foll
 | 7 | Reward ledger: idempotency, caps, epochs, Merkle root, `docs/REWARD_SECURITY.md`, `docs/API.md` | ✅ committed |
 | 8 | Server-side match signing (`src/neonrelay/`, vendored ed25519-donna, cross-verified with node:crypto) | ✅ committed |
 | 9 | Solana Anchor program + TS client/tests (`onchain/`; not compilable in the sandbox — BL-03) | ✅ committed |
-| 10 | In-game Wallet UI ✅, CI ✅ (blocked by account billing — BL-12), remaining docs + final audit | 🚧 in progress |
+| 10 | In-game Wallet UI, CI (blocked by account billing — BL-12), threat model, release checklist, Solana architecture + devnet runbook, final report | ✅ committed |
 
 Everything that could not be built or executed in this environment is recorded honestly in
 [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) with the exact command that failed
@@ -154,6 +154,7 @@ the runbooks live in `docs/BUILDING*.md`, `android/README.md` and
 | [`docs/API.md`](docs/API.md) | backend REST contract |
 | [`docs/SOLANA_ARCHITECTURE.md`](docs/SOLANA_ARCHITECTURE.md), [`docs/DEVNET_RUNBOOK.md`](docs/DEVNET_RUNBOOK.md) | Anchor program design and devnet procedure |
 | [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md), [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md), [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) | risk assessment, release gating, honest blocker log |
+| [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md) | final audit: executed evidence, blockers, exact reproduction commands, mock-vs-production statements |
 | [`docs/baseline/`](docs/baseline) | raw build/probe logs recorded before and after edits |
 
 ## License and attribution

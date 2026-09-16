@@ -62,7 +62,7 @@ Dockerfile,56,code/api-identifier,identifier kept for protocol/build compatibili
 README.md,4,historical-documentation,document that describes the upstream derivation,vendored snapshot of [DDRaceNetwork (DDNet)](https://github.com/ddnet/ddnet) and extended
 README.md,20,historical-documentation,document that describes the upstream derivation,| Upstream base | `ddnet/ddnet` @ [`a853d33`](https://github.com/ddnet/ddnet/commit/a853d333ac9e61ebfa2899b4641f8b0658ba60d5) |
 README.md,42,historical-documentation,document that describes the upstream derivation,* **This is not a drop-in replacement for DDNet.** The network protocol version is
-README.md,169,historical-documentation,document that describes the upstream derivation,"* DDNet, DDRaceNetwork and Teeworlds are the names of the upstream projects from which this"
+README.md,170,historical-documentation,document that describes the upstream derivation,"* DDNet, DDRaceNetwork and Teeworlds are the names of the upstream projects from which this"
 UPSTREAM_BASE.md,3,historical-documentation,document that describes the upstream derivation,This repository is a **standalone derivative work** of DDNet. It is not a GitHub
 UPSTREAM_BASE.md,9,historical-documentation,document that describes the upstream derivation,| Upstream repository | https://github.com/ddnet/ddnet |
 UPSTREAM_BASE.md,18,historical-documentation,document that describes the upstream derivation,"| Upstream submodule | `ddnet-libs` → https://github.com/ddnet/ddnet-libs @ `c0e6703fbcdbe03df2f26875427ec3951ce4ec21` (gitlink preserved, content **not** vendored) |"
@@ -1125,6 +1125,9 @@ docs/DEBUGGING.md,41,historical-documentation,document that describes the upstre
 docs/DEBUGGING.md,47,historical-documentation,document that describes the upstream derivation,- Open a terminal in the `ddnet` project folder and run the following:
 docs/DEBUGGING.md,54,historical-documentation,document that describes the upstream derivation,"- Download and unpack the debug symbols archive from https://ddnet.org/downloads/symbols/ with matching git commit revision and platform (win32/win64/win-arm64, steam/non-steam)."
 docs/DEBUGGING.md,57,historical-documentation,document that describes the upstream derivation,- Open a terminal in the `ddnet` project folder and run the following:
+docs/FINAL_REPORT.md,4,historical-documentation,document that describes the upstream derivation,"commercial fork of DDNet targeting Solana Mobile (Seeker), with a"
+docs/FINAL_REPORT.md,18,historical-documentation,document that describes the upstream derivation,"| Standalone base | upstream DDNet `a853d33` imported verbatim, provenance in `UPSTREAM_BASE.md`, no GitHub fork relationship, `upstream` remote only | ✅ |"
+docs/FINAL_REPORT.md,77,historical-documentation,document that describes the upstream derivation,| BL-10 | no settings migration from DDNet | documented behavior + enum-shift note |
 docs/KNOWN_LIMITATIONS.md,78,historical-documentation,document that describes the upstream derivation,import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
 docs/REBRANDING.md,1,historical-documentation,document that describes the upstream derivation,# Rebranding: DDNet → Neon Relay
 docs/REBRANDING.md,7,historical-documentation,document that describes the upstream derivation,* Upstream: https://github.com/ddnet/ddnet @ `a853d333ac9e61ebfa2899b4641f8b0658ba60d5`
@@ -1199,6 +1202,7 @@ docs/REBRANDING.md,156,historical-documentation,document that describes the upst
 docs/REBRANDING.md,157,historical-documentation,document that describes the upstream derivation,"| Data asset file names (`mapres/ddnet_grass.png`, `editor/automap/ddnet_*.rules`, `editor/entities/DDNet.png`, `assets/entities/comfort/ddnet.png`, `mapres/font_teeworlds*.png`) | Referenced by shipped maps, automap rules and the Android a"
 docs/REBRANDING.md,158,historical-documentation,document that describes the upstream derivation,"| Legacy fallback paths (`$APPDATA/DDNet`, `Application Support/DDNet`, `/usr/share/ddnet`, `~/.teeworlds`) | Read-only compatibility so players keep their data. |"
 docs/REBRANDING.md,165,historical-documentation,document that describes the upstream derivation,occurrence of `DDNet|DDraceNetwork|DDrace|Teeworlds|ddnet|teeworlds` (case-insensitive) in
+docs/RELEASE_CHECKLIST.md,22,historical-documentation,document that describes the upstream derivation,- [ ] ✅ No DDNet/Teeworlds marks in user-facing surfaces
 docs/THIRD_PARTY_NOTICES.md,22,legal-attribution,upstream/third-party license notice (must stay),"| DDNet / Teeworlds engine, game, tools, tests | zlib/libpng-style | [`../license.txt`](../license.txt), kept verbatim; upstream authors retain copyright |"
 docs/THIRD_PARTY_NOTICES.md,28,legal-attribution,upstream/third-party license notice (must stay),"| Rust crates (`src/rust-bridge`, `ddnet_*` crates) | per-crate SPDX ids | `Cargo.toml` / `Cargo.lock` |"
 docs/THIRD_PARTY_NOTICES.md,60,legal-attribution,upstream/third-party license notice (must stay),"| `Sunny Side Up.map` | Ravie (grass redrawn from Teeworlds `grass_main`, Apache-2.0) | CC-BY-SA 3.0 | ship |"
@@ -1211,6 +1215,8 @@ docs/THIRD_PARTY_NOTICES.md,116,legal-attribution,upstream/third-party license n
 docs/THIRD_PARTY_NOTICES.md,117,legal-attribution,upstream/third-party license notice (must stay),| `data/menuimages/*.png` (5 files) | Teeworlds character art | original gradient banners with per-section motifs |
 docs/THIRD_PARTY_NOTICES.md,118,legal-attribution,upstream/third-party license notice (must stay),| `data/communityicons/none.png` | Teeworlds tee silhouette | original neutral placeholder |
 docs/THIRD_PARTY_NOTICES.md,122,legal-attribution,upstream/third-party license notice (must stay),"DDNet, DDRaceNetwork and Teeworlds are the marks of the upstream projects. They appear in"
+docs/THREAT_MODEL.md,6,historical-documentation,document that describes the upstream derivation,map exploits) is upstream DDNet's anti-cheat domain and is only covered where
+docs/THREAT_MODEL.md,102,historical-documentation,document that describes the upstream derivation,* Upstream DDNet gameplay anti-cheat robustness.
 docs/UPSTREAM_AUDIT.md,1,historical-documentation,document that describes the upstream derivation,# Upstream audit — DDNet → Neon Relay
 docs/UPSTREAM_AUDIT.md,7,historical-documentation,document that describes the upstream derivation,| Upstream | https://github.com/ddnet/ddnet |
 docs/UPSTREAM_AUDIT.md,10,historical-documentation,document that describes the upstream derivation,| Tracked files | 1852 + 1 submodule gitlink (`ddnet-libs` @ `c0e6703`) |
