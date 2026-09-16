@@ -3186,6 +3186,8 @@ if(SERVER)
     interactions.cpp
     interactions.h
     mutes.cpp
+    neonrelay_events.cpp
+    neonrelay_events.h
     player.cpp
     player.h
     playermapping.cpp
@@ -3266,6 +3268,7 @@ if(SERVER)
       # tidy-alphabetical-sort
       $<TARGET_OBJECTS:engine-shared>
       $<TARGET_OBJECTS:game-shared>
+      $<TARGET_OBJECTS:neonrelay-ed25519>
       $<TARGET_OBJECTS:rust-bridge-shared>
       # tidy-alphabetical-sort
     )
@@ -3279,6 +3282,7 @@ if(SERVER)
       # tidy-alphabetical-sort
       $<TARGET_OBJECTS:engine-shared>
       $<TARGET_OBJECTS:game-shared>
+      $<TARGET_OBJECTS:neonrelay-ed25519>
       $<TARGET_OBJECTS:rust-bridge-shared>
       # tidy-alphabetical-sort
     )
@@ -3545,6 +3549,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     $<TARGET_OBJECTS:engine-shared>
     $<TARGET_OBJECTS:game-server-without-main>
     $<TARGET_OBJECTS:game-shared>
+    $<TARGET_OBJECTS:neonrelay-ed25519>
     $<TARGET_OBJECTS:rust-bridge-shared>
     # tidy-alphabetical-end
     ${DEPS}
