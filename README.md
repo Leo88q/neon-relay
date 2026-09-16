@@ -106,14 +106,36 @@ cmake -GNinja ..
 ninja neonrelay neonrelay-server
 ```
 
-Neon Relay adds two verification scripts that need no toolchain beyond Python 3 and a C++
-compiler:
+Neon Relay adds verification scripts that need no toolchain beyond Python 3, Node 22 and a
+C/C++ compiler:
 
 ```sh
 ./scripts/check_branding.sh --release --check-translations   # branding classification + gate
-./scripts/check_assets.sh                                    # asset manifest integrity
+./scripts/check_assets.sh --licenses                         # asset manifest + license texts
+./scripts/check_secrets.py --self-test && ./scripts/check_secrets.py   # secret scanner
 ./scripts/local_syntax_probe.sh                              # compile probe for the edited sources
+./scripts/neonrelay_signer_test.sh                           # C++ signer vs node:crypto vectors
 ```
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs the same gates on every push and pull request —
+each job mirrors a command that is evidenced locally in `docs/baseline/` and
+`docs/REWARD_SECURITY.md` §9:
+
+| Job | What it runs |
+| --- | --- |
+| `gates` | secret scan (self-test + repo scan), branding scan (release mode) + translation lockstep, asset manifest validation, config/header/tidy hygiene checks |
+| `cpp-syntax-probe` | codegen + C++20 syntax probe of every server/base/shared/game translation unit |
+| `match-signer` | builds the vendored ed25519-donna + signer + CLI tool, signs fixed vectors, cross-verifies with `node:crypto` |
+| `backend` | `cd backend && npm test` (Node 22, zero runtime dependencies) |
+| `onchain` | `cd onchain && npm test` (Merkle parity + Anchor program conformance) |
+
+Full native, Android and Solana builds are deliberately **not** CI jobs: those
+toolchains are documented blockers (`docs/KNOWN_LIMITATIONS.md` BL-01/02/03) and
+the runbooks live in `docs/BUILDING*.md`, `android/README.md` and
+`onchain/README.md`. The upstream workflows are kept, disabled, under
+`ci/upstream-reference/`.
 
 ## Documentation index
 

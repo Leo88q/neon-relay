@@ -1,0 +1,97 @@
+# Neon Relay CI (stage 10).
+#
+# Every gate below mirrors a command that was executed and evidenced locally
+# (docs/REWARD_SECURITY.md §9, docs/baseline/, docs/KNOWN_LIMITATIONS.md).
+# Jobs intentionally do NOT attempt full native/Android/Solana builds: those
+# toolchains are documented blockers (BL-01/BL-02/BL-03) and the honest
+# runbooks live in docs/BUILDING*.md and onchain/README.md.
+name: CI
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Branding scan, asset manifest validation, secret scan and the repository
+  # hygiene checks. Pure Python stdlib + bash; no system packages needed.
+  gates:
+    name: branding / assets / secrets / hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Secret scan (self-test first, so a broken scanner cannot pass)
+        run: |
+          python3 scripts/check_secrets.py --self-test
+          python3 scripts/check_secrets.py
+      - name: Branding scan (release mode) + translation lockstep
+        run: ./scripts/check_branding.sh --release --check-translations
+      - name: Asset manifest validation (coverage, hashes, license texts)
+        run: ./scripts/check_assets.sh --licenses
+      - name: Config variables unused-check
+        run: python3 scripts/check_config_variables.py
+      - name: Header guards
+        run: python3 scripts/check_header_guards.py
+      - name: CMake tidy-alphabetical lists
+        run: python3 scripts/tidy_alphabetical.py
+      - name: Standard C headers
+        run: python3 scripts/check_standard_headers.py
+
+  # Syntax-checks every server/base/shared/game C++ translation unit with the
+  # bundled headers (the full engine build needs SDL2/Vulkan/Rust — BL-01).
+  cpp-syntax-probe:
+    name: C++ syntax probe
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Codegen + translation-unit probe
+        run: ./scripts/local_syntax_probe.sh
+
+  # Builds the vendored ed25519-donna + match signer + CLI tool with plain
+  # gcc/g++, signs fixed vectors and cross-verifies with node:crypto.
+  match-signer:
+    name: match-event signer (C++ <-> node:crypto)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Signer harness
+        run: ./scripts/neonrelay_signer_test.sh
+
+  backend:
+    name: reward backend (node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests (zero runtime dependencies, no install step needed)
+        run: cd backend && npm test
+
+  onchain:
+    name: anchor program offline checks (node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Merkle parity + program conformance tests
+        run: cd onchain && npm test
