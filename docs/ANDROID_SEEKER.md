@@ -125,7 +125,17 @@ is covered by the compile probe (`scripts/local_syntax_probe.sh`, 124 TUs).
 
 ## 7. Status
 
-Implemented here: module skeleton, wallet layer, JNI bridge, native event sink,
-tests, rebranded template (`applicationId com.leo88q.neonrelay`,
-`libneonrelay.so`). Still ahead: challenge/verify round-trip with the backend
-(stage 6), in-game Wallet UI (stage 10), CI job that builds the APK (stage 10).
+Implemented here: module skeleton, wallet layer (including `signChallenge` for
+the backend's wallet-auth flow, `docs/WALLET_AUTH.md`), JNI bridge, native event
+sink, tests, rebranded template (`applicationId com.leo88q.neonrelay`,
+`libneonrelay.so`). The in-game Wallet UI now exists
+(`src/game/client/components/menus_settings_wallet.cpp`, Settings → Wallet): it
+shows the sanitized bridge state (not connected / waiting / connected /
+error), offers connect/disconnect, and states plainly that the wallet is
+optional and that no earnings are guaranteed. Native → Kotlin requests go
+through `neonrelay_wallet_platform_request` (JNI shim, cached `JavaVM` via
+`JNI_OnLoad`) into `NativeBridge.requestWalletConnect/requestWalletDisconnect`.
+Still ahead: wiring the HTTP transport for the challenge/verify round-trip into
+the app (the backend side is live, stage 6) and a CI job that builds the APK
+(blocked by BL-02/BL-12 — no Gradle/Android SDK in the sandbox and GitHub
+Actions billing).

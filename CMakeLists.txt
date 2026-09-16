@@ -2725,6 +2725,7 @@ if(CLIENT)
     components/menus_settings_sound.cpp
     components/menus_settings_tee.cpp
     components/menus_settings_tee7.cpp
+    components/menus_settings_wallet.cpp
     components/menus_start.cpp
     components/menus_start.h
     components/motd.cpp

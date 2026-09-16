@@ -5,6 +5,8 @@
 #include <cstring>
 #include <mutex>
 
+#include <base/detect.h>
+
 namespace {
 
 std::mutex s_mutex;
@@ -104,11 +106,44 @@ void neonrelay_wallet_push_event(int event_type, const char *json)
 			JsonString(json, "error_message", s_info.error_message, sizeof(s_info.error_message));
 			s_info.connected = JsonBool(json, "connected", false) ? 1 : 0;
 		}
+		s_info.requesting = 0;
 		listener = s_listener;
 		user = s_listener_user;
 	}
 	if(listener)
 		listener(event_type, &s_info, user);
+}
+
+#if !defined(CONF_PLATFORM_ANDROID)
+/* Non-Android stub: wallets are only wired up in the Solana Mobile build
+ * (android/app/.../wallet/). Report it as a user-safe error event so the
+ * in-game Wallet page can explain the situation instead of hanging. */
+void neonrelay_wallet_platform_request(int connect)
+{
+	(void)connect;
+	neonrelay_wallet_push_event(NEONRELAY_WALLET_EVENT_ERROR,
+		"{\"connected\": false, \"error_message\": \"Wallet connection is only available in the Neon Relay Android build.\"}");
+}
+#endif
+
+static void RequestWallet(int connect)
+{
+	{
+		std::lock_guard<std::mutex> lock(s_mutex);
+		s_info.requesting = 1;
+		s_info.error_message[0] = '\0';
+	}
+	neonrelay_wallet_platform_request(connect);
+}
+
+void neonrelay_wallet_request_connect(void)
+{
+	RequestWallet(1);
+}
+
+void neonrelay_wallet_request_disconnect(void)
+{
+	RequestWallet(0);
 }
 
 } // extern "C"

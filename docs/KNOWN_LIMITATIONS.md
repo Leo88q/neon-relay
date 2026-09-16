@@ -77,7 +77,11 @@ from the licensors' sites and diffing before shipping.
 A Neon Relay client starts with default settings (`settings_neonrelay.cfg`) and does not
 import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
 legacy user-directory fallbacks in `src/engine/shared/storage.cpp`. Documented behaviour,
-not a defect; a migration wizard is a possible follow-up.
+not a defect; a migration wizard is a possible follow-up. The
+stage-10 Settings → Wallet tab inserts `SETTINGS_WALLET` into the settings-page enum, which
+shifts the meaning of a persisted `ui_settings_page` value for the Credits page (index +1);
+an upgrading player who left the menu on Credits lands on Wallet once. Same BL-10 class:
+documented, cosmetic, no migration.
 
 ### BL-12 — GitHub Actions cannot execute on the repository's account
 `.github/workflows/ci.yml` (stage 10) is committed, parses as valid YAML and every gate it runs

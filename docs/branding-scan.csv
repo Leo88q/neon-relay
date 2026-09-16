@@ -31,21 +31,21 @@ CMakeLists.txt,1707,code/api-identifier,identifier kept for protocol/build compa
 CMakeLists.txt,1719,code/api-identifier,identifier kept for protocol/build compatibility ((editor|mapres|assets|skins7?|maps7?|themes|audi),mapres/font_teeworlds.png
 CMakeLists.txt,1720,code/api-identifier,identifier kept for protocol/build compatibility ((ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|r),mapres/font_teeworlds_alt.png
 CMakeLists.txt,2720,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),components/menus_settings_ddnet.cpp
-CMakeLists.txt,3149,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
-CMakeLists.txt,3150,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
-CMakeLists.txt,3179,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
-CMakeLists.txt,3180,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
-CMakeLists.txt,3611,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
-CMakeLists.txt,3750,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
-CMakeLists.txt,4007,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4009,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4010,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4011,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4012,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4013,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4014,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4015,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,4016,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3150,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
+CMakeLists.txt,3151,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
+CMakeLists.txt,3180,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
+CMakeLists.txt,3181,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
+CMakeLists.txt,3612,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
+CMakeLists.txt,3751,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
+CMakeLists.txt,4008,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4010,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4011,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4012,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4013,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4014,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4015,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4016,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,4017,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
 Cargo.lock,120,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-base"""
 Cargo.lock,124,legal-attribution,upstream/third-party license notice (must stay),"""ddnet-test"","
 Cargo.lock,129,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-engine"""
@@ -62,7 +62,7 @@ Dockerfile,56,code/api-identifier,identifier kept for protocol/build compatibili
 README.md,4,historical-documentation,document that describes the upstream derivation,vendored snapshot of [DDRaceNetwork (DDNet)](https://github.com/ddnet/ddnet) and extended
 README.md,20,historical-documentation,document that describes the upstream derivation,| Upstream base | `ddnet/ddnet` @ [`a853d33`](https://github.com/ddnet/ddnet/commit/a853d333ac9e61ebfa2899b4641f8b0658ba60d5) |
 README.md,42,historical-documentation,document that describes the upstream derivation,* **This is not a drop-in replacement for DDNet.** The network protocol version is
-README.md,168,historical-documentation,document that describes the upstream derivation,"* DDNet, DDRaceNetwork and Teeworlds are the names of the upstream projects from which this"
+README.md,169,historical-documentation,document that describes the upstream derivation,"* DDNet, DDRaceNetwork and Teeworlds are the names of the upstream projects from which this"
 UPSTREAM_BASE.md,3,historical-documentation,document that describes the upstream derivation,This repository is a **standalone derivative work** of DDNet. It is not a GitHub
 UPSTREAM_BASE.md,9,historical-documentation,document that describes the upstream derivation,| Upstream repository | https://github.com/ddnet/ddnet |
 UPSTREAM_BASE.md,18,historical-documentation,document that describes the upstream derivation,"| Upstream submodule | `ddnet-libs` → https://github.com/ddnet/ddnet-libs @ `c0e6703fbcdbe03df2f26875427ec3951ce4ec21` (gitlink preserved, content **not** vendored) |"
@@ -2110,10 +2110,10 @@ src/game/client/components/menus.cpp,2616,code/api-identifier,identifier kept fo
 src/game/client/components/menus.cpp,2629,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
 src/game/client/components/menus.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/menus.h,526,code/api-identifier,brand appears only inside code identifiers,"void RenderServerbrowserDDNetFilter(CUIRect View,"
-src/game/client/components/menus.h,579,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),// found in menus_settings_ddnet.cpp
-src/game/client/components/menus.h,580,code/api-identifier,brand appears only inside code identifiers,void RenderSettingsDDNet(CUIRect MainView);
-src/game/client/components/menus.h,714,code/api-identifier,brand appears only inside code identifiers,"SETTINGS_DDNET,"
-src/game/client/components/menus.h,756,comment,brand appears only in a source comment,// DDRace
+src/game/client/components/menus.h,580,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),// found in menus_settings_ddnet.cpp
+src/game/client/components/menus.h,581,code/api-identifier,brand appears only inside code identifiers,void RenderSettingsDDNet(CUIRect MainView);
+src/game/client/components/menus.h,715,code/api-identifier,brand appears only inside code identifiers,"SETTINGS_DDNET,"
+src/game/client/components/menus.h,758,comment,brand appears only in a source comment,// DDRace
 src/game/client/components/menus_browser.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/menus_browser.cpp,867,code/api-identifier,brand appears only inside code identifiers,"void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,"
 src/game/client/components/menus_browser.cpp,1063,code/api-identifier,brand appears only inside code identifiers,"RenderServerbrowserDDNetFilter(View, ServerBrowser()->CommunitiesFilter(), ItemHeight + 2.0f * Spacing, MaxEntries, EntriesPerRow, s_ScrollRegion, s_vItemIds, true, GetItemName, RenderItem);"
@@ -2126,9 +2126,9 @@ src/game/client/components/menus_ingame.cpp,206,code/api-identifier,brand appear
 src/game/client/components/menus_ingame.cpp,220,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_ReceivedDDNetPlayer && GameClient()->m_Snap.m_pLocalInfo && (ShowDDRaceButtons || !GameClient()->IsTeamPlay()))
 src/game/client/components/menus_ingame.cpp,767,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_GameInfo.m_DDRaceTeam)
 src/game/client/components/menus_settings.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/menus_settings.cpp,108,code/api-identifier,brand appears only inside code identifiers,else if(g_Config.m_UiSettingsPage == SETTINGS_DDNET)
-src/game/client/components/menus_settings.cpp,110,code/api-identifier,identifier kept for protocol/build compatibility (POS_SETTINGS_DDNET),GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_DDNET);
-src/game/client/components/menus_settings.cpp,111,code/api-identifier,brand appears only inside code identifiers,RenderSettingsDDNet(MainView);
+src/game/client/components/menus_settings.cpp,109,code/api-identifier,brand appears only inside code identifiers,else if(g_Config.m_UiSettingsPage == SETTINGS_DDNET)
+src/game/client/components/menus_settings.cpp,111,code/api-identifier,identifier kept for protocol/build compatibility (POS_SETTINGS_DDNET),GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_DDNET);
+src/game/client/components/menus_settings.cpp,112,code/api-identifier,brand appears only inside code identifiers,RenderSettingsDDNet(MainView);
 src/game/client/components/menus_settings_appearance.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/menus_settings_appearance.cpp,118,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),"DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudDDRace, Localize(""Show race HUD""), &g_Config.m_ClShowhudDDRace, &RightView, LineSize);"
 src/game/client/components/menus_settings_appearance.cpp,119,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),if(g_Config.m_ClShowhudDDRace)

@@ -118,10 +118,18 @@ def scan_line(line: str) -> list[str]:
 	return findings
 
 
+# The scanner itself is excluded: its pattern definitions and self-test
+# fixtures are literal credential-shaped strings by construction. Reviewers
+# audit changes to this file directly; every other tracked file is scanned.
+SELF_EXCLUDE = {"scripts/check_secrets.py"}
+
+
 def scan_tree(root: str) -> tuple[list[str], list[str]]:
 	content_findings: list[str] = []
 	path_findings: list[str] = []
 	for rel in tracked_files(root):
+		if rel in SELF_EXCLUDE:
+			continue
 		full = os.path.join(root, rel)
 		if any(p.search(rel) for p in BAD_PATH_PATTERNS):
 			path_findings.append(f"{rel}: credential-shaped file path must not be committed")

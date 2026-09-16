@@ -47,7 +47,8 @@ upstream tree at a pinned commit and has been diverging since — see
 ## Project status
 
 The project is delivered in stages; each stage is a separate, reviewable commit. This
-snapshot is complete through **stage 3 (assets)**; stages 4–9 are in progress.
+snapshot is complete through **stage 9**, with stage 10 in progress (CI and the in-game
+Wallet UI are committed; the remaining documents and the final audit report follow).
 
 | Stage | Content | Status |
 | --- | --- | --- |
@@ -55,13 +56,13 @@ snapshot is complete through **stage 3 (assets)**; stages 4–9 are in progress.
 | 1 | Audit: `docs/UPSTREAM_AUDIT.md` | ✅ committed |
 | 2 | Baseline build evidence, compile probe, upstream CI relocation | ✅ committed |
 | 3 | Rebrand: identity, packaging, user-facing strings, translations, icons | ✅ committed |
-| 4 | Assets: manifest, third-party notices, `scripts/check_assets.sh`, artwork replacement | 🚧 in progress |
-| 5 | Android/Seeker module + Kotlin Mobile Wallet Adapter layer + JNI bridge | ⬜ |
-| 6 | Wallet challenge/verify authentication, session tokens, `docs/WALLET_AUTH.md` | ⬜ |
-| 7 | Reward ledger: idempotency, caps, epochs, Merkle root, `docs/REWARD_SECURITY.md`, `docs/API.md` | ⬜ |
-| 8 | Server-side match signing (`src/neonrelay/`) | ⬜ |
-| 9 | Solana Anchor program + TS client/tests | ⬜ |
-| 10 | In-game Wallet UI, CI/CD, remaining docs, final audit | ⬜ |
+| 4 | Assets: manifest, third-party notices, `scripts/check_assets.sh`, artwork replacement | ✅ committed |
+| 5 | Android/Seeker module + Kotlin Mobile Wallet Adapter layer + JNI bridge | ✅ committed |
+| 6 | Wallet challenge/verify authentication, session tokens, `docs/WALLET_AUTH.md` | ✅ committed |
+| 7 | Reward ledger: idempotency, caps, epochs, Merkle root, `docs/REWARD_SECURITY.md`, `docs/API.md` | ✅ committed |
+| 8 | Server-side match signing (`src/neonrelay/`, vendored ed25519-donna, cross-verified with node:crypto) | ✅ committed |
+| 9 | Solana Anchor program + TS client/tests (`onchain/`; not compilable in the sandbox — BL-03) | ✅ committed |
+| 10 | In-game Wallet UI ✅, CI ✅ (blocked by account billing — BL-12), remaining docs + final audit | 🚧 in progress |
 
 Everything that could not be built or executed in this environment is recorded honestly in
 [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) with the exact command that failed

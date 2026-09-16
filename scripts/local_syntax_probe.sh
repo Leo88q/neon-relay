@@ -140,6 +140,7 @@ src/game/client/components/menus_settings_credits.cpp
 src/game/client/components/menus_settings_language.cpp
 src/game/client/components/menus_settings_appearance.cpp
 src/game/client/components/menus_settings_ddnet.cpp
+src/game/client/components/menus_settings_wallet.cpp
 src/game/client/components/menus_start.cpp
 src/game/client/components/voting.cpp
 src/game/editor/explanations.cpp

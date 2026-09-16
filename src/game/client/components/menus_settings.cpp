@@ -51,6 +51,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("Sound"),
 		Localize("Neon Relay"),
 		Localize("Assets"),
+		Localize("Wallet"),
 		Localize("Credits")};
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
 
@@ -114,6 +115,12 @@ void CMenus::RenderSettings(CUIRect MainView)
 	{
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ASSETS);
 		RenderSettingsAssets(MainView);
+	}
+	else if(g_Config.m_UiSettingsPage == SETTINGS_WALLET)
+	{
+		// no dedicated background position; reuse the assets framing
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ASSETS);
+		RenderSettingsWallet(MainView);
 	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_CREDITS)
 	{

@@ -33,6 +33,9 @@ typedef struct NeonRelayWalletInfo
 	char public_key_base64[64];
 	char error_message[128];
 	int connected;
+	/* 1 while a connect/disconnect request is waiting for the wallet layer to
+	 * answer with an event; reset by every pushed event. */
+	int requesting;
 } NeonRelayWalletInfo;
 
 typedef void (*NeonRelayWalletListener)(int event_type, const NeonRelayWalletInfo *info, void *user);
@@ -46,6 +49,18 @@ const NeonRelayWalletInfo *neonrelay_wallet_info(void);
 /* Platform entry point (Android JNI shim). `json` must contain only the four
  * sanitized fields documented above. */
 void neonrelay_wallet_push_event(int event_type, const char *json);
+
+/* Ask the platform wallet layer to connect/disconnect (in-game Wallet
+ * settings page). Android: forwarded to NativeBridge.kt via JNI. Other
+ * platforms: reports a user-safe "Android build only" error event. The result
+ * always arrives later through neonrelay_wallet_push_event. */
+void neonrelay_wallet_request_connect(void);
+void neonrelay_wallet_request_disconnect(void);
+
+/* Implemented per platform: Android in android/app/src/main/cpp/
+ * neonrelay_wallet_jni.cpp, other platforms by a stub inside
+ * wallet_bridge.cpp. connect: 1 = connect, 0 = disconnect. */
+void neonrelay_wallet_platform_request(int connect);
 
 #ifdef __cplusplus
 }
