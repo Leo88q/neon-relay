@@ -47,7 +47,7 @@ int CGameClient::TranslateSnap(CSnapshotBuffer *pSnapDstSix, CSnapshot *pSnapSrc
 			if(!pRawObj)
 			{
 				if(ItemType != UUID_UNKNOWN)
-					dbg_msg("sixup", "dropped weird ddnet ex object '%s' (%d), failed on '%s'", GetNetObjHandler()->GetObjName(ItemType), ItemType, GetNetObjHandler()->FailedObjOn());
+					dbg_msg("sixup", "dropped weird extended object '%s' (%d), failed on '%s'", GetNetObjHandler()->GetObjName(ItemType), ItemType, GetNetObjHandler()->FailedObjOn());
 				continue;
 			}
 			const int ItemSize = GetNetObjHandler()->GetUnpackedObjSize(ItemType);

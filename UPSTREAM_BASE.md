@@ -73,15 +73,16 @@ Ordered by stage; each stage is a separate commit on branch `arena/01a0a751-neon
 | # | Stage | What changed |
 | --- | --- | --- |
 | 0 | Baseline import | Verbatim snapshot of upstream `a853d33`, plus this file. |
-| 1 | Repository metadata & audit | `docs/UPSTREAM_AUDIT.md`, baseline logs, CI relocation to `ci/upstream-reference/`. |
-| 2 | Rebrand | Project/executable/Docker/CI/desktop-entry names, `GAME_NAME`, translated strings, `docs/REBRANDING.md`, `scripts/check_branding.sh`. |
-| 3 | Assets | `docs/ASSET_MANIFEST.csv`, `docs/THIRD_PARTY_NOTICES.md`, `licenses/`, `scripts/check_assets.sh`, replacement of trademark artwork. |
-| 4 | Android wallet layer | `android/` Gradle module, `wallet/*.kt` (Mobile Wallet Adapter), JNI bridge, C++ event surface. |
-| 5 | Wallet authentication | `backend/` challenge/verify flow, Ed25519 verification, session tokens, `docs/WALLET_AUTH.md`. |
-| 6 | Reward ledger | `backend/` idempotent ledger, caps, epochs, Merkle root, `docs/REWARD_SECURITY.md`, `docs/API.md`. |
-| 7 | Server-signed match events | `src/neonrelay/` (server-side signing module, off by default) + local unit test harness. |
-| 8 | Solana program | `onchain/` Anchor program, TS client/tests, `docs/SOLANA_ARCHITECTURE.md`, `docs/DEVNET_RUNBOOK.md`. |
-| 9 | UI, CI/CD, docs, audit | Menu/settings wallet screens, `.github/workflows/`, remaining docs, final audit. |
+| 1 | Repository metadata & audit | `docs/UPSTREAM_AUDIT.md`: provenance, license inventory, integration points. |
+| 2 | Baseline build evidence | `docs/baseline/` configure + probe logs, `scripts/local_syntax_probe.sh`, upstream CI relocated to `ci/upstream-reference/`. |
+| 3 | Rebrand | Project/executable/Docker/desktop-entry names, `GAME_NAME`, user-facing strings, translations, icons, `docs/REBRANDING.md`, `scripts/check_branding.sh`. |
+| 4 | Assets | `docs/ASSET_MANIFEST.csv`, `docs/THIRD_PARTY_NOTICES.md`, `licenses/`, `scripts/check_assets.sh`, replacement of trademark artwork. |
+| 5 | Android wallet layer | `android/` Gradle module, `wallet/*.kt` (Mobile Wallet Adapter), JNI bridge, C++ event surface. |
+| 6 | Wallet authentication | `backend/` challenge/verify flow, Ed25519 verification, session tokens, `docs/WALLET_AUTH.md`. |
+| 7 | Reward ledger | `backend/` idempotent ledger, caps, epochs, Merkle root, `docs/REWARD_SECURITY.md`, `docs/API.md`. |
+| 8 | Server-signed match events | `src/neonrelay/` (server-side signing module, off by default) + local unit test harness. |
+| 9 | Solana program | `onchain/` Anchor program, TS client/tests, `docs/SOLANA_ARCHITECTURE.md`, `docs/DEVNET_RUNBOOK.md`. |
+| 10 | UI, CI/CD, docs, audit | Menu/settings wallet screens, `.github/workflows/`, remaining docs, final audit. |
 
 ## Assets: removed / replaced / kept
 

@@ -475,7 +475,7 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 	static CButtonContainer s_SkinDatabaseButton;
 	if(DoButton_Menu(&s_SkinDatabaseButton, Localize("Skin Database"), 0, &DatabaseButton))
 	{
-		Client()->ViewLink("https://ddnet.org/skins/");
+		Client()->ViewLink("https://github.com/Leo88q/neon-relay/tree/main/data/skins");
 	}
 
 	static CButtonContainer s_DirectoryButton;

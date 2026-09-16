@@ -61,7 +61,7 @@ void runServer()
 	NSArray *pArguments = [NSArray new];
 
 	NSAlert *pAlert = [[[NSAlert alloc] init] autorelease];
-	[pAlert setMessageText: @"Run DDNet Server"];
+	[pAlert setMessageText: @"Run Neon Relay Server"];
 	[pAlert addButtonWithTitle: @"Use default config"];
 	[pAlert addButtonWithTitle: @"Select config"];
 	[pAlert addButtonWithTitle: @"Cancel"];
@@ -97,7 +97,7 @@ void runServer()
 		backing: NSBackingStoreBuffered
 		defer: NO];
 
-	[pWindow setTitle: @"DDNet Server"];
+	[pWindow setTitle: @"Neon Relay Server"];
 
 	pView = [[[ServerView alloc] initWithFrame: GraphicsRect] autorelease];
 	[pView setEditable: NO];
@@ -109,7 +109,7 @@ void runServer()
 	[pWindow makeKeyAndOrderFront: nil];
 
 	[pView listenTo: pTask];
-	[pTask setLaunchPath: [pMainBundle pathForAuxiliaryExecutable: @"DDNet-Server"]];
+	[pTask setLaunchPath: [pMainBundle pathForAuxiliaryExecutable: @"neonrelay-server"]];
 	[pTask setArguments: pArguments];
 	[pTask launch];
 	[NSApp run];

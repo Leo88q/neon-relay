@@ -1032,7 +1032,7 @@ Assets directory
 == 资源目录
 
 https://github.com/Leo88q/neon-relay
-== https://chat.teeworlds.cn/
+== https://github.com/Leo88q/neon-relay
 
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
 == 纹理文件 %s 的宽度无法被 %d 整除，或者高度无法被 %d 整除，这可能会导致显示错误。

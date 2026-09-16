@@ -15,7 +15,7 @@ REGISTER_QUICK_ACTION(
 	ALWAYS_FALSE,
 	ALWAYS_FALSE,
 	DEFAULT_BTN,
-	"[F1] Open the DDNet Wiki page for the map editor in a web browser.")
+	"[F1] Open the Neon Relay documentation for the map editor in a web browser.")
 REGISTER_QUICK_ACTION(
 	Exit,
 	"Exit",

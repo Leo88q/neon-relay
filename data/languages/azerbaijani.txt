@@ -1964,7 +1964,7 @@ Active: Hook
 == Aktiv: Qarmaq
 
 "%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
-== "%s" pnglite ilə uyğun gəlmir və köhnə DDnet versiyaları tərəfindən yüklənə bilmir.
+== "%s" pnglite ilə uyğun gəlmir və köhnə Neon Relay versiyaları tərəfindən yüklənə bilmir.
 
 [Spectating Camera Mode Icon]
 AUTO

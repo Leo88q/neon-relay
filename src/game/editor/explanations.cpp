@@ -347,19 +347,19 @@ const char *CExplanations::ExplainDDNet(int Tile, int Layer)
 		break;
 	case ENTITY_OFFSET + ENTITY_SPAWN_RED:
 		if(Layer == LAYER_GAME || Layer == LAYER_FRONT)
-			return "SPAWN: Red team members spawn here, same as normal spawn in DDRace.";
+			return "SPAWN: Red team members spawn here, same as a normal race spawn.";
 		break;
 	case ENTITY_OFFSET + ENTITY_SPAWN_BLUE:
 		if(Layer == LAYER_GAME || Layer == LAYER_FRONT)
-			return "SPAWN: Blue team members spawn here, same as normal spawn in DDRace.";
+			return "SPAWN: Blue team members spawn here, same as a normal race spawn.";
 		break;
 	case ENTITY_OFFSET + ENTITY_FLAGSTAND_RED:
 		if(Layer == LAYER_GAME || Layer == LAYER_FRONT)
-			return "FLAG: Not used in DDRace. Place where red team flag is.";
+			return "FLAG: Not used in race maps. Place where the red team flag is.";
 		break;
 	case ENTITY_OFFSET + ENTITY_FLAGSTAND_BLUE:
 		if(Layer == LAYER_GAME || Layer == LAYER_FRONT)
-			return "FLAG: Not used in DDRace. Place where blue team flag is.";
+			return "FLAG: Not used in race maps. Place where the blue team flag is.";
 		break;
 	case ENTITY_OFFSET + ENTITY_ARMOR_1:
 		if(Layer == LAYER_GAME || Layer == LAYER_FRONT || Layer == LAYER_SWITCH)

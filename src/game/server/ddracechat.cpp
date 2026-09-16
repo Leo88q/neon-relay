@@ -19,16 +19,15 @@
 
 void CGameContext::ConInfo(IConsole::IResult *pResult, void *pUserData)
 {
-	log_info("chatresp", "DDraceNetwork Mod. Version: " GAME_VERSION);
+	log_info("chatresp", "Neon Relay server. Version: " GAME_VERSION);
 	if(GIT_SHORTREV_HASH)
 	{
 		char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), "Git revision hash: %s", GIT_SHORTREV_HASH);
 		log_info("chatresp", "%s", aBuf);
 	}
-	log_info("chatresp", "Official site: DDNet.org");
+	log_info("chatresp", "Project: https://github.com/Leo88q/neon-relay");
 	log_info("chatresp", "For more info: /cmdlist");
-	log_info("chatresp", "Or visit DDNet.org");
 }
 
 void CGameContext::ConList(IConsole::IResult *pResult, void *pUserData)
@@ -142,7 +141,7 @@ void CGameContext::ConSettings(IConsole::IResult *pResult, void *pUserData)
 		else if(str_comp_nocase(pArg, "oldlaser") == 0)
 		{
 			log_info("chatresp", g_Config.m_SvOldLaser ?
-						     "Lasers can hit you if you shot them and they pull you towards the bounce origin (Like DDRace Beta)" :
+						     "Lasers can hit you if you shot them and they pull you towards the bounce origin (like in older race versions)" :
 						     "Lasers can't hit you if you shot them, and they pull others towards the shooter");
 		}
 		else if(str_comp_nocase(pArg, "timeout") == 0)

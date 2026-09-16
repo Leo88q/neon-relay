@@ -56,11 +56,12 @@ testrunner\[1\]_include.cmake
 local.properties
 
 # Ignore all the generated executables without extensions (for non-Windows
-# systems).
-DDNet
-!DDNet/
-DDNet-Server
-DDNet-Server-Launcher
+# systems). The `!…/` rules re-include directories that happen to share the name
+# (for example the `src/neonrelay/` module), so their contents stay tracked.
+neonrelay
+!neonrelay/
+neonrelay-server
+neonrelay-server-Launcher
 libsteam_api.a
 config_retrieve
 config_store
@@ -118,8 +119,8 @@ cscope.files
 cscope.out
 out
 tags
-# don't ignore this, it's used for the vscode workspace that ddnet provides
-!ddnet-cmake-tools-kits.json
+# don't ignore this, it's used for the vscode workspace that Neon Relay provides
+!neonrelay-cmake-tools-kits.json
 
 # tidy-alphabetical-start
 *.a
@@ -157,3 +158,7 @@ tags
 *.vcxproj
 *.zip
 # tidy-alphabetical-end
+
+# Neon Relay keeps generated reports and build evidence under docs/
+!docs/*.csv
+!docs/baseline/*.log

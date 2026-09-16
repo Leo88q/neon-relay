@@ -1064,7 +1064,7 @@ Enable game sounds
 == Уключыць гукі гульні
 
 Enable gun sound
-== Уключыць гук пісталета (толькі для DDRace)
+== Уключыць гук пісталета (толькі для race)
 
 Enable long pain sound (used when shooting in freeze)
 == Уключыць доўгі гук болю (выкарыстоўваецца пры стральбе ў замарозцы)
@@ -1103,7 +1103,7 @@ Assets
 == Тэкстуры
 
 Neon Relay needs to be restarted to complete the update!
-== Патрабуецца перазапусціць кліент DDnet для завяршэння абнаўлення!
+== Патрабуецца перазапусціць кліент Neon Relay для завяршэння абнаўлення!
 
 HUD
 == HUD

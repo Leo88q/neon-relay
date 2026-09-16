@@ -515,7 +515,7 @@ void CNetServer::OnTokenCtrlMsg(NETADDR &Addr, int ControlMsg, const CNetPacketC
 		SendControl(Addr, NET_CTRLMSG_CONNECTACCEPT, SECURITY_TOKEN_MAGIC, sizeof(SECURITY_TOKEN_MAGIC), Token);
 
 		if(g_Config.m_Debug && Slot != -1)
-			dbg_msg("security", "client %d wants to reconnect (ddnet)", Slot);
+			dbg_msg("security", "client %d wants to reconnect (relay token)", Slot);
 	}
 	else if(ControlMsg == NET_CTRLMSG_ACCEPT)
 	{
@@ -525,7 +525,7 @@ void CNetServer::OnTokenCtrlMsg(NETADDR &Addr, int ControlMsg, const CNetPacketC
 			// correct token
 			// try to accept client
 			if(g_Config.m_Debug)
-				dbg_msg("security", "new client (ddnet token)");
+				dbg_msg("security", "new client (relay token)");
 			TryAcceptClient(Addr, Token, Slot);
 		}
 		else

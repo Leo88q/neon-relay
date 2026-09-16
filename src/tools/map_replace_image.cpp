@@ -18,7 +18,7 @@
 
 /*
 	Usage: map_replace_image <source map filepath> <dest map filepath> <current image name> <new image filepath>
-	Notes: map filepath must be relative to user default teeworlds folder
+	Notes: map filepath must be relative to the user data folder
 		new image filepath must be absolute or relative to the current position
 */
 
@@ -78,7 +78,7 @@ int main(int argc, const char **argv)
 	{
 		dbg_msg("map_replace_image", "Invalid arguments");
 		dbg_msg("map_replace_image", "Usage: map_replace_image <source map filepath> <dest map filepath> <current image name> <new image filepath>");
-		dbg_msg("map_replace_image", "Notes: map filepath must be relative to user default teeworlds folder");
+		dbg_msg("map_replace_image", "Notes: map filepath must be relative to the user data folder");
 		dbg_msg("map_replace_image", "       new image filepath must be absolute or relative to the current position");
 		return -1;
 	}

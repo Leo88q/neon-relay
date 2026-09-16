@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import argparse
 import lzma
+import os
 import re
 import shutil
 import subprocess
@@ -15,7 +16,13 @@ import urllib.parse
 import urllib.request
 
 # TODO: 2027 or later: remove backwards compatibility for parsing filename without version and architecture
-CRASH_FILENAME_PATTERN = re.compile(r"(DDNet|DDNet-Server)(_([0-9\.\-]+))?_((win32|win64)(-steam)?)(_([a-zA-Z0-9]+))?_crash_log_([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2})_([0-9]+)_([0-9A-Fa-f]*)")
+# Debug symbol archives are published as release assets of this repository.
+# Override with the NEONRELAY_SYMBOLS_URL environment variable if you host them elsewhere.
+SYMBOLS_BASE_URL = os.environ.get(
+	"NEONRELAY_SYMBOLS_URL", "https://github.com/Leo88q/neon-relay/releases/download/symbols/"
+)
+
+CRASH_FILENAME_PATTERN = re.compile(r"(neonrelay|neonrelay-server|DDNet|DDNet-Server)(_([0-9\.\-]+))?_((win32|win64)(-steam)?)(_([a-zA-Z0-9]+))?_crash_log_([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2})_([0-9]+)_([0-9A-Fa-f]*)")
 IMAGE_BASE_PATTERN = re.compile(r"^ImageBase\s+([0-9A-Fa-f]+)$", re.MULTILINE)
 DATE_TIME_PATTERN = re.compile(r"^Error occurred on (.+)\.$")
 ERROR_MESSAGE_PATTERN = re.compile(r"^.+?\.exe caused .+\.$")
@@ -94,8 +101,8 @@ def download_symbols_executable(parsed_filename: ParsedFilename | None) -> Path:
 	if not parsed_filename:
 		raise RuntimeError("Executable containing debug symbols cannot be identified, because the crash log filename has an unexpected format.\nMake sure to keep the original filename of the crash log, or specify the executable manually with the `--executable` parameter.")
 
-	if parsed_filename.executable not in ["DDNet", "DDNet-Server"]:
-		raise RuntimeError("Executable containing debug symbols cannot be identified. Only official releases of DDNet and DDNet-Server have downloadable debug symbols.\nSpecify the executable manually with the `--executable` parameter if you have it.")
+	if parsed_filename.executable not in ["neonrelay", "neonrelay-server", "DDNet", "DDNet-Server"]:
+		raise RuntimeError("Executable containing debug symbols cannot be identified. Only official releases of neonrelay and neonrelay-server have downloadable debug symbols.\nSpecify the executable manually with the `--executable` parameter if you have it.")
 
 	# TODO: 2027 or later: remove backwards compatibility for parsing filename without version and architecture
 	if not parsed_filename.version:
@@ -113,12 +120,12 @@ def download_symbols_executable(parsed_filename: ParsedFilename | None) -> Path:
 
 	symbols_cache_path = Path(__file__).resolve().parent / "drmingw_symbols_cache"
 	symbols_cache_path.mkdir(exist_ok=True)
-	symbols_folder_name = f"DDNet-{parsed_filename.version}-{symbols_platform_string}-{parsed_filename.commit}-symbols"
+	symbols_folder_name = f"NeonRelay-{parsed_filename.version}-{symbols_platform_string}-{parsed_filename.commit}-symbols"
 	symbols_folder_path = symbols_cache_path / symbols_folder_name
 	if not symbols_folder_path.is_dir():
 		symbols_archive_name = f"{symbols_folder_name}.tar.xz"
 		archive_path = symbols_cache_path / symbols_archive_name
-		symbols_url = urllib.parse.urljoin("https://ddnet.org/downloads/symbols/", symbols_archive_name)
+		symbols_url = urllib.parse.urljoin(SYMBOLS_BASE_URL, symbols_archive_name)
 		print(f"Downloading symbols from {symbols_url}")
 		try:
 			urllib.request.urlretrieve(symbols_url, archive_path)
@@ -129,7 +136,7 @@ def download_symbols_executable(parsed_filename: ParsedFilename | None) -> Path:
 		try:
 			with lzma.open(archive_path) as file:
 				with tarfile.open(fileobj=file) as tar:
-					for executable in ["DDNet.exe", "DDNet-Server.exe"]:
+					for executable in ["neonrelay.exe", "neonrelay-server.exe"]:
 						tar.extract(executable, path=symbols_folder_path, filter="data")
 		except Exception as error:
 			shutil.rmtree(symbols_folder_path, ignore_errors=True)

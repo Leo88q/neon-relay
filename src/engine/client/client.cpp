@@ -3231,17 +3231,17 @@ void CClient::Run()
 			log_error("client", "Failed to initialize the graphics (see details above)");
 			const std::string Message = std::string(
 							    "Failed to initialize the graphics. See details below.\n\n"
-							    "For detailed troubleshooting instructions please read our Wiki:\n"
-							    "https://wiki.ddnet.org/wiki/GFX_Troubleshooting\n\n") +
+							    "For detailed troubleshooting instructions please read the debugging guide:\n"
+							    "https://github.com/Leo88q/neon-relay/blob/main/docs/DEBUGGING.md\n\n") +
 						    MemoryLogger.ConcatenatedLines();
 			const std::vector<IGraphics::CMessageBoxButton> vButtons = {
-				{.m_pLabel = "Show Wiki"},
+				{.m_pLabel = "Show guide"},
 				{.m_pLabel = "OK", .m_Confirm = true, .m_Cancel = true},
 			};
 			const std::optional<int> MessageResult = ShowMessageBox({.m_pTitle = "Graphics Initialization Error", .m_pMessage = Message.c_str(), .m_vButtons = vButtons});
 			if(MessageResult && *MessageResult == 0)
 			{
-				ViewLink("https://wiki.ddnet.org/wiki/GFX_Troubleshooting");
+				ViewLink("https://github.com/Leo88q/neon-relay/blob/main/docs/DEBUGGING.md");
 			}
 			return;
 		}
@@ -4954,8 +4954,8 @@ int main(int argc, const char **argv)
 			pPreamble =
 				"A graphics error occurred. Please see details and instructions below.\n\n";
 			pPostamble =
-				"For detailed troubleshooting instructions please read our Wiki:\n"
-				"https://wiki.ddnet.org/wiki/GFX_Troubleshooting\n\n"
+				"For detailed troubleshooting instructions please read the debugging guide:\n"
+				"https://github.com/Leo88q/neon-relay/blob/main/docs/DEBUGGING.md\n\n"
 				"If this did not resolve the issue, please take a screenshot and report this error.\n"
 				"Please also share the assert log"
 #if defined(CONF_CRASHDUMP)
@@ -5043,7 +5043,7 @@ int main(int argc, const char **argv)
 		const std::optional<int> MessageResult = pClient->ShowMessageBox({.m_pTitle = pTitle, .m_pMessage = aMessage, .m_vButtons = vButtons});
 		if(GotGraphicsError && MessageResult && *MessageResult == 0)
 		{
-			pClient->ViewLink("https://wiki.ddnet.org/wiki/GFX_Troubleshooting");
+			pClient->ViewLink("https://github.com/Leo88q/neon-relay/blob/main/docs/DEBUGGING.md");
 		}
 #if !defined(CONF_PLATFORM_ANDROID)
 		if(pClient->Storage() != nullptr && MessageResult && *MessageResult == (GotGraphicsError ? 1 : 0))

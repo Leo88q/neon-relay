@@ -77,20 +77,29 @@ LEGAL_PATH_RES = [
 HISTORICAL_PATH_RES = [
 	re.compile(r"^UPSTREAM_BASE\.md$"),
 	re.compile(r"^docs/UPSTREAM_AUDIT\.md$"),
-	re.compile(r"^docs/REBRANDING\.md$"),
 	re.compile(r"^docs/KNOWN_LIMITATIONS\.md$"),
 	re.compile(r"^docs/baseline/"),
 	re.compile(r"^man/"),
 	re.compile(r"^README\.md$"),
 	re.compile(r"^scripts/(check_assets|check_branding|check_secrets|local_syntax_probe)\.sh$"),
 	re.compile(r"^docs/(SOLANA_ARCHITECTURE|ANDROID_SEEKER|WALLET_AUTH|REWARD_SECURITY|API|DEVNET_RUNBOOK)\.md$"),
+	re.compile(r"^\.github/pull_request_template\.md$"),
+	re.compile(r"^scripts/languages/README\.md$"),
+	re.compile(r"^src/mastersrv/"),
+	re.compile(r"^src/masterping/"),
+	re.compile(r"^other/config_directory\.(sh|bat)$"),
+	re.compile(r"^docs/REBRANDING\.md$"),
+	# the credits screen keeps upstream attribution on purpose (allowed by the
+	# rebranding policy: legal/credits documentation may name the upstream project)
+	re.compile(r"^src/game/client/components/menus_settings_credits\.cpp$"),
+	# entities image names shipped in data/editor/entities
+	re.compile(r"^src/game/client/components/mapimages\.h$"),
 	re.compile(r"^docs/THREAT_MODEL\.md$"),
 	re.compile(r"^docs/RELEASE_CHECKLIST\.md$"),
 	re.compile(r"^ci/upstream-reference/"),
 	re.compile(r"^docs/upstream/"),
 	# upstream developer documentation, kept as reference until rewritten
 	re.compile(r"^docs/(BUILDING|BUILDING-android|BUILDING-ios|BUILDING-emscripten|DEBUGGING|CONTRIBUTING|DATABASE|BENCHMARKING)\.md$"),
-	re.compile(r"^other/vscode/"),
 	re.compile(r"^\.clang-tidy$|^\.typos\.toml$|^codecov\.yml$|^deny\.toml$|^Doxyfile$"),
 	re.compile(r"^formatting-revs\.txt$"),
 ]
@@ -126,6 +135,9 @@ CODE_PATH_RES = [
 # Line based rules: code / API identifiers that must not be renamed
 # ---------------------------------------------------------------------------
 CODE_IDENTIFIER_RES = [
+	# the crash-log tool still accepts the upstream executable names so that crash
+	# logs produced by an older DDNet installation stay diagnosable
+	re.compile(r'^\s*if parsed_filename\.executable not in \["neonrelay"'),
 	# name-based UUIDs (protocol, teehistorian, mapbugs) — renaming changes the UUID
 	re.compile(r"@ddnet\.(org|tw)"),
 	re.compile(r"\bUUID\("),
@@ -173,6 +185,10 @@ CODE_IDENTIFIER_RES = [
 	# upstream file headers (Teeworlds copyright line)
 	re.compile(r"acquire a complete release at teeworlds\.com"),
 	re.compile(r"\(c\) Magnus Auvinen"),
+	# attribution lines (translator credits, upstream author names)
+	re.compile(r"překlad od|translation by|Translated by|TeeWorlds-org", re.IGNORECASE),
+	# the 0.6/0.7 protocol generations are named after the original game
+	re.compile(r"\b(Teeworlds|Teeworlds 0\.7|0\.6|0\.7)\b.*(format|protocol|version|compat)", re.IGNORECASE),
 	# legacy compatibility paths/URLs we intentionally still accept
 	re.compile(r"CONNECTLINK_LEGACY"),
 	re.compile(r'"(DDNet|Teeworlds)"\s*,?\s*(//.*)?$'),
@@ -180,6 +196,17 @@ CODE_IDENTIFIER_RES = [
 	re.compile(r"/usr/(share|local/share|pkg/share)/(games/)?ddnet"),
 	re.compile(r"/opt/ddnet"),
 	re.compile(r"APPDATA.*DDNet|Application Support/DDNet|\.local/share/ddnet|\$DATA_HOME/ddnet"),
+	re.compile(r"\.teeworlds/|APPDATA.*Teeworlds|Application Support/Teeworlds"),
+	re.compile(r"str_comp\(appname, \"Teeworlds\"\)"),
+	# gametype strings received from servers (wire values)
+	re.compile(r"str_find_nocase\(pGame[Tt]ype"),
+	# editor entities image selection (matches data/editor/entities/DDNet.png)
+	re.compile(r"m_SelectEntitiesImage"),
+	re.compile(r"POS_SETTINGS_DDNET"),
+	# the web client still accepts legacy connect links
+	re.compile(r"startsWith\('ddnet://'\)"),
+	# crash log parser also accepts upstream release file names
+	re.compile(r"CRASH_FILENAME_PATTERN"),
 	re.compile(r"update\.neonrelay\.example"),
 ]
 

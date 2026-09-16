@@ -1,5 +1,5 @@
 " Vim syntax file
-" Language: ddnet config files (https://github.com/ddnet/ddnet)
+" Language: Neon Relay config files (https://github.com/Leo88q/neon-relay)
 
 if exists("b:current_syntax")
   finish
@@ -24,4 +24,4 @@ hi def link string String
 hi def link number Number
 hi def link escapeQuote SpecialChar
 
-let b:current_syntax = "ddnet-cfg"
+let b:current_syntax = "neonrelay-cfg"

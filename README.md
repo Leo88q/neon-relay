@@ -1,242 +1,154 @@
-[![DDraceNetwork](https://ddnet.org/ddnet-small.png)](https://ddnet.org)
+# Neon Relay
 
-[![Build status](https://github.com/ddnet/ddnet/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/ddnet/ddnet/actions/workflows/build.yml?branch=master)
-[![Code coverage](https://codecov.io/gh/ddnet/ddnet/branch/master/graph/badge.svg)](https://codecov.io/gh/ddnet/ddnet/branch/master)
-[![Translation status](https://hosted.weblate.org/widget/ddnet/ddnet/svg-badge.svg)](https://hosted.weblate.org/engage/ddnet/)
+**Neon Relay** is a standalone, commercially developed 2D multiplayer race game built on a
+vendored snapshot of [DDRaceNetwork (DDNet)](https://github.com/ddnet/ddnet) and extended
+with a Solana Mobile / Seeker client: on-device wallet connection through the Mobile Wallet
+Adapter, server-signed match results, and an audited, epoch-based reward ledger that players
+claim on-chain themselves.
 
-Our own flavor of DDRace, a Teeworlds mod. See the [website](https://ddnet.org) for more information.
+This repository is **not** a GitHub fork. It is an independent repository that imported the
+upstream tree at a pinned commit and has been diverging since — see
+[`UPSTREAM_BASE.md`](UPSTREAM_BASE.md).
 
-Development discussions happen on #ddnet on Quakenet ([Webchat](http://webchat.quakenet.org/?channels=ddnet&uio=d4)) or on [Discord in the developer channel](https://discord.gg/xsEd9xu).
+| | |
+| --- | --- |
+| Product name | Neon Relay |
+| Repository slug | `neon-relay` |
+| Internal identifier | `neonrelay` |
+| Client / server binaries | `neonrelay` / `neonrelay-server` |
+| Android applicationId | `com.leo88q.neonrelay` |
+| Upstream base | `ddnet/ddnet` @ [`a853d33`](https://github.com/ddnet/ddnet/commit/a853d333ac9e61ebfa2899b4641f8b0658ba60d5) |
+| License | zlib-style for code ([`license.txt`](license.txt)); `data/` is CC-BY-SA 3.0 except where stated |
+| Default branch | `main` (feature work lands via pull requests) |
 
-You can get binary releases on the [DDNet website](https://ddnet.org/downloads/), find it on [Steam](https://store.steampowered.com/app/412220/DDraceNetwork/) or [install from repository](#installation-from-repository).
+---
 
-- [Code Browser](https://ddnet.org/codebrowser/DDNet/)
-- [Source Code Documentation](https://codedoc.ddnet.org/)
-- [Building Guide](docs/BUILDING.md)
-- [Debugging Guide](docs/DEBUGGING.md)
-- [Contributing Guide](docs/CONTRIBUTING.md)
+## What this is — and what it is not
 
-If you want to learn about the source code, you can check the [Development](https://wiki.ddnet.org/wiki/Development) article on the wiki.
+* **The gameplay is server-authoritative and completely independent of any blockchain.**
+  Match simulation, race timing, teams and physics run in the C++ server exactly as upstream
+  does. Solana is used **only** for reward accounting: a player binds a wallet, plays, the
+  server signs a match result, the backend enforces caps and idempotency, an epoch publishes
+  a Merkle root, and the player claims their own allocation through an Anchor program.
+* **No private keys, seed phrases or signing keys ever live in the client or in this
+  repository.** The Android client asks the on-device wallet to sign a challenge through the
+  Mobile Wallet Adapter; signing happens inside the wallet app and never returns key
+  material. Backend signing keys and treasury authority are supplied at deployment time
+  through environment/secret stores and are absent from source, tests and CI.
+* **There is no token in this repository.** The Solana program is mint-agnostic: a reward
+  mint is configured per environment, devnet runs use a throwaway test mint explicitly
+  labelled as not official, and no mainnet mint address is hardcoded anywhere. Nothing here
+  promises earnings, appreciation or returns.
+* **This is not a drop-in replacement for DDNet.** The network protocol version is
+  unchanged so Neon Relay clients and servers can talk to each other, but branding,
+  packaging, server list and info-service defaults are different, and the Solana features are
+  new.
 
-## Cloning
+## Project status
 
-To clone this repository with external libraries and no history (~700 MiB):
+The project is delivered in stages; each stage is a separate, reviewable commit. This
+snapshot is complete through **stage 3 (assets)**; stages 4–9 are in progress.
 
-```sh
-git clone --depth 1 --recursive --shallow-submodules https://github.com/ddnet/ddnet
-```
+| Stage | Content | Status |
+| --- | --- | --- |
+| 0 | Import upstream `a853d33` verbatim, pin provenance | ✅ committed |
+| 1 | Audit: `docs/UPSTREAM_AUDIT.md` | ✅ committed |
+| 2 | Baseline build evidence, compile probe, upstream CI relocation | ✅ committed |
+| 3 | Rebrand: identity, packaging, user-facing strings, translations, icons | ✅ committed |
+| 4 | Assets: manifest, third-party notices, `scripts/check_assets.sh`, artwork replacement | 🚧 in progress |
+| 5 | Android/Seeker module + Kotlin Mobile Wallet Adapter layer + JNI bridge | ⬜ |
+| 6 | Wallet challenge/verify authentication, session tokens, `docs/WALLET_AUTH.md` | ⬜ |
+| 7 | Reward ledger: idempotency, caps, epochs, Merkle root, `docs/REWARD_SECURITY.md`, `docs/API.md` | ⬜ |
+| 8 | Server-side match signing (`src/neonrelay/`) | ⬜ |
+| 9 | Solana Anchor program + TS client/tests | ⬜ |
+| 10 | In-game Wallet UI, CI/CD, remaining docs, final audit | ⬜ |
 
-To clone this repository when you have the necessary libraries on your system already with no history (~150 MiB):
+Everything that could not be built or executed in this environment is recorded honestly in
+[`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) with the exact command that failed
+and the reason (missing Rust toolchain, Android SDK, no route to crates.io, etc.). Nothing
+in the documentation is presented as verified when it was not run.
 
-```sh
-git clone --depth 1 https://github.com/ddnet/ddnet
-```
+## Repository layout
 
-To clone this repository with external libraries and full history (~1 GiB):
+| Path | Contents |
+| --- | --- |
+| `src/engine`, `src/game`, `src/rust-bridge`, `src/mastersrv`, `src/masterping`, `src/tools`, `src/test` | upstream C++/Rust client, server, protocol, tools and tests |
+| `src/neonrelay/` | **new** server-side module: signed match results (stage 8) |
+| `android/` | **new** Gradle module for Android / Solana Mobile: wallet adapter, JNI bridge, UI (stage 5) |
+| `backend/` | **new** TypeScript (Node 22) API: wallet auth, reward ledger, epochs, claim intents (stages 6–7) |
+| `onchain/` | **new** Anchor program + TS client/tests: epochs, Merkle root, claim PDAs, pause (stage 9) |
+| `licenses/` | verbatim third-party license texts referenced by `docs/THIRD_PARTY_NOTICES.md` (stage 4) |
+| `scripts/android/files/**` | upstream Android template, superseded by `android/` |
+| `data/` | game assets: maps, skins, entities, sounds, languages, mapres, themes, editor resources |
+| `other/` | packaging helpers: icons, desktop entry, Docker, emscripten shell, vim syntax, Xcode project |
+| `docs/` | all project documentation (index below) |
+| `ci/upstream-reference/` | the upstream GitHub Actions workflows, kept for reference only |
 
-```sh
-git clone --recursive https://github.com/ddnet/ddnet
-```
+## Building
 
-To clone this repository when you have the necessary libraries on your system already with full history (~450 MiB):
+The upstream build instructions still apply and were kept intentionally so that divergence
+stays reviewable:
 
-```sh
-git clone https://github.com/ddnet/ddnet
-```
+* [`docs/BUILDING.md`](docs/BUILDING.md) — Linux, macOS, Windows
+* [`docs/BUILDING-android.md`](docs/BUILDING-android.md) — Android
+* [`docs/BUILDING-ios.md`](docs/BUILDING-ios.md) — iOS
+* [`docs/BUILDING-emscripten.md`](docs/BUILDING-emscripten.md) — WebAssembly
+* [`docs/DEBUGGING.md`](docs/DEBUGGING.md), [`docs/DATABASE.md`](docs/DATABASE.md),
+  [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md), [`docs/BENCHMARKING.md`](docs/BENCHMARKING.md)
 
-To clone this repository since we moved the libraries to https://github.com/ddnet/ddnet-libs with history (~250 MiB):
-
-```sh
-git clone --shallow-exclude=included-libs https://github.com/ddnet/ddnet
-```
-
-To clone the libraries if you have previously cloned DDNet without them, or if you require the ddnet-libs history instead of a shallow clone:
-
-```sh
-git submodule update --init --recursive
-```
-
-## Dependencies on Linux / macOS
-
-You can install the required libraries on your system, `touch CMakeLists.txt` and CMake will use the system-wide libraries by default. You can install all required dependencies and CMake on Debian or Ubuntu like this:
-
-```sh
-sudo apt install build-essential cargo cmake git glslang-tools google-mock libavcodec-extra libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libcurl4-openssl-dev libfreetype6-dev libglew-dev libnotify-dev libogg-dev libopus-dev libopusfile-dev libpng-dev libsdl2-dev libsqlite3-dev libssl-dev libvulkan-dev libwavpack-dev libx264-dev ninja-build python3 rustc spirv-tools
-```
-If your distribution doesn't ship with a `rustc` that is new enough, you can use `rustup` which automatically provides `rustc` 1.85.0 and above (this command removes `rustc` and reinstalls it as part of `rustup`.):
-```sh
-sudo apt install rustup
-```
-
-In case the `rustc` dependency doesn't have the required version for any reason:
-```sh
-sudo apt install rustup-1.85
-```
-
-On older distributions like Ubuntu 18.04 don't install `google-mock`, but instead set `-DDOWNLOAD_GTEST=ON` when building to get a more recent gtest/gmock version.
-
-On older distributions `rustc` version might be too old, to get an up-to-date Rust compiler you can use [rustup](https://rustup.rs/) with stable channel instead or try the `rustc-mozilla` package.
-
-Or on CentOS, RedHat and AlmaLinux like this:
-
-```sh
-sudo yum install cargo cmake ffmpeg-devel freetype-devel gcc gcc-c++ git glew-devel glslang gmock-devel gtest-devel libcurl-devel libnotify-devel libogg-devel libpng-devel libx264-devel ninja-build openssl-devel opus-devel opusfile-devel python3 rust SDL2-devel spirv-tools sqlite-devel vulkan-devel wavpack-devel
-```
-
-Or on Fedora like this:
-
-```sh
-sudo dnf install cargo cmake ffmpeg-devel freetype-devel gcc gcc-c++ git glew-devel glslang gmock-devel gtest-devel libcurl-devel libnotify-devel libogg-devel libpng-devel make ninja-build openssl-devel opus-devel opusfile-devel python SDL2-devel spirv-tools sqlite-devel vulkan-devel wavpack-devel x264-devel
-```
-
-Or on Arch Linux like this:
-
-```sh
-sudo pacman -S --needed base-devel cmake curl ffmpeg freetype2 git glew glslang gmock libnotify libpng ninja opusfile python rust sdl2 spirv-tools sqlite vulkan-headers vulkan-icd-loader wavpack x264
-```
-
-Or on Gentoo like this:
-
-```sh
-emerge --ask dev-build/ninja dev-db/sqlite dev-lang/rust-bin dev-libs/glib dev-libs/openssl dev-util/glslang dev-util/spirv-headers dev-util/spirv-tools media-libs/freetype media-libs/glew media-libs/libglvnd media-libs/libogg media-libs/libpng media-libs/libsdl2 media-libs/libsdl2[vulkan] media-libs/opus media-libs/opusfile media-libs/pnglite media-libs/vulkan-loader[layers] media-sound/wavpack media-video/ffmpeg net-misc/curl x11-libs/gdk-pixbuf x11-libs/libnotify
-```
-
-Or on Void Linux like this:
+Quick start (desktop client + server):
 
 ```sh
-sudo xbps-install -S base-devel cargo cmake ffmpeg6-devel freetype-devel git glew-devel glslang gtest-devel libcurl-devel libnotify-devel libogg-devel libpng-devel ninja openssl-devel opus-devel opusfile-devel sqlite-devel SPIRV-Tools-devel vulkan-loader wavpack-devel x264-devel SDL2-devel
+git clone --depth 1 --recursive --shallow-submodules https://github.com/Leo88q/neon-relay
+cd neon-relay
+mkdir build && cd build
+cmake -GNinja ..
+ninja neonrelay neonrelay-server
 ```
 
-On macOS you can use [homebrew](https://brew.sh/) to install build dependencies like this:
+Neon Relay adds two verification scripts that need no toolchain beyond Python 3 and a C++
+compiler:
 
 ```sh
-brew install cmake ffmpeg freetype glew glslang googletest libpng molten-vk ninja opusfile rust SDL2 spirv-tools vulkan-headers wavpack x264
+./scripts/check_branding.sh --release --check-translations   # branding classification + gate
+./scripts/check_assets.sh                                    # asset manifest integrity
+./scripts/local_syntax_probe.sh                              # compile probe for the edited sources
 ```
 
-If you don't want to use the system libraries, you can pass the `-DPREFER_BUNDLED_LIBS=ON` parameter to cmake.
+## Documentation index
 
-DDNet requires additional libraries, some of which are bundled for the most common platforms (Windows, Mac, Linux, all x86 and x86\_64) for convenience and the official builds. The bundled libraries for official builds are now in the ddnet-libs submodule. Note that when you build and develop locally, you should ideally use your system's package manager to install the dependencies, instead of relying on ddnet-libs submodule, which does not contain all dependencies anyway (e.g. openssl, vulkan). See the previous section for how to get the dependencies. Alternatively see our [Building Guide](docs/BUILDING.md) for how to disable some features and their dependencies (for example, `-DVULKAN=OFF` won't require Vulkan).
+| Document | Purpose |
+| --- | --- |
+| [`UPSTREAM_BASE.md`](UPSTREAM_BASE.md) | upstream commit, import method, licensing position |
+| [`docs/UPSTREAM_AUDIT.md`](docs/UPSTREAM_AUDIT.md) | what upstream contains, where the integration points are |
+| [`docs/REBRANDING.md`](docs/REBRANDING.md) | every branding change: old value, new value, path, why safe, what was deliberately kept |
+| [`docs/branding-scan.csv`](docs/branding-scan.csv) | machine-readable classification of every remaining upstream identifier |
+| [`docs/ASSET_MANIFEST.csv`](docs/ASSET_MANIFEST.csv) | per-file asset provenance: sha256, author, copyright, license, source, action |
+| [`docs/THIRD_PARTY_NOTICES.md`](docs/THIRD_PARTY_NOTICES.md) | third-party works shipped in `data/` and their rights status |
+| [`docs/ANDROID_SEEKER.md`](docs/ANDROID_SEEKER.md) | Solana Mobile / Seeker build, wallet adapter layer, JNI contract |
+| [`docs/WALLET_AUTH.md`](docs/WALLET_AUTH.md) | wallet challenge, Ed25519 verification, session tokens, threat handling |
+| [`docs/REWARD_SECURITY.md`](docs/REWARD_SECURITY.md) | server-signed match events, idempotency, caps, epochs |
+| [`docs/API.md`](docs/API.md) | backend REST contract |
+| [`docs/SOLANA_ARCHITECTURE.md`](docs/SOLANA_ARCHITECTURE.md), [`docs/DEVNET_RUNBOOK.md`](docs/DEVNET_RUNBOOK.md) | Anchor program design and devnet procedure |
+| [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md), [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md), [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) | risk assessment, release gating, honest blocker log |
+| [`docs/baseline/`](docs/baseline) | raw build/probe logs recorded before and after edits |
 
-## Building on Linux and macOS
+## License and attribution
 
-To compile DDNet yourself, execute the following commands in the source root:
+Code is under the zlib/libpng-style license in [`license.txt`](license.txt). The game assets
+in `data/` are CC-BY-SA 3.0 except `assets`, `fonts`, `languages` and `skins`, which carry
+their own terms; see [`docs/THIRD_PARTY_NOTICES.md`](docs/THIRD_PARTY_NOTICES.md).
 
-```sh
-cmake -Bbuild -GNinja
-cmake --build build
-```
+* Upstream copyright notices are kept verbatim. Nothing was removed to make the project look
+  cleaner, and `git filter-repo` was never used to rewrite legally significant content.
+* The branding changes are plainly marked as alterations in
+  [`docs/REBRANDING.md`](docs/REBRANDING.md), as required by clause 2 of the upstream license.
+* DDNet, DDRaceNetwork and Teeworlds are the names of the upstream projects from which this
+  work is derived. They are used in this repository only in provenance, legal and
+  compatibility contexts, and their trademarks are not claimed by this project.
 
-## Building on Windows with the Visual Studio IDE
+## Contributing
 
-Download and install some version of [Microsoft Visual Studio](https://www.visualstudio.com/) (At the time of writing, MSVS Community 2022) with **C++ support**.
-
-You'll have to install both [Python 3](https://www.python.org/downloads/) and [Rust](https://rustup.rs/) as well.
-
-Make sure the MSVC build tools, C++ CMake-Tools and the latest Windows SDK version appropriate to your windows version are selected in the installer.
-
-Now open up your Project folder, Visual Studio should automatically detect and configure your project using CMake.
-
-On your tools hotbar next to the triangular "Run" Button, you can now select what you want to start (e.g game-client or game-server) and build it.
-
-## Building on Windows with standalone MSVC build tools
-
-First off you will need to install the following dependencies:
-
-- [MSVC Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/),
-- [Python 3](https://www.python.org/downloads/windows/),
-- [Rust](https://www.rust-lang.org/tools/install).
-
-To compile with the Vulkan graphics backend (disabled by default), you also need to install the [Vulkan SDK](https://vulkan.lunarg.com/sdk/home).
-
-To compile and build DDNet on Windows, use your IDE of choice either with a CMake integration (e.g Visual Studio Code), or by ~~**deprecated**~~ using the CMake GUI.
-
-Configure CMake to use the MSVC Build Tools appropriate to your System by your IDE's instructions.
-
-If you're using Visual Studio Code, you can use the [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) extension to configure and build the project.
-
-You can then open the project folder in Visual Studio Code and press `Ctrl+Shift+P` to open the command palette, then search for `CMake: Configure`.
-
-This will open up a prompt for you to select a kit, select your `Visual Studio` version and save it. You can now use the GUI (bottom left) to compile and build your project.
-
-
-<a href="https://repology.org/metapackage/ddnet/versions">
-	<img src="https://repology.org/badge/vertical-allrepos/ddnet.svg?header=" alt="Packaging status" align="right">
-</a>
-
-## Installation from Repository
-
-Debian/Ubuntu
-
-```sh
-sudo apt-get install ddnet
-```
-
-MacOS
-
-```sh
-brew install --cask ddnet
-```
-
-Fedora
-
-```sh
-sudo dnf install ddnet
-```
-
-Arch Linux
-
-```sh
-yay -S ddnet
-```
-
-FreeBSD
-
-```sh
-sudo pkg install DDNet
-```
-
-Windows (Scoop)
-```cmd
-scoop bucket add games
-scoop install games/ddnet
-```
-
-## Benchmarking
-
-Detailed instructions can be found in [`docs/BENCHMARKING.md`](docs/BENCHMARKING.md).
-
-## Working with the official DDNet Database
-
-Detailed instructions can be found in [`docs/DATABASE.md`](docs/DATABASE.md).
-
-## Debugging
-
-Detailed instructions can be found in [`docs/DEBUGGING.md`](docs/DEBUGGING.md).
-
-## Better Git Blame
-
-First, use a better tool than `git blame` itself, e.g. [`tig`](https://jonas.github.io/tig/). There's probably a good UI for Windows, too. Alternatively, use the GitHub UI, click "Blame" in any file view.
-
-For `tig`, use `tig blame path/to/file.cpp` to open the blame view, you can navigate with arrow keys or kj, press comma to go to the previous revision of the current line, q to quit.
-
-Only then you could also set up git to ignore specific formatting revisions:
-
-```sh
-git config blame.ignoreRevsFile formatting-revs.txt
-```
-
-## (Neo)Vim Syntax Highlighting for config files
-
-Copy the file detection and syntax files to your vim config folder:
-
-```sh
-# vim
-cp -R other/vim/* ~/.vim/
-
-# neovim
-cp -R other/vim/* ~/.config/nvim/
-```
-
-## Precompiled Headers
-
-By default precompiled headers are used for common system includes, see `src/pch.h`. In CI the Ubuntu 22.04 build disables precompiled headers to ensure we don't break compilation by forgetting includes. You might want to disable precompiled headers locally instead, at the cost of slower compile times, by setting `-DPRECOMPILE_HEADERS=OFF` in `cmake`.
+Report issues and open pull requests against `main`. Any change that touches user-facing
+branding must keep `./scripts/check_branding.sh --release` passing, and any change to a
+shipped asset must update [`docs/ASSET_MANIFEST.csv`](docs/ASSET_MANIFEST.csv).

@@ -63,7 +63,7 @@ def check_variable_name(qualifiers, typ, name):
 
 
 def main():
-	p = argparse.ArgumentParser(description="Check identifiers (input via stdin in CSV format from extract_identifiers.py) for naming style in DDNet code")
+	p = argparse.ArgumentParser(description="Check identifiers (input via stdin in CSV format from extract_identifiers.py) for naming style in Neon Relay code")
 	p.parse_args()
 
 	identifiers = list(csv.DictReader(sys.stdin))

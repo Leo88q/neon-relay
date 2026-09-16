@@ -154,7 +154,7 @@ def process_source_file(out, file, extra_args, break_on):
 
 
 def main():
-	p = argparse.ArgumentParser(description="Extracts identifier data from a Teeworlds source file and its header, outputting the data as CSV to stdout")
+	p = argparse.ArgumentParser(description="Extracts identifier data from a source file and its header, outputting the data as CSV to stdout")
 	p.add_argument("file", metavar="FILE", nargs="+", help="Source file to analyze")
 	p.add_argument("--break-on", help="Break on a specific variable name, useful to debug issues with the script")
 	args = p.parse_args()

@@ -21,7 +21,7 @@ def ddnet_entry(source, context, target, **_kwargs):
 
 
 def main():
-	parser = argparse.ArgumentParser(description="Convert Weblate CSV files in the specified directory into DDNet translation files.")
+	parser = argparse.ArgumentParser(description="Convert Weblate CSV files in the specified directory into Neon Relay translation files.")
 	parser.add_argument("in_dir", metavar="IN_DIR", help="Directory with the Weblate CSV files")
 	args = parser.parse_args()
 

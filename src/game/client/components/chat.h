@@ -18,7 +18,7 @@
 
 #include <vector>
 
-constexpr auto SAVES_FILE = "ddnet-saves.txt";
+constexpr auto SAVES_FILE = "neonrelay-saves.txt";
 
 class CChat : public CComponent
 {

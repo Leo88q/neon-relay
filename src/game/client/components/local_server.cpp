@@ -41,7 +41,7 @@ bool CLocalServer::RunServer(const std::vector<const char *> &vpArguments)
 #if defined(CONF_PLATFORM_MACOS)
 	if(!fs_is_file(aBuf) && fs_parent_dir(aBuf) == 0)
 	{
-		str_append(aBuf, "/../../../DDNet-Server.app/Contents/MacOS/");
+		str_append(aBuf, "/../../../neonrelay-server.app/Contents/MacOS/");
 		str_append(aBuf, PLAT_SERVER_EXEC);
 	}
 #endif

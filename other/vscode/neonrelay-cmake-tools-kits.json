@@ -1,6 +1,6 @@
 [
 	{
-		"name": "[DDNet] (recommended) Clang + mold + ninja for fastest compiling (and dev modus)",
+		"name": "[Neon Relay] (recommended) Clang + mold + ninja for fastest compiling (and dev modus)",
 		"compilers": {
 			"C": "clang",
 			"CXX": "clang++"
@@ -14,7 +14,7 @@
 		}
 	},
 	{
-		"name": "[DDNet] Crosscompile for Windows using MinGW",
+		"name": "[Neon Relay] Crosscompile for Windows using MinGW",
 		"toolchainFile": "${workspaceFolder}/cmake/toolchains/mingw64.toolchain"
 	}
 ]

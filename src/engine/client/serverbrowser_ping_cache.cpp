@@ -43,10 +43,10 @@ private:
 CServerBrowserPingCache::CServerBrowserPingCache(IConsole *pConsole, IStorage *pStorage) :
 	m_pConsole(pConsole)
 {
-	m_pDisk = SqliteOpen(pStorage, "ddnet-cache.sqlite3");
+	m_pDisk = SqliteOpen(pStorage, "neonrelay-cache.sqlite3");
 	if(!m_pDisk)
 	{
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "serverbrowse_ping_cache", "failed to open ddnet-cache.sqlite3");
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "serverbrowse_ping_cache", "failed to open neonrelay-cache.sqlite3");
 		return;
 	}
 	sqlite3 *pSqlite = m_pDisk.get();

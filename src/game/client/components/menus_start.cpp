@@ -71,7 +71,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	static CButtonContainer s_WebsiteButton;
 	if(GameClient()->m_Menus.DoButton_Menu(&s_WebsiteButton, Localize("Website"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Client()->ViewLink("https://ddnet.org/");
+		Client()->ViewLink("https://github.com/Leo88q/neon-relay");
 	}
 
 	ExtMenu.HSplitBottom(5.0f, &ExtMenu, nullptr); // little space
@@ -236,7 +236,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		static CButtonContainer s_DownloadButton;
 		if(GameClient()->m_Menus.DoButton_Menu(&s_DownloadButton, Localize("Download"), 0, &DownloadButton, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 		{
-			Client()->ViewLink("https://ddnet.org/downloads/");
+			Client()->ViewLink("https://github.com/Leo88q/neon-relay/releases");
 		}
 
 		char aBuf[64];

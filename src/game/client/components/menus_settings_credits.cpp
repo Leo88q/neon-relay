@@ -9,8 +9,13 @@
 void CMenus::RenderSettingsCredits(CUIRect MainView)
 {
 	static constexpr const char *const CREDITS =
+		"Neon Relay\n"
 		"\n"
-		"Help and code by eeeee, HMH, east, CookieMichal, Learath2, "
+		"Neon Relay is a standalone derivative of the upstream DDNet project.\n"
+		"The upstream copyright notices and license are in license.txt, and the\n"
+		"asset provenance is in docs/THIRD_PARTY_NOTICES.md and docs/ASSET_MANIFEST.csv.\n"
+		"\n"
+		"DDNet help and code by eeeee, HMH, east, CookieMichal, Learath2, "
 		"Savander, laxa, Tobii, BeaR, Wohoo, nuborn, timakro, Shiki, "
 		"trml, Soreu, hi_leute_gll, Lady Saavik, Chairn, heinrich5991, "
 		"swick, oy, necropotame, Ryozuki, Redix, d3fault, marcelherd, "
@@ -31,7 +36,7 @@ void CMenus::RenderSettingsCredits(CUIRect MainView)
 		"Bamcane, qxdFox, ZerolAcqua, swarfeya, Scrumplex, 12944qwerty, "
 		"Pointer31, ProfSapphire, 0xpixty, GlimmeR, horoni & others\n"
 		"\n"
-		"Based on DDRace by the DDRace developers,";
+		"DDNet is based on DDRace by the DDRace developers,";
 	const float FontSize = 16.0f;
 
 	static CScrollRegion s_ScrollRegion;
@@ -78,9 +83,9 @@ void CMenus::RenderSettingsCredits(CUIRect MainView)
 	};
 
 	static char s_StaffLinkId;
-	RenderCreditsLink(&s_StaffLinkId, "DDNet is run by the ", "DDNet staff", ".", "https://ddnet.org/staff");
+	RenderCreditsLink(&s_StaffLinkId, "Neon Relay is developed at ", "github.com/Leo88q/neon-relay", ".", "https://github.com/Leo88q/neon-relay");
 	static char s_MapsLinkId;
-	RenderCreditsLink(&s_MapsLinkId, "", "Great maps", " and many ideas from the community.", "https://ddnet.org/releases/");
+	RenderCreditsLink(&s_MapsLinkId, "Upstream ", "DDNet", " - great maps and many ideas from its community.", "https://github.com/ddnet/ddnet");
 
 	CTextCursor Cursor;
 	Cursor.m_FontSize = FontSize;

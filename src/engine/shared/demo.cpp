@@ -1382,7 +1382,7 @@ bool CDemoPlayer::GetDemoInfo(IStorage *pStorage, IConsole *pConsole, const char
 			// This hopes whatever happened during the version increment didn't add something here
 			if(pConsole)
 			{
-				pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "demo_player", "Demo version incremented, but not by DDNet");
+				pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "demo_player", "Demo version incremented, but not by Neon Relay");
 			}
 			if(io_seek(File, -(int64_t)ExtensionUuidSize, EIoSeekOrigin::CURRENT) != 0)
 			{

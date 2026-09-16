@@ -3676,9 +3676,9 @@ public:
 		VkApplicationInfo VKAppInfo = {};
 		VKAppInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		VKAppInfo.pNext = nullptr;
-		VKAppInfo.pApplicationName = "DDNet";
+		VKAppInfo.pApplicationName = "Neon Relay";
 		VKAppInfo.applicationVersion = 1;
-		VKAppInfo.pEngineName = "DDNet-Vulkan";
+		VKAppInfo.pEngineName = "Neon Relay-Vulkan";
 		VKAppInfo.engineVersion = 1;
 		VKAppInfo.apiVersion = VK_API_VERSION_1_1;
 

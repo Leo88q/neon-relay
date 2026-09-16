@@ -1026,7 +1026,7 @@ Are you sure that you want to restart?
 == Tens a certeza que queres reiniciar?
 
 Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDRaceNetwork é um jogo cooperativo online onde o objetivo é tu e o teu grupo de tees alcançarem a linha de chegada do mapa. Como recém-chegado, deves começar nos servidores Novice, que têm os mapas mais fáceis. Considera o ping para escolher um servidor perto de ti.
+== Neon Relay é um jogo cooperativo online onde o objetivo é tu e o teu grupo de tees alcançarem a linha de chegada do mapa. Como recém-chegado, deves começar nos servidores Novice, que têm os mapas mais fáceis. Considera o ping para escolher um servidor perto de ti.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Usa a tecla k para matar (reiniciar), q para pausar e ver outros jogadores. Vê as definições para outras teclas.

@@ -53,7 +53,12 @@ public:
 		DiscordCreateParams Params;
 		DiscordCreateParamsSetDefault(&Params);
 
-		Params.client_id = 752165779117441075; // DDNet
+		// Discord rich presence is compiled in only with -DDISCORD=ON and is OFF by
+		// default. Neon Relay must use its own Discord application; the upstream
+		// application id is deliberately not reused. Register an application at
+		// https://discord.com/developers/applications, upload a `neonrelay_logo` asset
+		// and put the application id here (or behind a build option) before enabling it.
+		Params.client_id = 0; // TODO(release): Neon Relay Discord application id
 		Params.flags = EDiscordCreateFlags::DiscordCreateFlags_NoRequireDiscord;
 		Params.event_data = this;
 		Params.activity_events = &m_ActivityEvents;
@@ -94,8 +99,8 @@ public:
 	{
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
-		str_copy(m_Activity.assets.large_image, "ddnet_logo");
-		str_copy(m_Activity.assets.large_text, "DDNet logo");
+		str_copy(m_Activity.assets.large_image, "neonrelay_logo");
+		str_copy(m_Activity.assets.large_text, "Neon Relay logo");
 		m_Activity.timestamps.start = time_timestamp();
 		str_copy(m_Activity.details, "Offline");
 		m_Activity.instance = false;
@@ -107,8 +112,8 @@ public:
 	{
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
-		str_copy(m_Activity.assets.large_image, "ddnet_logo");
-		str_copy(m_Activity.assets.large_text, "DDNet logo");
+		str_copy(m_Activity.assets.large_image, "neonrelay_logo");
+		str_copy(m_Activity.assets.large_text, "Neon Relay logo");
 		m_Activity.timestamps.start = time_timestamp();
 		str_copy(m_Activity.name, "Online");
 		m_Activity.instance = true;

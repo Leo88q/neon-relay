@@ -168,6 +168,11 @@ void CChooseMaster::Reset()
 
 void CChooseMaster::Refresh()
 {
+	// No master server URLs configured: there is nothing to choose from.
+	if(m_pData->m_NumUrls == 0)
+	{
+		return;
+	}
 	if(m_pJob == nullptr || m_pJob->State() == IJob::STATE_DONE)
 	{
 		m_pJob = std::make_shared<CJob>(this, m_pData);
@@ -540,12 +545,15 @@ bool CServerBrowserHttp::Parse(json_value *pJson, std::vector<CServerInfo> *pvSe
 	return false;
 }
 
-static const char *DEFAULT_SERVERLIST_URLS[] = {
-	"https://master1.ddnet.org/ddnet/15/servers.json",
-	"https://master2.ddnet.org/ddnet/15/servers.json",
-	"https://master3.ddnet.org/ddnet/15/servers.json",
-	"https://master4.ddnet.org/ddnet/15/servers.json",
-};
+// Neon Relay ships without a hardcoded third-party server list: an unconfigured
+// client only sees LAN servers and servers it connects to directly (by address or
+// connect link). Operators publish their own master server by putting one URL per
+// line into `neonrelay-serverlist-urls.cfg` next to the settings file.
+//
+// The array keeps one unused placeholder entry because a zero length array is not
+// valid C++; NUM_DEFAULT_SERVERLIST_URLS is what the code below actually uses.
+static const char *DEFAULT_SERVERLIST_URLS[] = {nullptr};
+static constexpr int NUM_DEFAULT_SERVERLIST_URLS = 0;
 
 IServerBrowserHttp *CreateServerBrowserHttp(IEngine *pEngine, IStorage *pStorage, IHttp *pHttp, const char *pPreviousBestUrl)
 {
@@ -570,7 +578,7 @@ IServerBrowserHttp *CreateServerBrowserHttp(IEngine *pEngine, IStorage *pStorage
 	if(NumUrls == 0)
 	{
 		ppUrls = DEFAULT_SERVERLIST_URLS;
-		NumUrls = std::size(DEFAULT_SERVERLIST_URLS);
+		NumUrls = NUM_DEFAULT_SERVERLIST_URLS;
 	}
 	int PreviousBestIndex = -1;
 	for(int i = 0; i < NumUrls; i++)

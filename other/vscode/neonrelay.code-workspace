@@ -84,7 +84,7 @@
 		},
 		"editor.formatOnSave": true,
 		"cmake.additionalKits": [
-			"${workspaceFolder}/other/vscode/ddnet-cmake-tools-kits.json"
+			"${workspaceFolder}/other/vscode/neonrelay-cmake-tools-kits.json"
 		],
 		"cmake.defaultVariants": {
 			"buildType": {
@@ -185,7 +185,7 @@
 				"label": "CMake: build client",
 				"command": "build",
 				"targets": [
-					"DDNet"
+					"neonrelay"
 				],
 				"group": {
 					"kind": "build",
@@ -199,7 +199,7 @@
 				"label": "CMake: build server",
 				"command": "build",
 				"targets": [
-					"DDNet-Server"
+					"neonrelay-server"
 				],
 				"group": {
 					"kind": "build",
@@ -217,7 +217,7 @@
 				"type": "lldb",
 				"request": "launch",
 				"name": "Launch client",
-				"program": "${workspaceFolder}/build/DDNet",
+				"program": "${workspaceFolder}/build/neonrelay",
 				"preLaunchTask": "CMake: build client",
 				// use dbg configs like this
 				// "args": [ "dbg_gfx 0" ],
@@ -229,19 +229,19 @@
 				"type": "lldb",
 				"request": "launch",
 				"name": "Launch server",
-				"program": "${workspaceFolder}/build/DDNet-Server",
+				"program": "${workspaceFolder}/build/neonrelay-server",
 				"preLaunchTask": "CMake: build server",
 				"cwd": "${workspaceFolder}/build"
 			},
 			// useful for cross debugging the windows (wine) client
 			// for these you need the microsoft cpp extension
 			// start the wine executable like this:
-			// winedbg --gdb --no-start --port 55555 DDNet.exe
+			// winedbg --gdb --no-start --port 55555 neonrelay.exe
 			{
 				"type": "cppdbg",
 				"request": "launch",
 				"name": "Attach to wine gdbserver",
-				"program": "${workspaceFolder}/build_win/DDNet.exe",
+				"program": "${workspaceFolder}/build_win/neonrelay.exe",
 				"miDebuggerServerAddress": "localhost:55555",
 				"cwd": "${workspaceFolder}/build_win/",
 				"MIMode": "gdb",

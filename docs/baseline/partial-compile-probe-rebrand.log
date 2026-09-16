@@ -1,0 +1,33 @@
+# Neon Relay local syntax probe
+# date:      2026-09-16T01:14:43Z
+# compiler:  g++ (Debian 12.2.0-14+deb12u1) 12.2.0
+# standard:  -std=c++20
+# codegen:   /tmp/neonrelay-syntax-probe
+
+## code generation
+  note  wrote a stub for src/engine/shared/rust_version.h (real header needs cargo)
+
+  ok    src/generated/protocol.h
+  ok    src/generated/protocol.cpp
+  ok    src/generated/data_types.h
+  ok    src/generated/client_data.h
+  ok    src/generated/client_data.cpp
+  ok    src/generated/server_data.h
+  ok    src/generated/server_data.cpp
+  ok    src/generated/protocol7.h
+  ok    src/generated/protocol7.cpp
+  ok    src/generated/client_data7.h
+  ok    src/generated/client_data7.cpp
+  ok    src/generated/protocolglue.h
+  ok    src/generated/protocolglue_generated.cpp
+  ok    src/generated/wordlist.h
+
+## translation units
+SKIP  src/engine/client/serverbrowser_ping_cache.cpp (missing external header: sqlite3.h)
+
+## summary
+  compiled cleanly : 123
+  skipped (deps)   : 1
+  failed           : 0
+
+RESULT: PASS

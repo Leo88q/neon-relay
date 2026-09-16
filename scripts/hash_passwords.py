@@ -53,7 +53,7 @@ def parse_line(line):
 
 
 def main():
-	p = argparse.ArgumentParser(description="Hash passwords in a way suitable for DDNet configs.")
+	p = argparse.ArgumentParser(description="Hash passwords in a way suitable for Neon Relay server configs.")
 	p.add_argument("--new", "-n", nargs=3, metavar=("USERNAME", "LEVEL", "PASSWORD"), action="append", default=[], help="username, level and password of the new user")
 	p.add_argument("config", nargs="?", metavar="CONFIG", help="config file to update.")
 	args = p.parse_args()

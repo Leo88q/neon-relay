@@ -41,8 +41,8 @@ MAP_RE = re.compile(r"^(?P<map>.*)_record\.dtb$")
 
 
 def main():
-	p = argparse.ArgumentParser(description="Merge multiple DDNet race database files", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-	p.add_argument("--out", default="ddnet-server.sqlite", help="Output SQLite database")
+	p = argparse.ArgumentParser(description="Merge multiple Neon Relay race database files", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	p.add_argument("--out", default="neonrelay-server.sqlite", help="Output SQLite database")
 	p.add_argument("in_", metavar="IN", nargs="+", help="Text score databases to import; must have the format MAPNAME_record.dtb")
 	p.add_argument("--dry-run", "-n", action="store_true", help="Don't write out the resulting SQLite database")
 	p.add_argument("--stats", action="store_true", help="Display some stats at the end of the import process")

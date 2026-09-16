@@ -46,7 +46,7 @@ void CUPnP::Open(NETADDR Address)
 			str_format(aPort, sizeof(aPort), "%d", m_Addr.port);
 			Error = UPNP_AddPortMapping(m_pUpnpUrls->controlURL, m_pUpnpData->first.servicetype,
 				aPort, aPort, aLanAddr,
-				"DDNet Server " GAME_RELEASE_VERSION,
+				"Neon Relay Server " GAME_RELEASE_VERSION,
 				"UDP", nullptr, "0");
 
 			if(Error)

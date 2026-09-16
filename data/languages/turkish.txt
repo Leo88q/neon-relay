@@ -542,7 +542,7 @@ Welcome to Neon Relay
 == Neon Relay'e hoş geldiniz
 
 Neon Relay is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
-== DDRaceNetwork bitiş çizgisine en kısa sürede ulaşmayı amaçlayan oyunculardan oluşan, çevrim içi bir takım oyunudur. Çaylak olarak ilk önce kolay haritalardan yani Novice sunuculardan oynamaya başlamanı öneririz. Size uygun sunucuyu seçerken pinginizi dikkate alın.
+== Neon Relay bitiş çizgisine en kısa sürede ulaşmayı amaçlayan oyunculardan oluşan, çevrim içi bir takım oyunudur. Çaylak olarak ilk önce kolay haritalardan yani Novice sunuculardan oynamaya başlamanı öneririz. Size uygun sunucuyu seçerken pinginizi dikkate alın.
 
 Use k key to kill (restart), q to pause and watch other players. See settings for other key binds.
 == Ölmek (yeniden başlamak) için "k" tuşu, oyunu durdurup diğer oyuncuları izlemek için "q" tuşunu kullanabilirsin. Diğer kontrollere ayarlardan bakabilirsin.
@@ -1964,7 +1964,7 @@ Active: Hook
 == Aktif: Kanca
 
 "%s" is not compatible with pnglite and cannot be loaded by old Neon Relay versions:
-== "%s" pnglite ile uyumlu değil ve eski DDnet versiyonları tarafından yüklenemiyor:
+== "%s" pnglite ile uyumlu değil ve eski Neon Relay versiyonları tarafından yüklenemiyor:
 
 [Spectating Camera Mode Icon]
 AUTO

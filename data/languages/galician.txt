@@ -758,7 +758,7 @@ Neon Relay
 == Neon Relay
 
 Neon Relay needs to be restarted to complete the update!
-== Utilizar o marcador DDRace
+== Utilizar o marcador race
 
 Show score
 == Mostrar puntaje

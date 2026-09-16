@@ -1,0 +1,171 @@
+# cmake configure of the UNMODIFIED upstream tree (DDNet @ a853d333ac9e61ebfa2899b4641f8b0658ba60d5)
+# date: 2026-09-16T01:04:51Z
+# cmake: cmake version 4.4.3   ninja: 1.13.2.git.kitware.jobserver-pipe-1
+# compiler: g++ (Debian 12.2.0-14+deb12u1) 12.2.0
+# python: Python 3.11.2
+# command: cmake -Bbuild-baseline -GNinja -DCLIENT=OFF -DTOOLS=OFF -DSERVER=ON -DPREFER_BUNDLED_LIBS=ON -DDOWNLOAD_GTEST=OFF
+
+-- The C compiler identification is GNU 12.2.0
+-- The CXX compiler identification is GNU 12.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test HAVE_ATOMICS_WITHOUT_LIB
+-- Performing Test HAVE_ATOMICS_WITHOUT_LIB - Success
+-- Looking for __i386
+-- Looking for __i386 - not found
+-- Performing Test FLAG_SUPPORTED_Werror_unused_command_line_argument
+-- Performing Test FLAG_SUPPORTED_Werror_unused_command_line_argument - Failed
+-- Performing Test FLAG_SUPPORTED_fdiagnostics_color_always
+-- Performing Test FLAG_SUPPORTED_fdiagnostics_color_always - Success
+-- Performing Test FLAG_SUPPORTED_fcolor_diagnostics
+-- Performing Test FLAG_SUPPORTED_fcolor_diagnostics - Failed
+-- Performing Test FLAG_SUPPORTED_fuse_ld_mold
+-- Performing Test FLAG_SUPPORTED_fuse_ld_mold - Failed
+-- Performing Test FLAG_SUPPORTED_fuse_ld_lld
+-- Performing Test FLAG_SUPPORTED_fuse_ld_lld - Failed
+-- Performing Test FLAG_SUPPORTED_fuse_ld_gold
+-- Performing Test FLAG_SUPPORTED_fuse_ld_gold - Success
+-- Using gold linker
+-- Performing Test FLAG_SUPPORTED_fstack_protector_strong
+-- Performing Test FLAG_SUPPORTED_fstack_protector_strong - Success
+-- Performing Test FLAG_SUPPORTED_fstack_clash_protection
+-- Performing Test FLAG_SUPPORTED_fstack_clash_protection - Success
+-- Performing Test FLAG_SUPPORTED_fcf_protection_full
+-- Performing Test FLAG_SUPPORTED_fcf_protection_full - Success
+-- Performing Test FLAG_SUPPORTED_mbranch_protection_standard
+-- Performing Test FLAG_SUPPORTED_mbranch_protection_standard - Failed
+-- Performing Test FLAG_SUPPORTED_Wl__z_relro
+-- Performing Test FLAG_SUPPORTED_Wl__z_relro - Success
+-- Performing Test FLAG_SUPPORTED_Wl__z_now
+-- Performing Test FLAG_SUPPORTED_Wl__z_now - Success
+-- Performing Test FLAG_SUPPORTED_fno_exceptions
+-- Performing Test FLAG_SUPPORTED_fno_exceptions - Success
+-- Performing Test FLAG_SUPPORTED_fsigned_char
+-- Performing Test FLAG_SUPPORTED_fsigned_char - Success
+-- Performing Test FLAG_SUPPORTED_Wa__mbig_obj
+-- Performing Test FLAG_SUPPORTED_Wa__mbig_obj - Failed
+-- Performing Test FLAG_SUPPORTED_ffile_prefix_map__tmp_baseline_tree__DDNet
+-- Performing Test FLAG_SUPPORTED_ffile_prefix_map__tmp_baseline_tree__DDNet - Success
+-- Performing Test FLAG_SUPPORTED_ffile_prefix_map__tmp_baseline_tree_build_baseline__DDNet
+-- Performing Test FLAG_SUPPORTED_ffile_prefix_map__tmp_baseline_tree_build_baseline__DDNet - Success
+-- Performing Test FLAG_SUPPORTED_fno_ident
+-- Performing Test FLAG_SUPPORTED_fno_ident - Success
+-- Performing Test FLAG_SUPPORTED_Wall
+-- Performing Test FLAG_SUPPORTED_Wall - Success
+-- Performing Test FLAG_SUPPORTED_Wextra
+-- Performing Test FLAG_SUPPORTED_Wextra - Success
+-- Performing Test FLAG_SUPPORTED_Wno_format
+-- Performing Test FLAG_SUPPORTED_Wno_format - Success
+-- Performing Test FLAG_SUPPORTED_Wno_implicit_function_declaration
+-- Performing Test FLAG_SUPPORTED_Wno_implicit_function_declaration - Success
+-- Performing Test FLAG_SUPPORTED_Wclass_memaccess
+-- Performing Test FLAG_SUPPORTED_Wclass_memaccess - Success
+-- Performing Test FLAG_SUPPORTED_Wduplicated_branches
+-- Performing Test FLAG_SUPPORTED_Wduplicated_branches - Success
+-- Performing Test FLAG_SUPPORTED_Wduplicated_cond
+-- Performing Test FLAG_SUPPORTED_Wduplicated_cond - Success
+-- Performing Test FLAG_SUPPORTED_Wdynamic_class_memaccess
+-- Performing Test FLAG_SUPPORTED_Wdynamic_class_memaccess - Failed
+-- Performing Test FLAG_SUPPORTED_Wlogical_op
+-- Performing Test FLAG_SUPPORTED_Wlogical_op - Success
+-- Performing Test FLAG_SUPPORTED_Wno_missing_field_initializers
+-- Performing Test FLAG_SUPPORTED_Wno_missing_field_initializers - Success
+-- Performing Test FLAG_SUPPORTED_Wno_nullability_completeness
+-- Performing Test FLAG_SUPPORTED_Wno_nullability_completeness - Success
+-- Performing Test FLAG_SUPPORTED_Wno_psabi
+-- Performing Test FLAG_SUPPORTED_Wno_psabi - Success
+-- Performing Test FLAG_SUPPORTED_Wno_unused_parameter
+-- Performing Test FLAG_SUPPORTED_Wno_unused_parameter - Success
+-- Performing Test FLAG_SUPPORTED_Wrestrict
+-- Performing Test FLAG_SUPPORTED_Wrestrict - Success
+-- Performing Test FLAG_SUPPORTED_Wshadow_all
+-- Performing Test FLAG_SUPPORTED_Wshadow_all - Failed
+-- Performing Test FLAG_SUPPORTED_Wshadow_global
+-- Performing Test FLAG_SUPPORTED_Wshadow_global - Success
+-- Performing Test FLAG_SUPPORTED_Wsuggest_override
+-- Performing Test FLAG_SUPPORTED_Wsuggest_override - Success
+-- Performing Test FLAG_SUPPORTED_Wthread_safety
+-- Performing Test FLAG_SUPPORTED_Wthread_safety - Failed
+-- Performing Test FLAG_SUPPORTED_Wthread_safety_negative
+-- Performing Test FLAG_SUPPORTED_Wthread_safety_negative - Failed
+-- Performing Test FLAG_SUPPORTED_Wno_alloc_size_larger_than
+-- Performing Test FLAG_SUPPORTED_Wno_alloc_size_larger_than - Success
+-- Performing Test DEFINE_FORTIFY_SOURCE_3
+-- Performing Test DEFINE_FORTIFY_SOURCE_3 - Success
+-- Performing Test DEFINE_FORTIFY_SOURCE
+-- Performing Test DEFINE_FORTIFY_SOURCE - Success
+-- Could NOT find PkgConfig (missing: PKG_CONFIG_EXECUTABLE) 
+-- Found ZLIB: src/engine/external/zlib
+-- Could NOT find Crypto (missing: CRYPTO_LIBRARY CRYPTO_INCLUDEDIR) 
+-- Could NOT find Curl (missing: CURL_LIBRARY CURL_INCLUDEDIR) 
+-- Could NOT find Freetype (missing: FREETYPE_LIBRARY FREETYPE_INCLUDEDIR) 
+-- Found GLEW: src/engine/external/glew
+-- Could NOT find GTest (missing: GTEST_LIBRARY GTEST_INCLUDE_DIR GTEST_MAIN_LIBRARY) 
+-- Could NOT find Ogg (missing: OGG_INCLUDEDIR) 
+-- Could NOT find Opus (missing: OPUS_INCLUDEDIR) 
+-- Could NOT find Opusfile (missing: OPUSFILE_LIBRARY OPUSFILE_INCLUDEDIR) 
+-- Found Python3: /usr/bin/python3.11 (found version "3.11.2") found components: Interpreter
+-- Could NOT find Rust (missing: RUST_RUSTC RUST_CARGO) 
+-- Could NOT find SDL2 (missing: SDL2_LIBRARY SDL2_INCLUDEDIR) 
+-- Could NOT find SQLite3 (missing: SQLite3_INCLUDEDIR SQLite3_LIBRARY) 
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Could NOT find Wavpack (missing: WAVPACK_LIBRARY WAVPACK_INCLUDEDIR) 
+-- ******** DDNet ********
+-- Target OS: linux x86_64
+-- Compiler: /usr/bin/c++
+-- Rust version: 
+-- Build type: Release
+-- Dependencies:
+--  * Curl not found
+--  * Freetype not found
+--  * Glew not found (using bundled version)
+--  * GTest not found
+--  * Ogg not found
+--  * OpenSSL Crypto not found
+--  * Opus not found
+--  * Opusfile not found
+--  * PNG not found
+--  * Python3 found
+--  * SDL2 not found
+--  * SQLite3 not found
+--  * Wavpack not found
+--  * Zlib not found (using bundled version)
+CMake Error at CMakeLists.txt:727 (message):
+  You must install Curl to compile DDNet
+
+
+CMake Error at CMakeLists.txt:733 (message):
+  You must install Rust and Cargo to compile DDNet
+
+
+CMake Error at CMakeLists.txt:736 (message):
+  You must install SQLite3 to compile DDNet
+
+
+-- To run the tests, you have to install GTest
+-- Could NOT find Notify (missing: NOTIFY_LIBRARIES NOTIFY_INCLUDE_DIRS) 
+-- Could NOT find OpenGL (missing: OPENGL_opengl_LIBRARY OPENGL_glx_LIBRARY OPENGL_INCLUDE_DIR) 
+-- Configuring incomplete, errors occurred!
+
+# environment probes (why the configure step cannot succeed here):
+#   deb.debian.org           000
+#   crates.io                000
+#   static.rust-lang.org     000
+#   pypi.org                 200
+#   registry.npmjs.org       200
+#   github.com               200
+#   zlib.h                  ls: cannot access '/usr/include/zlib.h': No such file or directory
+#   sqlite3.h               ls: cannot access '/usr/include/sqlite3.h': No such file or directory
+#   openssl/evp.h           ls: cannot access '/usr/include/openssl/evp.h': No such file or directory
+#   curl/curl.h             ls: cannot access '/usr/include/curl/curl.h': No such file or directory
+#   cargo                   not installed

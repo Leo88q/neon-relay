@@ -1,0 +1,31 @@
+# Neon Relay local syntax probe
+# date:      2026-09-16T01:05:09Z
+# compiler:  g++ (Debian 12.2.0-14+deb12u1) 12.2.0
+# standard:  -std=c++20
+# codegen:   /tmp/neonrelay-syntax-probe
+
+## code generation
+  ok    src/generated/protocol.h
+  ok    src/generated/protocol.cpp
+  ok    src/generated/data_types.h
+  ok    src/generated/client_data.h
+  ok    src/generated/client_data.cpp
+  ok    src/generated/server_data.h
+  ok    src/generated/server_data.cpp
+  ok    src/generated/protocol7.h
+  ok    src/generated/protocol7.cpp
+  ok    src/generated/client_data7.h
+  ok    src/generated/client_data7.cpp
+  ok    src/generated/protocolglue.h
+  ok    src/generated/protocolglue_generated.cpp
+  ok    src/generated/wordlist.h
+
+## translation units
+SKIP  src/engine/server/server.cpp (missing external header: engine/shared/rust_version.h)
+
+## summary
+  compiled cleanly : 103
+  skipped (deps)   : 1
+  failed           : 0
+
+RESULT: PASS

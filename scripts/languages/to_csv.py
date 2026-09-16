@@ -7,7 +7,7 @@ import twlang
 
 
 def main():
-	parser = argparse.ArgumentParser(description="Convert DDNet translation files into Weblate CSV files in the specified directory.")
+	parser = argparse.ArgumentParser(description="Convert Neon Relay translation files into Weblate CSV files in the specified directory.")
 	parser.add_argument("out_dir", metavar="OUT_DIR", help="Directory to output the Weblate CSV files in")
 	args = parser.parse_args()
 

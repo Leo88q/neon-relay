@@ -40,9 +40,9 @@
 		<true/>
 		<!-- SDL references CoreBluetooth for wireless game controllers -->
 		<key>NSBluetoothAlwaysUsageDescription</key>
-		<string>DDNet uses Bluetooth to connect wireless game controllers.</string>
+		<string>Neon Relay uses Bluetooth to connect wireless game controllers.</string>
 		<key>NSBluetoothPeripheralUsageDescription</key>
-		<string>DDNet uses Bluetooth to connect wireless game controllers.</string>
+		<string>Neon Relay uses Bluetooth to connect wireless game controllers.</string>
 		<key>UIStatusBarHidden</key>
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>

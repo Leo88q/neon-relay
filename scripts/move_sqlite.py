@@ -89,9 +89,9 @@ def transfer(file_from, file_to, date, keep_timestamp_utc):
 
 
 def main():
-	default_output = "ddnet-server-" + strftime("%Y-%m-%dT%H:%M:%S") + ".sqlite"
-	parser = argparse.ArgumentParser(description="Move DDNet ranks, teamranks and saves from a possible active SQLite3 to a new one", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-	parser.add_argument("--from", "-f", dest="f", default="ddnet-server.sqlite", help="Input file where ranks are deleted from when moved successfully (default: ddnet-server.sqlite)")
+	default_output = "neonrelay-server-" + strftime("%Y-%m-%dT%H:%M:%S") + ".sqlite"
+	parser = argparse.ArgumentParser(description="Move Neon Relay ranks, teamranks and saves from a possibly active SQLite3 database to a new one", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	parser.add_argument("--from", "-f", dest="f", default="neonrelay-server.sqlite", help="Input file where ranks are deleted from when moved successfully (default: neonrelay-server.sqlite)")
 	parser.add_argument("--to", "-t", default=default_output, help="Output file where ranks are saved adds current date by default")
 	parser.add_argument("--backup-timeout", default=60, type=int, help="Time in minutes until when a rank is moved from the _backup tables")
 	parser.add_argument("--keep-timestamp-utc", default=False, action="store_true", help="Timestamps are converted to localtime by default. To keep them utc set this config option")
@@ -116,7 +116,7 @@ def main():
 	print(f"Moving entries from {os.path.abspath(args.f)} to {os.path.abspath(args.to)}")
 	print("You can use the following commands to import the entries to MySQL (using https://github.com/techouse/sqlite3-to-mysql/):")
 	print()
-	print(f"sqlite3mysql --sqlite-file {os.path.abspath(args.to)} --ignore-duplicate-keys --mysql-insert-method IGNORE --sqlite-tables record_race record_teamrace record_saves --mysql-password 'PW2' --mysql-host 'host' --mysql-database teeworlds --mysql-user teeworlds")
+	print(f"sqlite3mysql --sqlite-file {os.path.abspath(args.to)} --ignore-duplicate-keys --mysql-insert-method IGNORE --sqlite-tables record_race record_teamrace record_saves --mysql-password 'PW2' --mysql-host 'host' --mysql-database neonrelay --mysql-user neonrelay")
 	print(f"When the ranks are transferred successfully to mysql, {os.path.abspath(args.to)} can be removed")
 	print()
 	print("Log of the transfer:")

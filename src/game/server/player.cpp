@@ -1076,11 +1076,11 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			{
 				char aBuf[512];
 				str_format(aBuf, sizeof(aBuf),
-					"Happy DDNet birthday to %s for finishing their first map %d year%s ago!",
+					"Happy Neon Relay birthday to %s for finishing their first map %d year%s ago!",
 					Server()->ClientName(m_ClientId), Birthday, Birthday > 1 ? "s" : "");
 				GameServer()->SendChat(-1, TEAM_ALL, aBuf, m_ClientId);
 				str_format(aBuf, sizeof(aBuf),
-					"Happy DDNet birthday, %s!\nYou have finished your first map exactly %d year%s ago!",
+					"Happy Neon Relay birthday, %s!\nYou have finished your first map exactly %d year%s ago!",
 					Server()->ClientName(m_ClientId), Birthday, Birthday > 1 ? "s" : "");
 				GameServer()->SendBroadcast(aBuf, m_ClientId);
 				m_BirthdayAnnounced = true;
