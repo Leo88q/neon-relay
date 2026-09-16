@@ -51,12 +51,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "21"
+        jvmTarget = "17"
     }
 
     packaging {
@@ -75,7 +75,7 @@ android {
             java.srcDir("../../ddnet-libs/sdl/java")
             res.srcDir("../../scripts/android/files/res")
             // generated launcher icons (see copyLauncherIcons below)
-            res.srcDir(layout.buildDirectory.dir("generated/res"))
+            res.srcDir(layout.buildDirectory.dir("generated/launcher-res"))
         }
     }
 
@@ -88,12 +88,12 @@ android {
 // committed twice; see scripts/build_brand_assets.py.
 val copyLauncherIcons by tasks.registering(Copy::class) {
     from("../../other/icons/NeonRelay_256x256x32.png")
-    into(layout.buildDirectory.dir("generated/res/mipmap"))
+    into(layout.buildDirectory.dir("generated/launcher-res/mipmap"))
     rename { "ic_launcher.png" }
 }
 val copyLauncherIconsRound by tasks.registering(Copy::class) {
     from("../../other/icons/NeonRelay_256x256x32.png")
-    into(layout.buildDirectory.dir("generated/res/mipmap"))
+    into(layout.buildDirectory.dir("generated/launcher-res/mipmap"))
     rename { "ic_launcher_round.png" }
 }
 tasks.named("preBuild") {
@@ -109,4 +109,12 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+}
+
+// Workaround for the AGP 8.13 + Gradle 8.13 task-validation bug:
+// process*NavigationResources consumes generate*ResValues output without
+// declaring a dependency; wire it explicitly.
+tasks.configureEach {
+    val m = Regex("process(.+)NavigationResources").matchEntire(name)
+    if (m != null) dependsOn(tasks.named("generate" + m.groupValues[1] + "ResValues"))
 }

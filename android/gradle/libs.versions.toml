@@ -8,7 +8,7 @@
 [versions]
 agp = "8.13.0"
 kotlin = "2.0.21"
-mwa = "2.2.0"
+mwa = "2.0.8"
 coroutines = "1.9.0"
 lifecycle = "2.8.7"
 activity = "1.9.3"
@@ -16,7 +16,7 @@ securityCrypto = "1.1.0-alpha06"
 junit = "4.13.2"
 
 [libraries]
-mobilewalletadapter-clientlib = { module = "com.solana:mobile-wallet-adapter-clientlib", version.ref = "mwa" }
+mobilewalletadapter-clientlib = { module = "com.solanamobile:mobile-wallet-adapter-clientlib-ktx", version.ref = "mwa" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
