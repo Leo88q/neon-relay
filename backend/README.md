@@ -1,7 +1,7 @@
 # neonrelay-backend
 
-Reward backend for Neon Relay: wallet authentication (stage 6) and, from stage 7,
-the reward ledger. **Zero runtime dependencies** — Node 22 built-ins only
+Reward backend for Neon Relay: wallet authentication (stage 6) and the
+server-authoritative reward ledger (stage 7). **Zero runtime dependencies** — Node 22 built-ins only
 (`node:http`, `node:crypto`, `node:sqlite`), TypeScript run through Node's
 type-stripping (`--experimental-strip-types`), so there is no build step and no
 `node_modules` to audit.

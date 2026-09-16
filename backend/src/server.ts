@@ -8,6 +8,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { loadConfig, type Config } from "./config.ts";
 import { Db, migrate } from "./db.ts";
 import { AuthService, AuthFailure } from "./auth.ts";
+import { RewardService, RewardsError } from "./rewards.ts";
 import { SessionStore } from "./sessions.ts";
 import { WalletStore } from "./wallets.ts";
 import {
@@ -30,7 +31,8 @@ export function createApp(config: Config = loadConfig()): App {
   const wallets = new WalletStore(db);
   const sessions = new SessionStore(db, config.sessionTtlMs);
   const auth = new AuthService(config, wallets, sessions);
-  const router = buildRouter({ config, db, auth, wallets, sessions });
+  const rewards = new RewardService(db, config, wallets);
+  const router = buildRouter({ config, db, auth, wallets, sessions, rewards });
 
   const server = createServer((req, res) => {
     void dispatch(req, res);
@@ -62,6 +64,8 @@ export function createApp(config: Config = loadConfig()): App {
       } else if (err instanceof AuthFailure) {
         sendJson(res, authFailureStatus(err.code),
           { error: { code: err.code, message: err.message } });
+      } else if (err instanceof RewardsError) {
+        sendJson(res, err.status, { error: { code: err.code, message: err.message } });
       } else {
         // never leak internals; the message goes to the log only
         console.error("unhandled error", err);

@@ -24,7 +24,7 @@ test("health reports migrations", () => withApp({}, async (base) => {
 }));
 
 test("unknown routes are 404, never a stub", () => withApp({}, async (base) => {
-  const res = await getJson(base, "/v1/rewards/balance");
+  const res = await getJson(base, "/v1/rewards/definitely-not-a-route");
   assert.equal(res.status, 404);
   assert.equal(res.json.error.code, "not-found");
 }));

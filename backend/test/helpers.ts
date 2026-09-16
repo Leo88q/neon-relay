@@ -2,6 +2,7 @@
 import { generateKeyPairSync, sign as edSign } from "node:crypto";
 import { loadConfig, type Config } from "../src/config.ts";
 import { createApp, type App } from "../src/server.ts";
+import { canonicalEventBytes, type IncomingEvent } from "../src/rewards.ts";
 
 export interface TestWallet {
   publicKeyBase64: string;
@@ -70,4 +71,23 @@ export async function authenticate(base: string, wallet: TestWallet,
     account_label: label,
   });
   return { status: verifyRes.status, json: verifyRes.json, challengeBytes };
+}
+
+/** Game-server stand-in: signs match events with its own ed25519 key. */
+export interface TestServer {
+  publicKeyBase64: string;
+  signEvent: (event: Omit<IncomingEvent, "server_signature">) => IncomingEvent;
+}
+
+export function makeTestServer(): TestServer {
+  const { publicKey, privateKey } = generateKeyPairSync("ed25519");
+  const raw = publicKey.export({ format: "der", type: "spki" }).subarray(-32);
+  return {
+    publicKeyBase64: raw.toString("base64url"),
+    signEvent: (event) => ({
+      ...event,
+      server_signature: edSign(null, canonicalEventBytes(event), privateKey)
+        .toString("base64url"),
+    }),
+  };
 }

@@ -14,6 +14,7 @@
 import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
+import { RewardService, RewardsError } from "./rewards.ts";
 import { HttpError, RateLimiter, Router, type RequestContext } from "./http.ts";
 import type { SessionStore } from "./sessions.ts";
 import type { WalletStore } from "./wallets.ts";
@@ -35,8 +36,9 @@ export function buildRouter(deps: {
   auth: AuthService;
   wallets: WalletStore;
   sessions: SessionStore;
+  rewards: RewardService;
 }): Router {
-  const { config, db, auth, wallets, sessions } = deps;
+  const { config, db, auth, wallets, sessions, rewards } = deps;
   const router = new Router();
   // ~5 challenge/verify attempts per minute per IP, burst 10
   const limiter = new RateLimiter(10, 5 / 60_000);
@@ -117,9 +119,92 @@ export function buildRouter(deps: {
     return { unlinked: true, wallet_binding_id: binding.id };
   });
 
+  // ------------------------------------------------------------ rewards (stage 7)
+
+  router.add("POST", "/v1/rewards/events", (ctx) => {
+    guard(ctx, "ingest");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const events = body["events"];
+    if (!Array.isArray(events) || events.length === 0 || events.length > 500) {
+      throw new HttpError(400, "bad-request", "events must be an array of 1..500 items");
+    }
+    const results = rewards.ingestEvents(events as never[], Date.now());
+    return {
+      results,
+      accepted: results.filter((r) => r.status === "accepted").length,
+    };
+  });
+
+  router.add("GET", "/v1/rewards/balance", (ctx) => {
+    const { binding } = requireSession(ctx);
+    return rewards.balance(binding);
+  });
+
+  router.add("GET", "/v1/rewards/eligibility", (ctx) => {
+    const { binding } = requireSession(ctx);
+    return rewards.eligibility(binding.player_id, binding);
+  });
+
+  router.add("GET", "/v1/rewards/epochs", () => rewards.listEpochs());
+
+  router.add("POST", "/v1/rewards/epochs/seal", (ctx) => {
+    if (!config.adminToken) {
+      throw new HttpError(503, "admin-disabled", "operator routes are not configured");
+    }
+    if (ctx.bearer !== config.adminToken) {
+      throw new HttpError(403, "admin-forbidden", "operator token required");
+    }
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const epochId = body["epoch_id"];
+    if (typeof epochId !== "number" || !Number.isInteger(epochId)) {
+      throw new HttpError(400, "bad-request", "epoch_id must be an integer");
+    }
+    const epoch = rewards.sealEpoch(epochId);
+    return { epoch, audit_root: rewards.auditRoot(epochId) };
+  });
+
+  router.add("POST", "/v1/rewards/claim-intent", (ctx) => {
+    const { binding } = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const epochId = body["epoch_id"];
+    if (typeof epochId !== "number" || !Number.isInteger(epochId)) {
+      throw new HttpError(400, "bad-request", "epoch_id must be an integer");
+    }
+    const intent = rewards.claimIntent(binding, epochId);
+    return {
+      intent_id: intent.id,
+      epoch_id: intent.epoch_id,
+      amount_micro: intent.amount_micro,
+      leaf_hash: intent.leaf_hash,
+      merkle_proof: JSON.parse(intent.merkle_proof) as string[],
+      status: intent.status,
+    };
+  });
+
+  router.add("POST", "/v1/rewards/claim-confirmation", (ctx) => {
+    const { binding } = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const intentId = str(body["intent_id"], "intent_id", 64);
+    const transactionId = str(body["transaction_id"], "transaction_id", 128);
+    const status = body["status"];
+    if (status !== "submitted" && status !== "confirmed" && status !== "failed") {
+      throw new HttpError(400, "bad-request",
+        "status must be one of submitted|confirmed|failed");
+    }
+    const intent = rewards.claimConfirmation(binding, intentId, transactionId, status);
+    return { intent_id: intent.id, status: intent.status, transaction_id: intent.transaction_id };
+  });
+
+  router.add("GET", "/v1/rewards/intents", (ctx) => {
+    const { binding } = requireSession(ctx);
+    return { intents: rewards.intentsFor(binding) };
+  });
+
   // Surface auth failures with stable codes instead of 500s.
   return router;
 }
+
+export { RewardsError };
 
 export function authFailureStatus(code: AuthFailure["code"]): number {
   switch (code) {
