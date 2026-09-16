@@ -183,3 +183,25 @@ reports it (see `docs/KNOWN_LIMITATIONS.md`, BL-04).
 The classifier is a *tool*, not a proof: `docs/branding-scan.csv` is the reviewable output,
 and every rule that suppresses a match is visible in `scripts/branding_scan.py` with a
 comment explaining why the identifier must not be renamed.
+
+## Gameplay look: original neon skins and UI accent (stage 12)
+
+Beyond marks and strings, the in-game look now ships original Neon Relay art
+in the gameplay-critical slots, generated deterministically by
+`scripts/build_neon_skins.py` (256x128 sheets, exact upstream `set_tee` grid):
+
+| File | Treatment |
+| --- | --- |
+| `data/skins/default.png` | replaced in place — the default tee is a neon-gradient original (brand cyan body, magenta stripe) |
+| `data/skins/x_ninja.png` | replaced in place — dark body, magenta band, neon eyes (ninja state) |
+| `data/skins/x_spec.png` | replaced in place — outline-only neon-cyan ghost (spectator state) |
+| `data/skins/neon_*.png` (8 files) | new original skins: cyan, magenta, synthwave, vaporgrid, midnight, circuit, aurora, glitch |
+| `ui_color` default | `0xE4A046AF` (upstream purple) -> `0xE6FF40D6` (brand magenta, alpha 230) in `src/engine/shared/config_variables.h`; recolors every UI accent derived from it |
+
+Pixel bounding boxes were measured from the upstream sheets before generation
+(body ~59 px silhouette with a ~2 px outline ring, single-eye sprites, one foot
+shape per cell, `x_spec` outline-only) so the generated sheets load through the
+unchanged sprite pipeline. `scripts/build_neon_skins.py --check` is a CI gate.
+Prefixed upstream skin families (`coala_*`, `kitty_*`, `santa_*`) and menu theme
+maps remain upstream art behind the release gate — BL-05/BL-14.
+

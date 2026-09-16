@@ -93,6 +93,14 @@ increased."* This is an account-level blocker outside the repository. Once billi
 GitHub → Settings → Billing & plans, re-run with `gh run rerun 35052569158` or push any commit;
 no workflow change is expected to be needed.
 
+### BL-14 — menu theme maps and prefixed skin families are still upstream
+Stage 12 generated original art for the gameplay-critical slots (default/ninja/spec
+skins, eight neon skins, neon UI accent), but menu background *maps* (`data/themes/*.map`)
+cannot be produced procedurally — a background map needs the in-game editor/tool pipeline
+(BL-01). The release build therefore falls back to the "no theme" menu background with the
+neon `ui_color` accent; original theme maps are a follow-up. Prefixed upstream skin families
+(`coala_*`, `kitty_*`, `santa_*`) likewise stay behind the release gate (BL-05).
+
 ### BL-13 — features program has no gameplay producer yet; badge metadata is off-chain
 The stage-11 `neonrelay-features` program (achievements, badges, leaderboards, tournaments)
 is complete as a contract, but nothing in the game server emits achievements yet: an operator

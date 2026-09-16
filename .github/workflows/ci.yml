@@ -37,6 +37,8 @@ jobs:
           python3 scripts/check_secrets.py
       - name: Branding scan (release mode) + translation lockstep
         run: ./scripts/check_branding.sh --release --check-translations
+      - name: Generated skins match the generator (determinism)
+        run: python3 scripts/build_neon_skins.py --check
       - name: Asset manifest validation (coverage, hashes, license texts)
         run: ./scripts/check_assets.sh --licenses
       - name: Config variables unused-check

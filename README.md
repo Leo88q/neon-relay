@@ -47,7 +47,8 @@ upstream tree at a pinned commit and has been diverging since — see
 ## Project status
 
 The project is delivered in stages; each stage is a separate, reviewable commit. This
-snapshot is complete through **stage 10**: every stage is committed, and the final audit is
+snapshot is complete through **stage 12** (including the requested extensions: the
+non-simulation features program and the original neon gameplay art); the final audit is
 [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md).
 
 | Stage | Content | Status |
@@ -63,6 +64,8 @@ snapshot is complete through **stage 10**: every stage is committed, and the fin
 | 8 | Server-side match signing (`src/neonrelay/`, vendored ed25519-donna, cross-verified with node:crypto) | ✅ committed |
 | 9 | Solana Anchor program + TS client/tests (`onchain/`; not compilable in the sandbox — BL-03) | ✅ committed |
 | 10 | In-game Wallet UI, CI (blocked by account billing — BL-12), threat model, release checklist, Solana architecture + devnet runbook, final report | ✅ committed |
+| 11 | Non-simulation features program: achievements, unique badges, leaderboards, tournaments | ✅ committed |
+| 12 | Original neon skins in code-referenced slots + neon UI accent, manifest + CI gates | ✅ committed |
 
 Everything that could not be built or executed in this environment is recorded honestly in
 [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) with the exact command that failed
