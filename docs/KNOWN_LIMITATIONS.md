@@ -79,6 +79,16 @@ import an existing `settings_ddnet.cfg`; maps/skins/demos are still found throug
 legacy user-directory fallbacks in `src/engine/shared/storage.cpp`. Documented behaviour,
 not a defect; a migration wizard is a possible follow-up.
 
+### BL-12 — GitHub Actions cannot execute on the repository's account
+`.github/workflows/ci.yml` (stage 10) is committed, parses as valid YAML and every gate it runs
+was executed green locally in the same tree (11/11 commands, see the stage-10 commit message).
+The first real run ([run 35052569158](https://github.com/Leo88q/neon-relay/actions/runs/35052569158),
+2026-09-16) failed before any job started with GitHub's billing notice: *"The job was not
+started because recent account payments have failed or your spending limit needs to be
+increased."* This is an account-level blocker outside the repository. Once billing is fixed in
+GitHub → Settings → Billing & plans, re-run with `gh run rerun 35052569158` or push any commit;
+no workflow change is expected to be needed.
+
 ### BL-11 — signed events identify players by in-game name
 Stage-8 match events (`src/game/server/neonrelay_events.cpp`) set `player_id` to the
 client's current in-game name, because the game server has no account system. Names are
