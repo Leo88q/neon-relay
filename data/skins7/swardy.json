@@ -1,40 +1,36 @@
 {
 	"skin": {
 		"body": {
-			"filename": "spiky",
+			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 135,
-			"sat": 127,
-			"lgt": 172
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"marking": {
-			"filename": "duodonny",
-			"custom_colors": "true",
-			"hue": 85,
-			"sat": 52,
-			"lgt": 189,
-			"alp": 96
+			"filename": "lowstripe"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 135,
-			"sat": 127,
-			"lgt": 172
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 135,
-			"sat": 127,
-			"lgt": 172
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"eyes": {
-			"filename": "standard",
-			"custom_colors": "true",
-			"hue": 28,
-			"sat": 178,
-			"lgt": 94
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "unibop",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }

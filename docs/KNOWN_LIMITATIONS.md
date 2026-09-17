@@ -52,14 +52,19 @@ infrastructure (update server, info service, master server) is a deployment task
 the new `android/` module reuses those two classes as sources. Removing the template
 outright happens with the CI rework (stage 10).
 
-### BL-05 — 698 vendored assets are `block-release`
-Upstream applies CC-BY-SA 3.0 to `data/audio`, `data/countryflags`, `data/mapres`,
-`data/themes`, `data/editor`, `data/shader`, unnamed maps/skins/entities and the whole
-`data/skins7` tree **without naming authors**, so the attribution required by CC-BY-SA 3.0
-§4(b) cannot be produced from the tree. They are vendored for development and gated by
+### BL-05 — 246 vendored assets are `block-release`
+Upstream applies CC-BY-SA 3.0 to `data/audio/*.wv`, `data/shader/*`, `data/themes/*`,
+unreplaced `data/mapres/*` (54 sheets), unreplaced historical `data/maps*`, the
+DDNet `data/fonts/index.json`, `data/wordlist.txt`, `data/censorlist.txt`,
+`data/announcement.txt`, `data/autoexec_server.cfg`, `data/touch_controls.json`,
+`data/debug_font.png`, `data/gui_buttons.png` and `other/emscripten/*` **without
+naming authors**, so the attribution required by CC-BY-SA 3.0 §4(b) cannot be
+produced from the tree. They are vendored for development and gated by
 `./scripts/check_assets.sh --release`, which fails until the rights review in
-[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7 chooses: obtain authors, replace the
-assets, or ship a good-faith attribution page plus the full license text.
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7 chooses: obtain authors,
+replace the assets, or ship a good-faith attribution page plus the full license
+text. The previous number (698) reflected a manifest that did not enumerate the
+`.wv` audio mirrors; those are now correctly counted (131 of the 246).
 
 ### BL-08 — upstream developer docs kept as reference
 `docs/BUILDING*.md`, `docs/DEBUGGING.md`, `docs/CONTRIBUTING.md`, `docs/DATABASE.md` and
@@ -95,12 +100,14 @@ no workflow change is expected to be needed.
 
 ### BL-18 — remaining upstream art behind the release gate
 Stage 16 replaced every visible sprite sheet (emoticons, particles, gui icons,
-HUD, cursor, blob, flags, noise) with procedural originals. What remains
-upstream: `data/audio/*` (replacement needs an Opus encoder, unavailable in
-the offline sandbox), `data/maps*` and `data/mapres/*` (gameplay maps need
-artists or a map generator), `data/menuimages/*`, `data/communityicons/*`,
-`gui_buttons.png`, `extras.png`, `game.png` and `data/themes/*.map` (BL-14).
-All stay block-release in docs/ASSET_MANIFEST.csv until replaced or licensed.
+HUD, cursor, blob, flags, noise) with procedural originals. Stage 17 (BL-15 3/3)
+also replaced every 0.6 skin sheet and every 0.7 mask, so skins are no longer on
+this list. What remains upstream: `data/audio/*.wv` (the upstream WavPack
+mirrors of every sample; the matching `.wav` is already Neon Relay), `data/maps*`
+and `data/mapres/*` (gameplay maps need artists or a map generator),
+`data/menuimages/*`, `data/communityicons/*`, `gui_buttons.png`, `extras.png`,
+`game.png` and `data/themes/*.map` (BL-14). All stay block-release in
+docs/ASSET_MANIFEST.csv until replaced or licensed.
 
 ### BL-17 — MWA economy flow awaits on-device verification
 Stage 17 implemented the on-device builder (EconomyTxBuilder.kt: base58, PDA
@@ -126,15 +133,31 @@ platform-gated templates: `other/manifest/client.manifest.in`,
 `other/versioninfo/versioninfo.rc.in` (Windows builds) and
 `scripts/ios/files/Info.plist.in` (iOS builds). macOS/Linux/Android configure
 paths do not read the gated three; restoring them exactly is a follow-up once
-those targets enter scope.
+those targets enter scope. `cmake/checksummed_extra.txt` is committed to the
+tree (`git ls-files cmake/checksummed_extra.txt`) and the `checksummed_*`
+`.gitignore` pattern does not match the `cmake/checksummed_extra.txt` path, so
+the `git add -f` workaround is unnecessary.
+
+The skin sweep (BL-15 3/3, this commit) regenerated every 0.6 sheet and every
+0.7 mask with a unique procedural silhouette per name; see §5 of
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the full list.
 
 ### BL-14 — menu theme maps and prefixed skin families are still upstream
 Stage 12 generated original art for the gameplay-critical slots (default/ninja/spec
 skins, eight neon skins, neon UI accent), but menu background *maps* (`data/themes/*.map`)
 cannot be produced procedurally — a background map needs the in-game editor/tool pipeline
 (BL-01). The release build therefore falls back to the "no theme" menu background with the
-neon `ui_color` accent; original theme maps are a follow-up. Prefixed upstream skin families
-(`coala_*`, `kitty_*`, `santa_*`) likewise stay behind the release gate (BL-05).
+neon `ui_color` accent; original theme maps are a follow-up.
+
+**BL-15 3/3 (skin sweep)**: as of the BL-15 3/3 commit, every prefixed upstream skin family
+(`coala_*`, `kitty_*`, `santa_*`, the Whis family, Miper's `demonlimekitty`/`nanas`/`nersif`,
+Ravie's `kitty_*`/`bomb`, Magnus Auvinen's 16 originals, `wartee`/Obst, the unnamed rest)
+was redrawn with unique procedural silhouettes and per-name hue shifts; the 0.7 mask
+tree (17 body silhouettes + 5 eye sets + 50 marking compositions + 7 decorations +
+hands/feet mitts + bot chassis + xmas hat + 49 descriptors) was rebuilt as well.
+`docs/ASSET_MANIFEST.csv` lists all 235 skin pixels as `ship` (Zlib), and BL-05
+no longer mentions skins. Theme `.map` files remain the only art-side blocker on
+this branch — see §7 in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ### BL-13 — features program has no gameplay producer yet; badge metadata is off-chain
 The stage-11 `neonrelay-features` program (achievements, badges, leaderboards, tournaments)

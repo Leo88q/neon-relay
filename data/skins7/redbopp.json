@@ -3,42 +3,34 @@
 		"body": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 89,
-			"sat": 145,
-			"lgt": 121
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"marking": {
-			"filename": "donny",
-			"custom_colors": "true",
-			"hue": 2,
-			"sat": 217,
-			"lgt": 202,
-			"alp": 255
+			"filename": "bug"
 		},
 		"decoration": {
 			"filename": "unibop",
-			"custom_colors": "true",
-			"hue": 246,
-			"sat": 216,
-			"lgt": 108
+			"offset_x": "0",
+			"offset_y": "0"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 89,
-			"sat": 145,
-			"lgt": 121
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 89,
-			"sat": 145,
-			"lgt": 121
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"eyes": {
-			"filename": "standard",
-			"custom_colors": "false"
+			"filename": "standard"
 		}
 	}
 }

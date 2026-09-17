@@ -1,40 +1,36 @@
 {
 	"skin": {
 		"body": {
-			"filename": "raccoon",
+			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 89,
-			"sat": 173,
-			"lgt": 111
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"marking": {
-			"filename": "coonfluff",
-			"custom_colors": "true",
-			"hue": 17,
-			"sat": 110,
-			"lgt": 54,
-			"alp": 255
+			"filename": "singu"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 89,
-			"sat": 173,
-			"lgt": 111
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 89,
-			"sat": 173,
-			"lgt": 111
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"eyes": {
-			"filename": "standard",
-			"custom_colors": "true",
-			"hue": 23,
-			"sat": 196,
-			"lgt": 45
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "unibop",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }

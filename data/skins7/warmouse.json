@@ -1,40 +1,36 @@
 {
 	"skin": {
 		"body": {
-			"filename": "mouse",
+			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 33,
-			"sat": 169,
-			"lgt": 136
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"marking": {
-			"filename": "mice",
-			"custom_colors": "true",
-			"hue": 0,
-			"sat": 0,
-			"lgt": 255,
-			"alp": 255
+			"filename": "marksman"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 33,
-			"sat": 169,
-			"lgt": 136
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 33,
-			"sat": 169,
-			"lgt": 136
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"eyes": {
-			"filename": "negative",
-			"custom_colors": "true",
-			"hue": 0,
-			"sat": 200,
-			"lgt": 28
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "hair",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }

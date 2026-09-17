@@ -1,37 +1,36 @@
 {
 	"skin": {
 		"body": {
-			"filename": "koala",
+			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 175,
-			"sat": 191,
-			"lgt": 184
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"marking": {
-			"filename": "twinbelly",
-			"custom_colors": "true",
-			"hue": 21,
-			"sat": 12,
-			"lgt": 226,
-			"alp": 255
+			"filename": "purelove"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 175,
-			"sat": 191,
-			"lgt": 184
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 175,
-			"sat": 191,
-			"lgt": 184
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"eyes": {
-			"filename": "standard",
-			"custom_colors": "false"
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "hair",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }
