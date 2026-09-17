@@ -162,3 +162,8 @@ tags
 # Neon Relay keeps generated reports and build evidence under docs/
 !docs/*.csv
 !docs/baseline/*.log
+build-android/
+
+# locally built Android artifacts (produced by scripts/android/cmake_android.sh)
+android/app/src/main/jniLibs/
+android/app/src/main/assets/

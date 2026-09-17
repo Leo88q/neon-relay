@@ -57,6 +57,8 @@ public class ClientActivity extends SDLActivity {
 		}
 
 		super.onCreate(savedInstanceState);
+
+		com.leo88q.neonrelay.wallet.NativeBridge.warmUp();
 	}
 
 	@Override

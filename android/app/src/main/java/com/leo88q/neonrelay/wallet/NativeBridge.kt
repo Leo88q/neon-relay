@@ -36,5 +36,11 @@ object NativeBridge {
         WalletBridgeIntents.start()
     }
 
+    @JvmStatic
+    fun warmUp() {
+        if (available) nativeWarmUp()
+    }
+
     private external fun nativePushWalletEvent(type: Int, json: String)
+    private external fun nativeWarmUp()
 }
