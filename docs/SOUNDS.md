@@ -3,7 +3,7 @@
 Every sound shipped by Neon Relay is an **original, procedurally synthesised
 sample**: `scripts/build_neon_sounds.py` generates all 131 files in
 `data/audio/` from sine/noise primitives (22050 Hz, 16-bit mono WAV). No
-upstream DDNet/Teeworlds audio is used, sampled or referenced; the former
+upstream audio is used, sampled or referenced; the former
 WavPack files were removed.
 
 ## Engine support

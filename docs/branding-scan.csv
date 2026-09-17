@@ -457,7 +457,6 @@ docs/REBRANDING.md,157,historical-documentation,document that describes the upst
 docs/REBRANDING.md,158,historical-documentation,document that describes the upstream derivation,"| Legacy fallback paths (`$APPDATA/DDNet`, `Application Support/DDNet`, `/usr/share/ddnet`, `~/.teeworlds`) | Read-only compatibility so players keep their data. |"
 docs/REBRANDING.md,165,historical-documentation,document that describes the upstream derivation,occurrence of `DDNet|DDraceNetwork|DDrace|Teeworlds|ddnet|teeworlds` (case-insensitive) in
 docs/RELEASE_CHECKLIST.md,22,historical-documentation,document that describes the upstream derivation,- [ ] ✅ No DDNet/Teeworlds marks in user-facing surfaces
-docs/SOUNDS.md,6,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"upstream DDNet/Teeworlds audio is used, sampled or referenced; the former"
 docs/THIRD_PARTY_NOTICES.md,22,legal-attribution,upstream/third-party license notice (must stay),"| DDNet / Teeworlds engine, game, tools, tests | zlib/libpng-style | [`../license.txt`](../license.txt), kept verbatim; upstream authors retain copyright |"
 docs/THIRD_PARTY_NOTICES.md,28,legal-attribution,upstream/third-party license notice (must stay),"| Rust crates (`src/rust-bridge`, `ddnet_*` crates) | per-crate SPDX ids | `Cargo.toml` / `Cargo.lock` |"
 docs/THIRD_PARTY_NOTICES.md,76,legal-attribution,upstream/third-party license notice (must stay),"16 Teeworlds-era skins (Magnus Auvinen, zlib), `wartee` (Obst, zlib),"
