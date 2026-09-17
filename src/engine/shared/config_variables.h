@@ -235,7 +235,11 @@ MACRO_CONFIG_INT(UiMousesens, ui_mousesens, 200, 1, 100000, CFGFLAG_SAVE | CFGFL
 MACRO_CONFIG_INT(UiControllerSens, ui_controller_sens, 100, 1, 100000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Controller sensitivity for menus/editor")
 MACRO_CONFIG_INT(UiSmoothScrollTime, ui_smooth_scroll_time, 500, 0, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Time of smooth scrolling animation in menus/editor in ms (0 for off)")
 
-MACRO_CONFIG_COL(UiColor, ui_color, 0xE6FF40D6, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Interface color") // 255 64 214 230 hasalpha (Neon Relay brand magenta)
+MACRO_CONFIG_COL(UiColor, ui_color, 0xE64DE3F7, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Interface color") // 77 227 247 230 hasalpha (Neon Relay Night Drive cyan, docs/DESIGN_SYNTHWAVE.md)
+MACRO_CONFIG_STR(ClNeonrelayBackendUrl, cl_neonrelay_backend_url, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Neon Relay backend base URL for wallet economy flows (empty = payments/claims disabled in the client)")
+MACRO_CONFIG_STR(ClNeonrelayRpcUrl, cl_neonrelay_rpc_url, 128, "https://api.devnet.solana.com", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Solana RPC endpoint used by on-device economy transaction building (devnet default)")
+MACRO_CONFIG_STR(ClNeonrelayEconomyProgram, cl_neonrelay_economy_program, 64, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "neonrelay-economy program id (base58); operator configuration, never hardcoded in the build")
+MACRO_CONFIG_STR(ClNeonrelaySkrMint, cl_neonrelay_skr_mint, 64, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "SKR payment mint (base58) for display/validation; operator configuration (docs/PLAY_ECONOMY.md)")
 
 MACRO_CONFIG_INT(UiColorizePing, ui_colorize_ping, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight ping")
 MACRO_CONFIG_INT(UiColorizeGametype, ui_colorize_gametype, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight gametype")

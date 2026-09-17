@@ -1,0 +1,57 @@
+# Neon Relay — Synthwave «Night Drive» Design System
+
+Status: **adopted 2026-09-17** (operator choice via concept review).
+Concepts: `docs/design/concepts/` — menu + gameplay frames in three styles
+(A outrun, B night drive, C miami). Decision: **B (Night Drive) as the base
+style for every surface, with A's striped-sun / chrome accents reserved for
+menu, wallet and promo art** (hybrid). C kept as a candidate seasonal theme.
+
+## Tokens
+
+| Token | Hex | RGB | Use |
+|---|---|---|---|
+| night-0 (base) | `#05060E` | 5,6,14 | deepest background, vignettes |
+| night-1 (panel) | `#0A0E1E` | 10,14,30 | terrain slabs, glass panels (alpha ~60–80%) |
+| night-2 (raise) | `#101A30` | 16,26,48 | raised cards, selected rows |
+| cyan (primary) | `#4DE3F7` | 77,227,247 | safe surfaces, hooks, outlines, UI primary, touch controls |
+| pink (accent/danger) | `#FF2E88` | 255,46,136 | hazards, spikes, moving platforms, hot accents, horizon glow |
+| indigo (secondary) | `#6C60FF` | 108,96,255 | secondary glow, links, wallet highlights |
+| ice (text) | `#D8F6FF` | 216,246,255 | labels, HUD digits |
+| dim (grid) | `#607494` | 96,116,148 | background grid lines, disabled states |
+| sun-top (accent A) | `#FF5F6D` | 255,95,109 | striped sun gradient start — menu/promo only |
+| sun-bottom (accent A) | `#FFB020` | 255,176,32 | striped sun gradient end — menu/promo only |
+
+Semantic rule (gameplay legibility): **cyan = safe/traversable, pink =
+lethal/risk**. Hazards never use cyan; safe platforms never use pink.
+
+## Surface mapping
+
+- **Gameplay tiles / terrain**: night-1 slabs, cyan top-edge line only,
+  no full outlines; spikes & movers = pink.
+- **HUD**: monospace-ish digits in ice on night-1 glass pills; timer cyan,
+  economy chip (`SKR n`) indigo outline.
+- **Touch controls**: glass rings, inactive fill `#0A0E1E4D`, active tint
+  `#4DE3F733` (data/touch_controls.json).
+- **Menus / settings / wallet**: night-0 backdrop with dim perspective grid
+  and pink horizon line; panels night-1 glass; selection = cyan fill +
+  pink underline; menu glow blob = striped sun (accent A), see
+  `data/blob.png` generator.
+- **Brand / promo / launcher**: chrome-gradient logotype + striped sun
+  behind (accent A); body copy in ice on night-0.
+- **Skins**: base palette per token table; house skins `nightdrive`
+  (night body, cyan outline, pink stripe) and `outrun` (sun gradient body,
+  cyan band) ship the two poles of the system.
+
+## Implementation points
+
+- UI sheets & blob: `scripts/build_neon_ui_art.py` (tokens at top of file).
+- Skins: `scripts/build_neon_skins.py` (`BRAND_CYAN`, `BRAND_MAGENTA`, specs).
+- Default interface accent: `UiColor` default `0xE64DE3F7`
+  (`src/engine/shared/config_variables.h`).
+- Touch theme: `data/touch_controls.json`.
+- Regenerate + gates: run both generators, then
+  `scripts/gen_asset_manifest.py`, `scripts/check_assets.sh`,
+  `scripts/build_neon_ui_art.py --check`.
+
+Out of scope for now (parked): theme C «Miami» as a seasonal skin/theme pack;
+in-game map tileset reskin (BL-14 maps work will pick these tokens up).

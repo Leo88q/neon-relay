@@ -33,8 +33,8 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "data" / "skins"
 SS = 4  # supersampling factor
 
-BRAND_CYAN = (64, 232, 255)
-BRAND_MAGENTA = (255, 64, 214)
+BRAND_CYAN = (77, 227, 247)    # Night Drive primary (docs/DESIGN_SYNTHWAVE.md)
+BRAND_MAGENTA = (255, 46, 136)  # Night Drive danger/accent pink
 
 
 def lerp(a: int, b: int, t: float) -> int:
@@ -86,12 +86,12 @@ SPECS = [
 	# CSkins::LoadSkinDirect("default"), ninja/spec states)
 	SkinSpec("default", (110, 240, 255), (28, 120, 214), (10, 16, 34, 235),
 		(46, 170, 235), (238, 248, 255), accent=BRAND_MAGENTA, accent_style="stripe"),
-	SkinSpec("x_ninja", (44, 48, 62), (16, 18, 26), (255, 64, 214, 235),
+	SkinSpec("x_ninja", (44, 48, 62), (16, 18, 26), (255, 46, 136, 235),
 		(30, 32, 42), (255, 90, 220), accent=BRAND_MAGENTA, accent_style="band"),
 	# extra original neon skins
 	SkinSpec("neon_cyan", (140, 250, 255), (20, 140, 200), (6, 24, 38, 235),
 		(60, 200, 240), (240, 255, 255), accent=(255, 255, 255), accent_style="grid"),
-	SkinSpec("neon_magenta", (255, 150, 235), (170, 30, 140), (34, 6, 28, 235),
+	SkinSpec("neon_magenta", (255, 130, 200), (160, 20, 96), (34, 6, 28, 235),
 		(235, 90, 200), (255, 240, 250), accent=BRAND_CYAN, accent_style="stripe"),
 	SkinSpec("synthwave", (255, 120, 90), (120, 40, 160), (24, 8, 40, 235),
 		(200, 90, 140), (255, 230, 200), accent=(255, 220, 120), accent_style="grid"),
@@ -103,8 +103,13 @@ SPECS = [
 		(26, 34, 38), (120, 255, 210), accent=BRAND_CYAN, accent_style="circuit"),
 	SkinSpec("aurora", (120, 255, 190), (80, 120, 255), (10, 26, 30, 235),
 		(100, 210, 190), (235, 255, 245), accent=(200, 140, 255), accent_style="stripe"),
-	SkinSpec("glitch", (70, 74, 88), (24, 26, 34), (255, 64, 214, 235),
+	SkinSpec("glitch", (70, 74, 88), (24, 26, 34), (255, 46, 136, 235),
 		(50, 54, 66), (255, 80, 90), accent=BRAND_CYAN, accent_style="glitch"),
+	# Night Drive pass (docs/DESIGN_SYNTHWAVE.md): base style + outrun accent
+	SkinSpec("nightdrive", (26, 30, 52), (8, 10, 22), (77, 227, 247, 235),
+		(77, 227, 247), (216, 246, 255), accent=(255, 46, 136), accent_style="stripe"),
+	SkinSpec("outrun", (255, 95, 109), (150, 40, 120), (24, 8, 40, 235),
+		(255, 176, 32), (216, 246, 255), accent=(77, 227, 247), accent_style="band"),
 ]
 
 # x_spec: outline-only ghost (matches upstream sheet: only the outline cell)

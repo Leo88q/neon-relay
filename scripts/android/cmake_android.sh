@@ -265,9 +265,9 @@ log_info "Creating integrity index file..."
 python3 "${SCRIPT_DIR}/generate_asset_integrity_index.py"
 
 log_info "Preparing gradle build..."
-rm -rf src/main/java/org
+rm -rf src/main/java/com src/main/java/org
 mkdir -p src/main/java
-cp -R ../scripts/android/files/java/org src/main/java/
+cp -R ../scripts/android/files/java/com src/main/java/
 cp -R ../ddnet-libs/sdl/java/org src/main/java/
 # shellcheck source=scripts/android/files/build.sh
 source ./build.sh "$GAME_NAME" "$PACKAGE_NAME" "$BUILD_TYPE"
