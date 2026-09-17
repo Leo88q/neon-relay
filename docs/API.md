@@ -141,3 +141,23 @@ Anchor program (`onchain/`, stage 9) verifies against the published epoch root;
 confirmation statuses mirror the transaction lifecycle and are recorded for
 audit only — double-payment is prevented on-chain by the per-(epoch, wallet)
 claim PDA.
+
+## Economy routes (stage 15, docs/PLAY_ECONOMY.md)
+
+All economy routes require a wallet session unless noted; all return
+`application/json`. The backend never signs chain transactions.
+
+| Route | Auth | Purpose |
+| --- | --- | --- |
+| `GET /v1/economy/reference?kind=&epoch=&extra=` | session | entry-payment reference (SHA256(kind‖epoch‖extra‖wallet)) for `pay_entry` |
+| `GET /v1/economy/ticket?kind=&epoch=&extra=` | session | on-chain EntryTicket status (PDA read over RPC): `{ticketed, kind, amountMicro, paidAt}` |
+| `POST /v1/economy/epoch-close` `{epoch, poolMicro}` | admin token | ranks accepted reward events, keeps ticketed wallets, applies the top-10 table, stores the Merkle root + distribution for the operator publish step |
+| `GET /v1/economy/epochs` | public | closed prize epochs (root + total) |
+| `GET /v1/economy/current-epoch` | public | current epoch index (`floor(now / epochMs)`) used by entry references |
+| `POST /v1/economy/match-intent` `{epoch?}` | session | creates a per-match record, returns `{matchId, epoch, reference}` for `pay_entry` |
+| `GET /v1/economy/proof?epoch=&wallet=` | public | place, amount, leaf index and Merkle proof for `claim_prize` (public by design: reveals only the caller's own leaf, already committed in the root; used by the on-device claim flow) |
+
+Configuration: `NEONRELAY_ECONOMY_PROGRAM_ID`, `NEONRELAY_SKR_MINT`
+(operator-set, validated, never hardcoded), `NEONRELAY_RPC_URL`
+(default devnet). Without the program id the routes answer
+`503 economy-not-configured`.

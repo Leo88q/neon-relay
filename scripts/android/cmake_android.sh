@@ -267,6 +267,8 @@ python3 "${SCRIPT_DIR}/generate_asset_integrity_index.py"
 log_info "Preparing gradle build..."
 rm -rf src/main/java/com src/main/java/org
 mkdir -p src/main/java
+# the client Java classes live under com/leo88q/neonrelay after the
+# rebrand (upstream: org/ddnet/client)
 cp -R ../scripts/android/files/java/com src/main/java/
 cp -R ../ddnet-libs/sdl/java/org src/main/java/
 # shellcheck source=scripts/android/files/build.sh

@@ -109,6 +109,122 @@ class WalletManager(
         }
     }
 
+    /**
+     * Run an economy flow (docs/PLAY_ECONOMY.md, stage 17): build the
+     * pay_entry / claim_prize transaction fully on-device with
+     * [EconomyTxBuilder] (PDAs, references and Borsh payloads recomputed
+     * exactly as backend/src/economy.ts), fetch the config account and a
+     * fresh blockhash over public RPC, and let the wallet app sign AND send
+     * via signAndSendTransactions. For claims the Merkle proof comes from
+     * the backend's public proof route. No keys or seeds touch this object.
+     */
+    suspend fun runEconomy(requestJson: String): WalletResult<String> = mutex.withLock {
+        val activitySender = sender ?: return WalletResult.Failure(
+            WalletError.OperationFailed("wallet manager is not attached to an activity")
+        )
+        val request = runCatching { org.json.JSONObject(requestJson) }.getOrElse {
+            return WalletResult.Failure(WalletError.OperationFailed("economy request is not valid JSON"))
+        }
+        val action = request.optString("action", "")
+        val kind = request.optInt("kind", 0)
+        val epoch = request.optLong("epoch", 0L)
+        val programId = request.optString("programId", "")
+        val rpcUrl = request.optString("rpcUrl", "https://api.devnet.solana.com")
+        val backendUrl = request.optString("backendUrl", "")
+        if (programId.isEmpty()) {
+            return WalletResult.Failure(WalletError.OperationFailed("economy program id is not configured"))
+        }
+        val programIdBytes = runCatching { EconomyTxBuilder.base58Decode(programId) }.getOrElse {
+            return WalletResult.Failure(WalletError.OperationFailed("economy program id is not valid base58"))
+        }
+        val result = runCatching {
+            adapter.transact(activitySender) { auth: AuthorizationResult ->
+                adopt(auth)
+                val account = auth.accounts[0]
+                val player = account.publicKey
+                val configData = rpc(rpcUrl, "getAccountInfo", org.json.JSONArray().apply {
+                    put(EconomyTxBuilder.base58Encode(EconomyTxBuilder.configAddress(programIdBytes)))
+                    put(org.json.JSONObject().put("encoding", "base64"))
+                })
+                val config = EconomyTxBuilder.parseConfig(
+                    android.util.Base64.decode(
+                        configData.getJSONObject("value").getJSONArray("data").getString(0),
+                        android.util.Base64.DEFAULT,
+                    ),
+                )
+                require(!config.paused) { "economy program is paused" }
+                val blockhash = android.util.Base64.decode(
+                    rpc(rpcUrl, "getLatestBlockhash", org.json.JSONArray())
+                        .getJSONObject("value").getString("blockhash"),
+                    android.util.Base64.DEFAULT,
+                )
+                val resolvedEpoch = if (epoch > 0) epoch else httpGetJson("$backendUrl/v1/economy/current-epoch").getLong("epoch")
+                val message = when (action) {
+                    "pay_entry" -> EconomyTxBuilder.buildPayEntryMessage(
+                        player, config, programIdBytes,
+                        EconomyTxBuilder.entryReference(kind, resolvedEpoch, player), kind, blockhash,
+                    )
+                    "claim" -> {
+                        require(backendUrl.isNotEmpty()) { "backend url is not configured" }
+                        val proofJson = httpGetJson(
+                            "$backendUrl/v1/economy/proof?epoch=$resolvedEpoch" +
+                                "&wallet=${EconomyTxBuilder.base58Encode(player)}",
+                        )
+                        val proof = mutableListOf<ByteArray>()
+                        val arr = proofJson.getJSONArray("proof")
+                        for (i in 0 until arr.length()) proof.add(EconomyTxBuilder.hexToBytes(arr.getString(i)))
+                        EconomyTxBuilder.buildClaimPrizeMessage(
+                            player, config, programIdBytes, resolvedEpoch,
+                            proofJson.getLong("amountMicro"), proofJson.getInt("leafIndex"), proof, blockhash,
+                        )
+                    }
+                    else -> throw IllegalArgumentException("unknown economy action: $action")
+                }
+                val sent = signAndSendTransactions(arrayOf(message), arrayOf(account.publicKey))
+                sent.signature ?: ""
+            }.asWalletResult()
+        }.getOrElse { WalletResult.Failure(it.toWalletError()) }
+        return when (result) {
+            is WalletResult.Success -> {
+                pushEvent(NativeBridge.EVENT_ECONOMY, connected = true, message = "economy transaction sent")
+                result
+            }
+            is WalletResult.Failure -> {
+                session.update(WalletSession.State.ERROR, message = result.error.userMessage)
+                pushEvent(NativeBridge.EVENT_ECONOMY, connected = false, message = result.error.userMessage)
+                result
+            }
+        }
+    }
+
+    /** Minimal JSON-RPC over public RPC (IO dispatcher, no secrets). */
+    private suspend fun rpc(url: String, method: String, params: org.json.JSONArray): org.json.JSONObject =
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val body = org.json.JSONObject()
+                .put("jsonrpc", "2.0").put("id", 1).put("method", method).put("params", params)
+            val connection = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 10_000
+                readTimeout = 10_000
+                setRequestProperty("content-type", "application/json")
+                doOutput = true
+            }
+            connection.outputStream.use { it.write(body.toString().toByteArray()) }
+            val text = connection.inputStream.bufferedReader().use { it.readText() }
+            val json = org.json.JSONObject(text)
+            if (json.has("error")) throw java.io.IOException("rpc error: ${json.getJSONObject("error")}")
+            json.getJSONObject("result")
+        }
+
+    private suspend fun httpGetJson(url: String): org.json.JSONObject =
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val connection = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
+                connectTimeout = 10_000
+                readTimeout = 10_000
+            }
+            org.json.JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+        }
+
     /** Deauthorize and forget the session. Safe to call when not connected. */
     suspend fun disconnect(): WalletResult<Unit> = mutex.withLock {
         val activitySender = sender

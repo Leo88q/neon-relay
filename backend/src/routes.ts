@@ -19,6 +19,10 @@ import { HttpError, RateLimiter, Router, type RequestContext } from "./http.ts";
 import type { SessionStore } from "./sessions.ts";
 import type { WalletStore } from "./wallets.ts";
 import { migrationCount, type Db } from "./db.ts";
+import {
+  base58Decode, base58Encode, closeEpochPrizes, entryReference, httpRpc, ticketStatus,
+} from "./economy.ts";
+import { buildTree, leafHash, proofFor } from "./merkle.ts";
 
 const str = (value: unknown, field: string, max = 512): string => {
   if (typeof value !== "string" || value.length === 0 || value.length > max) {
@@ -202,6 +206,150 @@ export function buildRouter(deps: {
   });
 
   // Surface auth failures with stable codes instead of 500s.
+  // ------------------------------------------------------------- economy (15)
+  // SKR pay-to-play support routes (docs/PLAY_ECONOMY.md). The backend never
+  // signs chain transactions: it derives ticket PDAs, reads them over RPC and
+  // stores prize roots for an operator publish step.
+  const economyGuard = () => {
+    if (!config.economyProgramId) {
+      throw new HttpError(503, "economy-not-configured",
+        "set NEONRELAY_ECONOMY_PROGRAM_ID to enable economy routes");
+    }
+  };
+  const walletRawOf = (ctx: RequestContext): Buffer => {
+    const session = requireSession(ctx);
+    const binding = wallets.findBinding(session.session.wallet_binding_id);
+    if (!binding) throw new HttpError(401, "binding-missing", "wallet binding is gone");
+    return Buffer.from(binding.public_key, "base64url");
+  };
+  const rpc = httpRpc(config.rpcUrl);
+
+  router.add("GET", "/v1/economy/reference", (ctx) => {
+    economyGuard();
+    const kind = Number(ctx.url.searchParams.get("kind") ?? "0");
+    const epoch = Number(ctx.url.searchParams.get("epoch") ?? "0");
+    const extra = Number(ctx.url.searchParams.get("extra") ?? "0");
+    if (![0, 1].includes(kind) || !Number.isInteger(epoch) || epoch < 0) {
+      throw new HttpError(400, "bad-request", "kind must be 0|1 and epoch a non-negative integer");
+    }
+    const raw = walletRawOf(ctx);
+    return { reference: entryReference(kind, epoch, raw, extra).toString("hex") };
+  });
+
+  router.add("GET", "/v1/economy/ticket", async (ctx) => {
+    economyGuard();
+    const kind = Number(ctx.url.searchParams.get("kind") ?? "0");
+    const epoch = Number(ctx.url.searchParams.get("epoch") ?? "0");
+    const extra = Number(ctx.url.searchParams.get("extra") ?? "0");
+    const raw = walletRawOf(ctx);
+    const status = await ticketStatus(rpc, config.economyProgramId as string,
+      entryReference(kind, epoch, raw, extra), raw);
+    return status;
+  });
+
+  router.add("POST", "/v1/economy/epoch-close", async (ctx) => {
+    economyGuard();
+    if (!config.adminToken || ctx.bearer !== config.adminToken) {
+      throw new HttpError(401, "admin-required", "economy epoch close needs the admin token");
+    }
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const epoch = Number(body.epoch);
+    const poolMicro = Number(body.poolMicro);
+    if (!Number.isInteger(epoch) || epoch <= 0 || !Number.isInteger(poolMicro) || poolMicro <= 0) {
+      throw new HttpError(400, "bad-request", "epoch and poolMicro must be positive integers");
+    }
+    const rows = db.all<{ pk: string; total: number; binding: string }>(
+      `SELECT b.public_key AS pk, b.id AS binding, COALESCE(SUM(e.amount_micro), 0) AS total
+       FROM reward_events e JOIN wallet_bindings b ON b.id = e.wallet_binding_id
+       WHERE e.reward_epoch = ? AND e.status = 'accepted'
+       GROUP BY b.id ORDER BY total DESC`, [epoch]);
+    const ranked = rows.map((r) => ({ wallet: base58Encode(Buffer.from(r.pk, "base64url")), totalMicro: r.total }));
+    const refsByBinding = new Map<string, string[]>();
+    for (const row of rows) {
+      const intents = db.all<{ reference: string }>(
+        "SELECT reference FROM economy_matches WHERE wallet_binding_id = ? AND epoch = ?",
+        [row.binding, epoch]);
+      refsByBinding.set(row.binding, intents.map((i) => i.reference));
+    }
+    const bindingOf = new Map(ranked.map((r, i) => [r.wallet, rows[i]?.binding ?? ""]));
+    const result = await closeEpochPrizes({
+      rankedTotals: ranked,
+      hasTicket: async (raw) => {
+        const program = config.economyProgramId as string;
+        if ((await ticketStatus(rpc, program, entryReference(0, epoch, raw), raw)).ticketed) return true;
+        // per-match tickets (stage 17): any paid match intent in the epoch
+        const refs = refsByBinding.get(bindingOf.get(base58Encode(raw)) ?? "") ?? [];
+        for (const ref of refs) {
+          if ((await ticketStatus(rpc, program, Buffer.from(ref, "hex"), raw)).ticketed) return true;
+        }
+        return false;
+      },
+      poolMicro,
+      epoch,
+    });
+    db.run("INSERT INTO economy_epochs (epoch, root, total_micro, distribution, created_at) VALUES (?, ?, ?, ?, ?)",
+      [epoch, result.root, result.totalMicro,
+       JSON.stringify(result.leaves.map((l) => ({ wallet: l.wallet, amount_micro: l.amountMicro, place: l.place }))),
+       Date.now()]);
+    return { epoch, root: result.root, totalMicro: result.totalMicro,
+      leaves: result.leaves.map((l) => ({ place: l.place, wallet: l.wallet, amountMicro: l.amountMicro })) };
+  });
+
+  router.add("GET", "/v1/economy/current-epoch", (ctx) => {
+    economyGuard();
+    void ctx;
+    return { epoch: Math.floor(Date.now() / config.epochMs) };
+  });
+
+  router.add("POST", "/v1/economy/match-intent", async (ctx) => {
+    economyGuard();
+    const session = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const epoch = Number(body.epoch ?? 0) || Math.floor(Date.now() / config.epochMs);
+    const raw = walletRawOf(ctx);
+    const id = db.runInsert(
+      "INSERT INTO economy_matches (wallet_binding_id, epoch, reference, created_at) VALUES (?, ?, ?, ?)",
+      [session.session.wallet_binding_id, epoch, "pending", Date.now()]);
+    const reference = entryReference(0, epoch, raw, id).toString("hex");
+    db.run("UPDATE economy_matches SET reference = ? WHERE id = ?", [reference, id]);
+    return { matchId: id, epoch, reference };
+  });
+
+  router.add("GET", "/v1/economy/epochs", (ctx) => {
+    economyGuard();
+    void ctx;
+    return { epochs: db.all<{ epoch: number; root: string; total_micro: number }>(
+      "SELECT epoch, root, total_micro FROM economy_epochs ORDER BY epoch DESC") };
+  });
+
+  router.add("GET", "/v1/economy/proof", (ctx) => {
+    economyGuard();
+    const epoch = Number(ctx.url.searchParams.get("epoch") ?? "0");
+    // Public by design: the wallet parameter only reveals the caller's own
+    // leaf (amount + proof), both already committed in the published root;
+    // the Android claim flow calls this without a backend session.
+    const walletParam = ctx.url.searchParams.get("wallet") ?? "";
+    let raw: Buffer;
+    try {
+      raw = base58Decode(walletParam);
+    } catch {
+      throw new HttpError(400, "bad-request", "wallet must be a base58 public key");
+    }
+    if (raw.length !== 32) throw new HttpError(400, "bad-request", "wallet must be 32 bytes");
+    const wallet = walletParam;
+    const row = db.get<{ root: string; distribution: string }>(
+      "SELECT root, distribution FROM economy_epochs WHERE epoch = ?", [epoch]);
+    if (!row) throw new HttpError(404, "epoch-not-found", "no closed prize epoch with this id");
+    const dist = JSON.parse(row.distribution) as { wallet: string; amount_micro: number; place: number }[];
+    const index = dist.findIndex((d) => d.wallet === wallet);
+    if (index < 0) throw new HttpError(404, "not-in-distribution", "wallet has no prize in this epoch");
+    const leaves = dist.map((d) => leafHash(base58Decode(d.wallet), d.amount_micro));
+    const tree = buildTree(leaves);
+    if (tree.root !== row.root) throw new HttpError(500, "root-mismatch", "stored root does not match distribution");
+    return { epoch, root: row.root, place: dist[index]?.place, amountMicro: dist[index]?.amount_micro,
+      leafIndex: index, proof: proofFor(tree, index) };
+  });
+
   return router;
 }
 

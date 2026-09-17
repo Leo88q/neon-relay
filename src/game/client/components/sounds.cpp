@@ -36,7 +36,7 @@ void CSoundLoading::Run()
 			if(State() == IJob::STATE_ABORTED)
 				return;
 
-			int Id = m_pGameClient->Sound()->LoadWV(g_pData->m_aSounds[s].m_aSounds[i].m_pFilename);
+			int Id = m_pGameClient->Sound()->LoadWav(g_pData->m_aSounds[s].m_aSounds[i].m_pFilename);
 			g_pData->m_aSounds[s].m_aSounds[i].m_Id = Id;
 			// try to render a frame
 			if(m_Render)

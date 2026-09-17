@@ -129,3 +129,19 @@ Client helpers: `onchain/src/achievements.ts` decodes the bitmap with the same
 word/bit arithmetic as the program; `onchain/test/features.test.ts` pins the
 parity plus the authority/uniqueness/pause guards statically (18/18 offline
 tests overall in `onchain/`).
+
+## 8. neonrelay-economy (stage 14): pay-to-play money path
+
+Third program, money-only (no simulation): config PDA
+(`neonrelay_economy_config`: authority, operator mint, treasury ATA, vault ATA,
+rake_bps ≤ 2000, fees, paused), `EntryTicket` PDAs
+(`neonrelay_entry` + reference + player; idempotent payment receipts),
+`PrizeEpoch` PDAs (`neonrelay_prizes` + epoch LE; publish-once Merkle root,
+vault-covered total) and `PrizeClaim` PDAs
+(`neonrelay_prize_claim` + epoch + player; double-claim block). Instructions:
+`initialize` (operator mint in, never hardcoded), `set_params`, `set_paused`,
+`pay_entry` (rake→treasury, rest→vault, one transaction), `publish_prizes`,
+`claim_prize` (indexed Merkle proof, leaf = SHA256(wallet || amount_be), vault
+pays under config-PDA signature). Invariants: no `init_if_needed`, checked
+split arithmetic, pause gate on payments, one-way roots, 32-node proof cap.
+Design and compliance: docs/PLAY_ECONOMY.md.

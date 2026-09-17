@@ -1,12 +1,26 @@
 /* JNI shim for the Neon Relay wallet layer.
  *
+ * Two directions, one boundary:
+ *   Kotlin → native : NativeBridge.pushWalletEvent → neonrelay_wallet_push_event
+ *                     (only the sanitized JSON of src/neonrelay/wallet_bridge.h).
+ *   native → Kotlin : neonrelay_wallet_platform_request / _economy (in-game
+ *                     Wallet page) → NativeBridge.requestWalletConnect /
+ *                     requestWalletDisconnect / requestEconomy, which drive the
+ *                     Mobile Wallet Adapter flow.
+ *
  * JNI_OnLoad ownership: the statically linked SDL2 (ddnet-libs, SDL_android.c)
  * already exports JNI_OnLoad for libneonrelay.so, so this shim must NOT define
- * one. NativeBridge.warmUp() is called from ClientActivity.onCreate() right
- * after the native libraries are loaded; warmUp runs on a Java thread, which
- * is the only place where FindClass resolves application classes. The JavaVM
- * and a global ref to NativeBridge are cached there for all later
- * native-to-Kotlin calls from game threads.
+ * one (duplicate symbol at link time). Instead NativeBridge.warmUp() is called
+ * from ClientActivity.onCreate() right after SDLActivity has loaded the native
+ * libraries; warmUp runs on a Java thread, which is also the only place where
+ * FindClass resolves application classes (native-attached threads would see
+ * only the system class loader). The JavaVM and a global ref to the
+ * NativeBridge class are cached there and used for all later native→Kotlin
+ * calls from game threads.
+ *
+ * This is the only path between Kotlin wallet code and native game code; no
+ * private key material ever crosses it. Compiled into libneonrelay.so when
+ * TARGET_OS is android (see CMakeLists.txt).
  */
 #include <jni.h>
 
@@ -14,8 +28,9 @@
 
 namespace {
 JavaVM *s_pJavaVm = nullptr;
-jclass s_pBridgeClass = nullptr;
+jclass s_pBridgeClass = nullptr; // global ref, set from a Java thread only
 
+/* Idempotent; must be called from a Java thread (correct class loader). */
 void CacheFromJavaThread(JNIEnv *pEnv)
 {
 	if(s_pJavaVm)
@@ -31,6 +46,10 @@ void CacheFromJavaThread(JNIEnv *pEnv)
 		pEnv->ExceptionClear();
 }
 
+/* JNIEnv for the current (game) thread, attaching it to the VM if needed.
+ * Returns nullptr until warmUp() has run. Attached threads are intentionally
+ * never detached: wallet requests come from long-lived game threads and
+ * re-attaching per call costs more than keeping the attachment. */
 JNIEnv *AttachWalletEnv()
 {
 	if(!s_pJavaVm)
@@ -88,6 +107,8 @@ Java_com_leo88q_neonrelay_wallet_NativeBridge_nativePushWalletEvent(
 		env->ReleaseStringUTFChars(json, chars);
 }
 
+/* Implemented in wallet_bridge.h's contract: forward the in-game Wallet page
+ * economy request (pay_entry / claim) to the Kotlin layer. */
 void neonrelay_wallet_platform_economy(const char *json)
 {
 	JNIEnv *pEnv = AttachWalletEnv();

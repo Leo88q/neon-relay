@@ -25,6 +25,7 @@ enum
 	NEONRELAY_WALLET_EVENT_DISCONNECTED = 0,
 	NEONRELAY_WALLET_EVENT_CONNECTED = 1,
 	NEONRELAY_WALLET_EVENT_ERROR = 2,
+	NEONRELAY_WALLET_EVENT_ECONOMY = 3,
 };
 
 typedef struct NeonRelayWalletInfo
@@ -56,6 +57,17 @@ void neonrelay_wallet_push_event(int event_type, const char *json);
  * always arrives later through neonrelay_wallet_push_event. */
 void neonrelay_wallet_request_connect(void);
 void neonrelay_wallet_request_disconnect(void);
+
+/**
+ * Ask the platform wallet layer to run an economy flow (pay_entry / claim)
+ * described by a sanitized JSON payload: {"action": "pay_entry"|"claim",
+ * "kind": 0|1, "epoch": N}. No key material crosses this boundary; the
+ * Android layer builds and signs inside Mobile Wallet Adapter (BL-17).
+ */
+void neonrelay_wallet_request_economy(const char *json);
+
+/** Platform hook implemented per backend (JNI on Android, stub elsewhere). */
+void neonrelay_wallet_platform_economy(const char *json);
 
 /* Implemented per platform: Android in android/app/src/main/cpp/
  * neonrelay_wallet_jni.cpp, other platforms by a stub inside

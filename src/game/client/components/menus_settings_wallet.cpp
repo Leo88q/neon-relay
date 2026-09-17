@@ -127,4 +127,60 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 		Ui()->DoLabel(&NoteLine, pNote, 13.0f, TEXTALIGN_TL);
 	}
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+	// ------------------------------------------------------------- economy (15)
+	// SKR pay-to-play panel: entry payments and prize claims are executed by
+	// the platform wallet layer (Mobile Wallet Adapter on Seeker devices);
+	// this page only requests flows and explains the model (BL-17).
+	MainView.HSplitTop(8.0f, nullptr, &MainView);
+	MainView.HSplitTop(24.0f, &Header, &MainView);
+	Ui()->DoLabel(&Header, Localize("Economy (SKR pay-to-play)"), 20.0f, TEXTALIGN_ML);
+
+	static const char *s_pEconomyNote = Localize("Ranked play and tournaments accept SKR entry fees; 90% of each fee feeds the epoch prize pool and the top 10 ranked players claim prizes from it (docs/PLAY_ECONOMY.md). Payments and claims are signed by your wallet app - this game never sees keys.");
+	{
+		const float Height = TextRender()->TextBoundingBox(13.0f, s_pEconomyNote).m_H + 6.0f;
+		MainView.HSplitTop(Height, &Line, &MainView);
+		TextRender()->TextColor(ColorRGBA(0.75f, 0.75f, 0.75f, 1.0f));
+		Ui()->DoLabel(&Line, s_pEconomyNote, 13.0f, TEXTALIGN_ML);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+	}
+
+	MainView.HSplitTop(6.0f, nullptr, &MainView);
+	MainView.HSplitTop(24.0f, &ButtonRect, &MainView);
+	static CButtonContainer s_EconomyEntryButton;
+	if(DoButton_Menu(&s_EconomyEntryButton, Localize("Pay ranked epoch entry (SKR)"), 0, &ButtonRect))
+	{
+		char aJson[384];
+		str_format(aJson, sizeof(aJson),
+			"{\"action\": \"pay_entry\", \"kind\": 0, \"programId\": \"%s\", \"rpcUrl\": \"%s\", \"backendUrl\": \"%s\", \"mint\": \"%s\"}",
+			g_Config.m_ClNeonrelayEconomyProgram, g_Config.m_ClNeonrelayRpcUrl,
+			g_Config.m_ClNeonrelayBackendUrl, g_Config.m_ClNeonrelaySkrMint);
+		neonrelay_wallet_request_economy(aJson);
+	}
+
+	MainView.HSplitTop(4.0f, nullptr, &MainView);
+	MainView.HSplitTop(24.0f, &ButtonRect, &MainView);
+	static CButtonContainer s_EconomyTournamentButton;
+	if(DoButton_Menu(&s_EconomyTournamentButton, Localize("Pay tournament entry (SKR)"), 0, &ButtonRect))
+	{
+		char aJson[384];
+		str_format(aJson, sizeof(aJson),
+			"{\"action\": \"pay_entry\", \"kind\": 1, \"programId\": \"%s\", \"rpcUrl\": \"%s\", \"backendUrl\": \"%s\", \"mint\": \"%s\"}",
+			g_Config.m_ClNeonrelayEconomyProgram, g_Config.m_ClNeonrelayRpcUrl,
+			g_Config.m_ClNeonrelayBackendUrl, g_Config.m_ClNeonrelaySkrMint);
+		neonrelay_wallet_request_economy(aJson);
+	}
+
+	MainView.HSplitTop(4.0f, nullptr, &MainView);
+	MainView.HSplitTop(24.0f, &ButtonRect, &MainView);
+	static CButtonContainer s_EconomyClaimButton;
+	if(DoButton_Menu(&s_EconomyClaimButton, Localize("Claim my epoch prize"), 0, &ButtonRect))
+	{
+		char aJson[384];
+		str_format(aJson, sizeof(aJson),
+			"{\"action\": \"claim\", \"programId\": \"%s\", \"rpcUrl\": \"%s\", \"backendUrl\": \"%s\", \"mint\": \"%s\"}",
+			g_Config.m_ClNeonrelayEconomyProgram, g_Config.m_ClNeonrelayRpcUrl,
+			g_Config.m_ClNeonrelayBackendUrl, g_Config.m_ClNeonrelaySkrMint);
+		neonrelay_wallet_request_economy(aJson);
+	}
 }

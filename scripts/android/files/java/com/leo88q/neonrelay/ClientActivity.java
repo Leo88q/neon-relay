@@ -58,6 +58,10 @@ public class ClientActivity extends SDLActivity {
 
 		super.onCreate(savedInstanceState);
 
+		// Cache the JavaVM + NativeBridge class ref for the wallet JNI shim.
+		// SDL2 exports this library's JNI_OnLoad, so the shim cannot cache
+		// there; warmUp() runs on this Java thread where FindClass resolves
+		// application classes.
 		com.leo88q.neonrelay.wallet.NativeBridge.warmUp();
 	}
 

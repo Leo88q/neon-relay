@@ -124,6 +124,13 @@ void neonrelay_wallet_platform_request(int connect)
 	neonrelay_wallet_push_event(NEONRELAY_WALLET_EVENT_ERROR,
 		"{\"connected\": false, \"error_message\": \"Wallet connection is only available in the Neon Relay Android build.\"}");
 }
+
+void neonrelay_wallet_platform_economy(const char *json)
+{
+	(void)json;
+	neonrelay_wallet_push_event(NEONRELAY_WALLET_EVENT_ECONOMY,
+		"{\"connected\": false, \"error_message\": \"SKR entry payments and prize claims run in the Neon Relay Android build (Mobile Wallet Adapter); see docs/PLAY_ECONOMY.md.\"}");
+}
 #endif
 
 static void RequestWallet(int connect)
@@ -144,6 +151,11 @@ void neonrelay_wallet_request_connect(void)
 void neonrelay_wallet_request_disconnect(void)
 {
 	RequestWallet(0);
+}
+
+void neonrelay_wallet_request_economy(const char *json)
+{
+	neonrelay_wallet_platform_economy(json ? json : "{}");
 }
 
 } // extern "C"

@@ -27,6 +27,12 @@ object WalletHolder {
         data object Connect : Request
         data object Disconnect : Request
         data class Sign(val challenge: ByteArray) : Request
+        /**
+         * Economy flow (SKR entry payment / prize claim). The JSON carries
+         * operator config from the game (program id, mint, rpc/backend urls)
+         * plus action/kind/epoch; see docs/PLAY_ECONOMY.md and BL-17.
+         */
+        data class Economy(val json: String) : Request
     }
 
     private lateinit var application: Application

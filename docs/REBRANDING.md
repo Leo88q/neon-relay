@@ -205,3 +205,18 @@ unchanged sprite pipeline. `scripts/build_neon_skins.py --check` is a CI gate.
 Prefixed upstream skin families (`coala_*`, `kitty_*`, `santa_*`) and menu theme
 maps remain upstream art behind the release gate — BL-05/BL-14.
 
+## Stage 16: procedural UI art replaces the visible upstream sheets
+
+`scripts/build_neon_ui_art.py` (CI gate: `--check`) draws, from scratch and
+deterministically, original neon replacements over the exact upstream files
+and grids: `emoticons.png` (emote faces + symbol rows), `particles.png` (soft
+glow particles and streaks), `gui_icons.png` (24 interface line icons in two
+states), `hud.png` (HUD glyph rows), `blob.png` (menu glow), `arrow.png`,
+`race_flag.png`, `strong_weak.png`, `deadtee.png` (spectator ghost),
+`gui_cursor.png` (pointer + hover) and `background_noise.png` (seamless value
+noise). The manifest ships them as "The Neon Relay Authors / Zlib" via the
+GENERATED_UI_ART rule (201 ship / 685 block-release). Still upstream and
+behind the release gate: audio (needs an Opus encoding toolchain), maps and
+mapres, menu images, community icons, `gui_buttons.png`, `extras.png`,
+`game.png` and theme maps — BL-05/BL-14/BL-18.
+

@@ -1,10 +1,11 @@
 # Version catalog for the Neon Relay Android / Solana Mobile module.
 #
-# The Mobile Wallet Adapter pin is verified against the upstream repository tag:
-#   https://github.com/solana-mobile/mobile-wallet-adapter tag v2.2.0
-#   commit 25296e124c5fdc30dc89f1ac0622b8cffefc5c8e
-# (Maven Central is unreachable from the CI sandbox, so artifact availability is
-# confirmed by the first real Gradle build; see docs/KNOWN_LIMITATIONS.md BL-06.)
+# The Mobile Wallet Adapter artifact is published on Maven Central under the
+# group com.solanamobile (NOT com.solana): the clientlib-ktx AAR provides the
+# Kotlin MobileWalletAdapter API our wallet layer compiles against. Version
+# 2.0.8 is the newest publication verified via the Central search API
+# (first real Gradle build on the operator machine confirmed resolution;
+# see docs/KNOWN_LIMITATIONS.md BL-06).
 [versions]
 agp = "8.13.0"
 kotlin = "2.0.21"

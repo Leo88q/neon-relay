@@ -1,0 +1,250 @@
+/**
+ * Neon Relay economy service (stage 15).
+ *
+ * Derives EntryTicket PDAs of the on-chain economy program, checks ticket
+ * status over Solana RPC and closes epochs into top-10 prize distributions
+ * with Merkle roots. The backend holds NO chain keys: roots are stored for an
+ * operator/admin publish step (docs/PLAY_ECONOMY.md §3-§4, DEVNET_RUNBOOK §4).
+ *
+ * Reference scheme (policy layer over the mint-agnostic program):
+ *   reference = SHA256(kind u8 || epoch u64le || extra u64le || wallet32)
+ * kind 0 = ranked epoch pass (fee_match), kind 1 = tournament (fee_tournament,
+ * extra = tournament id). Per-ranked-match references arrive with the
+ * match-intent channel (stage 17); the program already accepts them.
+ */
+import { createHash } from "node:crypto";
+import { buildTree, leafHash, proofFor, type MerkleTree } from "./merkle.ts";
+import { PRIZE_TABLE_BPS } from "./prize_table.ts";
+
+const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+export function base58Encode(buf: Buffer): string {
+  let n = BigInt("0x" + (buf.length ? buf.toString("hex") : "0"));
+  let out = "";
+  while (n > 0n) {
+    const r = Number(n % 58n);
+    n /= 58n;
+    out = ALPHABET[r] + out;
+  }
+  for (const b of buf) {
+    if (b !== 0) break;
+    out = "1" + out;
+  }
+  return out || "1";
+}
+
+export function base58Decode(s: string): Buffer {
+  let n = 0n;
+  for (const c of s) {
+    const v = ALPHABET.indexOf(c);
+    if (v < 0) throw new Error(`invalid base58 character: ${c}`);
+    n = n * 58n + BigInt(v);
+  }
+  let hex = n.toString(16);
+  if (hex.length % 2) hex = "0" + hex;
+  const body = Buffer.from(hex || "", "hex");
+  let zeros = 0;
+  for (const c of s) {
+    if (c !== "1") break;
+    zeros++;
+  }
+  return Buffer.concat([Buffer.alloc(zeros), body]);
+}
+
+// ---------------------------------------------------------------- ed25519 curve
+
+const P = (1n << 255n) - 19n;
+
+function modPow(base: bigint, exp: bigint, m: bigint): bigint {
+  let b = ((base % m) + m) % m;
+  let e = exp;
+  let acc = 1n;
+  while (e > 0n) {
+    if (e & 1n) acc = (acc * b) % m;
+    b = (b * b) % m;
+    e >>= 1n;
+  }
+  return acc;
+}
+
+const D = ((P - 121665n) * modPow(121666n, P - 2n, P)) % P;
+
+/**
+ * RFC 8032 point decompression: returns true iff the 32-byte encoding
+ * represents a curve point. Used to reject on-curve candidates while
+ * searching PDA bumps (PDAs must NOT be valid points).
+ */
+export function isOnCurveEncoded(enc: Buffer): boolean {
+  if (enc.length !== 32) return false;
+  const raw = BigInt("0x" + Buffer.from(enc).reverse().toString("hex"));
+  const y = raw & ((1n << 255n) - 1n);
+  if (y >= P) return false;
+  const sign = (raw >> 255n) & 1n;
+  const y2 = (y * y) % P;
+  const u = (y2 - 1n + P) % P;
+  const v = (D * y2 + 1n) % P;
+  const v3 = (v * v % P) * v % P;
+  const v7 = (v3 * v3 % P) * v % P;
+  let x = (u * v3 % P) * modPow((u * v7) % P, (P - 5n) / 8n, P) % P;
+  const vx2 = (v * x % P) * x % P;
+  if (vx2 === u) {
+    // ok
+  } else if (vx2 === (P - u) % P) {
+    x = (x * modPow(2n, (P - 1n) / 4n, P)) % P;
+  } else {
+    return false;
+  }
+  if (x === 0n && sign === 1n) return false;
+  return true;
+}
+
+const PDA_MARKER = Buffer.from("ProgramDerivedAddress", "utf8");
+
+export function findProgramAddress(
+  seeds: Buffer[],
+  programId: Buffer,
+): { address: Buffer; bump: number } {
+  for (let bump = 255; bump >= 0; bump--) {
+    const h = createHash("sha256");
+    for (const s of seeds) h.update(s);
+    h.update(Buffer.from([bump]));
+    h.update(programId);
+    h.update(PDA_MARKER);
+    const candidate = h.digest();
+    if (!isOnCurveEncoded(candidate)) return { address: candidate, bump };
+  }
+  throw new Error("no valid PDA bump found");
+}
+
+// ---------------------------------------------------------------- references
+
+export const ENTRY_SEED = Buffer.from("neonrelay_entry", "utf8");
+
+export function entryReference(
+  kind: number,
+  epoch: number,
+  walletRaw: Buffer,
+  extra = 0,
+): Buffer {
+  if (walletRaw.length !== 32) throw new Error("wallet must be 32 raw bytes");
+  const b = Buffer.alloc(1 + 8 + 8);
+  b.writeUInt8(kind, 0);
+  b.writeBigUInt64LE(BigInt(epoch), 1);
+  b.writeBigUInt64LE(BigInt(extra), 9);
+  return createHash("sha256").update(b).update(walletRaw).digest();
+}
+
+export function ticketAddress(
+  reference: Buffer,
+  walletRaw: Buffer,
+  programIdRaw: Buffer,
+): Buffer {
+  return findProgramAddress([ENTRY_SEED, reference, walletRaw], programIdRaw).address;
+}
+
+// ---------------------------------------------------------------- ticket read
+
+export interface TicketStatus {
+  ticketed: boolean;
+  kind?: number;
+  amountMicro?: number;
+  paidAt?: number;
+}
+
+/** Borsh layout after the 8-byte discriminator: player(32) ref(32) kind(u8)
+ *  amount(u64le) paid_at(i64le) bump(u8). */
+export function parseTicketData(data: Buffer): TicketStatus {
+  if (data.length < 8 + 32 + 32 + 1 + 8 + 8 + 1) return { ticketed: false };
+  return {
+    ticketed: true,
+    kind: data.readUInt8(8 + 64),
+    amountMicro: Number(data.readBigUInt64LE(8 + 65)),
+    paidAt: Number(data.readBigInt64LE(8 + 73)),
+  };
+}
+
+export type RpcCaller = (method: string, params: unknown[]) => Promise<unknown>;
+
+export async function ticketStatus(
+  rpc: RpcCaller,
+  programIdB58: string,
+  reference: Buffer,
+  walletRaw: Buffer,
+): Promise<TicketStatus> {
+  const address = base58Encode(ticketAddress(reference, walletRaw, base58Decode(programIdB58)));
+  const res = (await rpc("getAccountInfo", [address, { encoding: "base64" }])) as {
+    value?: { data?: [string, string] };
+  };
+  if (!res?.value?.data?.[0]) return { ticketed: false };
+  return parseTicketData(Buffer.from(res.value.data[0], "base64"));
+}
+
+// ---------------------------------------------------------------- epoch close
+
+export interface PrizeLeaf {
+  wallet: string; // base58
+  publicKeyRaw: Buffer;
+  amountMicro: number;
+  place: number;
+}
+
+export interface EpochCloseResult {
+  epoch: number;
+  root: string;
+  totalMicro: number;
+  leaves: PrizeLeaf[];
+  tree: MerkleTree;
+}
+
+/**
+ * Top-10 prize close: rank wallets by accepted reward-event volume, keep only
+ * wallets holding a ranked epoch pass (kind 0) or any tournament ticket in
+ * the epoch, apply PRIZE_TABLE_BPS to the pool and build the Merkle tree.
+ * Ticket checks go through the injected RPC caller (mocked in tests).
+ */
+export async function closeEpochPrizes(deps: {
+  rankedTotals: { wallet: string; totalMicro: number }[]; // desc
+  hasTicket: (walletRaw: Buffer) => Promise<boolean>;
+  poolMicro: number;
+  epoch: number;
+}): Promise<EpochCloseResult> {
+  const leaves: PrizeLeaf[] = [];
+  for (const row of deps.rankedTotals) {
+    if (leaves.length >= PRIZE_TABLE_BPS.length) break;
+    const raw = base58Decode(row.wallet);
+    if (!(await deps.hasTicket(raw))) continue;
+    const bps = PRIZE_TABLE_BPS[leaves.length];
+    const amount = Number((BigInt(deps.poolMicro) * BigInt(bps)) / 10_000n);
+    if (amount <= 0) continue;
+    leaves.push({ wallet: row.wallet, publicKeyRaw: raw, amountMicro: amount, place: leaves.length + 1 });
+  }
+  const tree = buildTree(leaves.map((l) => leafHash(l.publicKeyRaw, l.amountMicro)));
+  return {
+    epoch: deps.epoch,
+    root: tree.root,
+    totalMicro: leaves.reduce((a, l) => a + l.amountMicro, 0),
+    leaves,
+    tree,
+  };
+}
+
+export function proofForWallet(result: EpochCloseResult, wallet: string): string[] | null {
+  const index = result.leaves.findIndex((l) => l.wallet === wallet);
+  if (index < 0) return null;
+  return proofFor(result.tree, index);
+}
+
+/** Minimal JSON-RPC caller for Solana RPC (injectable in tests). */
+export function httpRpc(url: string): RpcCaller {
+  return async (method, params) => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    });
+    if (!res.ok) throw new Error(`rpc http ${res.status}`);
+    const json = (await res.json()) as { result?: unknown; error?: { message?: string } };
+    if (json.error) throw new Error(`rpc error: ${json.error.message ?? "unknown"}`);
+    return json.result;
+  };
+}

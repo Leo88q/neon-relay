@@ -93,6 +93,41 @@ increased."* This is an account-level blocker outside the repository. Once billi
 GitHub → Settings → Billing & plans, re-run with `gh run rerun 35052569158` or push any commit;
 no workflow change is expected to be needed.
 
+### BL-18 — remaining upstream art behind the release gate
+Stage 16 replaced every visible sprite sheet (emoticons, particles, gui icons,
+HUD, cursor, blob, flags, noise) with procedural originals. What remains
+upstream: `data/audio/*` (replacement needs an Opus encoder, unavailable in
+the offline sandbox), `data/maps*` and `data/mapres/*` (gameplay maps need
+artists or a map generator), `data/menuimages/*`, `data/communityicons/*`,
+`gui_buttons.png`, `extras.png`, `game.png` and `data/themes/*.map` (BL-14).
+All stay block-release in docs/ASSET_MANIFEST.csv until replaced or licensed.
+
+### BL-17 — MWA economy flow awaits on-device verification
+Stage 17 implemented the on-device builder (EconomyTxBuilder.kt: base58, PDA
+with RFC 8032 on-curve test, ATA derivation, Anchor Borsh payloads, legacy
+message compilation) plus the match-intent channel and public proof route.
+The Kotlin/Android layer cannot be compiled or device-tested in the offline
+sandbox (no Gradle/JVM toolchain, BL-06), so the flow awaits a physical
+Seeker/wallet-app dry run per docs/DEVNET_RUNBOOK.md §5 before mainnet money
+(BL-16 gate still applies).
+
+### BL-16 — SKR mainnet money gated on compliance sign-off
+The economy program is mint-agnostic by design: the SKR (Solana Mobile Seeker
+token) mint arrives as operator configuration (`NEONRELAY_SKR_MINT`, validated
+at backend boot) and via `initialize()` on-chain; devnet uses a labelled test
+mint. Real-money mainnet deployment additionally requires the compliance gate
+of docs/PLAY_ECONOMY.md §7 (legal review, geo-restricted ToS, age gate, store
+policy check). Until signed off, deployments stay devnet/test-mint only.
+
+### BL-15 — vendoring gaps in platform-gated build templates
+The initial import missed `cmake/checksummed_extra.txt` (unconditional CMake
+input; restored in stage 13 with fork-local identity strings) and three
+platform-gated templates: `other/manifest/client.manifest.in`,
+`other/versioninfo/versioninfo.rc.in` (Windows builds) and
+`scripts/ios/files/Info.plist.in` (iOS builds). macOS/Linux/Android configure
+paths do not read the gated three; restoring them exactly is a follow-up once
+those targets enter scope.
+
 ### BL-14 — menu theme maps and prefixed skin families are still upstream
 Stage 12 generated original art for the gameplay-critical slots (default/ninja/spec
 skins, eight neon skins, neon UI accent), but menu background *maps* (`data/themes/*.map`)

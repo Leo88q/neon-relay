@@ -1,0 +1,21 @@
+[package]
+name = "neonrelay-economy"
+version = "0.1.0"
+edition = "2021"
+description = "Neon Relay pay-to-play economy: SKR-denominated match/tournament entry fees (operator-configured mint), rake sweep to the operator treasury, epoch prize vault and Merkle-claimed top-10 payouts. Game simulation stays off-chain."
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+# Pinned; NOT verifiable in the offline sandbox (docs/KNOWN_LIMITATIONS.md BL-03/BL-06).
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"

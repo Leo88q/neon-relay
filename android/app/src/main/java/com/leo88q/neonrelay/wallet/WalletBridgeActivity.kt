@@ -43,6 +43,7 @@ class WalletBridgeActivity : ComponentActivity() {
             is WalletHolder.Request.Connect -> manager.connect()
             is WalletHolder.Request.Disconnect -> manager.disconnect()
             is WalletHolder.Request.Sign -> manager.signChallenge(request.challenge)
+            is WalletHolder.Request.Economy -> manager.runEconomy(request.json)
         }
         WalletHolder.markInFlight(false)
         finish()

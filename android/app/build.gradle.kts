@@ -111,10 +111,13 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 }
 
-// Workaround for the AGP 8.13 + Gradle 8.13 task-validation bug:
-// process*NavigationResources consumes generate*ResValues output without
-// declaring a dependency; wire it explicitly.
+// Workaround for the AGP 8.13 + Gradle 8.13 task-validation bug: the
+// process*NavigationResources tasks consume generate*ResValues output without
+// declaring an explicit dependency, which fails the build with an implicit
+// dependency validation error. Wire the dependency explicitly.
 tasks.configureEach {
     val m = Regex("process(.+)NavigationResources").matchEntire(name)
-    if (m != null) dependsOn(tasks.named("generate" + m.groupValues[1] + "ResValues"))
+    if (m != null) {
+        dependsOn(tasks.named("generate" + m.groupValues[1] + "ResValues"))
+    }
 }

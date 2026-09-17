@@ -66,6 +66,10 @@ non-simulation features program and the original neon gameplay art); the final a
 | 10 | In-game Wallet UI, CI (blocked by account billing — BL-12), threat model, release checklist, Solana architecture + devnet runbook, final report | ✅ committed |
 | 11 | Non-simulation features program: achievements, unique badges, leaderboards, tournaments | ✅ committed |
 | 12 | Original neon skins in code-referenced slots + neon UI accent, manifest + CI gates | ✅ committed |
+| 14 | SKR pay-to-play economy program: entry tickets, rake, prize vault, top-10 Merkle claims (docs/PLAY_ECONOMY.md) | ✅ committed |
+| 15 | Economy backend (ticket PDA reads, epoch close top-10, proof routes) + Wallet→Economy UI panel | ✅ committed |
+| 16 | Procedural neon UI art over all visible upstream sheets (emoticons, particles, gui icons, HUD, cursor, blob, flags, noise) | ✅ committed |
+| 17 | On-device MWA economy tx builder (pay_entry/claim_prize), match-intent per-match payments, public proof route | ✅ committed |
 
 Everything that could not be built or executed in this environment is recorded honestly in
 [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) with the exact command that failed

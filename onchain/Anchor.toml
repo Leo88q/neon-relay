@@ -15,6 +15,7 @@ skip-lint = false
 # PLACEHOLDERS — replace with the output of `anchor keys list` before deploying.
 neonrelay_rewards = "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj"
 neonrelay_features = "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP"
+neonrelay_economy = "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9"
 
 [provider]
 cluster = "devnet"

@@ -44,3 +44,28 @@ export const MAX_LEADERBOARD_ENTRIES = 64;
 
 /** Tournament capacity cap. */
 export const MAX_TOURNAMENT_CAPACITY = 65535;
+
+/** --- neonrelay-economy program (stage 14) --- */
+
+/** PLACEHOLDER program id from Anchor.toml; replace with `anchor keys list` output on deployment. */
+export const ECONOMY_PROGRAM_ID_PLACEHOLDER = "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9";
+
+/** PDA seeds of the economy program, exactly as in its lib.rs. */
+export const ECONOMY_SEEDS = {
+	config: "neonrelay_economy_config",
+	entry: "neonrelay_entry",
+	prizes: "neonrelay_prizes",
+	claim: "neonrelay_prize_claim",
+} as const;
+
+/** Rake cap in basis points (20%); deployed default is 1000 (10%). */
+export const MAX_RAKE_BPS = 2000;
+/** Approved operator rake in basis points (10%). */
+export const DEFAULT_RAKE_BPS = 1000;
+/** Entry kinds accepted by `pay_entry`. */
+export const ENTRY_KIND = { match: 0, tournament: 1 } as const;
+/**
+ * Approved top-10 prize split in basis points of the epoch prize pool
+ * (places 1..10; sums to 10000 = 100%).
+ */
+export const PRIZE_TABLE_BPS = [2500, 1800, 1400, 1100, 900, 700, 600, 500, 300, 200] as const;

@@ -1,38 +1,40 @@
-{"skin": {
-	"body": {
-		"filename": "kitty",
-		"custom_colors": "true",
-		"hue": 23,
-		"sat": 0,
-		"lgt": 255
-	},
-	"marking": {
-		"filename": "tiger2",
-		"custom_colors": "true",
-		"hue": 28,
-		"sat": 107,
-		"lgt": 0,
-		"alp": 204
-	},
-	"hands": {
-		"filename": "standard",
-		"custom_colors": "true",
-		"hue": 22,
-		"sat": 0,
-		"lgt": 173
-	},
-	"feet": {
-		"filename": "standard",
-		"custom_colors": "true",
-		"hue": 22,
-		"sat": 0,
-		"lgt": 192
-	},
-	"eyes": {
-		"filename": "colorable",
-		"custom_colors": "true",
-		"hue": 28,
-		"sat": 147,
-		"lgt": 42
-	}}
+{
+	"skin": {
+		"body": {
+			"filename": "kitty",
+			"custom_colors": "true",
+			"hue": 9,
+			"sat": 145,
+			"lgt": 184
+		},
+		"marking": {
+			"filename": "tiger2",
+			"custom_colors": "true",
+			"hue": 28,
+			"sat": 107,
+			"lgt": 0,
+			"alp": 204
+		},
+		"hands": {
+			"filename": "standard",
+			"custom_colors": "true",
+			"hue": 9,
+			"sat": 145,
+			"lgt": 184
+		},
+		"feet": {
+			"filename": "standard",
+			"custom_colors": "true",
+			"hue": 9,
+			"sat": 145,
+			"lgt": 184
+		},
+		"eyes": {
+			"filename": "colorable",
+			"custom_colors": "true",
+			"hue": 28,
+			"sat": 147,
+			"lgt": 42
+		}
+	}
 }

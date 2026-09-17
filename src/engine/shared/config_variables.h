@@ -468,7 +468,7 @@ MACRO_CONFIG_STR(Bindaddr, bindaddr, 128, "", CFGFLAG_CLIENT | CFGFLAG_SERVER, "
 MACRO_CONFIG_INT(SvIpv4Only, sv_ipv4only, 0, 0, 1, CFGFLAG_SERVER, "Whether to bind only to ipv4, otherwise bind to all available interfaces")
 MACRO_CONFIG_INT(SvPort, sv_port, 0, 0, 65535, CFGFLAG_SERVER, "Port to use for the server (Only ports 8303-8310 work in LAN server browser, 0 to automatically find a free port in 8303-8310). See sv_register_port for the external port if you're behind NAT")
 MACRO_CONFIG_STR(SvHostname, sv_hostname, 128, "", CFGFLAG_SERVER, "Server hostname (0.7 only)")
-MACRO_CONFIG_STR(SvMap, sv_map, 128, "Sunny Side Up", CFGFLAG_SERVER, "Map to use on the server")
+MACRO_CONFIG_STR(SvMap, sv_map, 128, "Neon Relay Basin", CFGFLAG_SERVER, "Map to use on the server")
 MACRO_CONFIG_INT(SvMaxClients, sv_max_clients, SERVER_MAX_CLIENTS, 1, SERVER_MAX_CLIENTS, CFGFLAG_SERVER, "Maximum number of clients that are allowed on a server")
 MACRO_CONFIG_INT(SvMaxClientsPerIp, sv_max_clients_per_ip, 4, 1, SERVER_MAX_CLIENTS, CFGFLAG_SERVER, "Maximum number of clients with the same IP that can connect to the server")
 MACRO_CONFIG_INT(SvHighBandwidth, sv_high_bandwidth, 0, 0, 1, CFGFLAG_SERVER, "Use high bandwidth mode. Doubles the bandwidth required for the server. LAN use only")
@@ -684,7 +684,7 @@ MACRO_CONFIG_STR(ClBackgroundEntities, cl_background_entities, IO_MAX_PATH_LENGT
 MACRO_CONFIG_STR(ClRunOnJoin, cl_run_on_join, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Command to run when joining a server")
 
 // menu background map
-MACRO_CONFIG_STR(ClMenuMap, cl_menu_map, 100, "auto", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Background map in the menu")
+MACRO_CONFIG_STR(ClMenuMap, cl_menu_map, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Background map in the menu (empty = Night Drive night sky with the striped-sun blob, docs/DESIGN_SYNTHWAVE.md; upstream default was auto)")
 MACRO_CONFIG_INT(ClRotationRadius, cl_rotation_radius, 30, 1, 500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Menu camera rotation radius")
 MACRO_CONFIG_INT(ClRotationSpeed, cl_rotation_speed, 40, 1, 120, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Menu camera rotations in seconds")
 MACRO_CONFIG_INT(ClCameraSpeed, cl_camera_speed, 5, 1, 40, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Menu camera speed")

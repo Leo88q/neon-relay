@@ -37,6 +37,9 @@ export interface Config {
   capPerMatchMicro: number;
   capDailyMicro: number;
   capWeeklyMicro: number;
+  rpcUrl: string;
+  economyProgramId: string | null;
+  skrMint: string | null;
 }
 
 const num = (value: string | undefined, fallback: number): number => {
@@ -62,5 +65,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     capPerMatchMicro: num(env.NEONRELAY_CAP_PER_MATCH_MICRO, 50_000_000),
     capDailyMicro: num(env.NEONRELAY_CAP_DAILY_MICRO, 250_000_000),
     capWeeklyMicro: num(env.NEONRELAY_CAP_WEEKLY_MICRO, 1_000_000_000),
+    // --- economy (stage 15): SKR pay-to-play, docs/PLAY_ECONOMY.md
+    rpcUrl: env.NEONRELAY_RPC_URL ?? "https://api.devnet.solana.com",
+    economyProgramId: env.NEONRELAY_ECONOMY_PROGRAM_ID ?? null,
+    // Operator-set SKR mint (Solana Mobile Seeker token). Never hardcoded;
+    // devnet runs use a labelled test mint (BL-16).
+    skrMint: env.NEONRELAY_SKR_MINT ?? null,
   };
 }

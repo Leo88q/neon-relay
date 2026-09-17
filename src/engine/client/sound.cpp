@@ -687,6 +687,59 @@ bool CSound::DecodeWV(CSample &Sample, const void *pData, unsigned DataSize, con
 	return true;
 }
 
+bool CSound::DecodeWav(CSample &Sample, const void *pData, unsigned DataSize, const char *pContextName) const
+{
+	const unsigned char *p = static_cast<const unsigned char *>(pData);
+	if(DataSize < 44 || memcmp(p, "RIFF", 4) != 0 || memcmp(p + 8, "WAVE", 4) != 0)
+	{
+		log_error("sound/wav", "Not a RIFF/WAVE file. Filename='%s'", pContextName);
+		return false;
+	}
+	unsigned Pos = 12;
+	int Format = 0, Channels = 0, Rate = 0, Bits = 0;
+	const unsigned char *pDataChunk = nullptr;
+	unsigned DataBytes = 0;
+	while(Pos + 8 <= DataSize)
+	{
+		unsigned ChunkSize = (unsigned)p[Pos + 4] | ((unsigned)p[Pos + 5] << 8) | ((unsigned)p[Pos + 6] << 16) | ((unsigned)p[Pos + 7] << 24);
+		if(Pos + 8 + ChunkSize > DataSize)
+			ChunkSize = DataSize - Pos - 8;
+		if(memcmp(p + Pos, "fmt ", 4) == 0 && ChunkSize >= 16)
+		{
+			Format = p[Pos + 8] | (p[Pos + 9] << 8);
+			Channels = p[Pos + 10] | (p[Pos + 11] << 8);
+			Rate = (int)((unsigned)p[Pos + 12] | ((unsigned)p[Pos + 13] << 8) | ((unsigned)p[Pos + 14] << 16) | ((unsigned)p[Pos + 15] << 24));
+			Bits = p[Pos + 22] | (p[Pos + 23] << 8);
+		}
+		else if(memcmp(p + Pos, "data", 4) == 0)
+		{
+			pDataChunk = p + Pos + 8;
+			DataBytes = ChunkSize;
+		}
+		Pos += 8 + ChunkSize + (ChunkSize & 1);
+	}
+	if(Format != 1 || Bits != 16 || Channels < 1 || Channels > 2 || pDataChunk == nullptr || Rate <= 0)
+	{
+		log_error("sound/wav", "Unsupported WAV layout (format=%d bits=%d channels=%d). Filename='%s'", Format, Bits, Channels, pContextName);
+		return false;
+	}
+	const unsigned NumFrames = DataBytes / (unsigned)(Channels * 2);
+	if(NumFrames == 0)
+	{
+		log_error("sound/wav", "Empty WAV data. Filename='%s'", pContextName);
+		return false;
+	}
+	Sample.m_pData = static_cast<short *>(calloc(NumFrames * (unsigned)Channels, sizeof(short)));
+	for(unsigned i = 0; i < NumFrames * (unsigned)Channels; i++)
+		Sample.m_pData[i] = (short)((unsigned)pDataChunk[2 * i] | ((unsigned)pDataChunk[2 * i + 1] << 8));
+	Sample.m_NumFrames = NumFrames;
+	Sample.m_Rate = Rate;
+	Sample.m_Channels = Channels;
+	Sample.m_LoopStart = 0;
+	Sample.m_PausedAt = 0;
+	return true;
+}
+
 int CSound::LoadOpus(const char *pFilename, int StorageType)
 {
 	// no need to load sound when we are running with no sound
@@ -776,6 +829,42 @@ int CSound::LoadOpusFromMem(const void *pData, unsigned DataSize, bool ForceLoad
 		UnloadSample(pSample->m_Index);
 		return -1;
 	}
+
+	RateConvert(*pSample);
+	return pSample->m_Index;
+}
+
+int CSound::LoadWav(const char *pFilename, int StorageType)
+{
+	// no need to load sound when we are running with no sound
+	if(!m_SoundEnabled)
+		return -1;
+
+	CSample *pSample = AllocSample();
+	if(!pSample)
+	{
+		log_error("sound/wav", "Failed to allocate sample ID. Filename='%s'", pFilename);
+		return -1;
+	}
+
+	void *pData;
+	unsigned DataSize;
+	if(!m_pStorage->ReadFile(pFilename, StorageType, &pData, &DataSize))
+	{
+		UnloadSample(pSample->m_Index);
+		return -1;
+	}
+
+	if(!DecodeWav(*pSample, pData, DataSize, pFilename))
+	{
+		free(pData);
+		UnloadSample(pSample->m_Index);
+		return -1;
+	}
+	free(pData);
+
+	if(g_Config.m_Debug)
+		log_trace("sound/wav", "Loaded '%s' (index %d)", pFilename, pSample->m_Index);
 
 	RateConvert(*pSample);
 	return pSample->m_Index;

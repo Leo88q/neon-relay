@@ -39,6 +39,8 @@ jobs:
         run: ./scripts/check_branding.sh --release --check-translations
       - name: Generated skins match the generator (determinism)
         run: python3 scripts/build_neon_skins.py --check
+      - name: Generated UI art matches the generator (determinism)
+        run: python3 scripts/build_neon_ui_art.py --check
       - name: Asset manifest validation (coverage, hashes, license texts)
         run: ./scripts/check_assets.sh --licenses
       - name: Config variables unused-check

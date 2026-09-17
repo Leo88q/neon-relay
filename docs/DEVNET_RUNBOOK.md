@@ -167,3 +167,34 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
   (`signTransactions`) and the intent response contains everything required.
 * Upgrade authority of the deployed program remains the deploy keypair on
   devnet; hardening is a release-checklist item.
+
+## 4. Economy program dry-run (devnet, test mint only)
+
+1. `anchor deploy --provider.cluster devnet` includes `neonrelay_economy`
+   (placeholder id in Anchor.toml → replace with `anchor keys list`).
+2. Test mint: `./onchain/scripts/create_test_mint.sh` — labelled NOT official
+   SKR; the official SKR mint is mainnet-only operator config (BL-16 gate).
+3. `anchor shell`: `initialize(rake_bps = 1000, fee_match, fee_tournament)`
+   with the treasury ATA of the operator devnet wallet; verify config PDA
+   fields (`neonrelay_economy_config`).
+4. Pay: `pay_entry(reference = sha256("match-1"), kind = 0)` from a second
+   wallet; assert treasury/vault ATA deltas = rake/prize and the ticket PDA
+   exists; a repeat with the same reference must fail (idempotence).
+5. Prizes: build a 10-leaf tree with `onchain/src/merkle.ts`
+   (`PRIZE_TABLE_BPS` shares), `publish_prizes(epoch = 1, root, total)`,
+   then `claim_prize` for place 1 and assert a second claim fails.
+6. `set_paused(true)` → `pay_entry` must fail with `Paused`.
+
+## 5. On-device MWA payment flow (Seeker device, stage 17)
+
+1. Client config: set `cl_neonrelay_backend_url`, `cl_neonrelay_economy_program`
+   (from `anchor keys list`), `cl_neonrelay_rpc_url` (devnet) and
+   `cl_neonrelay_skr_mint` (test mint label).
+2. Settings → Wallet → Economy: "Pay ranked epoch entry" opens the wallet app
+   via MWA; the transaction is compiled on-device (EconomyTxBuilder.kt) and
+   sent with `signAndSendTransactions`; the ticket PDA appears at
+   `GET /v1/economy/ticket`.
+3. Claims: "Claim my epoch prize" fetches the proof from the public proof
+   route and sends `claim_prize`; a second claim fails (Claim PDA).
+4. Verify on-chain: vault ATA delta = fee − rake, treasury delta = rake,
+   ticket/claim PDAs exist (`solana confirm` / explorer on devnet).

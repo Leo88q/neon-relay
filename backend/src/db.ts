@@ -33,6 +33,11 @@ export class Db {
     this.raw.prepare(sql).run(...args);
   }
 
+  /** INSERT helper returning the new row id (node:sqlite lastInsertRowid). */
+  runInsert(sql: string, ...args: (string | number | null)[]): number {
+    return Number(this.raw.prepare(sql).run(...args).lastInsertRowid);
+  }
+
   get<T>(sql: string, ...args: (string | number | null)[]): T | undefined {
     return this.raw.prepare(sql).get(...args) as T | undefined;
   }
