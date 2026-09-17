@@ -1,7 +1,7 @@
 # Neon Relay original maps (BL-14)
 
 Every map shipped by Neon Relay is an **original, procedurally generated work**
-created for this project. No upstream DDNet/Teeworlds map or map artwork is
+created for this project. No upstream map or map artwork is
 distributed: BL-14 removed the five upstream race maps, all dm/ctf/coverage
 maps, `data/maps7/` and every upstream `data/mapres/*.png` from the release
 tree (historical license record stays in `docs/THIRD_PARTY_NOTICES.md` §4).
@@ -30,7 +30,7 @@ python3 scripts/gen_asset_manifest.py      # refresh docs/ASSET_MANIFEST.csv has
 bash scripts/check_assets.sh               # must pass
 ```
 
-`scripts/map_format.py` is a minimal DDNet datafile v4 writer matching
+`scripts/map_format.py` is a minimal datafile v4 writer compatible with the upstream engine format, matching
 `src/engine/shared/datafile.cpp` (36-byte header, item type/offset tables,
 zlib raw blocks) with builders for info/images/groups/tile layers/quad
 layers; item structs follow `src/game/mapitems.h` field order.

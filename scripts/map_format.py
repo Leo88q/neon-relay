@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Minimal DDNet datafile (.map) writer for original Neon Relay maps (BL-14).
+"""Minimal datafile (.map) writer for original Neon Relay maps (BL-14).
 
 Implements the datafile v4 layout used by src/engine/shared/datafile.cpp:
 
