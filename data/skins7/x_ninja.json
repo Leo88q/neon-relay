@@ -1,31 +1,36 @@
 {
 	"skin": {
 		"body": {
-			"filename": "x_ninja",
+			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 8,
-			"sat": 166,
-			"lgt": 110
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"marking": {
-			"filename": "uppy",
-			"custom_colors": "true",
-			"hue": 0,
-			"sat": 0,
-			"lgt": 64,
-			"alp": 255
+			"filename": "mice"
 		},
 		"hands": {
 			"filename": "standard",
-			"custom_colors": "false"
+			"custom_colors": "true",
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"feet": {
 			"filename": "standard",
-			"custom_colors": "false"
+			"custom_colors": "true",
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"eyes": {
-			"filename": "x_ninja",
-			"custom_colors": "false"
+			"filename": "x_ninja"
+		},
+		"decoration": {
+			"filename": "hair",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }

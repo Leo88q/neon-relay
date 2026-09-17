@@ -3,35 +3,34 @@
 		"body": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 225,
-			"sat": 192,
-			"lgt": 183
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"marking": {
-			"filename": "saddo",
-			"custom_colors": "true",
-			"hue": 108,
-			"sat": 54,
-			"lgt": 68,
-			"alp": 255
+			"filename": "grid"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 225,
-			"sat": 192,
-			"lgt": 183
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 225,
-			"sat": 192,
-			"lgt": 183
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"eyes": {
-			"filename": "standard",
-			"custom_colors": "false"
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "unibop",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }

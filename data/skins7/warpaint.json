@@ -3,31 +3,34 @@
 		"body": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 198,
-			"sat": 153,
-			"lgt": 126
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"marking": {
-			"filename": "warpaint",
-			"custom_colors": "false"
+			"filename": "monkey"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 198,
-			"sat": 153,
-			"lgt": 126
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 198,
-			"sat": 153,
-			"lgt": 126
+			"hue": 236,
+			"sat": 213,
+			"lgt": 25
 		},
 		"eyes": {
-			"filename": "standard",
-			"custom_colors": "false"
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "hair",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }

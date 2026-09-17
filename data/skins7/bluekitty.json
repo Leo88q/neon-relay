@@ -1,40 +1,36 @@
 {
 	"skin": {
 		"body": {
-			"filename": "kitty",
-			"custom_colors": true,
+			"filename": "standard",
+			"custom_colors": "true",
 			"hue": 132,
-			"sat": 118,
-			"lgt": 184
+			"sat": 187,
+			"lgt": 37
 		},
 		"marking": {
-			"filename": "whisker",
-			"custom_colors": true,
-			"hue": 130,
-			"sat": 109,
-			"lgt": 219,
-			"alp": 255
+			"filename": "thunder"
 		},
 		"hands": {
 			"filename": "standard",
-			"custom_colors": true,
-			"hue": 120,
-			"sat": 82,
-			"lgt": 235
+			"custom_colors": "true",
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"feet": {
 			"filename": "standard",
-			"custom_colors": true,
-			"hue": 135,
-			"sat": 82,
-			"lgt": 233
+			"custom_colors": "true",
+			"hue": 132,
+			"sat": 187,
+			"lgt": 37
 		},
 		"eyes": {
-			"filename": "negative",
-			"custom_colors": true,
-			"hue": 137,
-			"sat": 255,
-			"lgt": 0
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "unibop",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }

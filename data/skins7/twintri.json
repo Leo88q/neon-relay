@@ -3,35 +3,34 @@
 		"body": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 238,
-			"sat": 182,
-			"lgt": 148
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"marking": {
-			"filename": "twintri",
-			"custom_colors": "true",
-			"hue": 40,
-			"sat": 222,
-			"lgt": 227,
-			"alp": 255
+			"filename": "scar"
 		},
 		"hands": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 238,
-			"sat": 182,
-			"lgt": 148
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"feet": {
 			"filename": "standard",
 			"custom_colors": "true",
-			"hue": 238,
-			"sat": 182,
-			"lgt": 148
+			"hue": 173,
+			"sat": 174,
+			"lgt": 25
 		},
 		"eyes": {
-			"filename": "standard",
-			"custom_colors": "false"
+			"filename": "standard"
+		},
+		"decoration": {
+			"filename": "hair",
+			"offset_x": "0",
+			"offset_y": "0"
 		}
 	}
 }
