@@ -8,10 +8,10 @@
 			"lgt": 37
 		},
 		"marking": {
-			"filename": "spots"
+			"filename": "wildpatch"
 		},
 		"decoration": {
-			"filename": "unibop",
+			"filename": "hair",
 			"offset_x": "0",
 			"offset_y": "0"
 		},
