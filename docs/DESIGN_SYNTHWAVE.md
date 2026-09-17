@@ -55,3 +55,19 @@ lethal/risk**. Hazards never use cyan; safe platforms never use pink.
 
 Out of scope for now (parked): theme C «Miami» as a seasonal skin/theme pack;
 in-game map tileset reskin (BL-14 maps work will pick these tokens up).
+
+## Stage 19 — mapres night pass (2026-09-17)
+
+`scripts/build_neon_mapres.py` recolors the vendored tilesets/backgrounds that
+the shipped maps reference (desert_main, ddnet_tiles, round_tiles, snow,
+jungle_unhookables, generic_unhookable, bg_cloud1-3, desert_doodads,
+jungle_midground, grass_doodads, stars, basic_freeze): hue remap to the token
+palette + 128px slab seams + cyan light on exposed top edges + cyan rim on
+background silhouettes. Shapes/autotile borders untouched, so tile reading is
+identical.
+
+Compliance note: these files stay `block-release` in the manifest — the remap
+keeps upstream line work. Commercial release still requires original maps and
+tilesets (BL-14); the color language above is what those originals will reuse.
+Tilesets embedded inside .map files (e.g. Tutorial's grey grass) are replaced
+only together with the original maps.
