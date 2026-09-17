@@ -583,7 +583,12 @@ def markings_07(name: str, size: tuple[int, int]) -> Image.Image:
     r = min(w, h) * 0.30
     alpha = 235
     color = WHITE + (alpha,)
-    kind = MARK_KINDS[hash(name) % len(MARK_KINDS)]
+    # Use a deterministic SHA-256-derived index so the mapping is stable
+    # across Python sessions (the builtin hash() is randomised by
+    # PYTHONHASHSEED).
+    idx = int.from_bytes(hashlib.sha256(("mark:" + name).encode()).digest()[:4],
+                         "big") % len(MARK_KINDS)
+    kind = MARK_KINDS[idx]
     draw_marking(d, kind, cx, cy, r, color, alpha, w, h)
     return img
 
@@ -1103,19 +1108,21 @@ def gen_seven_jsons() -> int:
         feet_node["hue"] = hue
         feet_node["sat"] = sat
         feet_node["lgt"] = lgt
-        # pick a unique marking per descriptor (deterministic)
-        mark_idx = hash(stem) % len(MARK_KINDS)
+        # Deterministic per-stem SHA-256 (Python builtin hash() is
+        # randomised by PYTHONHASHSEED and would produce different
+        # bytes between runs).
+        s_idx = int.from_bytes(hashlib.sha256(stem.encode()).digest()[:4],
+                               "big")
+        mark_idx = s_idx % len(MARK_KINDS)
         mark_name = MARK_KINDS[mark_idx]
         skin["marking"] = {"filename": mark_name}
-        # pick a decoration (some descriptors get no decoration)
         deco = None
-        if hash(stem) % 3 == 0:
+        if s_idx % 3 == 0:
             deco = "hair"
-        elif hash(stem) % 3 == 1:
+        elif s_idx % 3 == 1:
             deco = "unibop"
         if deco:
             skin["decoration"] = {"filename": deco, "offset_x": "0", "offset_y": "0"}
-        # eyes: standard for most, x_ninja for ninja
         eye_name = "x_ninja" if species == "ninja" else (
             "negative" if species == "ghost" else "standard")
         skin["eyes"] = {"filename": eye_name}
