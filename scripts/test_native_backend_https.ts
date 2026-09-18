@@ -24,8 +24,8 @@ try {
   const auth = await authenticate(base, wallet);
   assert.equal(auth.status, 200);
   const bearer = auth.json.session_token;
-  for (const mode of ["accept", "sealed", "wrong-nonce", "disabled"]) {
-    const child = spawn(binary!, ["--backend", base, mode === "sealed" ? "sealed" : mode === "accept" ? "accept" : "reject"], { stdio: ["pipe", "pipe", "pipe"] });
+  for (const mode of ["accept", "sealed", "sealed-disconnect", "sealed-replaced", "sealed-exhausted", "wrong-nonce", "disabled"]) {
+    const child = spawn(binary!, ["--backend", base, mode.startsWith("sealed") ? mode : mode === "accept" ? "accept" : "reject"], { stdio: ["pipe", "pipe", "pipe"] });
     let transcript = "", stderr = "";
     child.stdout.on("data", (chunk) => { transcript += chunk; });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
@@ -43,7 +43,7 @@ try {
     try {
       const nonce = await line("NONCE ");
       assert.match(nonce, /^[0-9a-f]{64}$/);
-      if (mode === "sealed") {
+      if (mode.startsWith("sealed")) {
         const offer = await line("OFFER ");
         const signature = await line("OFFER_SIGNATURE ");
         assert.equal(JSON.parse(offer).connection_nonce, nonce);
@@ -51,7 +51,7 @@ try {
         assert.equal(sealed.status, 200);
         assert.equal(sealed.json.pairing_token, undefined);
         assert.equal(sealed.json.admissionEnabled, false);
-        child.stdin.write([sealed.json.sender_key, sealed.json.iv, sealed.json.ciphertext, sealed.json.tag].join("\n") + "\n");
+        child.stdin.write(JSON.stringify(sealed.json) + "\n");
       } else {
         const pair = await postJson(base, "/v2/game/pair", {
           connection_nonce: mode === "wrong-nonce" ? "ff".repeat(32) : nonce, consent: true,
@@ -75,6 +75,10 @@ try {
         assert.equal(verified.json.admissionEnabled, false);
         assert.equal((await getJson(base, "/v2/identity", bearer)).json.player_id, "registered-account");
         await line("REPLAY_REJECTED");
+      } else if (mode.startsWith("sealed-")) {
+        await line("SEAL_REJECTED");
+        const pending = app.db.get<{ consumed_at: number | null }>("SELECT consumed_at FROM game_pairings WHERE connection_nonce=?", nonce);
+        assert.ok(pending); assert.equal(pending.consumed_at, null);
       } else {
         await line("REJECTED");
       }

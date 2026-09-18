@@ -70,5 +70,12 @@ int main()
 	Connection->Disconnect();
 	assert(!Connection->PlayerId(1100));
 	assert(!Connection->Begin(Context.Domain, 1100));
+#if !defined(CONF_OPENSSL)
+	GameConnectionIdentity Unsupported(Random);
+	MatchSigner Signer;
+	assert(Signer.LoadSeedHex(std::string(64, '1')));
+	assert(!Unsupported.BeginSealedPairing(Signer, "game.example", 1000));
+	assert(Unsupported.OpenSealedPairing("{}", 1000).empty());
+#endif
 	return 0;
 }

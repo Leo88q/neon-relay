@@ -2,6 +2,7 @@
 #define NEONRELAY_GAME_CONNECTION_H
 
 #include "game_identity.h"
+#include "game_pairing_seal.h"
 
 #include <array>
 #include <limits>
@@ -36,14 +37,32 @@ public:
 		m_Connected = false;
 		m_Pending = false;
 		m_Identity.reset();
+		m_pSeal.reset();
 		m_Domain.clear();
 		m_Nonce.clear();
+	}
+	struct SealedOffer { std::string Json, Signature; };
+	std::optional<SealedOffer> BeginSealedPairing(const MatchSigner &Signer, const std::string &Domain, int64_t Now)
+	{
+		if(!Clock(Now) || Now < m_NextSealAt) return std::nullopt;
+		m_NextSealAt = Now + 2000; // bound key generation, even on failed attempts
+		m_Pending = false;
+		m_Identity.reset();
+		m_pSeal = std::make_unique<GamePairingSeal>();
+		if(!m_pSeal->Begin(Signer, Domain, m_Nonce, Now)) { m_pSeal.reset(); return std::nullopt; }
+		return SealedOffer{m_pSeal->Offer(), m_pSeal->Signature()};
+	}
+	std::string OpenSealedPairing(const std::string &Json, int64_t Now)
+	{
+		if(!Clock(Now) || !m_pSeal) return {};
+		return m_pSeal->OpenEnvelope(Json, Now);
 	}
 	std::optional<Request> Begin(const std::string &Domain, int64_t Now)
 	{
 		if(!Clock(Now) || Domain.empty() || Domain.size() > 253 || m_Serial == std::numeric_limits<uint64_t>::max())
 			return std::nullopt;
 		m_Identity.reset();
+		m_pSeal.reset();
 		m_Domain = Domain;
 		m_Pending = true;
 		m_Deadline = Now + 120000;
@@ -113,6 +132,8 @@ private:
 	uint64_t m_Serial = 0;
 	int64_t m_Deadline = 0;
 	int64_t m_LastNow = 0;
+	int64_t m_NextSealAt = 0;
+	std::unique_ptr<GamePairingSeal> m_pSeal;
 	std::string m_Nonce;
 	std::string m_Domain;
 	std::optional<AuthenticatedGameIdentity> m_Identity;

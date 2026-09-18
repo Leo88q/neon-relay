@@ -31,6 +31,30 @@ bool Text(const json_value *pRoot, const char *pName, std::string &Result)
 	return true;
 }
 } // namespace
+bool ParsePairingEnvelope(const std::string &Json, PairingEnvelope &Envelope, int64_t Now)
+{
+	Envelope = {};
+	if(Json.empty() || Json.size() > 768 || Now < 0 || Now > 9007199254740991LL) return false;
+	json_settings Settings{}; Settings.max_memory = 8192;
+	std::unique_ptr<json_value, decltype(&json_value_free)> Root(json_parse_ex(&Settings, Json.data(), Json.size(), nullptr), json_value_free);
+	if(!Root || Root->type != json_object || Root->u.object.length != 7) return false;
+	const auto *Version = Field(Root.get(), "v");
+	const auto *Expiry = Field(Root.get(), "expires_at");
+	const auto *Admission = Field(Root.get(), "admissionEnabled");
+	if(!Version || Version->type != json_integer || Version->u.integer != 1 ||
+		!Expiry || Expiry->type != json_integer || Expiry->u.integer <= Now || Expiry->u.integer > 9007199254740991LL ||
+		!Admission || Admission->type != json_boolean || Admission->u.boolean) return false;
+	PairingEnvelope Parsed;
+	if(!Text(Root.get(), "sender_key", Parsed.SenderKey) || !Text(Root.get(), "iv", Parsed.Iv) ||
+		!Text(Root.get(), "ciphertext", Parsed.Ciphertext) || !Text(Root.get(), "tag", Parsed.Tag)) return false;
+	const auto Hex = [](const std::string &Value, size_t Size) {
+		return Value.size() == Size && Value.find_first_not_of("0123456789abcdef") == std::string::npos;
+	};
+	if(!Hex(Parsed.SenderKey, 64) || !Hex(Parsed.Iv, 24) || !Hex(Parsed.Ciphertext, 86) || !Hex(Parsed.Tag, 32)) return false;
+	Parsed.ExpiresAt = Expiry->u.integer;
+	Envelope = Parsed;
+	return true;
+}
 bool IsPairingOrigin(const std::string &Origin)
 {
 	if(Origin.size() > 220 || Origin.compare(0, 8, "https://") != 0) return false;

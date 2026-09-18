@@ -1,4 +1,5 @@
 #include "game_pairing_seal.h"
+#include "game_pairing_protocol.h"
 #include <array>
 #if defined(CONF_OPENSSL)
 #include <openssl/evp.h>
@@ -64,16 +65,28 @@ bool GamePairingSeal::Begin(const MatchSigner &Signer, const std::string &Domain
 	return false;
 #endif
 }
-std::string GamePairingSeal::Open(const std::string &SenderKey, const std::string &Iv,
-	const std::string &Ciphertext, const std::string &Tag, int64_t Now)
+std::string GamePairingSeal::OpenEnvelope(const std::string &Json, int64_t Now)
 {
 #if defined(CONF_OPENSSL)
 	auto &State = *m_pImpl;
 	if(!State.Key) return {};
 	if(Now < State.Issued || Now >= State.Expires || State.Attempts++ >= 8)
 	{
-		EVP_PKEY_free(State.Key); State.Key = nullptr; return {};
+		m_pImpl = std::make_unique<Impl>(); return {};
 	}
+	PairingEnvelope Envelope;
+	if(!ParsePairingEnvelope(Json, Envelope, Now) || Envelope.ExpiresAt > State.Expires) return {};
+	return Decrypt(Envelope.SenderKey, Envelope.Iv, Envelope.Ciphertext, Envelope.Tag);
+#else
+	(void)Json; (void)Now;
+	return {};
+#endif
+}
+std::string GamePairingSeal::Decrypt(const std::string &SenderKey, const std::string &Iv,
+	const std::string &Ciphertext, const std::string &Tag)
+{
+#if defined(CONF_OPENSSL)
+	auto &State = *m_pImpl;
 	std::array<unsigned char, 32> PeerBytes;
 	std::array<unsigned char, 12> Nonce;
 	std::array<unsigned char, 43> Encrypted;
@@ -104,12 +117,17 @@ std::string GamePairingSeal::Open(const std::string &SenderKey, const std::strin
 		EVP_CIPHER_CTX_ctrl(Cipher.get(), EVP_CTRL_GCM_SET_TAG, 16, AuthTag.data()) == 1 &&
 		EVP_DecryptFinal_ex(Cipher.get(), Plain.data() + Written, &Final) == 1 && Final == 0;
 	std::string Token;
-	if(Ok) Token.assign(reinterpret_cast<char *>(Plain.data()), 43);
+	if(Ok)
+	{
+		Token.assign(reinterpret_cast<char *>(Plain.data()), 43);
+		const std::string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+		if(Token.find_first_not_of(Alphabet) != std::string::npos || Alphabet.find(Token.back()) % 4 != 0) Token.clear();
+	}
 	OPENSSL_cleanse(Plain.data(), Plain.size());
 	if(Ok) { EVP_PKEY_free(State.Key); State.Key = nullptr; }
 	return Token;
 #else
-	(void)SenderKey; (void)Iv; (void)Ciphertext; (void)Tag; (void)Now;
+	(void)SenderKey; (void)Iv; (void)Ciphertext; (void)Tag;
 	return {};
 #endif
 }

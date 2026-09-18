@@ -16,9 +16,10 @@ public:
 	const std::string &Offer() const;
 	const std::string &Signature() const;
 	// Empty on tampering, expiry or replay. Successful decryption destroys key.
-	std::string Open(const std::string &SenderKey, const std::string &Iv,
-		const std::string &Ciphertext, const std::string &Tag, int64_t Now);
+	std::string OpenEnvelope(const std::string &Json, int64_t Now);
 private:
+	std::string Decrypt(const std::string &SenderKey, const std::string &Iv,
+		const std::string &Ciphertext, const std::string &Tag);
 	struct Impl;
 	std::unique_ptr<Impl> m_pImpl;
 };

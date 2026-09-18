@@ -27,7 +27,7 @@ static int64_t Now()
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 // Confidential test IPC substitutes only for the not-yet-implemented client channel.
-static int RealBackend(const std::string &Origin, bool ExpectAccepted, bool Sealed)
+static int RealBackend(const std::string &Origin, bool ExpectAccepted, bool Sealed, const std::string &Action)
 {
 	log_set_global_logger(new TestLogger);
 	g_Config.m_DbgHttp = 1;
@@ -44,21 +44,48 @@ static int RealBackend(const std::string &Origin, bool ExpectAccepted, bool Seal
 	std::string Token;
 	if(Sealed)
 	{
-		neonrelay::GamePairingSeal Seal;
-		assert(Seal.Begin(Signer, "test.neonrelay.example", Connection->Nonce(), Now()));
-		std::cout << "OFFER " << Seal.Offer() << std::endl;
-		std::cout << "OFFER_SIGNATURE " << Seal.Signature() << std::endl;
-		std::string Sender, Iv, Ciphertext, Tag;
-		for(auto *Field : {&Sender, &Iv, &Ciphertext, &Tag}) assert(std::getline(std::cin, *Field));
-		auto WrongTag = Tag; WrongTag[0] = WrongTag[0] == '0' ? '1' : '0';
-		assert(Seal.Open(Sender, Iv, Ciphertext, WrongTag, Now()).empty());
-		assert(Seal.Open(std::string(64, '0'), Iv, Ciphertext, Tag, Now()).empty());
+		const auto Offer = Connection->BeginSealedPairing(Signer, "test.neonrelay.example", Now());
+		assert(Offer);
+		assert(!Connection->BeginSealedPairing(Signer, "test.neonrelay.example", Now())); // cooldown preserves current offer
+		std::cout << "OFFER " << Offer->Json << std::endl;
+		std::cout << "OFFER_SIGNATURE " << Offer->Signature << std::endl;
+		std::string Envelope;
+		assert(std::getline(std::cin, Envelope));
+		if(Action != "sealed")
+		{
+			int64_t CheckTime = Now();
+			if(Action == "sealed-disconnect") Connection->Disconnect();
+			else if(Action == "sealed-replaced")
+			{
+				CheckTime += 2000; // synthetic forward clock, no rollback ambiguity
+				assert(Connection->BeginSealedPairing(Signer, "test.neonrelay.example", CheckTime));
+			}
+			else if(Action == "sealed-exhausted")
+			{
+				for(int i = 0; i < 8; ++i) assert(Connection->OpenSealedPairing("{}", CheckTime).empty());
+			}
+			else assert(false);
+			assert(Connection->OpenSealedPairing(Envelope, CheckTime).empty());
+			assert(!Connection->PlayerId(CheckTime));
+			Http->Shutdown();
+			std::cout << "SEAL_REJECTED" << std::endl;
+			return 0;
+		}
+		auto WrongTag = Envelope;
+		const auto TagOffset = WrongTag.find("\"tag\":\"") + 7;
+		WrongTag[TagOffset] = WrongTag[TagOffset] == '0' ? '1' : '0';
+		assert(Connection->OpenSealedPairing(WrongTag, Now()).empty());
+		auto WrongSender = Envelope;
+		const auto SenderOffset = WrongSender.find("\"sender_key\":\"") + 14;
+		WrongSender.replace(SenderOffset, 64, std::string(64, '0'));
+		assert(Connection->OpenSealedPairing(WrongSender, Now()).empty());
+		assert(Connection->OpenSealedPairing(std::string(769, 'x'), Now()).empty());
 		neonrelay::GamePairingSeal Other;
 		assert(Other.Begin(Signer, "test.neonrelay.example", std::string(64, 'f'), Now()));
-		assert(Other.Open(Sender, Iv, Ciphertext, Tag, Now()).empty());
-		Token = Seal.Open(Sender, Iv, Ciphertext, Tag, Now());
+		assert(Other.OpenEnvelope(Envelope, Now()).empty());
+		Token = Connection->OpenSealedPairing(Envelope, Now());
 		assert(Token.size() == 43);
-		assert(Seal.Open(Sender, Iv, Ciphertext, Tag, Now()).empty());
+		assert(Connection->OpenSealedPairing(Envelope, Now()).empty());
 	}
 	else assert(std::getline(std::cin, Token));
 	assert(Pairing.Start(Connection, Token, Signer, Now()));
@@ -98,7 +125,7 @@ static int RealBackend(const std::string &Origin, bool ExpectAccepted, bool Seal
 int main(int argc, char **argv)
 {
 	if(argc == 4 && std::string(argv[1]) == "--backend")
-		return RealBackend(argv[2], std::string(argv[3]) != "reject", std::string(argv[3]) == "sealed");
+		return RealBackend(argv[2], std::string(argv[3]) != "reject", std::string(argv[3]).find("sealed") == 0, argv[3]);
 	assert(argc == 5);
 	log_set_global_logger(new TestLogger);
 	g_Config.m_DbgHttp = 1;

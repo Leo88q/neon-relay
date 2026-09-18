@@ -3,6 +3,13 @@
 #include "game_identity.h"
 
 namespace neonrelay {
+struct PairingEnvelope
+{
+	std::string SenderKey, Iv, Ciphertext, Tag;
+	int64_t ExpiresAt = 0;
+};
+// Fixed schema, canonical lowercase hex, at most 768 bytes and 8 KiB parser allocation.
+bool ParsePairingEnvelope(const std::string &Json, PairingEnvelope &Envelope, int64_t Now);
 bool IsPairingOrigin(const std::string &Origin);
 std::string PairingRequestJson(const MatchSigner &Signer, const std::string &Domain,
 	const std::string &ConnectionNonce, const std::string &Token);

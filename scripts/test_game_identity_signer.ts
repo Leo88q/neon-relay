@@ -65,6 +65,18 @@ try {
   for (const origin of ["http://backend.example", "https://user@backend.example", "https://backend.example/path", "https://backend.example?x", "https://backend.example#x", "https://backend.example:0", "https://backend.example:65536", "https://backend.example\n", "https://"]) {
     assert.equal(proto("origin", origin).status, 3);
   }
+  const envelope = { v: 1, sender_key: "ab".repeat(32), iv: "cd".repeat(12), ciphertext: "ef".repeat(43), tag: "01".repeat(16), expires_at: Date.now() + 60000, admissionEnabled: false };
+  const envelopeJson = JSON.stringify(envelope);
+  assert.equal(proto("envelope", envelopeJson, [now]).status, 0);
+  for (const bad of ["", "[]", "{}", "x".repeat(769),
+    envelopeJson.replace('"v":1', '"v":1,"v":1'),
+    ...[{ v: 2 }, { v: "1" }, { tag: "01".repeat(15) }, { sender_key: "AB".repeat(32) },
+      { iv: "00".repeat(13) }, { ciphertext: "ef".repeat(44) }, { expires_at: Number(now) },
+      { expires_at: 9007199254740992 }, { expires_at: 1.5 }, { admissionEnabled: true },
+      { admissionEnabled: 0 }, { extra: "unexpected" }, { tag: null }, { iv: [] },
+    ].map((patch) => JSON.stringify({ ...envelope, ...patch }))]) {
+    assert.equal(proto("envelope", bad, [now]).status, 3, "reject malformed sealed envelope");
+  }
   console.log("PASS: C++ pairing proof -> backend redemption -> strict C++ reply parser; origin/schema rejection cases");
   console.log("PASS: guarded C++ identity signing -> backend HTTP verification, 16 rejection cases and replay");
 } finally { await app.close(); }
