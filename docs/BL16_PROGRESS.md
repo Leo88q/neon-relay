@@ -412,3 +412,30 @@ shifts -1.5 +/- 0.05 source pixels. Full local gates passed: assets 4/4, backend
 97/97, onchain TS 32/32 plus existing checks. Manifest regenerated; nine other
 skins and all face_alt sources unchanged. Final detail/spacing appearance still
 needs the user's in-game review; this is not a new gameplay verification claim.
+
+### Ten articulated characters, story storefront and freeze identity preservation
+
+- Migrated the remaining nine sheets to separate body/hand/feet/eye cells. Ten
+  detailed 1024x512 authoring sheets accompany the 256x128 runtime sheets.
+  Nox/cool_guy_1 remains byte-identical to the approved detailed prototype.
+  Female hair palettes, expressive irises/lashes and costume motifs follow the
+  archived references; these are adaptations, not identical portrait faces.
+  All original v2 and face_alt files remain unchanged.
+- Added distinct Russian/English names, titles, fictional specialties and
+  legends to the single catalog, preserving five Common 500, three Rare 1000,
+  two Legendary 2000 SKR and the royalty metadata. No statistical bonuses.
+- Replaced the static character grid with selectable cards, rarity/price,
+  enlarged preview, narrative detail panel and free LOCAL try-on targeting the
+  main player. Purchases/NFT minting remain disabled; no external marketplace
+  publication or wallet ownership claim is made. Texts: CHARACTER_STOREFRONT_RU.md.
+- Player rendering skips legacy x_ninja replacement for catalog skins, both for
+  freeze and ninja weapon appearance; freeze/no-weapon effect flags and server
+  physics remain unchanged. This change targets live player rendering, not the
+  separate legacy ghost replay/settings appearance preview paths.
+- Verified source ae3c789: CI 35359533182 SUCCESS, including actual Linux server
+  build/boot and native TLS; menu and players.cpp syntax gates. Full local gates
+  passed: assets 4/4, menu/catalog 5/5, backend 97/97, onchain TS 32/32.
+- Still requires a rebuilt macOS client and visual checks for the new store,
+  freeze appearance and all nine new designs. User approval of the first
+  character's motion does not substitute for those checks. Client linking and
+  rendering were not executed in this sandbox. Full BL-16 is not complete.
