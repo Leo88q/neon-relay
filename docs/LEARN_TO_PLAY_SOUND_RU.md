@@ -52,15 +52,27 @@ python3 scripts/test_map_format.py
 ```sh
 cd "$HOME/neon-relay-mac-preview"
 git pull --ff-only origin arena/01a0b21c-neon-relay
-cmake --build build-mac --target neonrelay neonrelay-server -j 4
+cmake --build build-mac --target game-client game-server -j 4
 ```
 
 Остановите прежний сервер через Ctrl+C. Запускайте сервер и клиент в **двух отдельных терминалах** из каталога репозитория:
 
+Терминал 1 — сервер:
+
 ```sh
+cd "$HOME/neon-relay-mac-preview"
 ./build-mac/neonrelay-server "bindaddr 127.0.0.1" "sv_port 8303" "sv_register 0" 'sv_map "LearnToPlay Sound"'
-./build-mac/neonrelay "gfx_fullscreen 0" "connect 127.0.0.1:8303"
 ```
+
+Терминал 2 — клиент:
+
+```sh
+cd "$HOME/neon-relay-mac-preview"
+./build-mac/neonrelay "gfx_fullscreen 0" "gfx_screen_width 1200" "gfx_screen_height 760" "cl_show_welcome 0" "connect 127.0.0.1:8303"
+```
+
+Проверка кода `633541a`: локальный `ci-local.sh` прошёл, 8 проверок формата/визуального покрытия и 5 проверок картофельных ассетов прошли. [CI 35400575662](https://github.com/Leo88q/neon-relay/actions/runs/35400575662) — 7/7 заданий, включая настоящий сервер и клиент. Нативные снимки сохранены в артефакте `native-client-preview`. Скачать их в рабочее окружение агента не удалось из-за TLS/EOF на хранилище артефактов: визуальный просмотр снимков агентом и ручное прохождение не заявляются.
+
 
 ## Права
 
