@@ -10,20 +10,20 @@ STYLES=('sound','folds','circuit','chrome')
 def rgb(h,s,l):
     return tuple(round(v*255) for v in colorsys.hls_to_rgb((h%360)/360,l,s))
 
-def tile(style,mask,nohook=False):
+def tile(style,mask,nohook=False,depth=0):
     im=Image.new('RGBA',(64,64));d=ImageDraw.Draw(im)
     for y in range(64):
         if style=='sound': c=rgb(315-y*2,.65,.10+(64-y)*.001)
         elif style=='folds': c=(176+y//7,92+y//8,66+y//10)
         elif style=='circuit': c=(8,49-y//4,43-y//5)
         else:
-            v=int(120+95*math.cos(y/64*math.pi*2)+22*math.sin(y*.3));c=(max(15,v-15),max(20,v-2),min(255,v+25))
+            v=int(120+95*math.cos((depth*64+y)/640*math.pi*2)+10*math.sin(y*.03));c=(max(15,v-15),max(20,v-2),min(255,v+25))
         d.line((0,y,63,y),fill=(*c,255))
     if style=='sound':
         for x in range(5,64,14):
             for y in range(7,61,9):
-                d.rounded_rectangle((x,y,x+8,y+5),1,fill=(*rgb(315-y*2,.78,.48-y*.002),255))
-                d.line((x+1,y,x+7,y),fill=(255,190,222,150))
+                d.rounded_rectangle((x,y,x+8,y+5),1,fill=(*rgb(315-depth*13-y*.12,.78,.48-y*.001),255))
+                d.line((x+1,y,x+7,y),fill=(*rgb(315-depth*13,.65,.75),150))
     elif style=='folds':
         for x in range(0,64,16):
             d.polygon([(x,0),(x+8,0),(x+8,64),(x,64)],fill=(230,145,103,255))
@@ -61,6 +61,11 @@ def atlas(style):
         for mask in range(16):
             idx=(32 if nohook else 16)+mask
             im.paste(tile(style,mask,nohook),((idx%16)*64,(idx//16)*64))
+    if style in ('sound','chrome'):
+        for depth in range(10):
+            for mask in range(16):
+                idx=80+depth*16+mask
+                im.paste(tile(style,mask,depth=depth),((idx%16)*64,(idx//16)*64))
     for idx in range(64,70):
         t=Image.new('RGBA',(64,64));d=ImageDraw.Draw(t)
         if idx==64:

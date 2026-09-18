@@ -22,11 +22,11 @@ import zlib
 TILE = 4  # sizeof(CTile)
 
 
-def pack_name(name):
-	b = name.encode("utf-8")[:11].ljust(12, b"\0")
+def pack_name(name, num_ints=3):
+	b = name.encode("utf-8")[:num_ints*4-1].ljust(num_ints*4, b"\0")
 	b = bytes((v + 128) % 256 for v in b)
 	b = b[:-1] + b"\0"
-	return [struct.unpack(">i", b[i:i + 4])[0] for i in (0, 4, 8)]
+	return [struct.unpack(">i", b[i:i + 4])[0] for i in range(0,num_ints*4,4)]
 
 
 class Raw:

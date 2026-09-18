@@ -24,7 +24,7 @@ import struct
 import math
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from map_format import MapWriter, quad_rect  # noqa: E402
+from map_format import MapWriter, quad_rect, pack_name  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUTDIR = ROOT / "data" / "maps"
@@ -269,6 +269,10 @@ def write_map(name, build, blurb):
 					nx,ny=x+dx,y+dy
 					if not (0<=nx<g.w and 0<=ny<g.h) or g.g[ny][nx] not in (T_SOLID,T_NOHOOK): mask |= bit
 				idx = (32 if v==T_NOHOOK else 16)+mask
+				if v==T_SOLID and style in ("sound","chrome"):
+					depth=0
+					while depth<9 and y-depth>0 and g.g[y-depth-1][x] in (T_SOLID,T_NOHOOK): depth+=1
+					idx=80+depth*16+mask
 				if mask&1 and x%8==0:
 					q=list(struct.unpack('<38i',quad_rect(x*32-48,y*32-64,x*32+80,y*32+32)))
 					q[-2]=0 # shared synchronized color envelope
@@ -285,7 +289,7 @@ def write_map(name, build, blurb):
 		phase=step/16
 		strength=(math.exp(-phase*5) if step<16 else 1) if style=="sound" else .5+.5*math.cos(phase*math.tau)
 		points += [round(phase*period),1,1024,1024,1024,round(250+strength*500)]
-	mw.item(3,[2,4,0,17]+[0]*8+[1])
+	mw.item(3,[2,4,0,17]+pack_name("Material light",8)+[1])
 	mw.item(6,points)
 	mw.quads_layer([quad_rect(-1600,-1000,1600,1000)],img_sky,"Atmosphere")
 	mw.group((0,0),(0,0),0,1,"Far")
