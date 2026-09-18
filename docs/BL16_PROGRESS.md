@@ -222,3 +222,17 @@ same checks so this gap does not recur silently.
   35335519215 succeeded. Full local gates passed (backend 80, onchain TS 32).
 - No devnet/mainnet deploy or upgrade-authority verification; HTTP/mobile/game
   admission and NFT purchase/ownership integration are still outstanding.
+
+### Part 12 — server-attested game identity backend
+
+- Added a separate game identity public-key configuration, migration 0006 and
+  authenticated/rate-limited challenge, verification and status routes.
+- Signed bytes bind purpose/domain, session, wallet, player and signer. Nonces
+  are one-use with two-minute expiry; grants last five minutes without sliding.
+- Atomic verification and SQL invalidation prevent self-link changes/relinking
+  from preserving or resurrecting verification. No wallet token/hash is exposed
+  in the challenge. Existing read-only economy routes are unchanged.
+- Full local gates passed: backend 87/87 (7 new tests), onchain TS 32/32.
+- Trusted game-server identity authentication/signing is NOT implemented yet;
+  its required contract is documented in GAME_IDENTITY_V2.md. No payment, public
+  intent creation, capacity reservation or game admission was enabled.

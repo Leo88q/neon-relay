@@ -13,6 +13,7 @@
  */
 import { raceLobby, parseRaceCurrency, RACE_TIERS } from "./race_catalog.ts";
 import { readMarketV2, readTicketV2, V2AccountError } from "./economy_v2_rpc.ts";
+import { GameIdentity } from "./game_identity.ts";
 import { EconomyV2Store } from "./economy_v2_store.ts";
 import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
@@ -124,6 +125,24 @@ export function buildRouter(deps: {
     wallets.revokeBinding(binding.id);
     sessions.revokeForBinding(binding.id);
     return { unlinked: true, wallet_binding_id: binding.id };
+  });
+
+  const identity = new GameIdentity(db, config);
+  router.add("POST", "/v2/identity/challenge", (ctx) => {
+    guard(ctx, "game-identity");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return identity.issue(auth, str(body["player_id"], "player_id", 128));
+  });
+  router.add("POST", "/v2/identity/verify", (ctx) => {
+    guard(ctx, "game-identity");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return identity.verify(auth, str(body["nonce"], "nonce", 43), str(body["signature"], "signature", 86));
+  });
+  router.add("GET", "/v2/identity", (ctx) => {
+    guard(ctx, "game-identity-status");
+    return identity.status(requireSession(ctx));
   });
 
   // ------------------------------------------------------------ rewards (stage 7)

@@ -31,6 +31,8 @@ export interface Config {
    * be accepted on trust alone.
    */
   serverSigningPublicKey: string | null;
+  /** Separate server identity attestation key; absent disables verified player links. */
+  gameIdentityPublicKey: string | null;
   /** Bearer token for operator routes (epoch sealing). Absent = disabled. */
   adminToken: string | null;
   /** Epoch length; events are assigned to the epoch open at ingestion time. */
@@ -78,6 +80,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     sessionTtlMs: num(env.NEONRELAY_SESSION_TTL_MS, 12 * 60 * 60 * 1000),
     version: env.npm_package_version ?? "0.1.0",
     serverSigningPublicKey: env.NEONRELAY_SERVER_SIGNING_PUBLIC_KEY ?? null,
+    gameIdentityPublicKey: env.NEONRELAY_GAME_IDENTITY_PUBLIC_KEY ?? null,
     adminToken: env.NEONRELAY_ADMIN_TOKEN ?? null,
     epochMs: num(env.NEONRELAY_EPOCH_MS, 7 * 24 * 60 * 60 * 1000),
     capPerMatchMicro: num(env.NEONRELAY_CAP_PER_MATCH_MICRO, 50_000_000),
