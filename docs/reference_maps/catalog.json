@@ -1,0 +1,134 @@
+[
+  {
+    "name": "Tangerine",
+    "category": "novice",
+    "source_path": "types/novice/maps/Tangerine.map",
+    "revision": "19c834ae6506c15057f180500fc460b8c3f0448f",
+    "sha256": "b2bc470f243f96eb5b50ac28c0693500b8c44affcf4e8a6d3db50f030c9b2546",
+    "bytes": 105615,
+    "metadata": {
+      "author": "",
+      "version": "",
+      "credits": "",
+      "license": ""
+    },
+    "width": 500,
+    "height": 180,
+    "layers": 24,
+    "envelopes": 1,
+    "external_images": [
+      "bg_cloud1",
+      "bg_cloud2",
+      "bg_cloud3",
+      "generic_unhookable",
+      "grass_doodads",
+      "grass_main"
+    ],
+    "external_sounds": [],
+    "settings": [
+      "tune_zone 1 gravity -1"
+    ],
+    "author_catalog": "Oblique",
+    "stars": 1,
+    "note_ru": "Воздушные острова; есть зона отрицательной гравитации.",
+    "license_status": "unverified-do-not-ship",
+    "preview_revision": "79385b9fb9935ca7b18832214aa129138852dd37",
+    "preview_sha256": "a848b4c38b94a0ac0df83704e12729a0df575d337ef57a6acf6e2a1a13a40d4b",
+    "missing_local_images": []
+  },
+  {
+    "name": "Late Evening",
+    "category": "solo",
+    "source_path": "types/solo/maps/Late Evening.map",
+    "revision": "19c834ae6506c15057f180500fc460b8c3f0448f",
+    "sha256": "2f75f7a745f26880aceaa2c9efa6980acde406ea89bea09d98a2d4277078e048",
+    "bytes": 405779,
+    "metadata": {
+      "author": "",
+      "version": "",
+      "credits": "",
+      "license": ""
+    },
+    "width": 350,
+    "height": 150,
+    "layers": 21,
+    "envelopes": 1,
+    "external_images": [
+      "bg_cloud1",
+      "generic_deathtiles",
+      "generic_unhookable",
+      "jungle_doodads"
+    ],
+    "external_sounds": [],
+    "settings": [
+      "sv_solo_server 1"
+    ],
+    "author_catalog": "Bixes",
+    "stars": 2,
+    "note_ru": "Первый кандидат: Solo, острова, вертикальные переходы.",
+    "license_status": "unverified-do-not-ship",
+    "preview_revision": "79385b9fb9935ca7b18832214aa129138852dd37",
+    "preview_sha256": "fa22fd7018e6b466539af84c9ae94dfe2424a70001ac3d5d64de2972c27f4b59",
+    "missing_local_images": []
+  },
+  {
+    "name": "Planet Mars",
+    "category": "novice",
+    "source_path": "types/novice/maps/Planet Mars.map",
+    "revision": "19c834ae6506c15057f180500fc460b8c3f0448f",
+    "sha256": "ca551fcb1791b151f4548f7c5c569661e0fd698841e5ee4b8053c0a6b51dcfde",
+    "bytes": 718331,
+    "metadata": {
+      "author": "",
+      "version": "",
+      "credits": "",
+      "license": ""
+    },
+    "width": 435,
+    "height": 952,
+    "layers": 31,
+    "envelopes": 12,
+    "external_images": [
+      "generic_unhookable",
+      "grass_main",
+      "stars"
+    ],
+    "external_sounds": [],
+    "settings": [],
+    "author_catalog": "Aoe",
+    "stars": 4,
+    "note_ru": "Выраженная вертикальность; более сложный кандидат.",
+    "license_status": "unverified-do-not-ship",
+    "preview_revision": "79385b9fb9935ca7b18832214aa129138852dd37",
+    "preview_sha256": "da0ced43666b30d03bc36fcc4f9498bbef81eb50b0e5b817b78f25d5efcdaab8",
+    "missing_local_images": []
+  },
+  {
+    "name": "The Forest",
+    "category": "novice",
+    "source_path": "types/novice/maps/The Forest.map",
+    "revision": "19c834ae6506c15057f180500fc460b8c3f0448f",
+    "sha256": "a66b38c1577de113b05a5bd072f45f6d6ca2dcb975644e964f4ca886521bd159",
+    "bytes": 542201,
+    "metadata": {
+      "author": "",
+      "version": "",
+      "credits": "",
+      "license": ""
+    },
+    "width": 430,
+    "height": 162,
+    "layers": 27,
+    "envelopes": 0,
+    "external_images": [],
+    "external_sounds": [],
+    "settings": [],
+    "author_catalog": "YoDa & Nixus",
+    "stars": 3,
+    "note_ru": "Компактная многослойная трасса; все изображения встроены.",
+    "license_status": "unverified-do-not-ship",
+    "preview_revision": "79385b9fb9935ca7b18832214aa129138852dd37",
+    "preview_sha256": "63996877645eefbe97326a9bc3e0a1067b4a5dece6fa49ad5b25680c4dca5ce0",
+    "missing_local_images": []
+  }
+]

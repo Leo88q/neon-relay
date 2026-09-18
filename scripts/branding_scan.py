@@ -59,6 +59,8 @@ EXCLUDE_PATHS = (
 # Path based rules (checked first, most specific wins)
 # ---------------------------------------------------------------------------
 LEGAL_PATH_RES = [
+	# Explicit attribution/license review for optional, unshipped reference maps.
+	re.compile(r"^docs/reference_maps/(README_RU\.md|catalog\.json)$"),
 	re.compile(r"^license\.txt$"),
 	re.compile(r"^\.mailmap$"),
 	re.compile(r"^licenses/"),
@@ -139,6 +141,8 @@ CODE_PATH_RES = [
 # Line based rules: code / API identifiers that must not be renamed
 # ---------------------------------------------------------------------------
 CODE_IDENTIFIER_RES = [
+	# Pinned public asset-download endpoints are identifiers, not UI branding.
+	re.compile(r"https://raw\.githubusercontent\.com/ddnet/ddnet-maps/|repos/ddnet/ddnet-maps/contents/"),
 	# the crash-log tool still accepts the upstream executable names so that crash
 	# logs produced by an older DDNet installation stay diagnosable
 	re.compile(r'^\s*if parsed_filename\.executable not in \["neonrelay"'),
