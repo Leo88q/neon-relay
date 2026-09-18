@@ -85,6 +85,20 @@ jobs:
           g++ -std=c++20 -fsyntax-only -Isrc -I/tmp/neonrelay-syntax-probe/src -Isrc/engine/external \
             src/engine/http.cpp src/engine/shared/http_curl.cpp src/neonrelay/game_pairing_http.cpp
 
+      - name: Execute native HTTP worker against isolated TLS servers
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! ./scripts/test_native_https.sh 2>&1 | tee "$RUNNER_TEMP/native-https.log"; then
+            python3 - <<'PYLOG'
+          import os
+          from pathlib import Path
+          tail = Path(os.environ["RUNNER_TEMP"], "native-https.log").read_text()[-3500:]
+          print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
+          PYLOG
+            exit 1
+          fi
+
   # Builds the vendored ed25519-donna + match signer + CLI tool with plain
   # gcc/g++, signs fixed vectors and cross-verifies with node:crypto.
   match-signer:
