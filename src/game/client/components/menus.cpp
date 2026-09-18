@@ -969,7 +969,7 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	const char *pButtonText = "";
 	bool TopAlign = false;
 
-	ColorRGBA BgColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f);
+	ColorRGBA BgColor = ColorRGBA(0.065f, 0.09f, 0.15f, 1.0f);
 	if(m_Popup == POPUP_MESSAGE || m_Popup == POPUP_CONFIRM)
 	{
 		pTitle = m_aPopupTitle;
@@ -1051,7 +1051,7 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	}
 	else if(m_Popup == POPUP_WARNING)
 	{
-		BgColor = ColorRGBA(0.5f, 0.0f, 0.0f, 0.7f);
+		BgColor = ColorRGBA(0.23f, 0.075f, 0.10f, 1.0f);
 		pTitle = m_aMessageTopic;
 		pExtraText = m_aMessageBody;
 		pButtonText = m_aMessageButton;
@@ -1067,10 +1067,12 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	Box = Screen;
 	if(m_Popup != POPUP_FIRST_LAUNCH)
 	{
-		Box.Margin(150.0f, &Box);
+		Box.VMargin(std::max(12.0f, (Screen.w - 660.0f) / 2.0f), &Box);
+		Box.HMargin(std::min(150.0f, Screen.h * 0.16f), &Box);
 	}
 
-	// Background
+	// Dim the page, then render a readable opaque dialog.
+	Screen.Draw(ColorRGBA(0.008f, 0.015f, 0.035f, 0.72f), 0, 0.0f);
 	Box.Draw(BgColor, IGraphics::CORNER_ALL, 15.0f);
 
 	// Title

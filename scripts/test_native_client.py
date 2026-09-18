@@ -10,7 +10,9 @@ import time
 binary = Path(sys.argv[1]).resolve(strict=True)
 output = Path(sys.argv[2]); output.mkdir(parents=True, exist_ok=True)
 root = Path(__file__).resolve().parent.parent
-for name, width, height in [('desktop', 1280, 800), ('portrait', 480, 900)]:
+for name, width, height, page, key in [(f'{size}-{page}', width, height, page, key)
+        for size, width, height in [('desktop', 1280, 800), ('portrait', 480, 900)]
+        for page, key in [('store', 'c'), ('wallet', 'w'), ('settings', 's')]]:
     with tempfile.TemporaryDirectory(prefix='neonrelay-client-') as temp:
         home = Path(temp)
         (home/'storage.cfg').write_text(f'add_path {home}\nadd_path {root / "data"}\n')
@@ -36,10 +38,10 @@ for name, width, height in [('desktop', 1280, 800), ('portrait', 480, 900)]:
                 assert process.poll() is None, 'client crashed while rendering'
                 subprocess.run(['import','-window',window,str(output/f'{name}.png')],check=True,timeout=10)
                 subprocess.run(['xdotool','windowfocus','--sync',window],check=True)
-                subprocess.run(['xdotool','key','c'],check=True)
+                subprocess.run(['xdotool','key',key],check=True)
                 time.sleep(2)
-                assert process.poll() is None, 'client crashed while opening character store'
-                subprocess.run(['import','-window',window,str(output/f'{name}-store.png')],check=True,timeout=10)
+                assert process.poll() is None, 'client crashed while opening product page'
+                subprocess.run(['import','-window',window,str(output/f'{name}-page.png')],check=True,timeout=10)
                 # Ask the application to close rather than leaving an orphan.
                 subprocess.run(['xdotool','windowclose',window], check=False)
                 try: process.wait(timeout=8)

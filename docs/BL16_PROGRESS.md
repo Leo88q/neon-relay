@@ -475,3 +475,19 @@ needs the user's in-game review; this is not a new gameplay verification claim.
   freeze appearance and all nine new designs. User approval of the first
   character's motion does not substitute for those checks. Client linking and
   rendering were not executed in this sandbox. Full BL-16 is not complete.
+
+### Wallet and shared panels follow-up
+
+The wallet screen now has an opaque status card, wrapped paragraphs in a scroll
+region and 44-unit connect/disconnect controls. Removed the old economy request
+buttons entirely: even a populated service configuration does not authorize
+payments, claims or NFT purchases. Russian unavailable/configuration messages
+are included. Compact settings navigation uses a 2×2 grid instead of consuming
+120 units of the narrow screen with a sidebar; legal credits remain accessible.
+Shared message dialogs now have width-aware margins, opaque surfaces and a
+backdrop. Individual graphics/sound/control layouts still need mobile review.
+
+Full local ci-local passed (assets 5, menu contracts 7, backend 97, onchain 32),
+including client syntax. Native smoke coverage now opens store, wallet and
+settings in both desktop and portrait windows. This tests boot/liveness and
+captures images, not visual quality or real-device touch behavior.

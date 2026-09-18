@@ -2707,3 +2707,12 @@ Catalog preview. NFT purchases and equipping are not available yet.
 
 Rankings are unavailable until the race service is connected.
 == Рейтинг недоступен до подключения сервиса забегов.
+
+Payments, prize claims and NFT purchases are unavailable in this build.
+== В этой сборке недоступны платежи, получение призов и покупка NFT.
+
+Service configuration present. Transactions remain disabled.
+== Настройки сервиса заданы. Транзакции остаются отключёнными.
+
+Transaction service is not configured.
+== Сервис транзакций не настроен.

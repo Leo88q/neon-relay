@@ -74,6 +74,21 @@ class MenuContract(unittest.TestCase):
         self.assertIn('RenderCharacterPortrait', start)
         self.assertIn('Compact', start)
 
+    def test_wallet_is_read_only_and_scrollable(self):
+        wallet = self.text('src/game/client/components/menus_settings_wallet.cpp')
+        self.assertNotIn('neonrelay_wallet_request_economy(', wallet)
+        self.assertIn('neonrelay_wallet_request_connect()', wallet)
+        self.assertIn('neonrelay_wallet_request_disconnect()', wallet)
+        self.assertIn('s_WalletScroll.Begin', wallet)
+        self.assertIn('s_WalletScroll.End()', wallet)
+        self.assertIn('Props.m_MaxWidth = MainView.w', wallet)
+        self.assertIn('Payments, prize claims and NFT purchases are unavailable', wallet)
+        settings = self.text('src/game/client/components/menus_settings.cpp')
+        self.assertIn('const bool Compact', settings)
+        self.assertIn('Button.h = 44.0f', settings)
+        menus = self.text('src/game/client/components/menus.cpp')
+        self.assertNotIn('Box.Margin(150.0f, &Box)', menus)
+
     def test_no_fake_purchase_or_rankings(self):
         pages = self.text('src/game/client/components/menus_settings_wallet.cpp')
         pages = pages[pages.index('void CMenus::RenderRaceLobby'):]
