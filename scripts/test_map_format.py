@@ -153,6 +153,28 @@ class MapFormatTests(unittest.TestCase):
         self.assertTrue((sky[:,0]==sky[:,-1]).all())
         self.assertLess(sky.max(),48) # background cannot compete with collision caps
 
+    def test_functional_palette_icons_and_landmarks(self):
+        from learn_visibility import COLORS,symbol
+        from world_palette import ICE,PORTAL,RACE
+        from datafile_v4 import read
+        import numpy as np
+        import ast
+        self.assertEqual(COLORS[:3],[ICE]*3)
+        self.assertEqual(COLORS[4:6],[PORTAL]*2)
+        for values,color in [((9,12,11),ICE),((26,27,29,30,63),PORTAL),((33,34,35),RACE)]:
+            for v in values:
+                a=np.array(symbol(v))
+                self.assertTrue(((a[:,:,:3]==color).all(axis=2)&(a[:,:,3]>200)).any(),v)
+        tree=ast.parse((ROOT/'scripts/learn_visibility.py').read_text())
+        self.assertFalse(any(isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr in ('text','multiline_text') for n in ast.walk(tree)))
+        m=read(ROOT/'data/maps/LearnToPlay Sound.map');layers=dict(m.items[5])
+        for i in (23,24):
+            self.assertEqual(layers[i][1],3)
+            self.assertGreater(layers[i][4],0)
+        # Original race line is eight cells tall, but its icon is no longer repeated eight times.
+        p=layers[41];raw=m.raws[p[14]]
+        self.assertLess(sum(v==33 for v in raw[::4]),8)
+
     def test_name_matches_engine_encoding(self):
         self.assertEqual(struct.pack('>3i', *pack_name('abc')), b'\xe1\xe2\xe3'+b'\x80'*8+b'\x00')
 

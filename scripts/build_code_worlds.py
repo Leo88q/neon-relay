@@ -3,6 +3,7 @@
 from pathlib import Path
 import colorsys, math, random
 from PIL import Image, ImageDraw, ImageFilter
+from world_palette import PORTAL,RACE
 ROOT=Path(__file__).resolve().parent.parent
 OUT=ROOT/'data/mapres'
 STYLES=('sound','folds','circuit','chrome')
@@ -73,13 +74,13 @@ def atlas(style):
             for x in range(0,64,16):d.polygon([(x,29),(x+8,5),(x+16,29)],fill=(255,80,119,255))
         elif idx in (65,66):
             d.line((12,8,12,62),fill=(246,227,182,255),width=3)
-            d.polygon([(14,8),(53,8),(43,25),(14,25)],fill=((65,223,176,255) if idx==65 else (255,209,84,255)))
+            d.polygon([(14,8),(53,8),(43,25),(14,25)],fill=(*RACE,255))
             if idx==66:
                 for x in range(16,44,8):d.rectangle((x,10,x+3,14),fill=(80,53,40,255))
         elif idx==67:
             d.polygon([(32,8),(48,29),(32,50),(16,29)],outline=(252,202,104,255),width=3)
         else:
-            col=(110,187,255,255) if idx==68 else (223,147,255,255)
+            col=(*PORTAL,255)
             for j in (4,10,16):d.ellipse((j,j,63-j,63-j),outline=col,width=2)
             d.line((22,32,42,32),fill=col,width=3)
             d.line((36,26,42,32,36,38),fill=col,width=3)

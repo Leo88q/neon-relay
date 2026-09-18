@@ -3,12 +3,13 @@ from pathlib import Path
 import math
 import struct
 from collections import Counter
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image,ImageDraw
 import numpy as np
+from world_palette import ICE,PORTAL,RACE,MECHANISM,NEUTRAL
 ROOT=Path(__file__).resolve().parent.parent
 OUT=ROOT/'data/mapres'
 FAMILIES=['freeze','deep','thaw','stop','tele','evil','switch','speed','through']
-COLORS=[(111,215,251),(187,139,255),(91,237,166),(255,195,89),(152,173,255),(244,126,182),(255,205,117),(76,229,203),(133,171,188)]
+COLORS=[ICE,ICE,ICE,MECHANISM,PORTAL,PORTAL,MECHANISM,MECHANISM,NEUTRAL]
 
 def kind(layer,v):
     if layer=='tele':return 'evil' if v in (10,63) else 'tele'
@@ -39,6 +40,7 @@ def visual_layers(m):
                 counts[v]+=1
                 if name=='game' and v in (1,3):routes[v]='opaque-terrain';continue
                 if name=='game' and v>=192:routes[v]='runtime-entity';continue
+                if v in (190,191):routes[v]='render-metadata-no-marker';continue
                 family=kind(name,v)
                 flags=(raw[i*stride+flag_offset]&11) if flag_offset is not None else 0
                 if family:
@@ -53,7 +55,9 @@ def visual_layers(m):
                 else:routes[v]='symbol'
                 # Large regions use sparse interior markers, not a field of noisy icons.
                 if not family or family in ('stop','switch','speed') or (name=='tele' and v in (26,27,30)) or (x%3==0 and y%3==0):
-                    glyph[i*4]=v
+                    # A column of mode/start tiles is one visual sign, not repeated labels.
+                    repeated=family not in ('freeze','deep','thaw') and any(y+dy<h and values[i+dy*w]==v for dy in range(1,5))
+                    glyph[i*4]=v if family in ('stop','speed') or not repeated else 0
                     if family=='stop':glyph[i*4+1]=flags
                     if name=='speed':
                         angle=struct.unpack_from('<h',raw,i*stride+4)[0]%360
@@ -63,23 +67,84 @@ def visual_layers(m):
         result[name]=(bound,glyph)
     return result,audit
 
+def symbol(v):
+    """No fonts, letters or editor labels: shape + consistent functional color."""
+    t=Image.new('RGBA',(128,128));d=ImageDraw.Draw(t)
+    family=kind('game',v)
+    c=COLORS[FAMILIES.index(family)] if family else NEUTRAL
+    if v in (26,27,29,30,31,63):c=PORTAL
+    if 33<=v<=59:c=RACE
+    c=(*c,255)
+    # Dark translucent medallion separates icons from terrain without a text plaque.
+    d.ellipse((21,21,107,107),fill=(8,15,29,175))
+    if v in (9,11,12,13,144,145):
+        for a in range(0,360,60):
+            a=math.radians(a);dx,dy=math.cos(a),math.sin(a)
+            d.line((64,64,64+35*dx,64+35*dy),fill=c,width=5)
+            for side in (-1,1):
+                d.line((64+23*dx,64+23*dy,64+14*dx-side*9*dy,64+14*dy+side*9*dx),fill=c,width=4)
+        if v in (11,13,145):d.line((33,100,97,28),fill=c,width=6)
+        if v==12:d.ellipse((18,18,110,110),outline=c,width=3)
+    elif v in (26,27,29,30,31,63):
+        d.ellipse((35,22,93,106),outline=c,width=6)
+        d.arc((47,34,81,94),65,290,fill=c,width=4)
+        if v in (26,27,30):
+            pts=[(19,64),(58,64),(45,51),(58,64),(45,77)]
+            if v in (27,30):pts=[(128-x,y) for x,y in pts]
+            d.line(pts,fill=c,width=6)
+        if v==63:d.polygon([(59,10),(69,10),(69,17),(59,17)],fill=c)
+    elif 33<=v<=59:
+        d.line((29,101,29,30,99,30,99,101),fill=c,width=8)
+        if v==34:
+            for y in range(37,73,12):
+                for x in range(39,91,12):
+                    if (x//12+y//12)%2:d.rectangle((x,y,x+10,y+10),fill=c)
+        else:d.line((48,65,80,65,68,53,80,65,68,77),fill=c,width=6)
+    elif v in (21,22):
+        for x in ([64] if v==21 else [46,82]):
+            d.ellipse((x-11,33,x+11,55),fill=c)
+            d.rounded_rectangle((x-15,62,x+15,95),6,fill=c)
+    elif v in (28,60,61,62):
+        pts=[(31,64),(96,64),(78,45),(96,64),(78,83)]
+        if v in (60,61,62):pts=[(128-y,x) for x,y in pts]
+        d.line(pts,fill=c,width=7)
+        if v!=28:d.line((26,24,102,24),fill=c,width=7)
+    elif v in (17,18,5,6,66,67):
+        d.line((72,26,72,73),fill=c,width=6)
+        d.arc((34,55,74,97),0,180,fill=c,width=6)
+        if v==18:d.line((28,100,100,28),fill=c,width=5)
+    elif v in (89,90,105,106):
+        d.polygon([(64,23),(86,49),(82,84),(46,84),(42,49)],outline=c,width=5)
+        d.line((52,91,47,108),fill=c,width=4);d.line((76,91,81,108),fill=c,width=4)
+        if v in (89,90):d.line((28,100,100,28),fill=c,width=5)
+    else:
+        d.rectangle((32,41,96,87),outline=c,width=5)
+        d.line((44,64,83,47),fill=c,width=6)
+        d.ellipse((36,57,48,69),fill=c)
+        if v in (190,191):return Image.new('RGBA',(64,64)) # render-mode metadata, not an obstacle
+    return t.resize((64,64),Image.Resampling.LANCZOS)
+
+
 def build():
     OUT.mkdir(exist_ok=True)
     atlas=Image.new('RGBA',(1024,1024))
     for nohook in (False,True):
         for mask in range(16):
-            t=Image.new('RGBA',(64,64),(43,47,63,255) if nohook else (32,64,79,255));d=ImageDraw.Draw(t)
-            # Solid matte material with broad bevels, not yellow crosshatching.
-            for y in range(64):
-                c=(46+y//8,49+y//8,64+y//8) if nohook else (30+y//10,61+y//10,76+y//10)
-                d.line((0,y,63,y),fill=(*c,255))
-            edge=(255,205,113,255) if nohook else (153,238,247,255)
+            base=(68,79,99) if nohook else (85,105,131)
+            t=Image.new('RGBA',(64,64),(*base,255));d=ImageDraw.Draw(t)
+            # Original cut-block material: recessed face, broad lit bevel, dark lower facet.
+            d.rectangle((3,3,60,60),fill=tuple(v+9 for v in base)+(255,))
+            d.polygon([(4,4),(60,4),(53,11),(11,11)],fill=tuple(v+25 for v in base)+(255,))
+            d.polygon([(53,11),(60,4),(60,60),(53,53)],fill=tuple(v-13 for v in base)+(255,))
+            d.polygon([(4,60),(11,53),(53,53),(60,60)],fill=tuple(v-25 for v in base)+(255,))
+            d.rectangle((11,12,52,52),fill=(*base,255))
+            if not nohook:
+                for xx in (21,42):
+                    d.rectangle((xx-3,27,xx+3,34),fill=(30,42,60,255))
+                    d.line((xx-3,35,xx+3,35),fill=(133,151,175,255),width=2)
+            edge=(*NEUTRAL,255)
             for bit,line in [(1,(0,1,63,1)),(2,(62,0,62,63)),(4,(0,62,63,62)),(8,(1,0,1,63))]:
                 if mask&bit:d.line(line,fill=edge,width=4)
-            if nohook and mask:
-                # A restrained identification notch. Never overwrite the collision outline.
-                d.line((24,12,40,12),fill=(211,172,106,255),width=3)
-                d.line((24,17,40,17),fill=(211,172,106,255),width=2)
             idx=32+mask if nohook else 16+mask
             atlas.paste(t,((idx%16)*64,(idx//16)*64))
     atlas.save(OUT/'neonrelay_learn_terrain.png')
@@ -98,16 +163,9 @@ def build():
             idx=1+16*FAMILIES.index(family)+mask
             boundaries.paste(t,((idx%16)*64,(idx//16)*64))
     boundaries.save(OUT/'neonrelay_learn_boundaries.png')
-    symbols=Image.new('RGBA',(1024,1024));font=ImageFont.truetype(str(ROOT/'data/fonts/DejaVuSans.ttf'),15)
-    labels={5:'HOOK',9:'ICE',11:'THAW',12:'DEEP',13:'THAW',17:'∞ H',18:'H −',21:'SOLO',22:'TEAM',23:'SW−',24:'SW+',25:'SW−',26:'IN',27:'OUT',28:'→',29:'TP',30:'OUT',33:'START',34:'END',60:'↓',61:'↕',62:'STOP',63:'TP!',89:'J −',90:'JET −',105:'∞ J',106:'JET +',190:'HUD',191:'HUD',210:'SW',211:'SW',212:'SW',240:'DOOR'}
+    symbols=Image.new('RGBA',(1024,1024))
     for v in range(1,256):
-        t=Image.new('RGBA',(64,64));d=ImageDraw.Draw(t)
-        family=kind('game',v);c=COLORS[FAMILIES.index(family)] if family else (186,201,220)
-        if v in (26,27,29,30,63):c=COLORS[5 if v==63 else 4]
-        text=labels.get(v, str(v-34) if 35<=v<=59 else str(v))
-        d.rounded_rectangle((4,19,59,45),5,fill=(8,15,28,215),outline=(*c,220),width=2)
-        d.text((32,32),text,font=font,anchor='mm',fill=(*c,255))
-        symbols.paste(t,((v%16)*64,(v//16)*64))
+        symbols.paste(symbol(v),((v%16)*64,(v//16)*64))
     symbols.save(OUT/'neonrelay_learn_symbols.png')
     # Seamless, low-contrast atmospheric texture; no photo rights/tiling artifacts.
     n=768;yy,xx=np.meshgrid(np.linspace(0,math.tau,n),np.linspace(0,math.tau,n),indexing='ij')
@@ -117,4 +175,7 @@ def build():
     img[-1]=img[0];img[:,-1]=img[:,0]
     Image.fromarray(img).save(OUT/'neonrelay_learn_atmosphere.png')
 
-if __name__=='__main__':build()
+if __name__=='__main__':
+    build()
+    from learn_landmarks import build as build_landmarks
+    build_landmarks()

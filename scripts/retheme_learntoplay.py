@@ -6,6 +6,7 @@ from PIL import Image
 from datafile_v4 import read
 from map_format import pack_name,quad_rect
 from learn_visibility import visual_layers
+from learn_landmarks import regions
 ROOT=Path(__file__).resolve().parent.parent
 SOURCE=ROOT/'data/maps/LearnToPlay.map'
 OUTPUT=ROOT/'data/maps/LearnToPlay Sound.map'
@@ -73,7 +74,7 @@ def transform(source=SOURCE,output=OUTPUT):
             xx=x*32+4+col*13;yy=y*32
             k=(x+y+col)%8
             bars.append(quad(xx-1,yy+5,xx+9,yy+31,(5,10,25,250)))
-            for row,c in enumerate([(240,105,215),(205,111,229),(157,126,239),(89,163,225),(65,209,208)]):
+            for row,c in enumerate([(171,190,214),(153,174,203),(133,154,183),(114,137,167),(96,119,151)]):
                 bars.append(quad(xx,yy+6+row*5,xx+8,yy+9+row*5,(*c,230),colour=segment_envelopes[k][row]))
             peaks.append(quad(xx,yy+29,xx+8,yy+31,(245,240,255,230),position=motion[k]))
     # Replace existing decorative slots without renumbering any original item.
@@ -112,6 +113,27 @@ def transform(source=SOURCE,output=OUTPUT):
     # Early slots were old decorative shadows/circuit scribbles. Remove them;
     # keep all original gameplay layers, custom items and instructions unchanged.
     for i in (3,4,5):quads_at(i,[],-1,'Retired art')
+    # Architecture in original world-space BACKGROUND slots, before all gameplay art.
+    architecture=embedded('neonrelay_learn_landmarks',ROOT/'data/mapres/neonrelay_learn_landmarks.png')
+    gates=[];ruins=[];anchors=[]
+    def landmark(style,x,y,width,height,alpha=255):
+        q=list(struct.unpack('<38i',quad(x-width//2,y-height,x+width//2,y,(255,255,255,alpha))))
+        u=(style%2)*512;v=(style//2)*512
+        q[26:34]=[u,v,u+512,v,u,v+512,u+512,v+512]
+        return struct.pack('<38i',*q)
+    for types,style in [({33},1),({34},3)]:
+        for x0,y0,x1,y1 in regions(grid,w,h,types):
+            x=(x0+x1+1)*16;y=(y1+1)*32
+            gates.append(landmark(style,x,y,160,190));anchors.append((x,y))
+    tele=layers[35];tele_values=m.raws[tele[18]][1::2]
+    for x0,y0,x1,y1 in regions(tele_values,w,h,{26,27,30}):
+        x=(x0+x1+1)*16;y=(y1+1)*32
+        gates.append(landmark(0,x,y,112,144));anchors.append((x,y))
+    for k,(x,y) in enumerate(anchors):
+        ruins.append(landmark(2,x-180 if k%2 else x+200,y+32,290,240+(k%3)*75,170))
+    quads_at(23,ruins,architecture,'Distant ruins')
+    quads_at(24,gates,architecture,'Route landmarks')
+
     m.save(output)
     (ROOT/'docs/learntoplay-visual-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
     print(f'{output}: {len(surfaces)*2} animated LED columns; {len(m.items[3])-6} new envelopes; {original_count} original raw blocks retained')
