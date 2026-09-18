@@ -317,3 +317,20 @@ same checks so this gap does not recur silently.
 - Confidential wallet-to-game delivery is still test-only private stdin. No
   unencrypted game token packet was introduced. Production client transport,
   packet/main-loop wiring and live native playtests remain outstanding.
+
+### Part 19 — encrypted pairing envelopes (verified)
+
+- Added signed ephemeral X25519 offers and wallet-authenticated sealed issuance
+  using HKDF-SHA256/AES-256-GCM. Registry, consent, session and expiry checks remain;
+  only a token hash is persisted and no plaintext token is returned by this route.
+- Added OpenSSL C++ offer/decryption component with single-use key destruction,
+  bounded attempts/expiry and no plaintext fallback when OpenSSL is unavailable.
+- Real backend/native TLS harness now carries only ciphertext across test IPC,
+  decrypts in C++, redeems and verifies identity. Tampered tag, low-order peer,
+  different connection key and replay are rejected.
+- CI 35347448666 passed at 6065e74. Local offline gates passed: backend 97/97,
+  onchain TS 32/32 and existing native/protocol/asset gates.
+- This is envelope confidentiality, not full game-channel authentication. Offer
+  relay/substitution, packet rate limits/parser, connection ownership/lifetime,
+  endpoint confirmation and client UI remain release gates. Nothing enabled for
+  live game packets, payments or paid admission.

@@ -317,3 +317,75 @@ A confidential authenticated client channel and actual game message/main-loop
 wiring still need implementation and playtesting. This result also does not
 validate production backend TLS termination or operator key provisioning. No
 live wallet login, public payment or paid race admission was enabled.
+
+## Part 19: confidential pairing envelope (verified interoperability)
+
+`POST /v2/game/pair-sealed` accepts an authenticated wallet session, explicit
+consent, an exact `offer` JSON string and its canonical base64url Ed25519
+`signature`. The configured game identity signer must sign these ordered fields:
+
+```
+v = 1
+purpose = neonrelay-game-pairing-seal
+domain = configured backend domain
+connection_nonce = lowercase 32-byte hex
+server_ephemeral_key = lowercase raw X25519 public key hex
+issued_at = integer Unix milliseconds
+expires_at = integer Unix milliseconds, at most issued_at + 120000
+```
+
+The backend requires canonical compact JSON (no extra/duplicate fields), matching
+domain/purpose, current time and a valid trusted-server signature. It validates
+X25519 key agreement before creating the ordinary hashed one-use pairing row;
+invalid/low-order keys fail closed. Registry/session/consent rules still apply.
+The token expiry is capped by both offer expiry and session expiry.
+
+Envelope construction uses Node/OpenSSL primitives:
+
+- Fresh sender X25519 key; shared secret with the offer's ephemeral server key.
+- HKDF-SHA256, salt = SHA256(exact offer UTF-8 bytes), info = ASCII
+  `neonrelay:game-pairing-seal:v1`, 32-byte output.
+- AES-256-GCM, random 12-byte IV, exact offer bytes as AAD, 16-byte tag.
+- Plaintext = 43-byte ASCII pairing token, never present in this HTTP response.
+- Response: version 1, `sender_key` (32-byte hex), `iv` (12-byte hex),
+  `ciphertext` (43-byte hex), `tag` (16-byte hex), expiry and disabled-admission
+  flag. Metadata flags are not authorization and must never enable admission.
+
+`GamePairingSeal` owns an opaque ephemeral OpenSSL key. Successful decryption
+frees it; replay fails. Expiry, time before issuance or excess attempts discard
+the key. Temporary shared/AES key buffers and decrypted temporary storage are
+cleansed. The resulting token exists transiently in memory for the HTTPS redeem
+request; this is not a claim that all language/runtime heap copies are wiped.
+Without OpenSSL the class returns failure, never plaintext fallback. A future
+connection adapter must own/destroy the seal alongside its original connection.
+
+The actual-backend/native TLS harness now includes a sealed case. C++ generates
+and signs the offer; the wallet-authenticated backend encrypts a real token;
+only ciphertext fields cross test stdin; C++ decrypts and redeems through the
+real native HTTP worker, then signs and verifies an identity challenge. Native
+checks reject altered tag, all-zero peer, another connection's ephemeral key and
+repeat opening. Backend tests additionally cover AAD tampering, untrusted signer,
+wrong domain/purpose, expiry, extra fields, missing consent and disabled registry.
+
+Verified at `6065e74`:
+https://github.com/Leo88q/neon-relay/actions/runs/35347448666
+Local offline gates: backend 97/97, onchain TS 32/32 and prior checks. OpenSSL/TLS
+native execution remains CI-verified rather than local-sandbox execution.
+
+### Security scope before packet integration
+
+This is a confidentiality envelope, **not a complete authenticated game channel**
+and not an audited general-purpose protocol. AEAD verifies the derived key/AAD;
+X25519 encryption alone does not prove that the sender is the backend. Actual
+acceptance still requires HTTPS redemption of a valid live backend token. Anyone
+knowing a public offer can encrypt junk and cause denial of service; attempts
+must be rate-limited before a packet handler is enabled. Swapping/relaying whole
+valid offers across client connections requires a separate binding/confirmation
+and active-attacker review; this change does not establish protection against
+that or hijacking subsequent unencrypted game traffic.
+
+No envelope packet parser/handler or client UI is enabled. Do not send plaintext
+from the older `/v2/game/pair` route over UDP. This stage removes the plaintext
+secret from the test's sealed delivery path, not the remaining game transport,
+endpoint-authentication, relay, lifecycle and playtest release gates. Payments
+and paid admission remain disabled.
