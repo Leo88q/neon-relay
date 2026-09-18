@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Original Neon Relay race maps (BL-14).
 
-Generates five from-scratch race maps that replace every shipped upstream
+Generates five original race maps alongside the existing
 map, using only original Neon Relay art (neonrelay_sky / neonrelay_scenery /
 neonrelay_tiles). Tile ids follow src/game/mapitems.h; entity tiles are
 ENTITY_OFFSET + id. Layout rules keep every map solvable with stock
@@ -20,6 +20,8 @@ gaps <= 5 tiles, under-gaps >= 3 tiles, no nohook walls across the route.
 import pathlib
 import random
 import sys
+import struct
+import math
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from map_format import MapWriter, quad_rect  # noqa: E402
@@ -237,9 +239,12 @@ def write_map(name, build, blurb):
 	mw.version()
 	mw.info("The Neon Relay Authors", "1",
 		f"original Neon Relay map: {blurb} (BL-14, procedural)", "Zlib")
-	img_sky = mw.image("neonrelay_sky", 2048, 1024)
-	img_scn = mw.image("neonrelay_scenery", 1024, 1024)
-	img_tile = mw.image("neonrelay_tiles", 1024, 1024)
+	styles = {"Neon Relay Basin": "sound", "Chromatic Canyon": "folds", "Vector Spire": "circuit", "Midnight Circuit": "chrome", "Aurora Ascent": "folds"}
+	style = styles[name]
+	img_sky = mw.image(f"neonrelay_{style}_sky", 1536, 768)
+	img_mid = mw.image(f"neonrelay_{style}_mid", 1024, 512)
+	img_tile = mw.image(f"neonrelay_{style}_tiles", 1024, 1024)
+	img_light = mw.image("neonrelay_pulse", 128, 128)
 	# lift tele pads out of the game grid into a numbered tele layer
 	# (CTeleTile = {number, type}; RenderTelemap draws m_Type from the image)
 	tele = bytearray(g.w * g.h * 2)
@@ -250,14 +255,49 @@ def write_map(name, build, blurb):
 				tele[(y * g.w + x) * 2] = 1
 				tele[(y * g.w + x) * 2 + 1] = v
 				g.g[y][x] = T_AIR
-	mw.quads_layer([quad_rect(-3000, -1800, g.w * 32 * 2 + 3000, g.h * 32 * 2 + 1800)], img_sky, "Sky")
-	mw.tiles_layer(g.w, g.h, deco_b, img_scn, flags=0, layer_flags=1, name="Decor")
+	# Static collision data is untouched. Ordinary decorative tiles provide the
+	# visible terrain: the engine does not display the game layer as normal art.
+	visual = bytearray(g.w*g.h*4)
+	light_quads = []
+	for y in range(g.h):
+		for x in range(g.w):
+			v = g.g[y][x]
+			idx = 0
+			if v in (T_SOLID,T_NOHOOK):
+				mask=0
+				for dx,dy,bit in [(0,-1,1),(1,0,2),(0,1,4),(-1,0,8)]:
+					nx,ny=x+dx,y+dy
+					if not (0<=nx<g.w and 0<=ny<g.h) or g.g[ny][nx] not in (T_SOLID,T_NOHOOK): mask |= bit
+				idx = (32 if v==T_NOHOOK else 16)+mask
+				if mask&1 and x%8==0:
+					q=list(struct.unpack('<38i',quad_rect(x*32-48,y*32-64,x*32+80,y*32+32)))
+					q[-2]=0 # shared synchronized color envelope
+					light_quads.append(struct.pack('<38i',*q))
+			elif v==T_DEATH: idx=64
+			elif v==T_START: idx=65
+			elif v==T_FINISH: idx=66
+			elif v==T_CP: idx=67
+			if tele[(y*g.w+x)*2+1]: idx=68 if tele[(y*g.w+x)*2+1]==T_TELEIN else 69
+			visual[(y*g.w+x)*4]=idx
+	period = 500 if style=="sound" else 4000
+	points=[]
+	for step in range(17):
+		phase=step/16
+		strength=(math.exp(-phase*5) if step<16 else 1) if style=="sound" else .5+.5*math.cos(phase*math.tau)
+		points += [round(phase*period),1,1024,1024,1024,round(250+strength*500)]
+	mw.item(3,[2,4,0,17]+[0]*8+[1])
+	mw.item(6,points)
+	mw.quads_layer([quad_rect(-1600,-1000,1600,1000)],img_sky,"Atmosphere")
+	mw.group((0,0),(0,0),0,1,"Far")
+	mw.quads_layer([quad_rect(x,-256,x+1024,256) for x in range(-2048,int(g.w*32*.35)+2048,1024)],img_mid,"Depth")
+	mw.group((0,0),(35,0),1,1,"Mid")
+	mw.tiles_layer(g.w,g.h,visual,img_tile,name="Materials")
+	mw.quads_layer(light_quads,img_light,"Light")
 	mw.tiles_layer(g.w, g.h, g.bytes(), img_tile, flags=1, name="Game")
 	tele_idx = mw.raw(bytes(tele))
 	zero = b"\0" * (g.w * g.h * 4)
 	mw.tiles_layer(g.w, g.h, zero, img_tile, flags=2, layer_flags=0, name="Tele", tele=tele_idx)
-	mw.group((0, 0), (45, 45), 0, 2, "Background")
-	mw.group((0, 0), (100, 100), 2, 2, "Game")
+	mw.group((0, 0), (100, 100), 2, 4, "Game")
 	out = OUTDIR / f"{name}.map"
 	n = mw.save(out)
 	print(f"wrote {out} ({n} bytes, {g.w}x{g.h})")

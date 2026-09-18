@@ -60,6 +60,12 @@ class MapFormatTests(unittest.TestCase):
             writer.save(path)
             self.assertEqual(before, path.read_bytes())
 
+    def test_gameplay_unchanged_by_retheme(self):
+        import json
+        from map_gameplay_fingerprint import gameplay
+        for name, expected in json.loads((ROOT/'tests/fixtures/map_gameplay.json').read_text()).items():
+            self.assertEqual(gameplay(ROOT/f'data/maps/{name}.map'), expected, name)
+
     def test_name_matches_engine_encoding(self):
         self.assertEqual(struct.pack('>3i', *pack_name('abc')), b'\xe1\xe2\xe3'+b'\x80'*8+b'\x00')
 

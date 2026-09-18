@@ -1664,8 +1664,21 @@ set(EXPECTED_DATA
   languages/traditional_chinese.txt
   languages/turkish.txt
   languages/ukrainian.txt
+  mapres/neonrelay_chrome_mid.png
+  mapres/neonrelay_chrome_sky.png
+  mapres/neonrelay_chrome_tiles.png
+  mapres/neonrelay_circuit_mid.png
+  mapres/neonrelay_circuit_sky.png
+  mapres/neonrelay_circuit_tiles.png
+  mapres/neonrelay_folds_mid.png
+  mapres/neonrelay_folds_sky.png
+  mapres/neonrelay_folds_tiles.png
+  mapres/neonrelay_pulse.png
   mapres/neonrelay_scenery.png
   mapres/neonrelay_sky.png
+  mapres/neonrelay_sound_mid.png
+  mapres/neonrelay_sound_sky.png
+  mapres/neonrelay_sound_tiles.png
   mapres/neonrelay_tiles.png
   maps/Aurora\ Ascent.map
   maps/Chromatic\ Canyon.map
