@@ -104,3 +104,17 @@ Do not run destructive matting helpers on already normalized sources. For replac
   separate syntax check of all four modified menu translation units.
 - No native client link/run, screenshot, input or visual playtest in this
   environment. Syntax checks and contract tests do not prove visual layout.
+
+## Part 5: isolated v2 backend ledger and mint-bound wire primitives
+
+- Added a forward-only migration with separate v2 tables; no automatic mapping
+  of old rows onto a mint. Internal ledger keys include mint, and idempotency
+  keys bind the full intent payload. Caps are keyed by player/mint/epoch.
+- Epochs transition once from OPEN to SEALED with immutable snapshots, exact
+  u64 base-unit amounts, budget checks, atomic transactions and SQL guards.
+- Added separate v2 leaf/proof/PDA helpers and a TypeScript offline claim
+  verifier. Shared independent leaf vectors cover two mints and u64 maximum.
+- Backend 69/69; onchain TypeScript tests 28/28. No Rust v2 instructions yet,
+  no public v2 intent/payment/claim route and no deployed v2 vaults/treasuries.
+- See ECONOMY_V2_LEDGER.md for API boundaries, reserved wire formats and the
+  authentication/fee/funding checks still required before exposing payments.
