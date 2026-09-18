@@ -56,6 +56,21 @@ for index,name in enumerate(names):
       if label=='boiling-oil':
        time.sleep(.40)
        subprocess.run(['import','-window',window,str(out/f'learn-{index}-oil-phase-2.png')],check=True,timeout=10)
+       # Native pixel evidence: oil must be visible AND its amber pixels must move.
+       # Use the existing ImageMagick dependency, not an uninstalled Python imaging module.
+       paths=[out/f'learn-{index}-{label}.png',out/f'learn-{index}-oil-phase-2.png']
+       rgb=[subprocess.run(['convert',str(path),'-alpha','off','-depth','8','RGB:-'],capture_output=True,check=True,timeout=15).stdout for path in paths]
+       assert len(rgb[0])==len(rgb[1]) and len(rgb[0])%3==0,'native capture dimensions changed'
+       amber=changed=0
+       for px in range(0,len(rgb[0]),3):
+        r,g,b=rgb[0][px:px+3]
+        if r>65 and r>g*1.35 and g>b*1.5:
+         amber+=1
+         changed+=sum(abs(rgb[0][px+c]-rgb[1][px+c]) for c in range(3))>18
+       assert amber>200, f'boiling oil not visible in native frame: {amber} amber pixels'
+       assert changed>30, f'boiling oil did not animate in native frames: {changed} changed amber pixels'
+       print(f'PASS: native oil animation: {amber} amber pixels, {changed} changed')
+
 
     assert cl.poll() is None,'client exited while rendering world'
     text=clog.read_text(errors='replace').lower()
