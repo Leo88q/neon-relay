@@ -236,3 +236,16 @@ same checks so this gap does not recur silently.
 - Trusted game-server identity authentication/signing is NOT implemented yet;
   its required contract is documented in GAME_IDENTITY_V2.md. No payment, public
   intent creation, capacity reservation or game admission was enabled.
+
+### Part 13 — guarded C++ identity signer boundary
+
+- Added a C++ identity signer requiring trusted player/wallet/session context,
+  explicit consent and fresh authentication; exact canonical-byte comparison
+  before signing prevents payload/context substitutions.
+- Added the adapter to the game-server build source list and extended the signer
+  gate with a compiled C++ -> wallet-authenticated backend HTTP parity test,
+  16 negative cases, Unicode/quote handling and one-use nonce verification.
+- Found existing legacy finish events identify players by ClientName. That path
+  is NOT an identity provider and was not wired into the new signing mechanism.
+- Production account authentication/context adapter is still missing. There is
+  deliberately no chat/RCON/network signing hook and no paid admission enabled.

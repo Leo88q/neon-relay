@@ -186,3 +186,13 @@ echo
 echo "## cross-verify with node:crypto (same Ed25519 as the reward backend)"
 NEONRELAY_TEST_SEED_HEX="$SEED_HEX" node "$BUILD_DIR/verify.mjs" "$BUILD_DIR/signed.jsonl" "$PUBKEY_B64URL" \
 	|| exit 1
+
+# Guarded game identity adapter: native C++ -> actual backend HTTP verification.
+"$CXX" -std=c++20 -O2 -Wall -Wextra -Isrc -Isrc/engine/external \
+  src/neonrelay/game_identity.cpp src/neonrelay/game_identity_test.cpp \
+  "$BUILD_DIR/match_signer.o" "$BUILD_DIR/ed25519.o" -o "$BUILD_DIR/game_identity_test" \
+  || fail "game identity adapter did not compile"
+NEONRELAY_IDENTITY_TEST_BIN="$BUILD_DIR/game_identity_test" \
+NEONRELAY_IDENTITY_TEST_SEED_FILE="$SEED_FILE" \
+NEONRELAY_IDENTITY_TEST_PUBLIC_KEY="$PUBKEY_B64URL" \
+node --experimental-strip-types scripts/test_game_identity_signer.ts || fail "identity adapter parity failed"

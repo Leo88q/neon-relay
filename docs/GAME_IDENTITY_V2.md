@@ -67,3 +67,38 @@ secured by these new routes.
 Tests exercise real Ed25519 signatures and authenticated HTTP sessions, including
 wrong wallet/signer, changed payload fields, session mismatch, replay, expiry,
 self-link revocation, signer/domain changes, missing configuration and rate limits.
+
+## Part 13: guarded C++ signing boundary
+
+`src/neonrelay/game_identity.{h,cpp}` adds a guarded identity signing function
+using the existing Ed25519 primitive. It is linked into the game-server source
+list, but intentionally has **no network, chat, console or finish-event hook**.
+
+The caller must supply `AuthenticatedGameIdentity` from a trusted account
+adapter: allowlisted domain, stable player id, verified wallet, backend session
+and binding UUIDs, nonexpired authentication, and explicit link consent. This
+struct is a server-internal trust boundary, NOT a DTO to deserialize from a
+client. Setting its fields is not itself proof of identity. The production
+adapter that authenticates these facts is still missing.
+
+The signer reconstructs the exact canonical challenge using that context and
+its own public key, compares it byte-for-byte with the supplied backend JSON,
+and only then signs. It rejects changed fields, noncanonical nonce/key encoding,
+malformed UUIDs, wrong purpose/signer/domain, missing consent, expired or future
+challenge times, lifetime over two minutes, stale authentication and oversized
+input. No JSON parsing ambiguity or duplicate fields can survive exact equality.
+Replay consumption remains the backend's responsibility.
+
+The existing legacy finish-event path uses `ClientName` as its player identifier.
+It was deliberately NOT reused as a trusted identity provider. Nicknames, client
+slots and IP addresses must not become authoritative player ids for paid flows.
+Legacy event semantics are unchanged and are not secured by this adapter.
+
+`neonrelay_signer_test.sh` now compiles the C++ adapter and a test-only harness,
+issues a real backend challenge through wallet-authenticated HTTP, passes a
+fixture trusted context to C++, and redeems its signature through the backend.
+It checks 16 altered-context/payload rejection cases, Unicode/quote byte parity,
+no-admission flags and replay rejection. The harness is not a deployed tool.
+
+This validates the C++/backend signing boundary, not native account login,
+wallet-session transport, server integration, game admission or a release build.
