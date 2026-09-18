@@ -175,6 +175,32 @@ class MapFormatTests(unittest.TestCase):
         p=layers[41];raw=m.raws[p[14]]
         self.assertLess(sum(v==33 for v in raw[::4]),8)
 
+    def test_heights_only_adds_twelve_explicit_safe_terrace_tiles(self):
+        from datafile_v4 import read
+        from learn_visibility import fields
+        source=read(ROOT/'data/maps/LearnToPlay.map')
+        variant=read(ROOT/'data/maps/LearnToPlay Sound Heights.map')
+        validate(ROOT/'data/maps/LearnToPlay Sound Heights.map')
+        self.assertEqual(source.raws,variant.raws[:len(source.raws)])
+        for t in (0,1,4,65534,65535):self.assertEqual(source.items[t],variant.items[t])
+        a=dict(source.items[5]);b=dict(variant.items[5]);w=a[32][4]
+        original=source.raws[a[32][14]];changed=variant.raws[b[32][14]]
+        expected={(342+dx,y) for dx,height in enumerate((1,2,3,3,2,1)) for y in range(23-height,23)}
+        actual={(i//4%w,i//4//w) for i in range(0,len(original),4) if original[i:i+4]!=changed[i:i+4]}
+        self.assertEqual(actual,expected);self.assertEqual(len(actual),12)
+        for x,y in expected:
+            i=(y*w+x)*4
+            self.assertEqual(original[i:i+4],bytes(4))
+            self.assertEqual(changed[i:i+4],bytes((1,0,0,0)))
+        for name,p,raw,stride,offset,flags in fields(source):
+            for x,y in expected:self.assertEqual(raw[(y*w+x)*stride+offset],0)
+        for x in range(342,348):
+            self.assertIn(original[(23*w+x)*4],(1,3))
+            self.assertTrue(all(original[(y*w+x)*4]==0 for y in range(17,20)))
+        for i in range(33,37):self.assertEqual(a[i],b[i])
+        desc=b[32].copy();desc[14]=a[32][14]
+        self.assertEqual(a[32],desc)
+
     def test_name_matches_engine_encoding(self):
         self.assertEqual(struct.pack('>3i', *pack_name('abc')), b'\xe1\xe2\xe3'+b'\x80'*8+b'\x00')
 

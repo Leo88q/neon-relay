@@ -1683,6 +1683,7 @@ set(EXPECTED_DATA
   maps/Aurora\ Ascent.map
   maps/Chromatic\ Canyon.map
   maps/LearnToPlay\ Sound.map
+  maps/LearnToPlay\ Sound\ Heights.map
   maps/Midnight\ Circuit.map
   maps/Neon\ Relay\ Basin.map
   maps/Vector\ Spire.map

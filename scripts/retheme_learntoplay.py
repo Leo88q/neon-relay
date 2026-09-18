@@ -11,15 +11,18 @@ ROOT=Path(__file__).resolve().parent.parent
 SOURCE=ROOT/'data/maps/LearnToPlay.map'
 OUTPUT=ROOT/'data/maps/LearnToPlay Sound.map'
 
-def transform(source=SOURCE,output=OUTPUT):
+def transform(source=SOURCE,output=OUTPUT,terrace=False):
     m=read(source)
     layers=dict(m.items[5]);groups=dict(m.items[4])
     assert len(layers)==55 and layers[32][6]==1, 'Unexpected source map; audit layout before transforming'
     assert all(p[0]<3 for _,p in m.items[3]), 'Bezier envelope format needs explicit conversion'
+    original_count=len(m.raws)
+    if terrace:
+        from learn_terrace import apply
+        apply(m)
     game=layers[32];w,h=game[4:6];tiles=m.raws[game[14]]
     assert len(tiles)==w*h*4
     grid=tiles[::4]
-    original_count=len(m.raws)
     semantic,audit=visual_layers(m)
     def embedded(name,path):
         im=Image.open(path).convert('RGBA')
@@ -135,8 +138,10 @@ def transform(source=SOURCE,output=OUTPUT):
     quads_at(24,gates,architecture,'Route landmarks')
 
     m.save(output)
-    (ROOT/'docs/learntoplay-visual-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
+    if not terrace:(ROOT/'docs/learntoplay-visual-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
     print(f'{output}: {len(surfaces)*2} animated LED columns; {len(m.items[3])-6} new envelopes; {original_count} original raw blocks retained')
     return m
 
-if __name__=='__main__':transform()
+if __name__=='__main__':
+    transform()
+    transform(output=ROOT/'data/maps/LearnToPlay Sound Heights.map',terrace=True)

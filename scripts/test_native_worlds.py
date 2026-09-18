@@ -5,7 +5,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 client,server=map(lambda p: str(Path(p).resolve()),sys.argv[1:3])
 out=Path(sys.argv[3]);out.mkdir(parents=True,exist_ok=True)
-names=['Neon Relay Basin','Chromatic Canyon','Vector Spire','Midnight Circuit','Aurora Ascent', 'LearnToPlay Sound']
+names=['Neon Relay Basin','Chromatic Canyon','Vector Spire','Midnight Circuit','Aurora Ascent', 'LearnToPlay Sound', 'LearnToPlay Sound Heights']
 for index,name in enumerate(names):
  with tempfile.TemporaryDirectory(prefix='neonrelay-world-') as tmp:
   home=Path(tmp)
@@ -35,11 +35,11 @@ for index,name in enumerate(names):
     window=result.stdout.splitlines()[-1]
     time.sleep(2)
     subprocess.run(['import','-window',window,str(out/f'world-{index}.png')],check=True,timeout=10)
-    if name == 'LearnToPlay Sound':
+    if name.startswith('LearnToPlay Sound'):
      # Two in-game phases plus the normal capture. Keep full native frames.
      for phase in range(2):
       time.sleep(.24)
-      subprocess.run(['import','-window',window,str(out/f'learn-animation-{phase}.png')],check=True,timeout=10)
+      subprocess.run(['import','-window',window,str(out/f'learn-{index}-animation-{phase}.png')],check=True,timeout=10)
      # Inspect real render order in the previously unreadable hazard/stop sections.
      # Spectator captures are visual checks, never a claim of completing the route.
      def console(command):
@@ -49,10 +49,10 @@ for index,name in enumerate(names):
       subprocess.run(['xdotool','key','Return'],check=True);time.sleep(.25)
       subprocess.run(['xdotool','key','F1'],check=True);time.sleep(.4)
      console('team -1')
-     for label,x,y in [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22)]:
+     for label,x,y in [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22),('terrace',345,21)]:
       console(f'set_view {x} {y}')
       time.sleep(.5)
-      subprocess.run(['import','-window',window,str(out/f'learn-{label}.png')],check=True,timeout=10)
+      subprocess.run(['import','-window',window,str(out/f'learn-{index}-{label}.png')],check=True,timeout=10)
 
     assert cl.poll() is None,'client exited while rendering world'
     text=clog.read_text(errors='replace').lower()
