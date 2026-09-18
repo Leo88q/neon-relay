@@ -13,6 +13,7 @@
  */
 import { raceLobby, parseRaceCurrency, RACE_TIERS } from "./race_catalog.ts";
 import { readMarketV2, readTicketV2, V2AccountError } from "./economy_v2_rpc.ts";
+import { issueSealedPairing } from "./game_pairing_seal.ts";
 import { GamePairing } from "./game_pairing.ts";
 import { GameIdentity } from "./game_identity.ts";
 import { EconomyV2Store } from "./economy_v2_store.ts";
@@ -134,6 +135,13 @@ export function buildRouter(deps: {
     const auth = requireSession(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     return pairing.issue(auth, str(body["connection_nonce"], "connection_nonce", 64), body["consent"]);
+  });
+  router.add("POST", "/v2/game/pair-sealed", (ctx) => {
+    guard(ctx, "game-pairing");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return issueSealedPairing(config, pairing, auth, str(body["offer"], "offer", 2048),
+      str(body["signature"], "signature", 86), body["consent"]);
   });
   // Server-authenticated via Ed25519 proof, NOT a wallet bearer session.
   router.add("POST", "/v2/game/redeem", (ctx) => {

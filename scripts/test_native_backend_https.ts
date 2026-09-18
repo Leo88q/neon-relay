@@ -24,8 +24,8 @@ try {
   const auth = await authenticate(base, wallet);
   assert.equal(auth.status, 200);
   const bearer = auth.json.session_token;
-  for (const mode of ["accept", "wrong-nonce", "disabled"]) {
-    const child = spawn(binary!, ["--backend", base, mode === "accept" ? "accept" : "reject"], { stdio: ["pipe", "pipe", "pipe"] });
+  for (const mode of ["accept", "sealed", "wrong-nonce", "disabled"]) {
+    const child = spawn(binary!, ["--backend", base, mode === "sealed" ? "sealed" : mode === "accept" ? "accept" : "reject"], { stdio: ["pipe", "pipe", "pipe"] });
     let transcript = "", stderr = "";
     child.stdout.on("data", (chunk) => { transcript += chunk; });
     child.stderr.on("data", (chunk) => { stderr += chunk; });
@@ -43,14 +43,25 @@ try {
     try {
       const nonce = await line("NONCE ");
       assert.match(nonce, /^[0-9a-f]{64}$/);
-      const pair = await postJson(base, "/v2/game/pair", {
-        connection_nonce: mode === "wrong-nonce" ? "ff".repeat(32) : nonce, consent: true,
-      }, bearer);
-      assert.equal(pair.status, 200);
-      pairingToken = pair.json.pairing_token;
-      if (mode === "disabled") app.db.run("UPDATE game_accounts SET enabled=0");
-      child.stdin.write(pairingToken + "\n");
-      if (mode === "accept") {
+      if (mode === "sealed") {
+        const offer = await line("OFFER ");
+        const signature = await line("OFFER_SIGNATURE ");
+        assert.equal(JSON.parse(offer).connection_nonce, nonce);
+        const sealed = await postJson(base, "/v2/game/pair-sealed", { offer, signature, consent: true }, bearer);
+        assert.equal(sealed.status, 200);
+        assert.equal(sealed.json.pairing_token, undefined);
+        assert.equal(sealed.json.admissionEnabled, false);
+        child.stdin.write([sealed.json.sender_key, sealed.json.iv, sealed.json.ciphertext, sealed.json.tag].join("\n") + "\n");
+      } else {
+        const pair = await postJson(base, "/v2/game/pair", {
+          connection_nonce: mode === "wrong-nonce" ? "ff".repeat(32) : nonce, consent: true,
+        }, bearer);
+        assert.equal(pair.status, 200);
+        pairingToken = pair.json.pairing_token;
+        if (mode === "disabled") app.db.run("UPDATE game_accounts SET enabled=0");
+        child.stdin.write(pairingToken + "\n");
+      }
+      if (mode === "accept" || mode === "sealed") {
         assert.equal(await line("PAIRED "), "registered-account");
         const challenge = await postJson(base, "/v2/identity/challenge", { player_id: "registered-account" }, bearer);
         assert.equal(challenge.status, 200);
@@ -69,7 +80,7 @@ try {
       }
       child.stdin.end();
       assert.equal(await exit, 0, stderr.slice(-1500));
-      assert.ok(!transcript.includes(pairingToken) && !stderr.includes(pairingToken), "pairing token leaked");
+      if (pairingToken) assert.ok(!transcript.includes(pairingToken) && !stderr.includes(pairingToken), "pairing token leaked");
       assert.ok(!transcript.includes(bearer) && !stderr.includes(bearer), "wallet bearer leaked");
     } finally {
       clearTimeout(deadline);

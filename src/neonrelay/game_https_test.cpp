@@ -1,5 +1,6 @@
 // Test-only executable using the REAL engine HTTP worker and pairing adapter.
 #include "game_pairing_http.h"
+#include "game_pairing_seal.h"
 #include <engine/http.h>
 #include <engine/shared/config.h>
 #include <base/logger.h>
@@ -26,7 +27,7 @@ static int64_t Now()
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 // Confidential test IPC substitutes only for the not-yet-implemented client channel.
-static int RealBackend(const std::string &Origin, bool ExpectAccepted)
+static int RealBackend(const std::string &Origin, bool ExpectAccepted, bool Sealed)
 {
 	log_set_global_logger(new TestLogger);
 	g_Config.m_DbgHttp = 1;
@@ -41,7 +42,25 @@ static int RealBackend(const std::string &Origin, bool ExpectAccepted)
 	neonrelay::GamePairingHttp Pairing(*Http, Origin, "test.neonrelay.example");
 	std::cout << "NONCE " << Connection->Nonce() << std::endl;
 	std::string Token;
-	assert(std::getline(std::cin, Token));
+	if(Sealed)
+	{
+		neonrelay::GamePairingSeal Seal;
+		assert(Seal.Begin(Signer, "test.neonrelay.example", Connection->Nonce(), Now()));
+		std::cout << "OFFER " << Seal.Offer() << std::endl;
+		std::cout << "OFFER_SIGNATURE " << Seal.Signature() << std::endl;
+		std::string Sender, Iv, Ciphertext, Tag;
+		for(auto *Field : {&Sender, &Iv, &Ciphertext, &Tag}) assert(std::getline(std::cin, *Field));
+		auto WrongTag = Tag; WrongTag[0] = WrongTag[0] == '0' ? '1' : '0';
+		assert(Seal.Open(Sender, Iv, Ciphertext, WrongTag, Now()).empty());
+		assert(Seal.Open(std::string(64, '0'), Iv, Ciphertext, Tag, Now()).empty());
+		neonrelay::GamePairingSeal Other;
+		assert(Other.Begin(Signer, "test.neonrelay.example", std::string(64, 'f'), Now()));
+		assert(Other.Open(Sender, Iv, Ciphertext, Tag, Now()).empty());
+		Token = Seal.Open(Sender, Iv, Ciphertext, Tag, Now());
+		assert(Token.size() == 43);
+		assert(Seal.Open(Sender, Iv, Ciphertext, Tag, Now()).empty());
+	}
+	else assert(std::getline(std::cin, Token));
 	assert(Pairing.Start(Connection, Token, Signer, Now()));
 	auto Drain = [&]() {
 		const auto Deadline = std::chrono::steady_clock::now() + std::chrono::seconds(12);
@@ -79,7 +98,7 @@ static int RealBackend(const std::string &Origin, bool ExpectAccepted)
 int main(int argc, char **argv)
 {
 	if(argc == 4 && std::string(argv[1]) == "--backend")
-		return RealBackend(argv[2], std::string(argv[3]) == "accept");
+		return RealBackend(argv[2], std::string(argv[3]) != "reject", std::string(argv[3]) == "sealed");
 	assert(argc == 5);
 	log_set_global_logger(new TestLogger);
 	g_Config.m_DbgHttp = 1;

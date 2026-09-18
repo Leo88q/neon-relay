@@ -35,11 +35,12 @@ export class GamePairing {
     if (!signer || !key(signer)) throw new HttpError(503, "identity-not-configured", "game identity public key required");
     return signer;
   }
-  issue(ctx: { binding: BindingRow; session: SessionRow }, connectionNonce: string, consent: unknown, now = Date.now()) {
+  issue(ctx: { binding: BindingRow; session: SessionRow }, connectionNonce: string, consent: unknown, now = Date.now(), expiryLimit = Number.MAX_SAFE_INTEGER) {
     const signer = this.signer();
     if (consent !== true || !/^[0-9a-f]{64}$/.test(connectionNonce)) {
       throw new HttpError(400, "pairing-invalid-request", "explicit consent and 32-byte lowercase hex connection nonce required");
     }
+    if (!Number.isSafeInteger(expiryLimit) || expiryLimit <= now) throw new HttpError(400, "pairing-expiry-invalid", "invalid expiry limit");
     const token = randomToken(32), hash = sha256Hex(token);
     this.db.exec("BEGIN IMMEDIATE");
     try {
@@ -49,7 +50,7 @@ export class GamePairing {
          WHERE b.id=? AND s.id=? AND a.enabled=1 AND b.revoked_at IS NULL
          AND s.revoked_at IS NULL AND s.expires_at>?`, ctx.binding.id, ctx.session.id, now);
       if (!row || row.wallet !== ctx.binding.public_key) throw new HttpError(403, "game-account-required", "operator-provisioned active game account required");
-      const expiresAt = Math.min(now + 120_000, row.expires_at);
+      const expiresAt = Math.min(now + 120_000, row.expires_at, expiryLimit);
       this.db.run("DELETE FROM game_pairings WHERE expires_at<?", now - 86_400_000);
       this.db.run("DELETE FROM game_pairings WHERE session_id=? AND consumed_at IS NULL", ctx.session.id);
       this.db.run(`INSERT INTO game_pairings
