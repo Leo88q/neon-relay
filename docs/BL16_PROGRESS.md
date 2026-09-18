@@ -118,3 +118,22 @@ Do not run destructive matting helpers on already normalized sources. For replac
   no public v2 intent/payment/claim route and no deployed v2 vaults/treasuries.
 - See ECONOMY_V2_LEDGER.md for API boundaries, reserved wire formats and the
   authentication/fee/funding checks still required before exposing payments.
+
+## Part 6: additive Rust v2 instructions (validation in progress)
+
+- Added initialize_v2, set_paused_v2, pay_entry_v2, publish_prizes_v2 and
+  claim_prize_v2 alongside the legacy instructions. Account types and PDA
+  namespaces are separate; bootstrap is gated by the existing legacy operator.
+- One config/vault/treasury per mint, fixed paid tiers scaled by SPL decimals,
+  capped rake, mint-bound leaf/PDAs, pause checks and init-only ticket/claim/root.
+- Aggregate reservation plus epoch remaining balance prevents overlapping
+  epochs from committing the same funds. Checked u128 rake intermediate avoids
+  multiplying a u64 fee in u64. No withdrawal or unverified free-entry path.
+- Corrected two legacy Anchor compile issues while preserving wire layouts:
+  SPL TokenAccount owner field (not authority), and writable publication payer.
+- Added seven Rust host tests and four TypeScript source contract checks.
+  Existing local offline checks remain distinct from Rust execution.
+- A dedicated GitHub workflow compiles Anchor constraints and runs host tests;
+  results must be checked before treating the Rust additions as validated.
+  Local Rust toolchain download failed. No SBF build, validator test, deployment
+  or Android v2 transaction wiring yet. V2 payments remain disabled.

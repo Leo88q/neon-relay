@@ -1,0 +1,30 @@
+name: Economy Rust host tests
+on:
+  push:
+    branches: [main, "arena/**"]
+    paths:
+      - "onchain/**"
+      - ".github/workflows/economy-rust.yml"
+  pull_request:
+    paths:
+      - "onchain/**"
+      - ".github/workflows/economy-rust.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Compile Anchor account constraints and run host unit tests
+        run: cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy
+      - name: Save resolved dependency lock for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: economy-cargo-lock
+          path: onchain/Cargo.lock
+          if-no-files-found: ignore
