@@ -562,16 +562,16 @@ pub struct InitializeV2<'info> {
 	#[account(mut, constraint = authority.key() == legacy_config.authority @ EconomyError::Unauthorized)]
 	pub authority: Signer<'info>,
 	#[account(seeds = [CONFIG_SEED], bump = legacy_config.bump)]
-	pub legacy_config: Account<'info, EconomyConfig>,
-	pub mint: Account<'info, Mint>,
+	pub legacy_config: Box<Account<'info, EconomyConfig>>,
+	pub mint: Box<Account<'info, Mint>>,
 	#[account(init, payer = authority, space = 8 + EconomyConfigV2::INIT_SPACE,
 		seeds = [CONFIG_V2_SEED, mint.key().as_ref()], bump)]
-	pub config: Account<'info, EconomyConfigV2>,
+	pub config: Box<Account<'info, EconomyConfigV2>>,
 	#[account(constraint = treasury_ata.mint == mint.key() @ EconomyError::WrongMint,
 		constraint = treasury_ata.owner == authority.key() @ EconomyError::WrongTreasury)]
-	pub treasury_ata: Account<'info, TokenAccount>,
+	pub treasury_ata: Box<Account<'info, TokenAccount>>,
 	#[account(init, payer = authority, associated_token::mint = mint, associated_token::authority = config)]
-	pub vault_ata: Account<'info, TokenAccount>,
+	pub vault_ata: Box<Account<'info, TokenAccount>>,
 	pub token_program: Program<'info, Token>,
 	pub associated_token_program: Program<'info, anchor_spl::associated_token::AssociatedToken>,
 	pub system_program: Program<'info, System>,
@@ -582,7 +582,7 @@ pub struct AdminV2<'info> {
 	pub authority: Signer<'info>,
 	#[account(mut, seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump,
 		has_one = authority @ EconomyError::Unauthorized)]
-	pub config: Account<'info, EconomyConfigV2>,
+	pub config: Box<Account<'info, EconomyConfigV2>>,
 }
 
 #[derive(Accounts)]
@@ -591,23 +591,23 @@ pub struct PayEntryV2<'info> {
 	#[account(mut)]
 	pub player: Signer<'info>,
 	#[account(seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump)]
-	pub config: Account<'info, EconomyConfigV2>,
+	pub config: Box<Account<'info, EconomyConfigV2>>,
 	#[account(mut, constraint = player_ata.mint == config.mint @ EconomyError::WrongMint,
 		constraint = player_ata.owner == player.key() @ EconomyError::NotPlayerAta,
 		constraint = player_ata.key() != config.vault_ata @ EconomyError::WrongVault,
 		constraint = player_ata.key() != config.treasury_ata @ EconomyError::WrongTreasury)]
-	pub player_ata: Account<'info, TokenAccount>,
+	pub player_ata: Box<Account<'info, TokenAccount>>,
 	#[account(mut, address = config.vault_ata @ EconomyError::WrongVault,
 		constraint = vault_ata.mint == config.mint @ EconomyError::WrongMint,
 		constraint = vault_ata.owner == config.key() @ EconomyError::WrongVault)]
-	pub vault_ata: Account<'info, TokenAccount>,
+	pub vault_ata: Box<Account<'info, TokenAccount>>,
 	#[account(mut, address = config.treasury_ata @ EconomyError::WrongTreasury,
 		constraint = treasury_ata.mint == config.mint @ EconomyError::WrongMint,
 		constraint = treasury_ata.owner == config.authority @ EconomyError::WrongTreasury)]
-	pub treasury_ata: Account<'info, TokenAccount>,
+	pub treasury_ata: Box<Account<'info, TokenAccount>>,
 	#[account(init, payer = player, space = 8 + EntryTicketV2::INIT_SPACE,
 		seeds = [ENTRY_V2_SEED, config.mint.as_ref(), reference.as_ref(), player.key().as_ref()], bump)]
-	pub ticket: Account<'info, EntryTicketV2>,
+	pub ticket: Box<Account<'info, EntryTicketV2>>,
 	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
 }
@@ -619,14 +619,14 @@ pub struct PublishPrizesV2<'info> {
 	pub authority: Signer<'info>,
 	#[account(mut, seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump,
 		has_one = authority @ EconomyError::Unauthorized)]
-	pub config: Account<'info, EconomyConfigV2>,
+	pub config: Box<Account<'info, EconomyConfigV2>>,
 	#[account(address = config.vault_ata @ EconomyError::WrongVault,
 		constraint = vault_ata.mint == config.mint @ EconomyError::WrongMint,
 		constraint = vault_ata.owner == config.key() @ EconomyError::WrongVault)]
-	pub vault_ata: Account<'info, TokenAccount>,
+	pub vault_ata: Box<Account<'info, TokenAccount>>,
 	#[account(init, payer = authority, space = 8 + PrizeEpochV2::INIT_SPACE,
 		seeds = [PRIZES_V2_SEED, config.mint.as_ref(), epoch.to_le_bytes().as_ref()], bump)]
-	pub prizes: Account<'info, PrizeEpochV2>,
+	pub prizes: Box<Account<'info, PrizeEpochV2>>,
 	pub system_program: Program<'info, System>,
 }
 
@@ -636,21 +636,21 @@ pub struct ClaimPrizeV2<'info> {
 	#[account(mut)]
 	pub player: Signer<'info>,
 	#[account(mut, seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump)]
-	pub config: Account<'info, EconomyConfigV2>,
+	pub config: Box<Account<'info, EconomyConfigV2>>,
 	#[account(mut, constraint = player_ata.mint == config.mint @ EconomyError::WrongMint,
 		constraint = player_ata.owner == player.key() @ EconomyError::NotPlayerAta,
 		constraint = player_ata.key() != config.vault_ata @ EconomyError::WrongVault)]
-	pub player_ata: Account<'info, TokenAccount>,
+	pub player_ata: Box<Account<'info, TokenAccount>>,
 	#[account(mut, address = config.vault_ata @ EconomyError::WrongVault,
 		constraint = vault_ata.mint == config.mint @ EconomyError::WrongMint,
 		constraint = vault_ata.owner == config.key() @ EconomyError::WrongVault)]
-	pub vault_ata: Account<'info, TokenAccount>,
+	pub vault_ata: Box<Account<'info, TokenAccount>>,
 	#[account(mut, seeds = [PRIZES_V2_SEED, config.mint.as_ref(), epoch.to_le_bytes().as_ref()], bump = prizes.bump,
 		constraint = prizes.mint == config.mint @ EconomyError::WrongMint)]
-	pub prizes: Account<'info, PrizeEpochV2>,
+	pub prizes: Box<Account<'info, PrizeEpochV2>>,
 	#[account(init, payer = player, space = 8 + PrizeClaimV2::INIT_SPACE,
 		seeds = [CLAIM_V2_SEED, config.mint.as_ref(), epoch.to_le_bytes().as_ref(), player.key().as_ref()], bump)]
-	pub claim: Account<'info, PrizeClaimV2>,
+	pub claim: Box<Account<'info, PrizeClaimV2>>,
 	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
 }

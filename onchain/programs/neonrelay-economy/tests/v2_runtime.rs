@@ -50,8 +50,8 @@ async fn send(ctx: &mut ProgramTestContext, signer: &Keypair, instruction: Instr
         NONCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
     let hash = ctx.banks_client.get_latest_blockhash().await.unwrap();
     let tx = Transaction::new_signed_with_payer(&[unique, instruction], Some(&ctx.payer.pubkey()), &[&ctx.payer, signer], hash);
-    let result = ctx.banks_client.process_transaction(tx).await;
-    assert_eq!(result.is_ok(), ok, "unexpected transaction result: {result:?}");
+    let result = ctx.banks_client.process_transaction_with_metadata(tx).await.unwrap();
+    assert_eq!(result.result.is_ok(), ok, "unexpected transaction result: {result:?}");
 }
 async fn balance(ctx: &mut ProgramTestContext, key: Pubkey) -> u64 {
     let account = ctx.banks_client.get_account(key).await.unwrap().unwrap();
