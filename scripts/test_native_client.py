@@ -12,7 +12,7 @@ output = Path(sys.argv[2]); output.mkdir(parents=True, exist_ok=True)
 root = Path(__file__).resolve().parent.parent
 for name, width, height, page, key in [(f'{size}-{page}', width, height, page, key)
         for size, width, height in [('desktop', 1280, 800), ('portrait', 480, 900)]
-        for page, key in [('store', 'c'), ('wallet', 'w'), ('settings', 's')]]:
+        for page, key in [('store', 'c'), ('wallet', 'w'), ('settings', 's'), ('races', 'p'), ('leaders', 'l')]]:
     with tempfile.TemporaryDirectory(prefix='neonrelay-client-') as temp:
         home = Path(temp)
         (home/'storage.cfg').write_text(f'add_path {home}\nadd_path {root / "data"}\n')
@@ -42,6 +42,12 @@ for name, width, height, page, key in [(f'{size}-{page}', width, height, page, k
                 time.sleep(2)
                 assert process.poll() is None, 'client crashed while opening product page'
                 subprocess.run(['import','-window',window,str(output/f'{name}-page.png')],check=True,timeout=10)
+                if page in ('races', 'wallet'):
+                    subprocess.run(['xdotool','mousemove','--window',window,str(width//2),str(height//2)],check=True)
+                    subprocess.run(['xdotool','click','--repeat','12','--delay','30','5'],check=True)
+                    time.sleep(.5)
+                    assert process.poll() is None, 'client crashed while scrolling'
+                    subprocess.run(['import','-window',window,str(output/f'{name}-scrolled.png')],check=True,timeout=10)
                 # Ask the application to close rather than leaving an orphan.
                 subprocess.run(['xdotool','windowclose',window], check=False)
                 try: process.wait(timeout=8)

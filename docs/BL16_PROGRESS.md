@@ -491,3 +491,19 @@ Full local ci-local passed (assets 5, menu contracts 7, backend 97, onchain 32),
 including client syntax. Native smoke coverage now opens store, wallet and
 settings in both desktop and portrait windows. This tests boot/liveness and
 captures images, not visual quality or real-device touch behavior.
+
+### Race lobby and leaders follow-up
+
+The race lobby now uses opaque cards, full-width 44-unit currency tabs and a
+scrollable catalog. Compact cards stack title, catalog fee and participation
+requirements instead of shrinking three columns of text. The practice button
+is pinned outside the scroll region. Prize-policy text wraps with the viewport.
+Leaders show an explicit unavailable/empty state with no fabricated standings
+and a working return-to-races action. Both pages have Russian empty-state copy.
+Paid admission, holdings verification and result-service integration remain off.
+
+Local ci-local passed: assets 5, menu contracts 8, backend 97, onchain 32;
+expanded client syntax also passed. Native smoke coverage now opens all five
+product destinations at desktop and portrait sizes and captures scrolled race
+and wallet pages. These remain smoke captures, not pixel or touch assertions.
+The preceding wallet/settings code passed all jobs in CI run 35369613763.

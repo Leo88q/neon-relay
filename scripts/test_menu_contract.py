@@ -89,6 +89,21 @@ class MenuContract(unittest.TestCase):
         menus = self.text('src/game/client/components/menus.cpp')
         self.assertNotIn('Box.Margin(150.0f, &Box)', menus)
 
+    def test_race_and_leader_scroll_regions(self):
+        pages = self.text('src/game/client/components/menus_settings_wallet.cpp')
+        race = pages[pages.index('void CMenus::RenderRaceLobby'):pages.index('void CMenus::RenderCharacterPortrait')]
+        self.assertIn('s_RaceScroll.Begin', race)
+        self.assertIn('s_RaceScroll.End()', race)
+        self.assertIn('Props.m_MaxWidth = MainView.w', race)
+        self.assertLess(race.index('s_Practice'), race.index('s_RaceScroll.Begin'))
+        self.assertIn('Compact ? 108.0f : 84.0f', race)
+        self.assertIn('for(const auto &Race : RACE_CATALOG)', race)
+        leaders = pages[pages.index('void CMenus::RenderLeaders'):]
+        self.assertIn('s_LeadersScroll.Begin', leaders)
+        self.assertIn('s_LeadersScroll.End()', leaders)
+        self.assertIn('SetMenuPage(PAGE_RACES)', leaders)
+        self.assertNotIn('neonrelay_wallet_request_', leaders)
+
     def test_no_fake_purchase_or_rankings(self):
         pages = self.text('src/game/client/components/menus_settings_wallet.cpp')
         pages = pages[pages.index('void CMenus::RenderRaceLobby'):]

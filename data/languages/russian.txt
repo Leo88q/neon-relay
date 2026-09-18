@@ -2716,3 +2716,12 @@ Service configuration present. Transactions remain disabled.
 
 Transaction service is not configured.
 == Сервис транзакций не настроен.
+
+View races
+== Смотреть забеги
+
+No verified results yet
+== Подтверждённых результатов пока нет
+
+Only verified race results will appear here. Practice does not award ranked prizes.
+== Здесь появятся только проверенные результаты забегов. Тренировка не приносит рейтинговых призов.

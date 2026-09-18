@@ -109,48 +109,79 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 // Product pages use read-only catalogs until verified settlement is available.
 void CMenus::RenderRaceLobby(CUIRect MainView)
 {
-	MainView.Margin(20.0f, &MainView);
-	CUIRect Row, Tab;
-	MainView.HSplitTop(32.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Races"), 24.0f, TEXTALIGN_ML);
-	MainView.HSplitTop(30.0f, &Row, &MainView);
+	const bool Compact = MainView.w < 620.0f;
+	MainView.Margin(Compact ? 12.0f : 24.0f, &MainView);
+	CUIRect Row, Tab, Footer;
+	MainView.HSplitTop(42.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Races"), 28.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(44.0f, &Row, &MainView);
 	static int s_Currency = 0;
 	static CButtonContainer s_aCurrencies[2];
 	const char *apCurrencies[] = {"SKR", "POTATO"};
+	const float TabWidth = (Row.w - 8.0f) / 2.0f;
 	for(int i = 0; i < 2; ++i)
 	{
-		Row.VSplitLeft(130.0f, &Tab, &Row);
+		Row.VSplitLeft(TabWidth, &Tab, &Row);
 		if(DoButton_MenuTab(&s_aCurrencies[i], apCurrencies[i], s_Currency == i, &Tab, IGraphics::CORNER_ALL))
 			s_Currency = i;
+		Row.VSplitLeft(8.0f, nullptr, &Row);
 	}
-	MainView.HSplitTop(32.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Preview only. Paid entry is not available yet."), 14.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(12.0f, nullptr, &MainView);
+	// Practice stays outside the scroll region, including on short screens.
+	MainView.HSplitBottom(44.0f, &MainView, &Footer);
+	MainView.HSplitBottom(12.0f, &MainView, nullptr);
+	static CButtonContainer s_Practice;
+	if(DoButton_Menu(&s_Practice, Localize("Practice - server browser"), 0, &Footer))
+		SetMenuPage(PAGE_INTERNET);
+
+	static CScrollRegion s_RaceScroll;
+	CScrollRegionParams ScrollParams;
+	ScrollParams.m_ScrollUnit = 80.0f;
+	s_RaceScroll.Begin(&MainView, &ScrollParams);
+	const auto Paragraph = [&](const char *pText) {
+		SLabelProperties Props;
+		Props.m_MaxWidth = MainView.w;
+		const float Height = TextRender()->TextBoundingBox(14.0f, pText, -1, MainView.w).m_H + 16.0f;
+		MainView.HSplitTop(Height, &Row, &MainView);
+		s_RaceScroll.AddRect(Row);
+		Ui()->DoLabel(&Row, pText, 14.0f, TEXTALIGN_TL, Props);
+	};
+	Paragraph(Localize("Preview only. Paid entry is not available yet."));
 	for(const auto &Race : RACE_CATALOG)
 	{
-		MainView.HSplitTop(46.0f, &Row, &MainView);
-		Row.Draw(ColorRGBA(0.05f, 0.02f, 0.12f, 0.8f), IGraphics::CORNER_ALL, 6.0f);
-		CUIRect Name, Players, Fee;
-		Row.VSplitLeft(Row.w * 0.42f, &Name, &Row);
-		Row.VSplitLeft(Row.w * 0.4f, &Players, &Fee);
-		Name.VMargin(10.0f, &Name);
-		Ui()->DoLabel(&Name, Race.m_pName, 17.0f, TEXTALIGN_ML);
-		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), Localize("Players: %s"), Race.m_pPlayers);
-		Ui()->DoLabel(&Players, Race.m_LegendaryOnly ? Localize("Legendary holders only") : aBuf, 14.0f, TEXTALIGN_ML);
-		str_format(aBuf, sizeof(aBuf), "%s %s", Race.m_pEntry, apCurrencies[s_Currency]);
-		Ui()->DoLabel(&Fee, aBuf, 14.0f, TEXTALIGN_ML);
-		MainView.HSplitTop(5.0f, nullptr, &MainView);
+		MainView.HSplitTop(Compact ? 108.0f : 84.0f, &Row, &MainView);
+		const bool Visible = s_RaceScroll.AddRect(Row);
+		if(Visible)
+		{
+			Row.Draw(ColorRGBA(0.07f, 0.11f, 0.19f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+			Row.Margin(12.0f, &Row);
+			CUIRect Name, Players, Fee;
+			Row.HSplitTop(28.0f, &Name, &Row);
+			if(Compact)
+			{
+				Row.HSplitTop(26.0f, &Fee, &Row);
+				Row.HSplitTop(26.0f, &Players, &Row);
+			}
+			else
+			{
+				Name.VSplitRight(180.0f, &Name, &Fee);
+				Row.HSplitTop(28.0f, &Players, &Row);
+			}
+			Ui()->DoLabel(&Name, Race.m_pName, 19.0f, TEXTALIGN_ML);
+			char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), Localize("Players: %s"), Race.m_pPlayers);
+			TextRender()->TextColor(ColorRGBA(0.68f, 0.77f, 0.89f, 1.0f));
+			Ui()->DoLabel(&Players, Race.m_LegendaryOnly ? Localize("Legendary holders only") : aBuf, 14.0f, TEXTALIGN_ML);
+			TextRender()->TextColor(ColorRGBA(0.35f, 0.9f, 0.8f, 1.0f));
+			str_format(aBuf, sizeof(aBuf), "%s %s", Race.m_pEntry, apCurrencies[s_Currency]);
+			Ui()->DoLabel(&Fee, aBuf, 16.0f, Compact ? TEXTALIGN_ML : TEXTALIGN_MR);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
+		}
+		MainView.HSplitTop(10.0f, nullptr, &MainView);
 	}
-	MainView.HSplitTop(26.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Prize pool: 90% players / 10% developer"), 14.0f, TEXTALIGN_ML);
-	MainView.HSplitTop(26.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Top 10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%"), 13.0f, TEXTALIGN_ML);
-	// Existing gameplay remains accessible without pretending it is a paid race.
-	MainView.HSplitTop(28.0f, &Row, &MainView);
-	Row.w = 260.0f;
-	static CButtonContainer s_Practice;
-	if(DoButton_Menu(&s_Practice, Localize("Practice - server browser"), 0, &Row))
-		SetMenuPage(PAGE_INTERNET);
+	Paragraph(Localize("Prize pool: 90% players / 10% developer"));
+	Paragraph(Localize("Top 10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%"));
+	s_RaceScroll.End();
 }
 
 void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
@@ -282,10 +313,34 @@ void CMenus::RenderCharacters(CUIRect MainView)
 
 void CMenus::RenderLeaders(CUIRect MainView)
 {
-	MainView.Margin(20.0f, &MainView);
-	CUIRect Row;
-	MainView.HSplitTop(40.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Leaders"), 24.0f, TEXTALIGN_ML);
-	MainView.HSplitTop(30.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Rankings are unavailable until the race service is connected."), 15.0f, TEXTALIGN_ML);
+	MainView.Margin(MainView.w < 620.0f ? 12.0f : 24.0f, &MainView);
+	CUIRect Row, Footer;
+	MainView.HSplitTop(42.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Leaders"), 28.0f, TEXTALIGN_ML);
+	MainView.HSplitBottom(44.0f, &MainView, &Footer);
+	MainView.HSplitBottom(12.0f, &MainView, nullptr);
+	static CButtonContainer s_Races;
+	if(DoButton_Menu(&s_Races, Localize("View races"), 0, &Footer))
+		SetMenuPage(PAGE_RACES);
+	MainView.Draw(ColorRGBA(0.07f, 0.11f, 0.19f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+	MainView.Margin(16.0f, &MainView);
+	static CScrollRegion s_LeadersScroll;
+	CScrollRegionParams ScrollParams;
+	s_LeadersScroll.Begin(&MainView, &ScrollParams);
+	const char *apMessages[] = {
+		Localize("No verified results yet"),
+		Localize("Rankings are unavailable until the race service is connected."),
+		Localize("Only verified race results will appear here. Practice does not award ranked prizes."),
+	};
+	for(int i = 0; i < 3; ++i)
+	{
+		const float Size = i == 0 ? 22.0f : 15.0f;
+		SLabelProperties Props;
+		Props.m_MaxWidth = MainView.w;
+		const float Height = TextRender()->TextBoundingBox(Size, apMessages[i], -1, MainView.w).m_H + 20.0f;
+		MainView.HSplitTop(Height, &Row, &MainView);
+		s_LeadersScroll.AddRect(Row);
+		Ui()->DoLabel(&Row, apMessages[i], Size, TEXTALIGN_TL, Props);
+	}
+	s_LeadersScroll.End();
 }
