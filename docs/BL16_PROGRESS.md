@@ -180,3 +180,15 @@ same checks so this gap does not recur silently.
 - Config/token state is seeded, so initialization remains untested in runtime.
   This is native bank execution, NOT an SBF binary or validator/deployment test.
   Public payment and admission flags remain disabled. Full BL-16 is incomplete.
+
+### Part 9 — v2 initialization and two-mint runtime isolation (verified)
+
+- Added a second native runtime scenario with actual initialize_v2 and
+  Associated Token/System/SPL CPI creation of two market configs and vaults.
+- Checked operator/treasury constraints, duplicate init, invalid rake/decimal
+  overflow rollback, cross-mint account substitutions, independent payments,
+  epoch reservations and claims, including unchanged other-market balances.
+- Rust run 35305779544 and general CI 35305779545 passed at b5da216. Full local
+  gates passed: backend 80/80, onchain TS 32/32, existing asset/native checks.
+- Legacy bootstrap/mint/source state is still seeded. SBF/validator/deployment
+  and game admission remain unverified; no payment/admission flags enabled.

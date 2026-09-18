@@ -166,3 +166,39 @@ not an `initialize_v2`/mint initialization test. It is not SBF execution, a
 validator/deployment test, exhaustive cross-mint attack testing, or proof that
 an operator deployment is safe. Those remain release gates. No public payments
 or race admission have been enabled.
+
+## Part 9: v2 initialization and two-mint runtime isolation
+
+The second scenario in `tests/v2_runtime.rs` now invokes `initialize_v2` with
+real Associated Token/System/SPL program processors. It creates two independent
+v2 configs and canonical vault ATAs for synthetic mints with 0 and 6 decimals.
+The earlier part-8 initialization limitation therefore applies only to the
+first scenario, not to the full current suite.
+
+Verified cases:
+
+- Only the seeded legacy operator can initialize a market; a treasury with
+  another mint or another owner is rejected.
+- Rake above 2000 bps and a third mint with 16 decimals fail, with neither
+  config nor vault left behind. Duplicate initialization fails.
+- Config identity, all four decimal-scaled fees, initial reserves/pause, and
+  vault mint/owner/zero balance are checked after successful initialization.
+- Swapping payment source, vault, treasury or ticket with the other mint's
+  account fails without creating tickets or changing token balances.
+- The same wallet/reference can pay independently in both markets; ticket
+  addresses differ. Both markets independently publish epoch 1.
+- Cross-market vault, epoch and claim-account substitutions fail. Claiming
+  market A leaves market B's reserved balance and vault unchanged. Both valid
+  claims succeed, both duplicate claims fail, all reserves/epoch remainders
+  reach zero, and each treasury retains exactly its own 10% rake.
+
+Rust host tests and both native runtime scenarios passed at `b5da216`:
+https://github.com/Leo88q/neon-relay/actions/runs/35305779544
+General CI passed at the same source revision:
+https://github.com/Leo88q/neon-relay/actions/runs/35305779545
+Full local gates passed with backend 80/80 and onchain TS 32/32.
+
+Still seeded: legacy operator config, initialized mint accounts, source token
+balances and treasury accounts. This does not test legacy bootstrap, SPL mint
+creation/minting, SBF binary execution, upgrade/deployment controls, every
+possible attack, or game admission. Payments remain disabled.
