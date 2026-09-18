@@ -40,6 +40,7 @@ jobs:
           sha256sum onchain/target/deploy/neonrelay_economy.so > onchain/target/deploy/economy-sbf.sha256
       - name: Execute runtime scenarios with economy SBF (no native fallback)
         env:
+          RUST_LOG: "error"
           NEONRELAY_TEST_SBF: "1"
           BPF_OUT_DIR: ${{ github.workspace }}/onchain/target/deploy
         shell: bash
@@ -50,7 +51,7 @@ jobs:
           import os
           from pathlib import Path
           text = Path(os.environ["RUNNER_TEMP"], "economy-sbf-test.log").read_text()
-          tail = "\n".join(text.splitlines()[-100:])[-20000:]
+          tail = "\n".join(text.splitlines()[-100:])[-3500:]
           print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
           PYLOG
             exit 1
