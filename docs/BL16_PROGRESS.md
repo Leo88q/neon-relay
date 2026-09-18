@@ -249,3 +249,17 @@ same checks so this gap does not recur silently.
   is NOT an identity provider and was not wired into the new signing mechanism.
 - Production account authentication/context adapter is still missing. There is
   deliberately no chat/RCON/network signing hook and no paid admission enabled.
+
+### Part 14 — operator identity registry and backend connection pairing
+
+- Added immutable operator-provisioned player/wallet registry, local provisioning
+  command, and no automatic conversion of self-declared nickname/player links.
+- Added session-authenticated, consent-required issuance of hashed one-use pairing
+  tokens and server-signature-authenticated redemption bound to a connection nonce,
+  domain, signer and live registered wallet/session. Returned context has no bearer.
+- Tightened existing identity issue/verify/status to require the active registry;
+  disabling an account invalidates pending proofs and existing grants.
+- Backend 94/94 (7 new tests) and native C++/backend identity parity passed.
+- The native connection transport/TLS client/nonce lifecycle adapter remains
+  unimplemented; pairing context must not be fabricated from network input.
+  Payments, public intent creation and race admission remain disabled.

@@ -102,3 +102,65 @@ no-admission flags and replay rejection. The harness is not a deployed tool.
 
 This validates the C++/backend signing boundary, not native account login,
 wallet-session transport, server integration, game admission or a release build.
+
+## Part 14: operator account registry and one-use connection pairing
+
+This stage tightens the earlier identity routes: challenge issuance,
+verification and status now require an **enabled registry entry matching both
+wallet and player id**. A trusted signature alone no longer creates verification
+for an unregistered player. No existing self-declared links are auto-imported.
+
+Provision locally as an operator (public wallet key only):
+
+```sh
+NEONRELAY_DB=/path/to/backend.db node --experimental-strip-types \
+  backend/scripts/register_game_account.ts stable-account-id WALLET_BASE64URL
+```
+
+The operator must establish actual account ownership out of band before
+provisioning. The command does not itself establish that ownership. CLI ids are
+stable ASCII identifiers, not nicknames. One wallet maps to one player and vice
+versa. SQL prevents reassignment, deletion and INSERT OR REPLACE; disable an
+account with an operator DB update of `game_accounts.enabled` instead. Wallet
+rotation/recovery is intentionally not implemented. Enabling/disabling removes
+pending pairings/challenges and existing identity grants.
+
+Pairing protocol (backend implementation only):
+
+1. The game server generates a fresh cryptographically random 32-byte nonce for
+   a specific live connection and presents it to the wallet-authenticated client.
+2. `POST /v2/game/pair`, with wallet bearer session, body
+   `{ "connection_nonce": "64 lowercase hex characters", "consent": true }`.
+   The backend derives the player from the registry, ignoring `player_id` from
+   `/v1/wallet/link`. Returns a random `pairing_token`, player id and expiry.
+3. Deliver that token to the intended game connection using an authenticated,
+   confidential channel. Treat it as a short-lived secret, not a chat message.
+   The server must check its own connection nonce, not accept an arbitrary
+   client-supplied nonce as proof of connection ownership.
+4. The server signs exact UTF-8 compact JSON, in this order:
+   `{ "v":1, "purpose":"neonrelay-game-pairing", "domain":DOMAIN,
+   "token_hash":SHA256_HEX(TOKEN_ASCII), "connection_nonce":NONCE }`.
+   Whitespace shown here is explanatory; `pairingProofBytes()` defines bytes.
+5. `POST /v2/game/redeem`, with `pairing_token`, `connection_nonce`, and the
+   canonical base64url Ed25519 `signature`. It requires the configured server
+   signing key, not a wallet session. Pairings expire within two minutes (or at
+   session expiry), are consumed atomically, and cannot be redeemed twice.
+6. The response supplies server-side context: domain, registry player id, wallet,
+   session/binding UUIDs, connection nonce, authentication expiry and explicit
+   consent. No bearer token or session-token hash is returned. The server must
+   authenticate the backend HTTPS endpoint and match nonce to the original live
+   connection before constructing `AuthenticatedGameIdentity`.
+
+Only the pairing token's SHA-256 hash is stored. New issuance invalidates the
+session's old pending token. Relink/unlink, account disable, session revocation,
+expiry, different signer/domain or connection nonce prevent redemption. A
+returned context is a short lease, not an instantly revocable server login;
+the server must discard it on disconnect/expiry and re-pair on reconnect.
+Identity verification still rechecks registry/session validity, and future
+admission must do the same. Rate limits apply to both pairing routes.
+
+The native game connection transport, pairing-proof signing call, backend TLS
+client and context lifecycle adapter remain **unimplemented**. There is no
+public signing endpoint and no claim that a live game connection is now
+wallet-authenticated. This stage supplies the registry and server-authenticated
+backend protocol that the adapter will consume. No paid admission is enabled.

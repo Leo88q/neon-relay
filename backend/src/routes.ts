@@ -13,6 +13,7 @@
  */
 import { raceLobby, parseRaceCurrency, RACE_TIERS } from "./race_catalog.ts";
 import { readMarketV2, readTicketV2, V2AccountError } from "./economy_v2_rpc.ts";
+import { GamePairing } from "./game_pairing.ts";
 import { GameIdentity } from "./game_identity.ts";
 import { EconomyV2Store } from "./economy_v2_store.ts";
 import type { Config } from "./config.ts";
@@ -125,6 +126,21 @@ export function buildRouter(deps: {
     wallets.revokeBinding(binding.id);
     sessions.revokeForBinding(binding.id);
     return { unlinked: true, wallet_binding_id: binding.id };
+  });
+
+  const pairing = new GamePairing(db, config);
+  router.add("POST", "/v2/game/pair", (ctx) => {
+    guard(ctx, "game-pairing");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return pairing.issue(auth, str(body["connection_nonce"], "connection_nonce", 64), body["consent"]);
+  });
+  // Server-authenticated via Ed25519 proof, NOT a wallet bearer session.
+  router.add("POST", "/v2/game/redeem", (ctx) => {
+    guard(ctx, "game-pairing-redeem");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return pairing.redeem(str(body["pairing_token"], "pairing_token", 43),
+      str(body["connection_nonce"], "connection_nonce", 64), str(body["signature"], "signature", 86));
   });
 
   const identity = new GameIdentity(db, config);

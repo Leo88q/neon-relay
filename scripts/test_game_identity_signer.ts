@@ -6,6 +6,8 @@ const signer = process.env.NEONRELAY_IDENTITY_TEST_PUBLIC_KEY!;
 const { app, base } = await startTestApp({ gameIdentityPublicKey: signer });
 try {
   const wallet = makeWallet();
+  // Operator-seeded Unicode fixture exercises protocol byte parity; never a public registration.
+  app.db.run("INSERT INTO game_accounts(player_id,wallet) VALUES (?,?)", 'account-игрок-"7"', wallet.publicKeyBase64);
   const auth = await authenticate(base, wallet);
   assert.equal(auth.status, 200);
   const token = auth.json.session_token;

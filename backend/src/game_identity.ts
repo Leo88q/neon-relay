@@ -30,11 +30,15 @@ export class GameIdentity {
     if (!live || live.public_key !== ctx.binding.public_key) throw new HttpError(401, "identity-session-invalid", "active wallet session required");
     return live;
   }
+  private registered(wallet: string, playerId: string) {
+    return !!this.db.get("SELECT 1 FROM game_accounts WHERE wallet=? AND player_id=? AND enabled=1", wallet, playerId);
+  }
   issue(ctx: IdentityContext, playerId: string, now = Date.now()) {
     const signer = this.signer(); this.active(ctx, now);
     if (typeof playerId !== "string" || playerId.length < 1 || playerId.length > 128 || /[\u0000-\u001f\u007f]/.test(playerId)) {
       throw new HttpError(400, "bad-player-id", "invalid player identifier");
     }
+    if (!this.registered(ctx.binding.public_key, playerId)) throw new HttpError(403, "game-account-required", "active registered player/wallet required");
     const nonce = randomNonce(32), expiresAt = now + 120_000;
     // Only public session UUID, never bearer token or its hash, is disclosed.
     const payload = JSON.stringify({ v: 1, purpose: "neonrelay-game-identity", domain: this.config.authDomain,
@@ -66,6 +70,7 @@ export class GameIdentity {
       if (!row || row.session_id !== ctx.session.id || row.binding_id !== ctx.binding.id || row.wallet !== ctx.binding.public_key || row.signer !== signer || row.domain !== this.config.authDomain) {
         throw new HttpError(403, "identity-challenge-mismatch", "challenge does not belong to this session and signer");
       }
+      if (!this.registered(row.wallet, row.player_id)) throw new HttpError(403, "game-account-required", "active registered player/wallet required");
       if (row.consumed_at !== null || row.expires_at <= now) throw new HttpError(409, "identity-challenge-used-or-expired", "request a fresh identity challenge");
       if (!verifySignature(Buffer.from(row.payload), Buffer.from(signature, "base64url"), publicKeyFromBase64Url(signer))) {
         throw new HttpError(403, "identity-signature-invalid", "trusted game server signature required");
@@ -85,7 +90,7 @@ export class GameIdentity {
       `SELECT player_id, expires_at FROM game_identity_grants WHERE session_id=? AND binding_id=?
        AND wallet=? AND signer=? AND domain=? AND expires_at>? AND player_id=?`,
       ctx.session.id, ctx.binding.id, ctx.binding.public_key, signer, this.config.authDomain, now, live.player_id);
-    return grant ? { verified: true, player_id: grant.player_id, verified_until: grant.expires_at, admissionEnabled: false }
+    return grant && this.registered(ctx.binding.public_key, grant.player_id) ? { verified: true, player_id: grant.player_id, verified_until: grant.expires_at, admissionEnabled: false }
       : { verified: false, player_id: null, verified_until: null, admissionEnabled: false };
   }
 }

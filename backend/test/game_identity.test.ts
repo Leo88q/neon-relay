@@ -1,9 +1,11 @@
+import { registerGameAccount } from "../src/game_pairing.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { authenticate, getJson, postJson, makeWallet, startTestApp } from "./helpers.ts";
 async function setup() {
   const server = makeWallet(), wallet = makeWallet();
   const { app, base } = await startTestApp({ gameIdentityPublicKey: server.publicKeyBase64 });
+  registerGameAccount(app.db, "player-1", wallet.publicKeyBase64);
   const auth = await authenticate(base, wallet);
   const token = auth.json.session_token;
   const issue = async () => (await postJson(base, "/v2/identity/challenge", { player_id: "player-1" }, token)).json;

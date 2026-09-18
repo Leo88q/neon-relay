@@ -27,7 +27,7 @@ test("v2 migration is repeatable and leaves legacy single-mint rows untouched", 
     migrate(db, oldDir);
     db.run("INSERT INTO economy_epochs VALUES (?, ?, ?, ?, ?)", 1, "old-root", 50, "[]", 1);
     db.run("INSERT INTO economy_matches(wallet_binding_id, epoch, reference, created_at) VALUES (?, ?, ?, ?)", "legacy", 1, "old-reference", 1);
-    assert.deepEqual(migrate(db), ["0005_economy_v2.sql", "0006_game_identity.sql"]);
+    assert.deepEqual(migrate(db), ["0005_economy_v2.sql", "0006_game_identity.sql", "0007_game_pairing.sql"]);
     assert.deepEqual(migrate(db), []);
     assert.equal(db.get<{ reference: string }>("SELECT reference FROM economy_matches")!.reference, "old-reference");
     assert.equal(db.get<{ root: string }>("SELECT root FROM economy_epochs WHERE epoch = 1")!.root, "old-root");
