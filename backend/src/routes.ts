@@ -11,6 +11,7 @@
  * Reward routes (/v1/rewards/…) arrive in stage 7 and are intentionally absent:
  * an unknown path is a 404, never a silent stub.
  */
+import { raceLobby, parseRaceCurrency } from "./race_catalog.ts";
 import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
@@ -203,6 +204,18 @@ export function buildRouter(deps: {
   router.add("GET", "/v1/rewards/intents", (ctx) => {
     const { binding } = requireSession(ctx);
     return { intents: rewards.intentsFor(binding) };
+  });
+
+  // Read-only v2 catalog: no legacy ticket or transfer is reused for POTATO.
+  router.add("GET", "/v2/economy/lobby", (ctx) => {
+    guard(ctx, "lobby");
+    const values = ctx.url.searchParams.getAll("currency");
+    if (values.length > 1) throw new HttpError(400, "bad-currency", "supply currency once");
+    try {
+      return raceLobby(config, values.length ? parseRaceCurrency(values[0]!) : undefined);
+    } catch {
+      throw new HttpError(400, "bad-currency", "currency must be SKR or POTATO");
+    }
   });
 
   // Surface auth failures with stable codes instead of 500s.

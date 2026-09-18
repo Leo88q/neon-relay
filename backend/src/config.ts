@@ -1,3 +1,5 @@
+import { base58Decode, base58Encode } from "./economy.ts";
+
 /**
  * Neon Relay reward backend — configuration.
  *
@@ -40,6 +42,7 @@ export interface Config {
   rpcUrl: string;
   economyProgramId: string | null;
   skrMint: string | null;
+  potatoMint: string | null;
 }
 
 const num = (value: string | undefined, fallback: number): number => {
@@ -51,7 +54,22 @@ const num = (value: string | undefined, fallback: number): number => {
   return parsed;
 };
 
+function mintAddress(value: string | undefined, name: string): string | null {
+  if (value === undefined || value === "") return null;
+  try {
+    if (value.length < 32 || value.length > 44) throw new Error();
+    const raw = base58Decode(value);
+    if (raw.length !== 32 || raw.every((byte) => byte === 0) || base58Encode(raw) !== value) throw new Error();
+  } catch {
+    throw new Error(`${name} must be a canonical nonzero 32-byte base58 public key`);
+  }
+  return value;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
+  const skrMint = mintAddress(env.NEONRELAY_SKR_MINT, "NEONRELAY_SKR_MINT");
+  const potatoMint = mintAddress(env.NEONRELAY_POTATO_MINT, "NEONRELAY_POTATO_MINT");
+  if (skrMint !== null && skrMint === potatoMint) throw new Error("SKR and POTATO must use distinct mints");
   return {
     port: num(env.PORT, 8787),
     dbPath: env.NEONRELAY_DB ?? "var/neonrelay.db",
@@ -70,6 +88,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     economyProgramId: env.NEONRELAY_ECONOMY_PROGRAM_ID ?? null,
     // Operator-set SKR mint (Solana Mobile Seeker token). Never hardcoded;
     // devnet runs use a labelled test mint (BL-16).
-    skrMint: env.NEONRELAY_SKR_MINT ?? null,
+    skrMint,
+    potatoMint,
   };
 }

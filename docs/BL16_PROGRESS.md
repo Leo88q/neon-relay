@@ -44,3 +44,14 @@ python3 scripts/gen_asset_manifest.py
 ```
 
 Do not run destructive matting helpers on already normalized sources. For replacing a source with another normalized RGBA PNG, preserve its canonical dimensions.
+
+## Part 2: read-only dual-currency lobby
+
+- Added validated `NEONRELAY_POTATO_MINT` alongside SKR, distinct-mint validation,
+  and a base58 all-zero decode regression fix.
+- Added `/v2/economy/lobby`, both categories and five race policies, exact bigint
+  pool/share preview helpers and 10 new tests (backend total 49).
+- No on-chain PDA/state migration or payment endpoint in this stage. Catalog
+  explicitly disables joining/payment even when both mints are configured.
+- See `DUAL_CURRENCY_LOBBY.md` for the coordinated backend/Rust/Android migration
+  requirements and remaining security checks.

@@ -42,7 +42,7 @@ export function base58Decode(s: string): Buffer {
   }
   let hex = n.toString(16);
   if (hex.length % 2) hex = "0" + hex;
-  const body = Buffer.from(hex || "", "hex");
+  const body = n === 0n ? Buffer.alloc(0) : Buffer.from(hex, "hex");
   let zeros = 0;
   for (const c of s) {
     if (c !== "1") break;
