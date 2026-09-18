@@ -14,7 +14,6 @@
 #include <engine/client.h>
 #include <engine/client/updater.h>
 #include <engine/config.h>
-#include <engine/editor.h>
 #include <engine/font_icons.h>
 #include <engine/friends.h>
 #include <engine/gfx/image_manipulation.h>
@@ -1153,12 +1152,8 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 
 		// additional info
 		Box.VMargin(20.f, &Box);
-		if(GameClient()->Editor()->HasUnsavedData())
-		{
-			str_format(aBuf, sizeof(aBuf), "%s\n\n%s", Localize("There's an unsaved map in the editor, you might want to save it."), Localize("Continue anyway?"));
-			Ui()->DoLabel(&Box, aBuf, 20.0f, TEXTALIGN_ML, {.m_MaxWidth = Part.w - 20.0f});
-		}
-		else if(GameClient()->m_TouchControls.HasEditingChanges() || m_MenusIngameTouchControls.UnsavedChanges())
+
+		if(GameClient()->m_TouchControls.HasEditingChanges() || m_MenusIngameTouchControls.UnsavedChanges())
 		{
 			str_format(aBuf, sizeof(aBuf), "%s\n\n%s", Localize("There's an unsaved change in the touch controls editor, you might want to save it."), Localize("Continue anyway?"));
 			Ui()->DoLabel(&Box, aBuf, 20.0f, TEXTALIGN_ML, {.m_MaxWidth = Part.w - 20.0f});

@@ -178,8 +178,6 @@ void CSounds::Enqueue(int Channel, int SetId)
 		return;
 	if(m_QueuePos >= QUEUE_SIZE)
 		return;
-	if(Channel != CHN_MUSIC && g_Config.m_ClEditor)
-		return;
 
 	m_aQueue[m_QueuePos].m_Channel = Channel;
 	m_aQueue[m_QueuePos++].m_SetId = SetId;

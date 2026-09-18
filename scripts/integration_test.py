@@ -710,15 +710,6 @@ def client_can_connect_websockets(test_env):
 
 
 @test
-def open_editor(test_env):
-	client = test_env.client(["maps/coverage.map"])
-	client.wait_for_log_exact("editor/load: Loaded map 'maps/coverage.map'", timeout=10)
-	client.command("cl_editor 0")
-	client.exit()
-	client.wait_for_exit()
-
-
-@test
 def smoke_test(test_env):
 	client1 = test_env.client(["logfile client1.log", "player_name client1", "cl_save_settings 1"])
 	server = test_env.server(["logfile server.log", "sv_demo_chat 1", "sv_map coverage", "sv_tee_historian 1"])

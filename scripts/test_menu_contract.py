@@ -104,6 +104,25 @@ class MenuContract(unittest.TestCase):
         self.assertIn('SetMenuPage(PAGE_RACES)', leaders)
         self.assertNotIn('neonrelay_wallet_request_', leaders)
 
+    def test_map_editor_removed_but_gameplay_maps_preserved(self):
+        self.assertFalse((ROOT/'src/game/editor').exists())
+        self.assertFalse((ROOT/'src/engine/editor.h').exists())
+        self.assertFalse((ROOT/'data/editor').exists())
+        cmake = self.text('CMakeLists.txt')
+        self.assertNotIn('GAME_EDITOR', cmake)
+        engine = self.text('src/engine/client/client.cpp')
+        for retired in ['CreateEditor(', 'm_pEditor', 'HandleMapPath', 'CtrlShiftKey(KEY_E']:
+            self.assertNotIn(retired, engine)
+        self.assertNotIn('MACRO_CONFIG_INT(ClEditor,', self.text('src/engine/shared/config_variables.h'))
+        self.assertIn('GameClient()->OnRender()', engine)
+        self.assertTrue((ROOT/'src/engine/server/server.cpp').exists())
+        images = self.text('src/game/client/components/mapimages.cpp')
+        self.assertIn('game_entities/entities_clear', images)
+        for name in ['ddnet', 'ddrace', 'f-ddrace', 'fng', 'race', 'vanilla', 'blockworlds']:
+            path = 'game_entities/entities_clear/' + name + '.png'
+            self.assertTrue((ROOT/'data'/path).is_file())
+            self.assertIn(path, cmake)
+
     def test_no_fake_purchase_or_rankings(self):
         pages = self.text('src/game/client/components/menus_settings_wallet.cpp')
         pages = pages[pages.index('void CMenus::RenderRaceLobby'):]

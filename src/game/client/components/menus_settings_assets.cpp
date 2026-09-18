@@ -47,7 +47,7 @@ void CMenus::LoadEntities(SCustomEntities *pEntitiesItem, void *pUser)
 	{
 		for(int i = 0; i < MAP_IMAGE_MOD_TYPE_COUNT; ++i)
 		{
-			str_format(aPath, sizeof(aPath), "editor/entities_clear/%s.png", gs_apModEntitiesNames[i]);
+			str_format(aPath, sizeof(aPath), "game_entities/entities_clear/%s.png", gs_apModEntitiesNames[i]);
 			pEntitiesItem->m_aImages[i].m_Texture = pThis->Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
 			if(!pEntitiesItem->m_RenderTexture.IsValid() || pEntitiesItem->m_RenderTexture.IsNullTexture())
 				pEntitiesItem->m_RenderTexture = pEntitiesItem->m_aImages[i].m_Texture;

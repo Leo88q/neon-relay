@@ -93,7 +93,7 @@ HISTORICAL_PATH_RES = [
 	# the credits screen keeps upstream attribution on purpose (allowed by the
 	# rebranding policy: legal/credits documentation may name the upstream project)
 	re.compile(r"^src/game/client/components/menus_settings_credits\.cpp$"),
-	# entities image names shipped in data/editor/entities
+	# gameplay overlay names shipped in data/game_entities/entities_clear
 	re.compile(r"^src/game/client/components/mapimages\.h$"),
 	re.compile(r"^docs/THREAT_MODEL\.md$"),
 	re.compile(r"^docs/RELEASE_CHECKLIST\.md$"),
@@ -108,6 +108,7 @@ HISTORICAL_PATH_RES = [
 ]
 
 TEST_PATH_RES = [
+	re.compile(r"^scripts/test_menu_contract\.py$"),
 	re.compile(r"^src/test/"),
 	re.compile(r"^src/rust-bridge/test/"),
 	re.compile(r"^scripts/integration_test\.py$"),
@@ -177,7 +178,7 @@ CODE_IDENTIFIER_RES = [
 	re.compile(r"ddnet-libs"),
 	# data asset file names referenced by maps, the editor and the asset index
 	re.compile(r"(ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|rules|map|json|ogg|wv|ttf|otf|ttc)", re.IGNORECASE),
-	re.compile(r"(editor|mapres|assets|skins7?|maps7?|themes|audio)/[A-Za-z0-9_\-./]*(ddnet|ddrace|teeworlds)", re.IGNORECASE),
+	re.compile(r"(game_entities|mapres|assets|skins7?|maps7?|themes|audio)/[A-Za-z0-9_\-./]*(ddnet|ddrace|teeworlds)", re.IGNORECASE),
 	re.compile(r"\b(F-DDRace|DDNet)\.png\b"),
 	# source file names of upstream modules
 	re.compile(r"(ddracechat|ddracecommands|menus_settings_ddnet|gamemodes/ddnet)\.(cpp|h)"),

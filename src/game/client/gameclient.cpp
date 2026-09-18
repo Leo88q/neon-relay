@@ -55,7 +55,6 @@
 #include <engine/client/enums.h>
 #include <engine/demo.h>
 #include <engine/discord.h>
-#include <engine/editor.h>
 #include <engine/engine.h>
 #include <engine/favorites.h>
 #include <engine/friends.h>
@@ -107,7 +106,6 @@ void CGameClient::OnConsoleInit()
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	m_pDemoPlayer = Kernel()->RequestInterface<IDemoPlayer>();
 	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
-	m_pEditor = Kernel()->RequestInterface<IEditor>();
 	m_pFavorites = Kernel()->RequestInterface<IFavorites>();
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	m_pFoes = Client()->Foes();
@@ -614,8 +612,6 @@ void CGameClient::OnReset()
 {
 	InvalidateSnapshot();
 
-	m_EditorMovementDelay = 5;
-
 	m_PredictedTick = -1;
 	std::fill(std::begin(m_aLastNewPredictedTick), std::end(m_aLastNewPredictedTick), -1);
 
@@ -714,9 +710,6 @@ void CGameClient::OnReset()
 
 	for(auto &pComponent : m_vpAll)
 		pComponent->OnReset();
-
-	Editor()->ResetMentions();
-	Editor()->ResetIngameMoved();
 
 	Collision()->Unload();
 	Layers()->Unload();
@@ -1321,7 +1314,7 @@ void CGameClient::OnEnterGame()
 
 void CGameClient::OnGameOver()
 {
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && g_Config.m_ClEditor == 0)
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		Client()->AutoScreenshot_Start();
 }
 
@@ -2429,7 +2422,6 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 		pComponent->OnNewSnapshot();
 
 	// notify editor when local character moved
-	UpdateEditorIngameMoved();
 
 	// detect air jump for other players
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -2547,23 +2539,6 @@ std::function<bool(int, int, int, int)> CGameClient::GetScoreComparator(bool Tim
 		return TimeSeconds1 < TimeSeconds2;
 	};
 	return CompareTimeMillis;
-}
-
-void CGameClient::UpdateEditorIngameMoved()
-{
-	const bool LocalCharacterMoved = m_Snap.m_pLocalCharacter && m_Snap.m_pLocalPrevCharacter && (m_Snap.m_pLocalCharacter->m_X != m_Snap.m_pLocalPrevCharacter->m_X || m_Snap.m_pLocalCharacter->m_Y != m_Snap.m_pLocalPrevCharacter->m_Y);
-	if(!g_Config.m_ClEditor)
-	{
-		m_EditorMovementDelay = 5;
-	}
-	else if(m_EditorMovementDelay > 0 && !LocalCharacterMoved)
-	{
-		--m_EditorMovementDelay;
-	}
-	if(m_EditorMovementDelay == 0 && LocalCharacterMoved)
-	{
-		Editor()->OnIngameMoved();
-	}
 }
 
 void CGameClient::ApplyPreInputs(int Tick, bool Direct, CGameWorld &GameWorld)
@@ -2880,11 +2855,6 @@ void CGameClient::OnPredict()
 
 	if(m_NewPredictedTick)
 		m_Ghost.OnNewPredictedSnapshot();
-}
-
-void CGameClient::OnActivateEditor()
-{
-	OnRelease();
 }
 
 CGameClient::CClientStats::CClientStats()

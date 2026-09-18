@@ -21,7 +21,7 @@ for name, width, height, page, key in [(f'{size}-{page}', width, height, page, k
         with (output/f'{name}.log').open('w') as log:
             process = subprocess.Popen([str(binary), 'gfx_fullscreen 0', 'gfx_vsync 0',
                 f'gfx_screen_width {width}', f'gfx_screen_height {height}', 'cl_menu_map ""',
-                'cl_show_welcome 0'], cwd=temp, env=env, stdout=log, stderr=subprocess.STDOUT)
+                'cl_show_welcome 0', 'cl_editor 1'], cwd=temp, env=env, stdout=log, stderr=subprocess.STDOUT)
             try:
                 deadline = time.monotonic()+35
                 window = None
@@ -38,6 +38,7 @@ for name, width, height, page, key in [(f'{size}-{page}', width, height, page, k
                 assert process.poll() is None, 'client crashed while rendering'
                 subprocess.run(['import','-window',window,str(output/f'{name}.png')],check=True,timeout=10)
                 subprocess.run(['xdotool','windowfocus','--sync',window],check=True)
+                subprocess.run(['xdotool','key','ctrl+shift+e'],check=True)
                 subprocess.run(['xdotool','key',key],check=True)
                 time.sleep(2)
                 assert process.poll() is None, 'client crashed while opening product page'

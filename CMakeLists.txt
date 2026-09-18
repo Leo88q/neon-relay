@@ -1601,47 +1601,6 @@ set(EXPECTED_DATA
   countryflags/index.txt
   deadtee.png
   debug_font.png
-  editor/audio_source.png
-  editor/automap/basic_freeze.rules
-  editor/automap/ddmax_freeze.rules
-  editor/automap/ddnet_grass.rules
-  editor/automap/ddnet_tiles.rules
-  editor/automap/ddnet_walls.rules
-  editor/automap/desert_main.rules
-  editor/automap/fadeout.rules
-  editor/automap/generic_clear.rules
-  editor/automap/generic_unhookable.rules
-  editor/automap/generic_unhookable_0.7.rules
-  editor/automap/grass_main.rules
-  editor/automap/jungle_main.rules
-  editor/automap/jungle_midground.rules
-  editor/automap/round_tiles.rules
-  editor/automap/water.rules
-  editor/automap/winter_main.rules
-  editor/checker.png
-  editor/cursor.png
-  editor/cursor_resize.png
-  editor/cursor_text.png
-  editor/entities/DDNet.png
-  editor/entities/F-DDrace.png
-  editor/entities/FNG.png
-  editor/entities/Race.png
-  editor/entities/Vanilla.png
-  editor/entities/blockworlds.png
-  editor/entities_clear/blockworlds.png
-  editor/entities_clear/ddnet.png
-  editor/entities_clear/ddrace.png
-  editor/entities_clear/f-ddrace.png
-  editor/entities_clear/fng.png
-  editor/entities_clear/race.png
-  editor/entities_clear/vanilla.png
-  editor/front.png
-  editor/speed_arrow.png
-  editor/speed_arrow_array.png
-  editor/speedup.png
-  editor/switch.png
-  editor/tele.png
-  editor/tune.png
   emoticons.png
   extras.png
   fonts/DejaVuSans.ttf
@@ -1650,6 +1609,15 @@ set(EXPECTED_DATA
   fonts/SourceHanSans.ttc
   fonts/index.json
   game.png
+  game_entities/entities_clear/blockworlds.png
+  game_entities/entities_clear/ddnet.png
+  game_entities/entities_clear/ddrace.png
+  game_entities/entities_clear/f-ddrace.png
+  game_entities/entities_clear/fng.png
+  game_entities/entities_clear/race.png
+  game_entities/entities_clear/vanilla.png
+  game_entities/speed_arrow.png
+  game_entities/speed_arrow_array.png
   gui_buttons.png
   gui_cursor.png
   gui_icons.png
@@ -1706,7 +1674,6 @@ set(EXPECTED_DATA
   maps/Vector\ Spire.map
   maps/license.txt
   menuimages/demos.png
-  menuimages/editor.png
   menuimages/local_server.png
   menuimages/play_game.png
   menuimages/settings.png
@@ -2028,7 +1995,6 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   console.h
   demo.h
   discord.h
-  editor.h
   engine.h
   favorites.h
   font_icons.h
@@ -2530,98 +2496,7 @@ if(CLIENT)
     ui_scrollregion.h
     # tidy-alphabetical-end
   )
-  set_src(GAME_EDITOR GLOB_RECURSE src/game/editor
-    # tidy-alphabetical-start
-    auto_map.cpp
-    auto_map.h
-    component.cpp
-    component.h
-    editor.cpp
-    editor.h
-    editor_action.h
-    editor_actions.cpp
-    editor_actions.h
-    editor_history.cpp
-    editor_history.h
-    editor_object.cpp
-    editor_object.h
-    editor_props.cpp
-    editor_server_settings.cpp
-    editor_server_settings.h
-    editor_trackers.cpp
-    editor_trackers.h
-    editor_ui.cpp
-    editor_ui.h
-    enums.h
-    envelope_editor.cpp
-    envelope_editor.h
-    explanations.cpp
-    explanations.h
-    file_browser.cpp
-    file_browser.h
-    font_typer.cpp
-    font_typer.h
-    layer_selector.cpp
-    layer_selector.h
-    map_grid.cpp
-    map_grid.h
-    map_object.cpp
-    map_object.h
-    map_view.cpp
-    map_view.h
-    mapitems.h
-    mapitems/envelope.cpp
-    mapitems/envelope.h
-    mapitems/envelope_evaluator.cpp
-    mapitems/envelope_evaluator.h
-    mapitems/image.cpp
-    mapitems/image.h
-    mapitems/layer.cpp
-    mapitems/layer.h
-    mapitems/layer_front.cpp
-    mapitems/layer_front.h
-    mapitems/layer_game.cpp
-    mapitems/layer_game.h
-    mapitems/layer_group.cpp
-    mapitems/layer_group.h
-    mapitems/layer_quads.cpp
-    mapitems/layer_quads.h
-    mapitems/layer_sounds.cpp
-    mapitems/layer_sounds.h
-    mapitems/layer_speedup.cpp
-    mapitems/layer_speedup.h
-    mapitems/layer_switch.cpp
-    mapitems/layer_switch.h
-    mapitems/layer_tele.cpp
-    mapitems/layer_tele.h
-    mapitems/layer_tiles.cpp
-    mapitems/layer_tiles.h
-    mapitems/layer_tune.cpp
-    mapitems/layer_tune.h
-    mapitems/map.cpp
-    mapitems/map.h
-    mapitems/map_io.cpp
-    mapitems/sound.cpp
-    mapitems/sound.h
-    popups.cpp
-    prompt.cpp
-    prompt.h
-    proof_mode.cpp
-    proof_mode.h
-    quad_art.cpp
-    quad_art.h
-    quad_knife.cpp
-    quad_knife.h
-    quick_action.h
-    quick_actions.cpp
-    quick_actions.h
-    references.cpp
-    references.h
-    smooth_value.cpp
-    smooth_value.h
-    tile_art.cpp
-    # tidy-alphabetical-end
-  )
+
   set_src(GAME_MAP GLOB_RECURSE src/game/map
     # tidy-alphabetical-start
     envelope_extrema.cpp
@@ -2656,7 +2531,7 @@ if(TARGET_OS STREQUAL "android")
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/neonrelay)
 endif()
 
-  set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_EDITOR} ${GAME_MAP} ${GAME_GENERATED_CLIENT})
+  set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_MAP} ${GAME_GENERATED_CLIENT})
 
   set(DEPS_CLIENT ${DEPS} ${GLEW_DEP})
 
@@ -3205,7 +3080,6 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     csv_test.cpp
     datafile_test.cpp
     dbg_test.cpp
-    editor_test.cpp
     fs_test.cpp
     gameworld_test.cpp
     git_revision_test.cpp

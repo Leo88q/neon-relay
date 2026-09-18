@@ -507,3 +507,25 @@ expanded client syntax also passed. Native smoke coverage now opens all five
 product destinations at desktop and portrait sizes and captures scrolled race
 and wallet pages. These remain smoke captures, not pixel or touch assertions.
 The preceding wallet/settings code passed all jobs in CI run 35369613763.
+
+### Map editor removal
+
+The map editor is now removed, not merely hidden. Deleted `src/game/editor`,
+`src/engine/editor.h`, the editor-specific unit test, map-edit CLI/drop handling,
+Ctrl+Shift+E, editor configuration and kernel registration/update/render hooks.
+CMake no longer compiles or packages the map editor. Shared gameplay map code,
+server target, replay support and touch-control customization remain intact.
+The latter two are not the removed map editor despite internal "editor" names.
+
+Removed editor-only assets and automap rules. Nine gameplay overlay images were
+moved byte-for-byte from `data/editor` to `data/game_entities`; loader paths and
+packaging changed together. Manifest: 819 rows, 573 ship / 246 block-release.
+The blocked-release assets are still a release limitation. Existing user maps
+and configuration files were not deleted; this client no longer edits maps.
+
+Full local ci-local passed after removal: assets 5, menu contracts 9, backend 97,
+onchain 32. Expanded syntax checks include map image loading, sound, chat and
+console. Full client link/boot still requires CI; SDL headers are unavailable
+locally. Native smoke tests now also pass an obsolete `cl_editor 1` argument and
+press Ctrl+Shift+E before opening each product page. They check liveness, not
+visual equality; static regression checks enforce absence of editor entrypoints.

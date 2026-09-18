@@ -9,7 +9,6 @@
 #include <base/log_color.h>
 #include <base/time.h>
 
-#include <engine/editor.h>
 #include <engine/graphics.h>
 #include <engine/keys.h>
 #include <engine/shared/config.h>
@@ -893,10 +892,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				m_aLastSoundPlayed[CHAT_HIGHLIGHT] = Now;
 			}
 
-			if(g_Config.m_ClEditor)
-			{
-				GameClient()->Editor()->UpdateMentions();
-			}
 		}
 	}
 	else if(Team != TEAM_WHISPER_SEND)

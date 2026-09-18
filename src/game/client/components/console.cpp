@@ -1182,9 +1182,6 @@ void CGameConsole::OnRender()
 		Progress = 1.0f;
 	}
 
-	if(m_ConsoleState == CONSOLE_OPEN && g_Config.m_ClEditor)
-		Toggle(CONSOLETYPE_LOCAL);
-
 	if(m_ConsoleState == CONSOLE_CLOSED)
 		return;
 

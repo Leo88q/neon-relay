@@ -27,7 +27,7 @@ CMapImages::CMapImages()
 	m_SpeedupArrowIsLoaded = false;
 	m_TuneColorsIsLoaded = false;
 
-	str_copy(m_aEntitiesPath, "editor/entities_clear");
+	str_copy(m_aEntitiesPath, "game_entities/entities_clear");
 
 	static_assert(std::size(gs_apModEntitiesNames) == MAP_IMAGE_MOD_TYPE_COUNT, "Mod name string count is not equal to mod type count");
 }
@@ -38,7 +38,7 @@ void CMapImages::OnInit()
 	InitOverlayTextures();
 
 	if(str_comp(g_Config.m_ClAssetsEntities, "default") == 0)
-		str_copy(m_aEntitiesPath, "editor/entities_clear");
+		str_copy(m_aEntitiesPath, "game_entities/entities_clear");
 	else
 	{
 		str_format(m_aEntitiesPath, sizeof(m_aEntitiesPath), "assets/entities/%s", g_Config.m_ClAssetsEntities);
@@ -287,7 +287,7 @@ IGraphics::CTextureHandle CMapImages::GetEntities(EMapImageEntityLayerType Entit
 		// try default
 		if(ImgInfo.m_pData == nullptr)
 		{
-			str_format(aPath, sizeof(aPath), "editor/entities_clear/%s.png", gs_apModEntitiesNames[EntitiesModType]);
+			str_format(aPath, sizeof(aPath), "game_entities/entities_clear/%s.png", gs_apModEntitiesNames[EntitiesModType]);
 			Graphics()->LoadPng(ImgInfo, aPath, IStorage::TYPE_ALL);
 		}
 
@@ -369,7 +369,7 @@ IGraphics::CTextureHandle CMapImages::GetSpeedupArrow()
 	if(!m_SpeedupArrowIsLoaded)
 	{
 		int TextureLoadFlag = Graphics()->TextureLoadFlags() | IGraphics::TEXLOAD_NO_2D_TEXTURE;
-		m_SpeedupArrowTexture = Graphics()->LoadTexture("editor/speed_arrow_array.png", IStorage::TYPE_ALL, TextureLoadFlag);
+		m_SpeedupArrowTexture = Graphics()->LoadTexture("game_entities/speed_arrow_array.png", IStorage::TYPE_ALL, TextureLoadFlag);
 		m_SpeedupArrowIsLoaded = true;
 	}
 	return m_SpeedupArrowTexture;
@@ -411,7 +411,7 @@ IGraphics::CTextureHandle CMapImages::GetOverlayCenter()
 void CMapImages::ChangeEntitiesPath(const char *pPath)
 {
 	if(str_comp(pPath, "default") == 0)
-		str_copy(m_aEntitiesPath, "editor/entities_clear");
+		str_copy(m_aEntitiesPath, "game_entities/entities_clear");
 	else
 	{
 		str_format(m_aEntitiesPath, sizeof(m_aEntitiesPath), "assets/entities/%s", pPath);
