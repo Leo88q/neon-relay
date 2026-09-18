@@ -42,7 +42,19 @@ jobs:
         env:
           NEONRELAY_TEST_SBF: "1"
           BPF_OUT_DIR: ${{ github.workspace }}/onchain/target/deploy
-        run: cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy --test v2_runtime -- --test-threads=1
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy --test v2_runtime -- --test-threads=1 2>&1 | tee "$RUNNER_TEMP/economy-sbf-test.log"; then
+            python3 - <<'PYLOG'
+          import os
+          from pathlib import Path
+          text = Path(os.environ["RUNNER_TEMP"], "economy-sbf-test.log").read_text()
+          tail = "\n".join(text.splitlines()[-100:])[-20000:]
+          print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
+          PYLOG
+            exit 1
+          fi
       - name: Save SBF binary and hash (never keypair files)
         uses: actions/upload-artifact@v4
         with:
