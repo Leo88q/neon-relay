@@ -17,3 +17,12 @@ CC-BY-SA license
 Tutorial:
 Copyright unique2 & Alisa
 CC-BY-SA license
+
+LearnToPlay Sound:
+Derived from LearnToPlay by Tridemy & Cøke.
+Original gameplay, embedded tutorial instructions and author attribution retained.
+Neon Relay visual adaptation: code-built LED surfaces, peaks and wave animation (2026).
+CC-BY-SA 3.0; https://creativecommons.org/licenses/by-sa/3.0/
+Source: https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/data/maps/LearnToPlay.map
+This is a modified version, not an original map by Neon Relay.
+Distribution approval remains pending the embedded-asset attribution review.

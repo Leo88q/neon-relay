@@ -29,7 +29,7 @@ def validate(path):
     for t, start, n in types:
         assert start == count
         for i in range(start, start+n):
-            tag, payload_size = struct.unpack_from('<2i', data, item_start+item_offsets[i])
+            tag, payload_size = struct.unpack_from('<Ii', data, item_start+item_offsets[i])
             end = item_offsets[i+1] if i+1 < ni else items_size
             assert tag >> 16 == t
             assert payload_size == end-item_offsets[i]-8
@@ -73,6 +73,45 @@ class MapFormatTests(unittest.TestCase):
         # Native buffering swaps corners 2/3 into perimeter order.
         pts=[(q[i*2],q[i*2+1]) for i in (0,1,3,2)]
         self.assertGreater(sum(pts[i][0]*pts[(i+1)%4][1]-pts[(i+1)%4][0]*pts[i][1] for i in range(4)),0)
+
+    def test_learntoplay_preservation_and_animation(self):
+        import json, hashlib
+        from datafile_v4 import read
+        from map_gameplay_fingerprint import gameplay
+        src=ROOT/'data/maps/LearnToPlay.map'
+        dst=ROOT/'data/maps/LearnToPlay Sound.map'
+        fixture=json.loads((ROOT/'tests/fixtures/learntoplay_source.json').read_text())
+        self.assertEqual(hashlib.sha256(src.read_bytes()).hexdigest(),fixture['source_sha256'])
+        self.assertEqual(gameplay(src),fixture['gameplay_sha256'])
+        self.assertEqual(gameplay(dst),fixture['gameplay_sha256'])
+        validate(dst)
+        a,b=read(src),read(dst)
+        self.assertEqual(a.raws,b.raws[:len(a.raws)])
+        for t in (0,1,4,65534,65535):self.assertEqual(a.items[t],b.items[t])
+        self.assertEqual(a.items[2],b.items[2][:len(a.items[2])])
+        self.assertEqual(a.items[3],b.items[3][:len(a.items[3])])
+        self.assertEqual(dict(a.items[6])[0],dict(b.items[6])[0][:len(dict(a.items[6])[0])])
+        layers=dict(b.items[5])
+        for i,p in a.items[5]:
+            if p[1]==2 and p[6]:self.assertEqual(p,layers[i])
+        for i in [*range(6,23),25,54]:self.assertEqual(dict(a.items[5])[i],layers[i])
+        # Segment visibility and moving peaks are actual map envelopes, not a GIF.
+        envs=dict(b.items[3]);points=dict(b.items[6])[0]
+        self.assertEqual(len(envs)-len(a.items[3]),50)
+        animated=0
+        for i,p in b.items[3][len(a.items[3]):]:
+            frames=[points[n*6:n*6+6] for n in range(p[2],p[2]+p[3])]
+            self.assertEqual(frames[0][2:],frames[-1][2:])
+            animated += len(set(tuple(f[2:]) for f in frames))>1
+            self.assertEqual(p[-1],1)
+        self.assertGreaterEqual(animated,40)
+        self.assertGreater(layers[38][4],0)
+        self.assertGreater(layers[39][4],0)
+        # Reader/writer retain unsigned high types and extension IDs.
+        with tempfile.TemporaryDirectory() as tmp:
+            output=Path(tmp)/'roundtrip.map';a.save(output)
+            again=read(output)
+            self.assertEqual(a.items,again.items);self.assertEqual(a.raws,again.raws)
 
     def test_name_matches_engine_encoding(self):
         self.assertEqual(struct.pack('>3i', *pack_name('abc')), b'\xe1\xe2\xe3'+b'\x80'*8+b'\x00')

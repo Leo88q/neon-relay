@@ -89,7 +89,7 @@ class MapWriter:
 		offsets = []
 		for t, i, payload in flat:
 			offsets.append(len(item_bytes))
-			item_bytes += struct.pack("<ii", (t << 16) | i, len(payload) * 4)
+			item_bytes += struct.pack("<Ii", (t << 16) | i, len(payload) * 4)
 			item_bytes += struct.pack("<%di" % len(payload), *payload)
 		item_size = len(item_bytes)
 

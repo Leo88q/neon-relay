@@ -5,7 +5,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 client,server=map(lambda p: str(Path(p).resolve()),sys.argv[1:3])
 out=Path(sys.argv[3]);out.mkdir(parents=True,exist_ok=True)
-names=['Neon Relay Basin','Chromatic Canyon','Vector Spire','Midnight Circuit','Aurora Ascent']
+names=['Neon Relay Basin','Chromatic Canyon','Vector Spire','Midnight Circuit','Aurora Ascent', 'LearnToPlay Sound']
 for index,name in enumerate(names):
  with tempfile.TemporaryDirectory(prefix='neonrelay-world-') as tmp:
   home=Path(tmp)
@@ -35,6 +35,11 @@ for index,name in enumerate(names):
     window=result.stdout.splitlines()[-1]
     time.sleep(2)
     subprocess.run(['import','-window',window,str(out/f'world-{index}.png')],check=True,timeout=10)
+    if name == 'LearnToPlay Sound':
+     # Two in-game phases plus the normal capture. Keep full native frames.
+     for phase in range(2):
+      time.sleep(.24)
+      subprocess.run(['import','-window',window,str(out/f'learn-animation-{phase}.png')],check=True,timeout=10)
     assert cl.poll() is None,'client exited while rendering world'
     text=clog.read_text(errors='replace').lower()
     assert 'failed to load' not in text and 'invalid header' not in text,text[-1500:]
