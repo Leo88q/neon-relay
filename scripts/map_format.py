@@ -133,7 +133,7 @@ class MapWriter:
 def quad_rect(x0, y0, x1, y1, rgba=(255, 255, 255, 255)):
 	"""One CQuad covering the rect (map pixels), texcoords 0..1, 22.10 fixed."""
 	f = 1024
-	pts = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+	pts = [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]
 	cx = sum(p[0] for p in pts) // 4
 	cy = sum(p[1] for p in pts) // 4
 	out = []
@@ -141,7 +141,7 @@ def quad_rect(x0, y0, x1, y1, rgba=(255, 255, 255, 255)):
 		out += [x * f, y * f]
 	for _ in range(4):
 		out += list(rgba)
-	tex = [(0, 0), (1, 0), (1, 1), (0, 1)]
+	tex = [(0, 0), (1, 0), (0, 1), (1, 1)]
 	for u, v in tex:
 		out += [u * f, v * f]
 	out += [-1, 0, -1, 0]

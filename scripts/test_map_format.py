@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import zlib
 from pathlib import Path
-from map_format import MapWriter, pack_name
+from map_format import MapWriter, pack_name, quad_rect
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -65,6 +65,14 @@ class MapFormatTests(unittest.TestCase):
         from map_gameplay_fingerprint import gameplay
         for name, expected in json.loads((ROOT/'tests/fixtures/map_gameplay.json').read_text()).items():
             self.assertEqual(gameplay(ROOT/f'data/maps/{name}.map'), expected, name)
+
+    def test_quad_matches_engine_corner_order(self):
+        q=struct.unpack('<38i',quad_rect(0,0,20,10))
+        self.assertEqual(q[:8], (0,0,20480,0,0,10240,20480,10240))
+        self.assertEqual(q[26:34], (0,0,1024,0,0,1024,1024,1024))
+        # Native buffering swaps corners 2/3 into perimeter order.
+        pts=[(q[i*2],q[i*2+1]) for i in (0,1,3,2)]
+        self.assertGreater(sum(pts[i][0]*pts[(i+1)%4][1]-pts[(i+1)%4][0]*pts[i][1] for i in range(4)),0)
 
     def test_name_matches_engine_encoding(self):
         self.assertEqual(struct.pack('>3i', *pack_name('abc')), b'\xe1\xe2\xe3'+b'\x80'*8+b'\x00')
