@@ -20,6 +20,11 @@ int main(int argc, char **argv)
 	}
 	const std::string Input((std::istreambuf_iterator<char>(std::cin)), std::istreambuf_iterator<char>());
 	if(Mode == "origin") return neonrelay::IsPairingOrigin(Input) ? 0 : 3;
+	if(Mode == "envelope" && argc == 3)
+	{
+		neonrelay::PairingEnvelope Envelope;
+		return neonrelay::ParsePairingEnvelope(Input, Envelope, std::stoll(argv[2])) ? 0 : 3;
+	}
 	if(Mode == "parse" && argc == 3)
 	{
 		neonrelay::AuthenticatedGameIdentity Context;
