@@ -192,6 +192,13 @@ def main() -> int:
 
     for path in watched:
         rel = path.relative_to(ROOT).as_posix()
+        if rel.startswith("assets-src/maps/warm-workshops/"):
+            add(rel, path, "Neon Relay project (AI-assisted generated artwork)",
+                "AI-generated artwork; human copyright eligibility not assessed",
+                "Zlib", OWN_URL,
+                "Warm Workshops art-direction prototype; generated in Arena; not packaged as playable map assets; approval and integration pending",
+                "block-release")
+            continue
         if (rel.startswith("data/skins/potato_") and rel.endswith(".png")) or rel.startswith(("data/portraits/", "assets-src/potato/generated_bodies/")):
             add(rel, path, "Neon Relay project (AI-assisted generated artwork)",
                 "AI-generated artwork; human copyright eligibility not assessed",

@@ -1,0 +1,23 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neon Relay — Тёплые мастерские</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#211710;color:#fae1b5;font:15px system-ui}header{padding:18px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}h1{font-size:21px;margin:0}p{margin:0;color:#c9af94;font-size:13px}button{background:#563725;color:#ffe5ac;border:1px solid #b57c42;border-radius:9px;padding:12px;cursor:pointer}main{position:relative;max-width:1500px;margin:auto}canvas{width:100%;display:block;aspect-ratio:16/9;touch-action:pan-y}footer{max-width:1100px;margin:auto;padding:20px;line-height:1.7;color:#d6bda4}b{color:#ffe4b0}</style>
+<header><div><h1>Тёплые мастерские</h1><p>NEON RELAY / Художественный прототип — не игровая карта</p></div><button id="motion">Остановить движение</button><button id="details">Скрыть программные эффекты</button></header>
+<main><canvas id="scene" width="1600" height="900" aria-label="Тёплый город мастерских: деревянные платформы, медные фонари, зелень, пар и пыль в свете"></canvas></main>
+<footer><b>Изображения:</b> нарисованный город, дерево и кирпич, фонари, медные трубы, зелень.<br><b>Код сверху:</b> раздельное смещение фона и декора, световые ореолы, контактные тени, пар и медленные пылинки. Двигайте курсор по сцене.<br>Это образец материалов и глубины. Геометрия настоящей трассы сюда ещё не перенесена. Интерактивные поверхности и опасности будут оформлены отдельно.</footer>
+<script>
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d');
+const names=['background','platform','lantern','ivy','pipes'],img={};let moving=!matchMedia('(prefers-reduced-motion: reduce)').matches,effects=true,time=0,last=0,target=0,camera=0;
+const button=document.querySelector('#motion');function label(){button.textContent=moving?'Остановить движение':'Включить движение'}label();button.onclick=()=>{moving=!moving;label()};document.querySelector('#details').onclick=e=>{effects=!effects;e.target.textContent=effects?'Скрыть программные эффекты':'Показать программные эффекты'};
+canvas.onpointermove=e=>{const r=canvas.getBoundingClientRect();target=(e.clientX-r.left)/r.width-.5};canvas.onpointerleave=()=>target=0;
+function sprite(n,x,y,w,depth=1){const im=img[n],h=w*im.height/im.width;ctx.drawImage(im,x-camera*depth,y,w,h);return h}
+function glow(x,y,r){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(255,198,95,.28)');g.addColorStop(.35,'rgba(255,158,56,.12)');g.addColorStop(1,'rgba(255,140,35,0)');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2)}
+function frame(now){if(moving){time+=Math.min((now-last)/1000,.05);camera+=(target*35-camera)*.035}last=now;ctx.clearRect(0,0,1600,900);ctx.drawImage(img.background,-45-camera*.25,-35,1690,970);
+ctx.fillStyle='rgba(55,30,19,.19)';ctx.fillRect(0,0,1600,900);
+sprite('pipes',90,410,250,.5);sprite('pipes',1210,300,260,.5);
+for(const [x,y,w] of [[-55,710,560],[590,585,450],[1140,695,520]]){if(effects){ctx.save();ctx.filter='blur(13px)';ctx.fillStyle='rgba(35,15,9,.5)';ctx.fillRect(x-camera+18,y+25,w-35,70);ctx.restore()}sprite('platform',x,y,w)}
+sprite('ivy',30,625,160,1.1);sprite('ivy',880,509,145,1.1);sprite('ivy',1400,596,185,1.1);
+for(const [x,y] of [[330,425],[1020,245]]){sprite('lantern',x,y,140,.8);if(effects)glow(x-camera*.8+104,y+175,180+Math.sin(time*1.5)*5)}
+if(effects){for(let i=0;i<32;i++){const x=((i*197.7+Math.sin(time*.19+i)*32)%1650)-camera*.7,y=(i*83.3-time*(3+i%4)+90000)%900;ctx.fillStyle=`rgba(255,218,153,${.12+.12*Math.sin(i+time*.4)})`;ctx.beginPath();ctx.arc(x,y,1+i%2,0,Math.PI*2);ctx.fill()}
+for(let i=0;i<7;i++){let t=(time*.12+i/7)%1;ctx.save();ctx.filter='blur(12px)';ctx.fillStyle=`rgba(255,233,198,${(1-t)*.08})`;ctx.beginPath();ctx.ellipse(210-camera*.5+Math.sin(t*6)*22,423-t*165,16+t*36,9+t*18,0,0,Math.PI*2);ctx.fill();ctx.restore()}}
+requestAnimationFrame(frame)}
+Promise.all(names.map(n=>new Promise((ok,no)=>{let im=new Image;im.onload=()=>{img[n]=im;ok()};im.onerror=no;im.src=n+'.png'}))).then(()=>requestAnimationFrame(frame)).catch(()=>document.querySelector('footer').textContent='Не удалось загрузить графику. Пересоберите художественный прототип.');
+</script></html>
