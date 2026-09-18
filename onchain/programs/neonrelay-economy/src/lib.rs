@@ -327,20 +327,20 @@ pub struct Initialize<'info> {
 		seeds = [CONFIG_SEED],
 		bump,
 	)]
-	pub config: Account<'info, EconomyConfig>,
+	pub config: Box<Account<'info, EconomyConfig>>,
 	/// Operator-chosen payment mint (SKR on mainnet). Not hardcoded anywhere.
-	pub mint: Account<'info, Mint>,
+	pub mint: Box<Account<'info, Mint>>,
 	#[account(
 		constraint = treasury_ata.mint == mint.key() @ EconomyError::InvalidTreasuryMint,
 	)]
-	pub treasury_ata: Account<'info, TokenAccount>,
+	pub treasury_ata: Box<Account<'info, TokenAccount>>,
 	#[account(
 		init,
 		payer = authority,
 		associated_token::mint = mint,
 		associated_token::authority = config,
 	)]
-	pub vault_ata: Account<'info, TokenAccount>,
+	pub vault_ata: Box<Account<'info, TokenAccount>>,
 	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
 	pub associated_token_program: Program<'info, anchor_spl::associated_token::AssociatedToken>,
