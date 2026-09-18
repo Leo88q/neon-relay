@@ -288,3 +288,17 @@ same checks so this gap does not recur silently.
 - Adapter/engine syntax gates added. Actual native TLS execution, game packet
   transport/config/poll-loop wiring and full native linking remain unverified.
   No live wallet login or paid admission has been enabled.
+
+### Part 17 — real native HTTP worker/TLS test (verified)
+
+- Added a focused executable linking real engine HTTP/curl and pairing adapter
+  implementations, driven by isolated Python loopback TLS servers in CI.
+- Verified trust/hostname rejection, no redirects/downgrade, streaming response
+  cap, actual timeout and debug-log privacy with a positive logging control.
+- Exercised actual queued pairing request/Poll/parser success and disconnect
+  cancellation with a simulated backend TLS response.
+- GitHub CI 35342502366 passed at e3ccca8, including the new execution step.
+  Full local offline gates passed: backend 94, onchain TS 32 plus native gates.
+- Local TLS build was not run: curl headers absent and apt mirror unavailable.
+  Full game packet -> production backend integration/native gameplay remain
+  outstanding; no wallet-login handler or paid admission enabled.

@@ -233,3 +233,47 @@ packet handler: operator key/origin configuration, confidential client token
 transport, main-loop polling and integration tests still need wiring. Public
 payments/admission remain disabled. Calls to Start/Poll and destruction belong
 on the game thread; no callbacks are installed on the HTTP worker thread.
+
+## Part 17: real native HTTP/TLS execution (verified in CI)
+
+`scripts/test_native_https.sh` builds a focused executable from the **real**
+engine `http.cpp`, curl worker, base implementations and pairing adapter. No
+HTTP, TLS, clock or response-processing implementation is replaced with stubs.
+The Python runner generates short-lived test certificates, starts loopback
+HTTP/HTTPS servers, temporarily installs a generated CA in the disposable CI
+runner trust store, and removes it and its private key material afterward.
+Run this test only in an isolated Linux test environment with curl development
+headers, OpenSSL CLI and passwordless sudo—not on an operator workstation.
+
+Verified at `e3ccca8` in CI run:
+https://github.com/Leo88q/neon-relay/actions/runs/35342502366
+
+Executed checks:
+
+- Valid HTTPS under the temporary trusted CA succeeds.
+- An untrusted self-signed certificate and a trusted-CA certificate with the
+  wrong hostname both fail before an HTTP request reaches those endpoints.
+- 307 redirects, including redirects to plain HTTP, are not followed; the
+  redirect target receives no request.
+- Direct HTTP is refused for sensitive requests even when the global insecure
+  option is enabled. A nonsensitive HTTP control still succeeds.
+- A streaming body without Content-Length exceeding 4096 bytes is rejected.
+- A slow response hits an actual native worker request timeout.
+- With global debug enabled, a sensitive test header is absent from captured
+  logs; the ordinary-request control header is present.
+- The actual `GamePairingHttp` queue/Poll/parser path accepts a schema-valid
+  local TLS response and establishes the connection's leased identity. Drop
+  while a subsequent request is pending leaves the connection unauthenticated.
+
+The local TLS server deliberately **simulates backend responses**. It does not
+perform account registry/signature verification; those are covered separately
+by the C++/real-backend HTTP protocol tests from parts 13–16. This is not yet a
+single end-to-end test from a real game packet through the production backend,
+a full native game build/playtest, or proof that operator deployment TLS is
+configured correctly. No client packet handler, live wallet login or payment
+admission was enabled.
+
+Local offline gates passed (backend 94/94, onchain TS 32/32, compiled protocol and
+connection tests). The native TLS executable itself ran in GitHub CI: the local
+sandbox lacked curl development headers and its apt package mirror was
+unreachable. This is recorded separately, not represented as local TLS success.
