@@ -137,3 +137,22 @@ Do not run destructive matting helpers on already normalized sources. For replac
   results must be checked before treating the Rust additions as validated.
   Local Rust toolchain download failed. No SBF build, validator test, deployment
   or Android v2 transaction wiring yet. V2 payments remain disabled.
+
+### Part 6 verification update
+
+GitHub workflow `Economy Rust host tests` run 35303726125 succeeded:
+https://github.com/Leo88q/neon-relay/actions/runs/35303726125
+It compiled the Anchor economy crate and executed the Rust host test suite,
+including the seven new v2 tests. This is not an SBF/validator/deployment test.
+The resolved Cargo.lock is retained as a CI artifact; artifact download from
+this sandbox failed, so no local dependency lock is claimed here.
+
+Inspection also found earlier GitHub CI runs failed at the procedural skin
+check despite local gates passing. The workflow had no image dependency setup.
+Added pinned Pillow/NumPy installation and the new asset/menu regression checks.
+The UI check also referenced obsolete builders for strong_weak/deadtee; it now
+uses the existing misc-sheet builders. Pixels of all assets are unchanged.
+PNG compression bytes are no longer mistaken for pixel changes by the UI
+check; manifest SHA256 validation remains separate. Alphabetical hygiene now
+uses --dry-run, with existing sorting issues fixed. Local CI includes these
+same checks so this gap does not recur silently.

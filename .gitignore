@@ -29,8 +29,8 @@ RelWithDebInfo
 Release
 SAN.*
 _CPack_Packages/
-build.ninja
 build-android/
+build.ninja
 checksummed_*
 cmake_install.cmake
 debug

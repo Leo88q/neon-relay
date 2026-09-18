@@ -4,10 +4,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 python3 scripts/test_potato_assets.py
 python3 scripts/test_menu_contract.py
+python3 scripts/build_neon_skins.py --check
+python3 scripts/build_neon_ui_art.py --check
 ./scripts/check_assets.sh --licenses
 ./scripts/check_branding.sh --release --check-translations
 python3 scripts/check_secrets.py
 python3 scripts/check_config_variables.py
+python3 scripts/check_header_guards.py
+python3 scripts/tidy_alphabetical.py --dry-run
+python3 scripts/check_standard_headers.py
 ./scripts/local_syntax_probe.sh
 ./scripts/check_menu_syntax.sh
 ./scripts/neonrelay_signer_test.sh

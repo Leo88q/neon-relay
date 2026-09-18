@@ -18,7 +18,8 @@ deterministic Neon Relay originals in the exact same files and grids:
 
 Everything is drawn from scratch (no upstream pixels), 4x supersampled and
 downscaled with LANCZOS for clean antialiasing. `--check` regenerates into a
-temp dir and byte-compares with the repository files (CI gate).
+temp dir and pixel-compares with the repository files (CI gate).
+PNG compression differences are allowed; asset hashes are checked separately.
 """
 import argparse
 import hashlib
@@ -28,6 +29,7 @@ import random
 import sys
 import tempfile
 from PIL import Image, ImageDraw
+import build_neon_misc_sheets as misc
 
 SS = 4
 # Night Drive synthwave tokens; source of truth: docs/DESIGN_SYNTHWAVE.md
@@ -444,8 +446,8 @@ BUILDERS = {
     "data/blob.png": build_blob,
     "data/arrow.png": build_arrow,
     "data/race_flag.png": build_race_flag,
-    "data/strong_weak.png": build_strong_weak,
-    "data/deadtee.png": build_deadtee,
+    "data/strong_weak.png": misc.build_strong_weak,
+    "data/deadtee.png": misc.build_deadtee,
     "data/gui_cursor.png": build_gui_cursor,
     "data/background_noise.png": build_background_noise,
 }
@@ -468,8 +470,9 @@ def main():
         img.save(dest)
         if args.check:
             repo = os.path.join(root, rel)
-            with open(repo, "rb") as f1, open(dest, "rb") as f2:
-                same = f1.read() == f2.read()
+            with Image.open(repo) as expected:
+                same = (expected.mode == img.mode and expected.size == img.size
+                        and expected.tobytes() == img.tobytes())
             ok = ok and same
             print(("  ok   " if same else "  DIFF ") + rel)
         else:

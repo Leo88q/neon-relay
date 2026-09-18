@@ -1971,9 +1971,6 @@ set(EXPECTED_DATA
   skins7/x_ninja.json
   skins7/xmas_hat.png
   strong_weak.png
-  themes/nightdrive.png
-  themes/nightdrive_day.map
-  themes/nightdrive_night.map
   themes/autumn.png
   themes/autumn_day.map
   themes/autumn_night.map
@@ -1985,6 +1982,9 @@ set(EXPECTED_DATA
   themes/jungle_night.map
   themes/newyear.map
   themes/newyear.png
+  themes/nightdrive.png
+  themes/nightdrive_day.map
+  themes/nightdrive_night.map
   themes/none.png
   themes/rand.png
   themes/winter.png
