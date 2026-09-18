@@ -207,3 +207,18 @@ same checks so this gap does not recur silently.
   no keypair upload, no deploy, no wallet use. Standalone validator/RPC lifecycle,
   deployment verification and gameplay admission integration remain outstanding.
   Payments and admission stay disabled; complete BL-16 is not yet delivered.
+
+### Part 11 — standalone local validator + backend RPC (verified)
+
+- Added opt-in RPC lifecycle test against an ephemeral loopback validator with
+  the economy SBF ELF loaded into genesis; no external network or operator keys.
+- Real SPL mint creation/minting, treasury/source ATAs, legacy bootstrap, two v2
+  markets, payments, publication and claims now execute through validator RPC.
+  Replays must fail with transaction errors; balances/reserves are checked.
+- Production backend v2 decoder then verifies both finalized market/ticket
+  snapshots. Payment flags stay false. Temporary ledger/fixture are cleaned up.
+- Boxed legacy initialization account wrappers without wire ABI changes.
+- Verified at 8d01311: Rust/native/SBF/validator run 35335519276 and general CI
+  35335519215 succeeded. Full local gates passed (backend 80, onchain TS 32).
+- No devnet/mainnet deploy or upgrade-authority verification; HTTP/mobile/game
+  admission and NFT purchase/ownership integration are still outstanding.

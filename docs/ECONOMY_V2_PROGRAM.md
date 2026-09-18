@@ -243,3 +243,53 @@ Remaining gates: standalone validator/RPC lifecycle and deployment verification,
 legacy bootstrap trust, real mint setup, backend/mobile/game integration and
 admission authorization. These tests are not a cluster deployment and do not
 validate every legacy v1 instruction. Public payments/admission remain disabled.
+
+## Part 11: isolated validator/RPC lifecycle (verified)
+
+`onchain/scripts/test_local_validator.sh` starts an ephemeral Agave validator
+on loopback, loading the built economy ELF into genesis with `--bpf-program`.
+The Rust `v2_validator` test is ignored by normal host runs and explicitly
+invoked by this script. Its RPC URL is fixed to `http://127.0.0.1:8899`; it cannot
+be configured to send these transactions to devnet or mainnet. Test signer
+keys are generated in memory. The temporary ledger and public-account fixture
+are deleted when the script exits, and the validator process is stopped.
+
+Unlike the earlier bank scenarios, this test does not seed economic state:
+
+1. Request local faucet SOL for two ephemeral signers.
+2. Create and initialize two SPL mints, create source/treasury ATAs, mint test
+   tokens through SPL instructions.
+3. Invoke the actual legacy `initialize`, then `initialize_v2` for each mint.
+4. Pay 50, check source/treasury/vault balances of 50/5/45, and reject replay.
+5. Publish a 45-token single-leaf epoch, claim it, reject duplicate claim, check
+   balances of 95/5/0 and zero config reservations/epoch remainder.
+6. Wait for the final observed slot to root. The Node script
+   `verify_validator_rpc.ts` invokes the **production backend v2 RPC decoder**
+   on both markets/tickets using finalized reads, confirming their mint-bound
+   identity, fee, ownership, balances and disabled-payment flag.
+
+Negative replay assertions require a transaction error, not merely an RPC
+transport failure. Legacy initialization's decoded accounts were boxed like
+v2 accounts to reduce SBF stack pressure; serialized ABI and constraints are
+unchanged. This checks legacy initialization only, not all v1 payment/claim
+instructions or the trustworthiness of legacy first-caller bootstrap.
+
+Verified at `8d01311`:
+
+- Rust host/native, SBF and isolated validator/backend RPC:
+  https://github.com/Leo88q/neon-relay/actions/runs/35335519276
+- General CI: https://github.com/Leo88q/neon-relay/actions/runs/35335519215
+- Full local non-Rust gates: backend 80/80, onchain TS 32/32 and existing checks.
+
+To rerun with the pinned toolchain installed and ELF already built:
+
+```sh
+onchain/scripts/test_local_validator.sh
+```
+
+**Remaining scope:** genesis loading is not an upgradeable-loader deployment
+transaction, deployment-authority audit or external-cluster verification. The
+backend test exercises RPC decoding, not the full authenticated HTTP/game/mobile
+purchase/admission flow. NFT ownership, mint policy, tournament authorization,
+game identity attestation and release gates remain separate. Public payments
+and race admission remain disabled.
