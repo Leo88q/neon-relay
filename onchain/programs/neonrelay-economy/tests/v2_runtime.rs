@@ -27,10 +27,11 @@ fn ix(meta: impl ToAccountMetas, data: impl InstructionData) -> Instruction {
     Instruction { program_id: neonrelay_economy::id(), accounts: meta.to_account_metas(None), data: data.data() }
 }
 async fn send(ctx: &mut ProgramTestContext, signer: &Keypair, instruction: Instruction, ok: bool) {
-    // Distinct fee-payer nonce instruction avoids cached identical signatures on
-    // retries, so duplicate tests really execute the program's init constraint.
-    let nonce = Keypair::new().pubkey();
-    let unique = solana_sdk::system_instruction::transfer(&ctx.payer.pubkey(), &nonce, 1);
+    // Vary the compute budget to avoid cached identical signatures on retries;
+    // duplicate tests must really execute the program init constraint.
+    static NONCE: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(200_000);
+    let unique = solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_limit(
+        NONCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
     let hash = ctx.banks_client.get_latest_blockhash().await.unwrap();
     let tx = Transaction::new_signed_with_payer(&[unique, instruction], Some(&ctx.payer.pubkey()), &[&ctx.payer, signer], hash);
     let result = ctx.banks_client.process_transaction(tx).await;
