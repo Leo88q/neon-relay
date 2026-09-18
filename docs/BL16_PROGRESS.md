@@ -334,3 +334,18 @@ same checks so this gap does not recur silently.
   relay/substitution, packet rate limits/parser, connection ownership/lifetime,
   endpoint confirmation and client UI remain release gates. Nothing enabled for
   live game packets, payments or paid admission.
+
+### Part 20 — bounded envelope parsing and connection-owned keys (verified)
+
+- Added fixed seven-field envelope parser with 768-byte/8-KiB bounds, canonical
+  field encoding, safe expiry and no unknown/duplicate fields.
+- Moved seal ownership into original native connection state; disconnect/new
+  offer/redeem invalidates the old key. Added per-connection keygen cooldown,
+  pre-crypto attempt accounting and canonical decrypted-token validation.
+- Added 19 schema/size negatives, explicit no-OpenSSL fallback coverage and real
+  backend/native TLS tests showing valid ciphertext is unusable after disconnect,
+  replacement or attempt exhaustion, without consuming the backend token.
+- CI 35348842613 succeeded at e645784. Full local gates passed: backend 97/97,
+  onchain TS 32/32 and existing native/protocol/assets gates.
+- Game packet dispatch/client UI and active relay/substitution defenses remain
+  outstanding; payment and paid-admission flags remain disabled.

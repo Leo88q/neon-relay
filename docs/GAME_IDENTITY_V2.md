@@ -389,3 +389,48 @@ from the older `/v2/game/pair` route over UDP. This stage removes the plaintext
 secret from the test's sealed delivery path, not the remaining game transport,
 endpoint-authentication, relay, lifecycle and playtest release gates. Payments
 and paid admission remain disabled.
+
+## Part 20: bounded envelope parser and connection-owned keys (verified)
+
+The native entry point is now `GameConnectionIdentity::OpenSealedPairing` with
+one bounded JSON envelope, not individually supplied crypto fields. The private
+seal object is owned by the original connection. Disconnect/destruction, starting
+a new sealed offer or starting a redeem attempt releases the old object/key.
+Starting a sealed offer also clears the old identity and invalidates any pending
+HTTP completion, so an old reply cannot authenticate a newly pairing connection.
+
+Limits and rejection rules:
+
+- 768-byte maximum envelope and 8 KiB maximum JSON-parser allocation.
+- Exactly seven unique required fields; version must be integer 1, admission
+  flag boolean false, expiry an unexpired safe integer not beyond the signed
+  offer, crypto fields exact-length canonical lowercase hex.
+- Unknown/duplicate fields, wrong types, uppercase hex, truncated/oversized
+  fields and noncanonical decrypted token encoding are rejected.
+- At most eight opening attempts per key, including malformed JSON, before
+  further opening is refused and the key discarded. Size/schema validation
+  precedes X25519/AES work.
+- New key generation is limited to once per two seconds per connection, even
+  for failed initialization. A request inside that cooldown does not replace
+  the current offer. This is not a global/IP packet flood limit.
+- Expired keys are refused/discarded when opening is attempted; disconnect and
+  replacement destroy them immediately. There is no background expiry timer.
+- No-OpenSSL builds explicitly fail to create/open a sealed offer; the compiled
+  local harness verifies that fallback instead of silently sending plaintext.
+
+The real-backend/native TLS test now delivers one JSON envelope to the
+connection-owned decoder. Additional runs prove that a formerly valid envelope
+fails after disconnect, after key replacement, and after exhausting malformed
+attempts. The backend confirms those tokens were never consumed. Parser tests
+cover 19 malformed/schema/size cases alongside the existing crypto/TLS tests.
+
+Verified at `e645784`:
+https://github.com/Leo88q/neon-relay/actions/runs/35348842613
+Full local offline gates also passed (backend 97/97, onchain TS 32/32, compiled
+protocol/lifecycle checks). OpenSSL/native TLS execution was verified in CI.
+
+Still not enabled: network message dispatch, client UI, offer relay/substitution
+protection, complete game-channel authentication and paid admission. The bounds
+above are for this decoding boundary, not proof that the whole server resists
+network denial of service. Before wiring a packet handler, transport framing and
+preallocation limits must also be checked.
