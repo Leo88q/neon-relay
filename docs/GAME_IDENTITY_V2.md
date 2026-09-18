@@ -434,3 +434,20 @@ protection, complete game-channel authentication and paid admission. The bounds
 above are for this decoding boundary, not proof that the whole server resists
 network denial of service. Before wiring a packet handler, transport framing and
 preallocation limits must also be checked.
+
+## Part 21: stale HTTP cancellation and full server linking
+
+`GamePairingHttp::Poll` now checks the complete pending request generation via
+`GameConnectionIdentity::IsPending`, including deadline and clock validity,
+not merely the connection nonce. Starting a sealed offer leaves the nonce
+unchanged but invalidates the old pending HTTP request. Poll immediately removes
+and aborts that job, without waiting for the 10-second timeout or allowing a
+stale success/failure to install/clear a newer identity request. Cancellation
+cannot undo a backend redemption that already completed; this is local job and
+context cancellation, not transactional network rollback.
+
+The compiled TLS harness covers same-nonce request supersession, new sealed
+offer cancellation and disconnect with zero remaining adapter jobs. Full Linux
+server CMake compilation/linking and isolated map/game/HTTP initialization now
+also have a dedicated CI gate. Both passed at `1f5de78`, run 35350154080.
+No new packet handler, live login or payment feature is enabled by this gate.

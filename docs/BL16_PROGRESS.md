@@ -349,3 +349,25 @@ same checks so this gap does not recur silently.
   onchain TS 32/32 and existing native/protocol/assets gates.
 - Game packet dispatch/client UI and active relay/substitution defenses remain
   outstanding; payment and paid-admission flags remain disabled.
+
+### Part 21 — full Linux server build/boot and stale HTTP cancellation (verified)
+
+- Added an Ubuntu 24.04/Rust 1.89.0 CI job for the actual Release `game-server`
+  target, not a stub or a translation-unit-only check. All 155 build steps and
+  final executable linking succeeded.
+- Booted the linked server with isolated storage/map/SQLite, loopback-only bind,
+  no master registration, no inherited Neon Relay environment configuration and
+  automatic clean shutdown while empty. Missing-map negative control fails as
+  required. No client rendering or multiplayer playtest is claimed.
+- Corrected test setup after discovering that `-d` is not supported; use the
+  native `storage.cfg` path mechanism. Map validation uses actual initialization
+  plus a failing negative control, not a nonexistent informational log line.
+- Poll now cancels stale pairing jobs by request generation, not nonce alone.
+  Native TLS tests cover supersession/new seal/disconnect and ensure stale
+  failure does not invalidate the replacement request.
+- Verified source 1f5de78, CI 35350154080 SUCCESS (including native TLS).
+  Full local offline gates passed: backend 97/97, onchain TS 32/32, assets,
+  syntax, signer and protocol/lifecycle tests. Full server build ran in CI,
+  not in the local sandbox, where Rust/curl development dependencies are absent.
+- Outstanding: native client build and visual playtest, active relay defenses,
+  packet/UI integration and full economy/admission flow. Payments remain off.
