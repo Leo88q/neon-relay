@@ -7,10 +7,10 @@ GamePairingHttp::GamePairingHttp(IHttp &Http, std::string Origin, std::string Do
 	m_Http(Http), m_Origin(std::move(Origin)), m_Domain(std::move(Domain)) {}
 GamePairingHttp::~GamePairingHttp()
 {
-	for(auto &Pending : m_Pending)
+	for(auto &Entry : m_Pending)
 	{
-		Pending.Http->Abort();
-		if(auto Connection = Pending.Connection.lock()) Connection->Fail(Pending.Request);
+		Entry.Http->Abort();
+		if(auto Connection = Entry.Connection.lock()) Connection->Fail(Entry.Request);
 	}
 }
 bool GamePairingHttp::Start(const std::shared_ptr<GameConnectionIdentity> &Connection,

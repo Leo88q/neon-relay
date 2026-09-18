@@ -70,16 +70,16 @@ public:
 	}
 	// Poll uses the full request generation, not just the connection nonce.
 	// A new seal invalidates pending HTTP without replacing that nonce.
-	bool IsPending(const Request &Request, int64_t Now)
+	bool IsPending(const Request &PendingRequest, int64_t Now)
 	{
-		if(!Clock(Now) || !Matches(Request)) return false;
-		if(Now >= m_Deadline) { Fail(Request); return false; }
+		if(!Clock(Now) || !Matches(PendingRequest)) return false;
+		if(Now >= m_Deadline) { Fail(PendingRequest); return false; }
 		return true;
 	}
-	bool Complete(const Request &Request, const std::string &EchoNonce,
+	bool Complete(const Request &PendingRequest, const std::string &EchoNonce,
 		const AuthenticatedGameIdentity &Identity, int64_t Now)
 	{
-		if(!Clock(Now) || !Matches(Request))
+		if(!Clock(Now) || !Matches(PendingRequest))
 			return false;
 		m_Pending = false; // matching reply is terminal, including rejection
 		if(Now >= m_Deadline || EchoNonce != m_Nonce || Identity.Domain != m_Domain ||
@@ -88,9 +88,9 @@ public:
 		m_Identity = Identity;
 		return true;
 	}
-	void Fail(const Request &Request)
+	void Fail(const Request &PendingRequest)
 	{
-		if(Matches(Request))
+		if(Matches(PendingRequest))
 		{
 			m_Pending = false;
 			m_Identity.reset();
@@ -123,9 +123,9 @@ private:
 		m_LastNow = Now;
 		return true;
 	}
-	bool Matches(const Request &Request) const
+	bool Matches(const Request &PendingRequest) const
 	{
-		return m_Connected && m_Pending && Request.Serial == m_Serial && Request.Nonce == m_Nonce;
+		return m_Connected && m_Pending && PendingRequest.Serial == m_Serial && PendingRequest.Nonce == m_Nonce;
 	}
 	bool Active(int64_t Now)
 	{
