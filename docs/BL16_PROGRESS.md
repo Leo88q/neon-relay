@@ -55,3 +55,26 @@ Do not run destructive matting helpers on already normalized sources. For replac
   explicitly disables joining/payment even when both mints are configured.
 - See `DUAL_CURRENCY_LOBBY.md` for the coordinated backend/Rust/Android migration
   requirements and remaining security checks.
+
+## Part 3: legacy payment transport hardening before v2 migration
+
+- Backend ticket reads now require finalized commitment, matching program owner,
+  non-executable account, canonical base64, exact Borsh layout/discriminator,
+  player/reference/bump binding, supported kind and safe positive amount.
+  Unsafe u64 -> number coercion fails closed. This does not yet compare against
+  mint-qualified v2 configuration or tier-specific expected fees.
+- Android base58 encoding now reverses the accumulated digits; message compiler
+  includes program ID before serialization, writes program_id_index, merges
+  duplicate account privileges and places the payer first.
+- WalletManager decodes blockhash as base58, validates RPC config owner/encoding,
+  and wraps messages in a one-signature unsigned transaction for the wallet.
+- Config discriminator/layout, claim proof sizes, entry inputs, key sizes, hex
+  and the 1232-byte transaction limit are validated before submission.
+- Added backend negative tests and Android pure JVM tests with pinned shared
+  reference/PDA vectors and a wire-message parser. Backend total: 57 tests.
+- Android tests have NOT run in this sandbox: no Java/Kotlin/Android toolchain;
+  attempts to install it failed because the package mirror was unreachable.
+  Run `cd android && ./gradlew :app:testDebugUnitTest` in an Android build
+  environment. No wallet or validator transaction was broadcast here.
+- V2 state/DB/PDA migration, tier fee enforcement and the five-button client
+  menu are still pending. All v2 payments remain disabled.

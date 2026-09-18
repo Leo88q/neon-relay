@@ -146,6 +146,9 @@ class WalletManager(
                     put(EconomyTxBuilder.base58Encode(EconomyTxBuilder.configAddress(programIdBytes)))
                     put(org.json.JSONObject().put("encoding", "base64"))
                 })
+                val configAccount = configData.getJSONObject("value")
+                require(configAccount.getString("owner") == programId && !configAccount.getBoolean("executable")) { "invalid economy config owner" }
+                require(configAccount.getJSONArray("data").getString(1) == "base64") { "invalid account encoding" }
                 val config = EconomyTxBuilder.parseConfig(
                     android.util.Base64.decode(
                         configData.getJSONObject("value").getJSONArray("data").getString(0),
@@ -153,10 +156,9 @@ class WalletManager(
                     ),
                 )
                 require(!config.paused) { "economy program is paused" }
-                val blockhash = android.util.Base64.decode(
+                val blockhash = EconomyTxBuilder.base58Decode(
                     rpc(rpcUrl, "getLatestBlockhash", org.json.JSONArray())
                         .getJSONObject("value").getString("blockhash"),
-                    android.util.Base64.DEFAULT,
                 )
                 val resolvedEpoch = if (epoch > 0) epoch else httpGetJson("$backendUrl/v1/economy/current-epoch").getLong("epoch")
                 val message = when (action) {
@@ -180,7 +182,7 @@ class WalletManager(
                     }
                     else -> throw IllegalArgumentException("unknown economy action: $action")
                 }
-                val sent = signAndSendTransactions(arrayOf(message), arrayOf(account.publicKey))
+                val sent = signAndSendTransactions(arrayOf(EconomyTxBuilder.unsignedTransaction(message)), arrayOf(account.publicKey))
                 sent.signature ?: ""
             }.asWalletResult()
         }.getOrElse { WalletResult.Failure(it.toWalletError()) }

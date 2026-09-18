@@ -153,14 +153,18 @@ export interface TicketStatus {
 
 /** Borsh layout after the 8-byte discriminator: player(32) ref(32) kind(u8)
  *  amount(u64le) paid_at(i64le) bump(u8). */
+export const TICKET_DISCRIMINATOR = createHash("sha256").update("account:EntryTicket").digest().subarray(0, 8);
+const TICKET_SIZE = 8 + 32 + 32 + 1 + 8 + 8 + 1;
+
 export function parseTicketData(data: Buffer): TicketStatus {
-  if (data.length < 8 + 32 + 32 + 1 + 8 + 8 + 1) return { ticketed: false };
-  return {
-    ticketed: true,
-    kind: data.readUInt8(8 + 64),
-    amountMicro: Number(data.readBigUInt64LE(8 + 65)),
-    paidAt: Number(data.readBigInt64LE(8 + 73)),
-  };
+  if (data.length !== TICKET_SIZE || !data.subarray(0, 8).equals(TICKET_DISCRIMINATOR)) return { ticketed: false };
+  const kind = data.readUInt8(72);
+  const amount = data.readBigUInt64LE(73);
+  const paidAt = data.readBigInt64LE(81);
+  // Legacy JSON API uses number. Reject, never silently round an on-chain u64.
+  if (kind > 1 || amount === 0n || amount > BigInt(Number.MAX_SAFE_INTEGER) ||
+      paidAt < 0n || paidAt > BigInt(Number.MAX_SAFE_INTEGER)) return { ticketed: false };
+  return { ticketed: true, kind, amountMicro: Number(amount), paidAt: Number(paidAt) };
 }
 
 export type RpcCaller = (method: string, params: unknown[]) => Promise<unknown>;
@@ -171,12 +175,27 @@ export async function ticketStatus(
   reference: Buffer,
   walletRaw: Buffer,
 ): Promise<TicketStatus> {
-  const address = base58Encode(ticketAddress(reference, walletRaw, base58Decode(programIdB58)));
-  const res = (await rpc("getAccountInfo", [address, { encoding: "base64" }])) as {
-    value?: { data?: [string, string] };
+  const program = base58Decode(programIdB58);
+  if (program.length !== 32 || reference.length !== 32 || walletRaw.length !== 32) {
+    throw new Error("ticket address inputs must be 32 bytes");
+  }
+  const { address, bump } = findProgramAddress([ENTRY_SEED, reference, walletRaw], program);
+  const res = (await rpc("getAccountInfo", [base58Encode(address), { encoding: "base64", commitment: "finalized" }])) as {
+    value?: { owner?: unknown; executable?: unknown; data?: unknown };
   };
-  if (!res?.value?.data?.[0]) return { ticketed: false };
-  return parseTicketData(Buffer.from(res.value.data[0], "base64"));
+  const account = res?.value;
+  if (!account || account.owner !== programIdB58 || account.executable !== false ||
+      !Array.isArray(account.data) || account.data.length !== 2 || account.data[1] !== "base64" ||
+      typeof account.data[0] !== "string") return { ticketed: false };
+  // Strict canonical decoding also bounds memory allocation from untrusted RPC.
+  const encoded = account.data[0];
+  if (encoded.length !== Math.ceil(TICKET_SIZE / 3) * 4) return { ticketed: false };
+  const data = Buffer.from(encoded, "base64");
+  if (data.toString("base64") !== encoded) return { ticketed: false };
+  const parsed = parseTicketData(data);
+  if (!parsed.ticketed || !data.subarray(8, 40).equals(walletRaw) ||
+      !data.subarray(40, 72).equals(reference) || data[89] !== bump) return { ticketed: false };
+  return parsed;
 }
 
 // ---------------------------------------------------------------- epoch close
