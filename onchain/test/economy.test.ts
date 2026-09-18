@@ -71,7 +71,7 @@ test("no hardcoded payment mint: SKR arrives only via initialize()", () => {
 	// no base58 pubkey literals except the program's own declare_id
 	const ids = libRs.match(/[1-9A-HJ-NP-Za-km-z]{32,44}/g) ?? [];
 	assert.deepEqual(ids.filter((x) => x !== ECONOMY_PROGRAM_ID_PLACEHOLDER), []);
-	assert.match(libRs, /pub mint: Account<'info, Mint>/);
+	assert.match(libRs, /pub mint: Box<Account<'info, Mint>>/);
 	assert.match(libRs, /constraint = treasury_ata\.mint == mint\.key\(\)/);
 	// checked arithmetic on the rake split
 	assert.match(libRs, /checked_mul\(u64::from\(config\.rake_bps\)\)/);

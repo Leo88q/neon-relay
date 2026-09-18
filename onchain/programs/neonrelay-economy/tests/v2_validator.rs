@@ -19,6 +19,9 @@ fn send(rpc: &RpcClient, payer: &Keypair, extra: &[&Keypair], instructions: Vec<
     let result = rpc.send_and_confirm_transaction_with_spinner_and_config(&tx, CommitmentConfig::confirmed(),
         RpcSendTransactionConfig { skip_preflight: true, ..Default::default() });
     assert_eq!(result.is_ok(), ok, "validator transaction: {result:?}");
+    if !ok {
+        assert!(result.unwrap_err().get_transaction_error().is_some(), "transport failure is not transaction rejection");
+    }
 }
 fn state<T: AccountDeserialize>(rpc: &RpcClient, key: Pubkey) -> T {
     T::try_deserialize(&mut rpc.get_account_data(&key).unwrap().as_slice()).unwrap()
