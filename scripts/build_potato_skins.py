@@ -1,46 +1,38 @@
 #!/usr/bin/env python3
-"""Build ten articulated classic skin sheets via build_potato_animated.py.
-Keep v2 portrait sources and their collage unchanged as historical references.
-Live sheets contain separate body, dark outline, hand, feet and six eye states.
+"""Bake generated RGBA bodies with painted faces and separate animated limbs.
+No rematting of canonical sources; no procedural face or legacy skin regeneration.
 """
-
-import sys
 from pathlib import Path
-
-from PIL import Image
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_potato_animated import build_sheet
-from build_potato_weapon_sheet import prepare_source  # noqa: E402
+from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "assets-src" / "potato" / "v2"
-SKINS = ROOT / "data" / "skins"
+SRC = ROOT / 'assets-src/potato/generated_bodies'
+POTATOES = ["cool_guy_1", "cool_girl_1", "guy_2", "girl_2", "guy_3",
+           "girl_3", "guy_4", "girl_4", "legend_guy", "legend_girl"]
 
-POTATOES = [
-    "cool_guy_1", "cool_girl_1", "guy_2", "girl_2", "guy_3",
-    "girl_3", "guy_4", "girl_4", "legend_guy", "legend_girl",
-]
-def main() -> int:
-    SRC.mkdir(parents=True, exist_ok=True)
-    SKINS.mkdir(parents=True, exist_ok=True)
-    sources = {name: prepare_source(SRC / f"{name}.png", 512, 480) for name in POTATOES}
 
-    coll = Image.new("RGBA", (1280, 512), (0, 0, 0, 0))
-    for i, name in enumerate(POTATOES):
-        cell = sources[name].resize((256, 256), Image.LANCZOS)
-        coll.paste(cell, ((i % 5) * 256, (i // 5) * 256))
-    coll.save(SRC / "potato_v2_all_10.png")
-    print(f"[collage] {SRC / 'potato_v2_all_10.png'} 1280x512")
+def build_sheet(name):
+    with Image.open(SRC / f'{name}.png') as image:
+        assert image.mode == 'RGBA' and image.size == (1024, 1024)
+        art = image.crop(image.getchannel('A').getbbox())
+    # Reserve a margin for antialiasing and outline; render metrics stay bounded.
+    art.thumbnail((76, 76), Image.Resampling.LANCZOS)
+    sheet = Image.new('RGBA', (256, 128))
+    sheet.paste(art, ((96-art.width)//2, (96-art.height)//2))
+    mask = sheet.crop((0, 0, 96, 96)).getchannel('A').filter(ImageFilter.MaxFilter(3))
+    border = Image.new('RGBA', (96, 96), '#192333'); border.putalpha(mask)
+    sheet.paste(border, (96, 0))
+    with Image.open(SRC / 'limbs.png') as limbs:
+        sheet.paste(limbs, (192, 0))
+    # Entire eye row deliberately empty: face is in the generated body art.
+    return sheet
 
-    authoring = ROOT / "assets-src/potato/articulated"
-    authoring.mkdir(parents=True, exist_ok=True)
+
+def main():
     for name in POTATOES:
-        build_sheet(name, high_resolution=True).save(authoring / f"{name}.png")
-        build_sheet(name).save(SKINS / f"potato_{name}.png")
-        print(f"[skin] potato_{name}.png: separate body/limbs/eyes")
-    return 0
+        build_sheet(name).save(ROOT / f'data/skins/potato_{name}.png')
+    print('PASS: ten generated bodies, independent limbs, no eye/emote cells')
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__ == '__main__':
+    main()

@@ -496,10 +496,7 @@ void CMenus::RenderLoadingDirect(const char *pCaption, const char *pContent, std
 		// the menu background is not loaded yet.
 		return;
 	}
-	if(!GameClient()->m_MenuBackground.Render())
-	{
-		RenderBackground();
-	}
+	RenderBackground();
 
 	m_LoadingState.m_LastRender = Now;
 
@@ -808,10 +805,7 @@ void CMenus::Render()
 	}
 	else
 	{
-		if(!GameClient()->m_MenuBackground.Render())
-		{
-			RenderBackground();
-		}
+		RenderBackground();
 		ms_ColorTabbarInactive = ms_ColorTabbarInactiveOutgame;
 		ms_ColorTabbarActive = ms_ColorTabbarActiveOutgame;
 		ms_ColorTabbarHover = ms_ColorTabbarHoverOutgame;
@@ -850,7 +844,7 @@ void CMenus::Render()
 		else
 		{
 			CUIRect TabBar, MainView;
-			Screen.HSplitTop(24.0f, &TabBar, &MainView);
+			Screen.HSplitTop(44.0f, &TabBar, &MainView);
 
 			if(m_MenuPage == PAGE_RACES)
 				RenderRaceLobby(MainView);
@@ -896,7 +890,7 @@ void CMenus::Render()
 		else
 		{
 			CUIRect TabBar, MainView;
-			Screen.HSplitTop(24.0f, &TabBar, &MainView);
+			Screen.HSplitTop(44.0f, &TabBar, &MainView);
 
 			if(m_GamePage == PAGE_GAME)
 			{
@@ -2098,6 +2092,7 @@ void CMenus::SetActive(bool Active)
 
 void CMenus::OnShutdown()
 {
+	for(auto &Texture : m_aCharacterPortraits) Graphics()->UnloadTexture(&Texture);
 	m_CommunityIcons.Shutdown();
 }
 
@@ -2251,55 +2246,11 @@ void CMenus::UpdateColors()
 
 void CMenus::RenderBackground()
 {
-	const float ScreenHeight = 300.0f;
-	const float ScreenWidth = ScreenHeight * Graphics()->ScreenAspect();
-	Graphics()->MapScreenToSize(ScreenWidth, ScreenHeight);
-
-	// render background color
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(ms_GuiColor.WithAlpha(1.0f));
-	const IGraphics::CQuadItem BackgroundQuadItem = IGraphics::CQuadItem(0, 0, ScreenWidth, ScreenHeight);
-	Graphics()->QuadsDrawTL(&BackgroundQuadItem, 1);
-	Graphics()->QuadsEnd();
-
-	// render the tiles
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.045f);
-	const float Size = 15.0f;
-	const float OffsetTime = std::fmod(Client()->GlobalTime() * 0.15f, 2.0f);
-	IGraphics::CQuadItem aCheckerItems[64];
-	size_t NumCheckerItems = 0;
-	const int NumItemsWidth = std::ceil(ScreenWidth / Size);
-	const int NumItemsHeight = std::ceil(ScreenHeight / Size);
-	for(int y = -2; y < NumItemsHeight; y++)
-	{
-		for(int x = 0; x < NumItemsWidth + 4; x += 2)
-		{
-			aCheckerItems[NumCheckerItems] = IGraphics::CQuadItem((x - 2 * OffsetTime + (y & 1)) * Size, (y + OffsetTime) * Size, Size, Size);
-			NumCheckerItems++;
-			if(NumCheckerItems == std::size(aCheckerItems))
-			{
-				Graphics()->QuadsDrawTL(aCheckerItems, NumCheckerItems);
-				NumCheckerItems = 0;
-			}
-		}
-	}
-	if(NumCheckerItems != 0)
-		Graphics()->QuadsDrawTL(aCheckerItems, NumCheckerItems);
-	Graphics()->QuadsEnd();
-
-	// render border fade
-	Graphics()->TextureSet(m_TextureBlob);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-	const IGraphics::CQuadItem BlobQuadItem = IGraphics::CQuadItem(-100, -100, ScreenWidth + 200, ScreenHeight + 200);
-	Graphics()->QuadsDrawTL(&BlobQuadItem, 1);
-	Graphics()->QuadsEnd();
-
-	// restore screen
 	Ui()->MapScreen();
+	const CUIRect Screen = *Ui()->Screen();
+	Screen.Draw(ColorRGBA(0.025f, 0.035f, 0.065f, 1.0f), 0, 0);
+	CUIRect Ambient = {Screen.x, Screen.y, Screen.w * 0.58f, Screen.h};
+	Ambient.Draw(ColorRGBA(0.035f, 0.065f, 0.105f, 1.0f), 0, 0);
 }
 
 int CMenus::DoButton_CheckBox_Tristate(const void *pId, const char *pText, TRISTATE Checked, const CUIRect *pRect)

@@ -171,21 +171,6 @@
    "h": 66667,
    "shape": "rect",
    "visibilities": [
-    "ingame",
-    "extra-menu"
-   ],
-   "behavior": {
-    "type": "predefined",
-    "id": "emoticon"
-   }
-  },
-  {
-   "x": 116667,
-   "y": 133333,
-   "w": 83333,
-   "h": 66667,
-   "shape": "rect",
-   "visibilities": [
     "-ingame",
     "extra-menu"
    ],

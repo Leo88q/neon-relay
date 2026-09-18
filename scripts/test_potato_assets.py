@@ -19,8 +19,8 @@ class Assets(unittest.TestCase):
         for name in POTATOES:
             im = Image.open(ROOT / f'data/skins/potato_{name}.png')
             self.assertEqual((im.size, im.mode), ((256, 128), 'RGBA'))
-            with Image.open(ROOT / f'assets-src/potato/articulated/{name}.png') as source:
-                self.assertEqual((source.size, source.mode), ((1024, 512), 'RGBA'))
+            with Image.open(ROOT / f'assets-src/potato/generated_bodies/{name}.png') as source:
+                self.assertEqual((source.size, source.mode), ((1024, 1024), 'RGBA'))
             a = np.array(im.getchannel('A'))
             box = im.crop((0, 0, 96, 96)).getchannel('A').getbbox()
             self.assertIsNotNone(box)
@@ -28,15 +28,12 @@ class Assets(unittest.TestCase):
             self.assertLessEqual(box[3] - box[1], 80)
             self.assertTrue(a[:96, 96:192].any())
             cells = [(192, 0, 224, 32), (224, 0, 256, 32), (192, 32, 256, 64), (192, 64, 256, 96)]
-            cells += [(64+i*32, 96, 96+i*32, 128) for i in range(6)]
             for cell in cells:
                 self.assertIsNotNone(im.crop(cell).getchannel('A').getbbox())
-            eyes = [im.crop(cell).tobytes() for cell in cells[4:]]
-            self.assertEqual(len(set(eyes)), 6)
             border = np.array(im.crop((96, 0, 192, 96)))
             visible = border[..., 3] > 128
             self.assertTrue((border[visible, :3] < 100).all())
-            self.assertFalse(a[96:, :64].any())
+            self.assertFalse(a[96:].any())
 
     def test_approved_prototype_motion_geometry(self):
         # User approved motion at this revision; detail work must not move limbs
@@ -45,13 +42,18 @@ class Assets(unittest.TestCase):
         old = np.array(Image.open(io.BytesIO(original)).convert('RGBA'))
         new = np.array(Image.open(ROOT / 'data/skins/potato_cool_guy_1.png'))
         self.assertTrue(np.array_equal(old[:96, 192:], new[:96, 192:]))
-        self.assertTrue(np.array_equal(old[:96, :192, 3], new[:96, :192, 3]))
-        for i in range(6):
-            x = 64 + i*32
-            def center(image):
-                a = image[96:128, x:x+32, 3].astype(float)
-                return (a * np.arange(32)[None, :]).sum() / a.sum()
-            self.assertAlmostEqual(center(new) - center(old), -1.5, delta=0.05)
+
+    def test_no_legacy_runtime_skins(self):
+        expected = {f'potato_{name}.png' for name in POTATOES}
+        self.assertEqual({p.name for p in (ROOT/'data/skins').glob('*.png')}, expected)
+        self.assertFalse(list((ROOT/'data/skins7').rglob('*.png')))
+        for name in POTATOES:
+            with Image.open(ROOT/f'assets-src/potato/generated_bodies/{name}.png') as source:
+                alpha = np.array(source.getchannel('A'))
+                self.assertFalse(alpha[0].any() or alpha[-1].any() or alpha[:,0].any() or alpha[:,-1].any())
+                self.assertTrue((alpha == 255).any())
+                self.assertTrue(((alpha > 0) & (alpha < 255)).any())
+            self.assertEqual((ROOT/f'data/portraits/potato_{name}.png').read_bytes(), (ROOT/f'assets-src/potato/generated_bodies/{name}.png').read_bytes())
 
     def test_atlas_outside_rects_unchanged(self):
         original = subprocess.check_output(['git', 'show', 'aef3363:data/game.png'], cwd=ROOT)

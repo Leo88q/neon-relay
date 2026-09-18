@@ -58,8 +58,21 @@ class MenuContract(unittest.TestCase):
                 self.assertTrue(row[field]['ru'])
                 self.assertTrue(row[field]['en'])
         players = self.text('src/game/client/components/players.cpp')
-        self.assertIn('!IsPotatoCatalogSkin(GameClient()->m_aClients[i].m_aSkinName)', players)
+        self.assertNotIn('ApplySkin(NinjaTeeRenderInfo()', players)
         self.assertIn('TEE_EFFECT_FROZEN | TEE_NO_WEAPON', players)
+
+    def test_fixed_faces_and_retired_wheel(self):
+        self.assertFalse((ROOT/'src/game/client/components/emoticon.cpp').exists())
+        self.assertNotIn('RenderTee7(', self.text('src/game/client/render.cpp'))
+        self.assertNotIn('m_aEyes[TeeEye]', self.text('src/game/client/render.cpp'))
+        skins = self.text('src/game/client/components/skins.cpp')
+        self.assertIn('IsPotatoCatalogSkin(pName) ? pName : "potato_cool_guy_1"', skins)
+        self.assertNotIn('LoadSkinDirect("default")', skins)
+        touch = json.loads(self.text('data/touch_controls.json'))
+        self.assertFalse(any(b['behavior'].get('id') == 'emoticon' for b in touch['touch-buttons']))
+        start = self.text('src/game/client/components/menus_start.cpp')
+        self.assertIn('RenderCharacterPortrait', start)
+        self.assertIn('Compact', start)
 
     def test_no_fake_purchase_or_rankings(self):
         pages = self.text('src/game/client/components/menus_settings_wallet.cpp')

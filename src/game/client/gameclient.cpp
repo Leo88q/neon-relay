@@ -14,7 +14,6 @@
 #include "components/damageind.h"
 #include "components/debughud.h"
 #include "components/effects.h"
-#include "components/emoticon.h"
 #include "components/freezebars.h"
 #include "components/ghost.h"
 #include "components/hud.h"
@@ -151,7 +150,6 @@ void CGameClient::OnConsoleInit()
 					      &m_DamageInd,
 					      &m_Hud,
 					      &m_Spectator,
-					      &m_Emoticon,
 					      &m_InfoMessages,
 					      &m_Chat,
 					      &m_Broadcast,
@@ -175,7 +173,6 @@ void CGameClient::OnConsoleInit()
 						  &m_Scoreboard,
 						  &m_Motd, // for pressing esc to remove it
 						  &m_Spectator,
-						  &m_Emoticon,
 						  &m_ImportantAlert,
 						  &m_Menus,
 						  &m_Controls,
@@ -4555,39 +4552,8 @@ void CGameClient::RefreshSkin(const std::shared_ptr<CManagedTeeRenderInfo> &pMan
 	CTeeRenderInfo &TeeInfo = pManagedTeeRenderInfo->TeeRenderInfo();
 	const CSkinDescriptor &SkinDescriptor = pManagedTeeRenderInfo->SkinDescriptor();
 
-	if(SkinDescriptor.m_Flags & CSkinDescriptor::FLAG_SIX)
-	{
-		TeeInfo.Apply(m_Skins.Find(SkinDescriptor.m_aSkinName));
-	}
-
-	if(SkinDescriptor.m_Flags & CSkinDescriptor::FLAG_SEVEN)
-	{
-		for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
-		{
-			for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
-			{
-				m_Skins7.FindSkinPart(Part, SkinDescriptor.m_aSixup[Dummy].m_aaSkinPartNames[Part], true)->ApplyTo(TeeInfo.m_aSixup[Dummy]);
-
-				if(SkinDescriptor.m_aSixup[Dummy].m_XmasHat)
-				{
-					TeeInfo.m_aSixup[Dummy].m_HatTexture = m_Skins7.XmasHatTexture();
-				}
-				else
-				{
-					TeeInfo.m_aSixup[Dummy].m_HatTexture.Invalidate();
-				}
-
-				if(SkinDescriptor.m_aSixup[Dummy].m_BotDecoration)
-				{
-					TeeInfo.m_aSixup[Dummy].m_BotTexture = m_Skins7.BotDecorationTexture();
-				}
-				else
-				{
-					TeeInfo.m_aSixup[Dummy].m_BotTexture.Invalidate();
-				}
-			}
-		}
-	}
+	TeeInfo.Apply(m_Skins.Find(SkinDescriptor.m_aSkinName));
+	for(auto &Sixup : TeeInfo.m_aSixup) Sixup.Reset();
 
 	if(SkinDescriptor.m_Flags != 0 && pManagedTeeRenderInfo->m_RefreshCallback)
 	{

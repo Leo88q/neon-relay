@@ -45,7 +45,7 @@ jobs:
       - name: Branding scan (release mode) + translation lockstep
         run: ./scripts/check_branding.sh --release --check-translations
       - name: Generated skins match the generator (determinism)
-        run: python3 scripts/build_neon_skins.py --check
+        run: python3 scripts/test_potato_assets.py
       - name: Generated UI art matches the generator (determinism)
         run: python3 scripts/build_neon_ui_art.py --check
       - name: Asset manifest validation (coverage, hashes, license texts)
@@ -124,6 +124,42 @@ jobs:
           PYLOG
             exit 1
           fi
+
+  native-client:
+    name: Linux client build and desktop/portrait boot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install client toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build pkg-config libcurl4-openssl-dev libssl-dev libsqlite3-dev zlib1g-dev libsdl2-dev libfreetype6-dev libogg-dev libopus-dev libopusfile-dev libpng-dev libwavpack-dev libglew-dev libnotify-dev xvfb xauth xdotool imagemagick
+          rustup toolchain install 1.89.0 --profile minimal
+          rustup default 1.89.0
+      - name: Compile and render native client
+        env:
+          CARGO_BUILD_JOBS: 2
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! ./scripts/test_native_client.sh 2>&1 | tee "$RUNNER_TEMP/native-client.log"; then
+            python3 - <<'PYLOG'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          logs = [root / "native-client.log"] + list((root / "client-preview").glob("*.log"))
+          tail = "\n".join(p.read_text(errors="replace")[-2200:] for p in logs)[-3500:]
+          print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
+          PYLOG
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-client-preview
+          path: ${{ runner.temp }}/client-preview/
+          retention-days: 7
 
   # Builds the vendored ed25519-donna + match signer + CLI tool with plain
   # gcc/g++, signs fixed vectors and cross-verifies with node:crypto.

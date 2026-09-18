@@ -35,7 +35,6 @@ static const constexpr float FONTSIZE = 15.0f;
 const CMenusIngameTouchControls::CBehaviorFactoryEditor CMenusIngameTouchControls::BEHAVIOR_FACTORIES_EDITOR[] = {
 	{CTouchControls::CIngameMenuTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CIngameMenuTouchButtonBehavior>(); }},
 	{CTouchControls::CExtraMenuTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CExtraMenuTouchButtonBehavior>(0); }},
-	{CTouchControls::CEmoticonTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CEmoticonTouchButtonBehavior>(); }},
 	{CTouchControls::CSpectateTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CSpectateTouchButtonBehavior>(); }},
 	{CTouchControls::CSwapActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CSwapActionTouchButtonBehavior>(); }},
 	{CTouchControls::CUseActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CUseActionTouchButtonBehavior>(); }},

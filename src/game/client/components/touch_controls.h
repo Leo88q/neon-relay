@@ -301,18 +301,6 @@ public:
 		char m_aLabel[16];
 	};
 
-	class CEmoticonTouchButtonBehavior : public CPredefinedTouchButtonBehavior
-	{
-	public:
-		static constexpr const char *const BEHAVIOR_ID = "emoticon";
-
-		CEmoticonTouchButtonBehavior() :
-			CPredefinedTouchButtonBehavior(BEHAVIOR_ID) {}
-
-		CButtonLabel GetLabel() const override;
-		void OnDeactivate(bool ByFinger) override;
-	};
-
 	class CSpectateTouchButtonBehavior : public CPredefinedTouchButtonBehavior
 	{
 	public:

@@ -39,10 +39,8 @@ class CPlayers : public CComponent
 	int m_WeaponEmoteQuadContainerIndex;
 	int m_aWeaponSpriteMuzzleQuadContainerIndex[NUM_WEAPONS];
 
-	void CreateNinjaTeeRenderInfo();
 	void CreateSpectatorTeeRenderInfo();
 
-	std::shared_ptr<CManagedTeeRenderInfo> m_pNinjaTeeRenderInfo;
 	std::shared_ptr<CManagedTeeRenderInfo> m_pSpectatorTeeRenderInfo;
 
 public:
@@ -56,7 +54,6 @@ public:
 	void OnInit() override;
 	void OnRender() override;
 
-	const std::shared_ptr<CManagedTeeRenderInfo> &NinjaTeeRenderInfo() const { return m_pNinjaTeeRenderInfo; }
 	const std::shared_ptr<CManagedTeeRenderInfo> &SpectatorTeeRenderInfo() const { return m_pSpectatorTeeRenderInfo; }
 };
 

@@ -16,6 +16,7 @@
 #include <game/client/ui.h>
 #include <game/localization.h>
 #include <game/version.h>
+#include <algorithm>
 
 #if defined(CONF_PLATFORM_ANDROID)
 #include <android/android_main.h>
@@ -23,36 +24,50 @@
 
 void CMenusStart::RenderStartMenu(CUIRect MainView)
 {
-	GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_START);
-
-	// render logo
-	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_BANNER].m_Id);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1, 1, 1, 1);
-	IGraphics::CQuadItem QuadItem(MainView.w / 2 - 170, 60, 360, 103);
-	Graphics()->QuadsDrawTL(&QuadItem, 1);
-	Graphics()->QuadsEnd();
-
-	const float Rounding = 10.0f;
-	const float VMargin = MainView.w / 2 - 190.0f;
-
-	CUIRect Button;
-	int NewPage = -1;
-
-	// Exactly five product destinations. Escape/Q retain the quit confirmation.
-	CUIRect Menu;
-	MainView.VMargin(VMargin, &Menu);
-	Menu.HSplitTop(180.0f, nullptr, &Menu);
+	const float VMargin = std::max(16.0f, MainView.w * 0.04f);
+	const bool Russian = str_find(g_Config.m_ClLanguagefile, "russian") != nullptr;
+	CUIRect Content, Header, Hero, Menu;
+	MainView.Margin(VMargin, &Content);
+	Content.HSplitTop(64.0f, &Header, &Content);
+	Ui()->DoLabel(&Header, "NEON RELAY", 34.0f, TEXTALIGN_ML);
+	Content.HSplitBottom(34.0f, &Content, nullptr);
+	bool Compact = MainView.w < 760.0f;
+#if defined(CONF_PLATFORM_ANDROID)
+	Compact = true;
+#endif
+	if(Compact)
+	{
+		Content.HSplitTop(std::min(136.0f, Content.h*0.30f), &Hero, &Menu);
+		Menu.HSplitTop(12.0f, nullptr, &Menu);
+	}
+	else
+	{
+		Content.VSplitLeft(Content.w*0.55f, &Hero, &Menu);
+		Menu.VSplitLeft(20.0f, nullptr, &Menu);
+	}
+	Hero.Draw(ColorRGBA(0.065f, 0.10f, 0.16f, 1.0f), IGraphics::CORNER_ALL, 18.0f);
+	CUIRect Art = Hero;
+	Art.Margin(8.0f, &Art);
+	if(!Compact)
+	{
+		CUIRect Caption;
+		Art.HSplitBottom(52.0f, &Art, &Caption);
+		Ui()->DoLabel(&Caption, Russian ? "Твой маршрут. Твой стиль." : "Your route. Your style.", 20.0f, TEXTALIGN_MC);
+	}
+	GameClient()->m_Menus.RenderCharacterPortrait(Art, 0);
 	const char *apLabels[] = {Localize("Play", "Start menu"), Localize("Characters"), Localize("Wallet"), Localize("Leaders"), Localize("Settings")};
 	const int aPages[] = {CMenus::PAGE_RACES, CMenus::PAGE_CHARACTERS, CMenus::PAGE_WALLET, CMenus::PAGE_LEADERS, CMenus::PAGE_SETTINGS};
 	const int aKeys[] = {KEY_P, KEY_C, KEY_W, KEY_L, KEY_S};
-	const char *apImages[] = {"play_game", nullptr, nullptr, nullptr, "settings"};
 	static CButtonContainer s_aButtons[5];
+	int NewPage = -1;
+	const float ButtonHeight = std::min(62.0f, (Menu.h-32.0f)/5.0f);
 	for(int i = 0; i < 5; ++i)
 	{
-		Menu.HSplitTop(40.0f, &Button, &Menu);
+		CUIRect Button;
+		Menu.HSplitTop(ButtonHeight, &Button, &Menu);
 		Menu.HSplitTop(8.0f, nullptr, &Menu);
-		if(GameClient()->m_Menus.DoButton_Menu(&s_aButtons[i], apLabels[i], 0, &Button, BUTTONFLAG_LEFT, g_Config.m_ClShowStartMenuImages ? apImages[i] : nullptr, IGraphics::CORNER_ALL, Rounding) || CheckHotKey(aKeys[i]) || (i == 0 && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
+		const ColorRGBA Color = i == 0 ? ColorRGBA(0.08f, 0.48f, 0.51f, 1.0f) : ColorRGBA(0.09f, 0.13f, 0.20f, 1.0f);
+		if(GameClient()->m_Menus.DoButton_Menu(&s_aButtons[i], apLabels[i], 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 12.0f, 0.0f, Color) || CheckHotKey(aKeys[i]) || (i == 0 && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 			NewPage = aPages[i];
 	}
 	const bool Escape = Ui()->ConsumeHotkey(CUi::HOTKEY_ESCAPE);

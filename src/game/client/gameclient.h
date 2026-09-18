@@ -40,7 +40,6 @@
 #include "components/damageind.h"
 #include "components/debughud.h"
 #include "components/effects.h"
-#include "components/emoticon.h"
 #include "components/flow.h"
 #include "components/freezebars.h"
 #include "components/ghost.h"
@@ -174,7 +173,6 @@ public:
 	CScoreboard m_Scoreboard;
 	CStatboard m_Statboard;
 	CSounds m_Sounds;
-	CEmoticon m_Emoticon;
 	CDamageInd m_DamageInd;
 	CTouchControls m_TouchControls;
 	CVoting m_Voting;

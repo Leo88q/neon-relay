@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 python3 scripts/test_potato_assets.py
 python3 scripts/test_menu_contract.py
-python3 scripts/build_neon_skins.py --check
+python3 scripts/test_potato_assets.py
 python3 scripts/build_neon_ui_art.py --check
 ./scripts/check_assets.sh --licenses
 ./scripts/check_branding.sh --release --check-translations

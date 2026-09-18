@@ -19,6 +19,7 @@
 #include <base/str.h>
 #include <engine/graphics.h>
 #include <engine/textrender.h>
+#include <engine/storage.h>
 #include <game/client/ui.h>
 #include <game/localization.h>
 #include <neonrelay/wallet_bridge.h>
@@ -238,6 +239,26 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		SetMenuPage(PAGE_INTERNET);
 }
 
+void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
+{
+	if(Index < 0 || Index >= 10) return;
+	auto &Texture = m_aCharacterPortraits[Index];
+	if(!Texture.IsValid())
+	{
+		char aPath[128];
+		str_format(aPath, sizeof(aPath), "portraits/%s.png", POTATO_CATALOG[Index].m_pSkin);
+		Texture = Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
+	}
+	if(!Texture.IsValid()) return;
+	const float Size = std::min(Rect.w, Rect.h);
+	Graphics()->TextureSet(Texture);
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(1, 1, 1, 1);
+	IGraphics::CQuadItem Quad(Rect.x + (Rect.w-Size)/2, Rect.y + (Rect.h-Size)/2, Size, Size);
+	Graphics()->QuadsDrawTL(&Quad, 1);
+	Graphics()->QuadsEnd();
+}
+
 void CMenus::RenderCharacters(CUIRect MainView)
 {
 	MainView.Margin(16.0f, &MainView);
@@ -247,27 +268,58 @@ void CMenus::RenderCharacters(CUIRect MainView)
 	Ui()->DoLabel(&Row, Localize("Characters"), 24.0f, TEXTALIGN_ML);
 	MainView.HSplitTop(26.0f, &Row, &MainView);
 	Ui()->DoLabel(&Row, Russian ? "Витрина • Покупки NFT пока недоступны. Только примерка." : "Store preview • NFT purchases unavailable. Local try-on only.", 12.0f, TEXTALIGN_ML);
+	bool Compact = MainView.w < 760.0f;
+#if defined(CONF_PLATFORM_ANDROID)
+	Compact = true;
+#endif
+	static bool s_DetailOpen = false;
+	static int s_Page = 0;
+	static CButtonContainer s_Previous, s_Next, s_Back;
 	CUIRect Grid, Details;
-	MainView.VSplitLeft(MainView.w * 0.61f, &Grid, &Details);
-	Details.VSplitLeft(10.0f, nullptr, &Details);
+	if(Compact)
+	{
+		MainView.HSplitTop(42.0f, &Row, &MainView);
+		if(s_DetailOpen)
+		{
+			if(DoButton_Menu(&s_Back, Russian ? "Назад к коллекции" : "Back to collection", 0, &Row)) s_DetailOpen = false;
+		}
+		else
+		{
+			CUIRect Prev, Next, Count;
+			Row.VSplitLeft(55.0f, &Prev, &Count); Count.VSplitRight(55.0f, &Count, &Next);
+			if(DoButton_Menu(&s_Previous, "<", 0, &Prev)) s_Page = (s_Page+2)%3;
+			if(DoButton_Menu(&s_Next, ">", 0, &Next)) s_Page = (s_Page+1)%3;
+			char aPage[32]; str_format(aPage, sizeof(aPage), "%d / 3", s_Page+1);
+			Ui()->DoLabel(&Count, aPage, 16.0f, TEXTALIGN_MC);
+		}
+		MainView.HSplitTop(10.0f, nullptr, &MainView);
+		Grid = MainView; Details = MainView;
+	}
+	else
+	{
+		MainView.VSplitLeft(MainView.w * 0.61f, &Grid, &Details);
+		Details.VSplitLeft(12.0f, nullptr, &Details);
+	}
 	Details.Draw(ColorRGBA(0.035f, 0.045f, 0.09f, 0.96f), IGraphics::CORNER_ALL, 8.0f);
 	Details.Margin(12.0f, &Details);
 	static int s_Selected = 0;
 	static CButtonContainer s_aSelect[10], s_TryOn;
-	const float Width = Grid.w / 5.0f;
+	const int Columns = Compact ? 2 : 5;
+	const float Width = Grid.w / Columns;
 	const float Height = std::min(Grid.h / 2.0f, 190.0f);
-	for(int i = 0; i < 10; ++i)
+	for(int Slot = 0; Slot < (Compact ? 4 : 10) && (!Compact || !s_DetailOpen); ++Slot)
 	{
+		const int i = Compact ? s_Page*4+Slot : Slot;
+		if(i >= 10) break;
 		const auto &Entry = POTATO_CATALOG[i];
-		CUIRect Card = {Grid.x + (i % 5) * Width, Grid.y + (i / 5) * Height, Width - 5.0f, Height - 5.0f};
+		CUIRect Card = {Grid.x + (Slot % Columns) * Width, Grid.y + (Slot / Columns) * Height, Width - 5.0f, Height - 5.0f};
 		const ColorRGBA Tint = Entry.m_PriceSkr == 2000 ? ColorRGBA(0.23f, 0.15f, 0.06f, 0.94f) :
 			Entry.m_PriceSkr == 1000 ? ColorRGBA(0.13f, 0.08f, 0.23f, 0.94f) : ColorRGBA(0.04f, 0.10f, 0.15f, 0.94f);
 		if(DoButton_Menu(&s_aSelect[i], "", s_Selected == i, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 8.0f, 0.0f, Tint))
-			s_Selected = i;
-		CTeeRenderInfo Info;
-		Info.Apply(GameClient()->m_Skins.Find(Entry.m_pSkin));
-		Info.m_Size = std::min(60.0f, Card.w * 0.7f);
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(0.15f, 0.0f), vec2(Card.x + Card.w / 2.0f, Card.y + Height * 0.3f));
+		{ s_Selected = i; if(Compact) s_DetailOpen = true; }
+		CUIRect Portrait = Card;
+		Portrait.h = Height * 0.57f;
+		RenderCharacterPortrait(Portrait, i);
 		Card.HSplitTop(Height * 0.57f, nullptr, &Card);
 		Card.HSplitTop(20.0f, &Row, &Card);
 		Ui()->DoLabel(&Row, Russian ? Entry.m_pNameRu : Entry.m_pName, 13.0f, TEXTALIGN_MC);
@@ -278,18 +330,16 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		str_format(aPrice, sizeof(aPrice), "%d SKR", Entry.m_PriceSkr);
 		Ui()->DoLabel(&Row, aPrice, 13.0f, TEXTALIGN_MC);
 	}
+	if(Compact && !s_DetailOpen) return;
 	const auto &Entry = POTATO_CATALOG[s_Selected];
 	CUIRect Footer;
-	Details.HSplitBottom(66.0f, &Details, &Footer);
+	Details.HSplitBottom(84.0f, &Details, &Footer);
 	Details.HSplitTop(26.0f, &Row, &Details);
 	Ui()->DoLabel(&Row, Russian ? Entry.m_pNameRu : Entry.m_pName, 22.0f, TEXTALIGN_ML);
 	Details.HSplitTop(20.0f, &Row, &Details);
 	Ui()->DoLabel(&Row, Russian ? Entry.m_pTitleRu : Entry.m_pTitle, 13.0f, TEXTALIGN_ML);
-	Details.HSplitTop(82.0f, &Row, &Details);
-	CTeeRenderInfo Info;
-	Info.Apply(GameClient()->m_Skins.Find(Entry.m_pSkin));
-	Info.m_Size = 86.0f;
-	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(0.15f, 0.0f), Row.Center());
+	Details.HSplitTop(Compact ? 130.0f : 112.0f, &Row, &Details);
+	RenderCharacterPortrait(Row, s_Selected);
 	const char *pSkill = Russian ? Entry.m_pSkillRu : Entry.m_pSkill;
 	const char *pLegend = Russian ? Entry.m_pLegendRu : Entry.m_pLegend;
 	float Font = 12.0f;
@@ -306,7 +356,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 	Footer.HSplitTop(32.0f, &Row, &Footer);
 	Wrapped.m_MaxWidth = Row.w;
 	Ui()->DoLabel(&Row, Russian ? "Навыки — только легенда. Бонусов к физике нет." : "Skills are lore only. No gameplay bonuses.", 10.0f, TEXTALIGN_TL, Wrapped);
-	Footer.HSplitTop(26.0f, &Row, &Footer);
+	Footer.HSplitTop(44.0f, &Row, &Footer);
 	if(DoButton_Menu(&s_TryOn, Russian ? "Примерить бесплатно (тест)" : "Try on free (preview)", 0, &Row))
 	{
 		str_copy(g_Config.m_ClPlayerSkin, Entry.m_pSkin);

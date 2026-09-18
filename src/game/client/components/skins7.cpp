@@ -388,45 +388,11 @@ void CSkins7::InitPlaceholderSkinParts()
 
 void CSkins7::Refresh(TSkinLoadedCallback &&SkinLoadedCallback)
 {
+	// Retain wire-format metadata compatibility, never load legacy visuals.
 	m_vSkins.clear();
-
-	for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
-	{
-		for(CSkinPart &SkinPart : m_avSkinParts[Part])
-		{
-			Graphics()->UnloadTexture(&SkinPart.m_OriginalTexture);
-			Graphics()->UnloadTexture(&SkinPart.m_ColorableTexture);
-		}
-		m_avSkinParts[Part].clear();
-
-		if(Part == protocol7::SKINPART_MARKING || Part == protocol7::SKINPART_DECORATION)
-		{
-			CSkinPart NoneSkinPart;
-			NoneSkinPart.m_Type = Part;
-			NoneSkinPart.m_Flags = SKINFLAG_STANDARD;
-			NoneSkinPart.m_aName[0] = '\0';
-			NoneSkinPart.m_BloodColor = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-			m_avSkinParts[Part].emplace_back(NoneSkinPart);
-		}
-
-		CSkinPartScanData SkinPartScanData;
-		SkinPartScanData.m_pThis = this;
-		SkinPartScanData.m_SkinLoadedCallback = SkinLoadedCallback;
-		SkinPartScanData.m_Part = Part;
-		char aPartsDirectory[IO_MAX_PATH_LENGTH];
-		str_format(aPartsDirectory, sizeof(aPartsDirectory), SKINS_DIR "/%s", ms_apSkinPartNames[Part]);
-		Storage()->ListDirectory(IStorage::TYPE_ALL, aPartsDirectory, SkinPartScan, &SkinPartScanData);
-	}
-
-	CSkinScanData SkinScanData;
-	SkinScanData.m_pThis = this;
-	SkinScanData.m_SkinLoadedCallback = SkinLoadedCallback;
-	Storage()->ListDirectory(IStorage::TYPE_ALL, SKINS_DIR, SkinScan, &SkinScanData);
-
-	LoadXmasHat();
-	LoadBotDecoration();
+	for(auto &Parts : m_avSkinParts) Parts.clear();
+	InitPlaceholderSkinParts();
 	SkinLoadedCallback();
-
 	m_LastRefreshTime = time_get_nanoseconds();
 }
 

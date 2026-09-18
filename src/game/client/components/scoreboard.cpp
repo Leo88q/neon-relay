@@ -55,7 +55,6 @@ void CScoreboard::ConKeyScoreboard(IConsole::IResult *pResult, void *pUserData)
 	CScoreboard *pSelf = static_cast<CScoreboard *>(pUserData);
 
 	pSelf->GameClient()->m_Spectator.OnRelease();
-	pSelf->GameClient()->m_Emoticon.OnRelease();
 
 	pSelf->m_Active = pResult->GetInteger(0) != 0;
 
@@ -1234,12 +1233,7 @@ CUi::EPopupMenuFunctionResult CScoreboard::CScoreboardPopupContext::Render(void 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);
 		Container.VSplitLeft(ActionSize, &Action, &Container);
 
-		const char *EmoticonActionIcon = Client.m_EmoticonIgnore ? FontIcon::COMMENT_SLASH : FontIcon::COMMENT;
-		if(pUi->DoButton_FontIcon(&pPopupContext->m_EmoticonAction, EmoticonActionIcon, Client.m_EmoticonIgnore, &Action, BUTTONFLAG_LEFT, ActionCorners))
-		{
-			Client.m_EmoticonIgnore ^= 1;
-		}
-		pScoreboard->GameClient()->m_Tooltips.DoToolTip(&pPopupContext->m_EmoticonAction, &Action, Client.m_EmoticonIgnore ? Localize("Unmute emoticons") : Localize("Mute emoticons"));
+
 	}
 
 	const float ButtonSize = 17.5f;

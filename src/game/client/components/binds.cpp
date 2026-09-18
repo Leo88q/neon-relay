@@ -47,6 +47,8 @@ CBinds::~CBinds()
 
 void CBinds::Bind(int KeyId, const char *pStr, bool FreeOnly, int ModifierCombination)
 {
+	// Migrate obsolete saved bindings without stealing Shift from other actions.
+	if(str_comp(pStr, "+emote") == 0 || str_startswith(pStr, "emote ")) pStr = "";
 	dbg_assert(KeyId >= KEY_FIRST && KeyId < KEY_LAST, "KeyId invalid");
 	dbg_assert(ModifierCombination >= KeyModifier::NONE && ModifierCombination < KeyModifier::COMBINATION_COUNT, "ModifierCombination invalid");
 
@@ -281,7 +283,6 @@ void CBinds::SetDefaults()
 	Bind(KEY_SPACE, "+jump");
 	Bind(KEY_MOUSE_1, "+fire");
 	Bind(KEY_MOUSE_2, "+hook");
-	Bind(KEY_LSHIFT, "+emote");
 	Bind(KEY_RETURN, "+show_chat; chat all");
 	Bind(KEY_RIGHT, "spectate_next");
 	Bind(KEY_LEFT, "spectate_previous");

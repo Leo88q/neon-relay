@@ -881,65 +881,7 @@ void CPlayers::RenderPlayer(
 	if(ClientId < 0)
 		return;
 
-	int QuadOffsetToEmoticon = NUM_WEAPONS * 2 + 2 + 2;
-	if((Player.m_PlayerFlags & PLAYERFLAG_CHATTING) && !GameClient()->m_aClients[ClientId].m_Afk)
-	{
-		int CurEmoticon = (SPRITE_DOTDOT - SPRITE_OOP);
-		Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[CurEmoticon]);
-		int QuadOffset = QuadOffsetToEmoticon + CurEmoticon;
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
-		Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, Position.x + 24.f, Position.y - 40.f);
-
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-		Graphics()->QuadsSetRotation(0);
-	}
-
-	if(g_Config.m_ClAfkEmote && GameClient()->m_aClients[ClientId].m_Afk && ClientId != GameClient()->m_aLocalIds[!g_Config.m_ClDummy])
-	{
-		int CurEmoticon = (SPRITE_ZZZ - SPRITE_OOP);
-		Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[CurEmoticon]);
-		int QuadOffset = QuadOffsetToEmoticon + CurEmoticon;
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
-		Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, Position.x + 24.f, Position.y - 40.f);
-
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-		Graphics()->QuadsSetRotation(0);
-	}
-
-	if(g_Config.m_ClShowEmotes && !GameClient()->m_aClients[ClientId].m_EmoticonIgnore && GameClient()->m_aClients[ClientId].m_EmoticonStartTick != -1)
-	{
-		float SinceStart = (Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_aClients[ClientId].m_EmoticonStartTick) + (Client()->IntraGameTickSincePrev(g_Config.m_ClDummy) - GameClient()->m_aClients[ClientId].m_EmoticonStartFraction);
-		float FromEnd = (2 * Client()->GameTickSpeed()) - SinceStart;
-
-		if(0 <= SinceStart && FromEnd > 0)
-		{
-			float a = 1;
-
-			if(FromEnd < Client()->GameTickSpeed() / 5)
-				a = FromEnd / (Client()->GameTickSpeed() / 5.0f);
-
-			float h = 1;
-			if(SinceStart < Client()->GameTickSpeed() / 10)
-				h = SinceStart / (Client()->GameTickSpeed() / 10.0f);
-
-			float Wiggle = 0;
-			if(SinceStart < Client()->GameTickSpeed() / 5)
-				Wiggle = SinceStart / (Client()->GameTickSpeed() / 5.0f);
-
-			float WiggleAngle = std::sin(5 * Wiggle);
-
-			Graphics()->QuadsSetRotation(pi / 6 * WiggleAngle);
-
-			Graphics()->SetColor(1.0f, 1.0f, 1.0f, a * Alpha);
-			// client_datas::emoticon is an offset from the first emoticon
-			int QuadOffset = QuadOffsetToEmoticon + GameClient()->m_aClients[ClientId].m_Emoticon;
-			Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[GameClient()->m_aClients[ClientId].m_Emoticon]);
-			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, Position.x, Position.y - 23.f - 32.f * h, 1.f, (64.f * h) / 64.f);
-
-			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-			Graphics()->QuadsSetRotation(0);
-		}
-	}
+	// Emoticon/chat/AFK bubbles intentionally removed.
 }
 
 inline bool CPlayers::IsPlayerInfoAvailable(int ClientId) const
@@ -956,7 +898,6 @@ void CPlayers::OnRender()
 
 	// update render info for ninja
 	CTeeRenderInfo aRenderInfo[MAX_CLIENTS];
-	const bool IsTeamPlay = GameClient()->IsTeamPlay();
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
 		aRenderInfo[i] = GameClient()->m_aClients[i].m_RenderInfo;
@@ -987,18 +928,6 @@ void CPlayers::OnRender()
 			Frozen = GameClient()->m_Snap.m_aCharacters[i].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[i].m_ExtendedData.m_FreezeEnd != 0;
 		}
 
-		if(!IsPotatoCatalogSkin(GameClient()->m_aClients[i].m_aSkinName) && (GameClient()->m_aClients[i].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
-		{
-			// change the skin for the player to the ninja
-			aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
-			aRenderInfo[i].ApplySkin(NinjaTeeRenderInfo()->TeeRenderInfo());
-			aRenderInfo[i].m_CustomColoredSkin = IsTeamPlay;
-			if(!IsTeamPlay)
-			{
-				aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 1);
-				aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 1);
-			}
-		}
 	}
 
 	// get screen edges to avoid rendering offscreen
@@ -1066,15 +995,6 @@ void CPlayers::OnRender()
 	}
 }
 
-void CPlayers::CreateNinjaTeeRenderInfo()
-{
-	CTeeRenderInfo NinjaTeeRenderInfo;
-	NinjaTeeRenderInfo.m_Size = 64.0f;
-	CSkinDescriptor NinjaSkinDescriptor;
-	NinjaSkinDescriptor.m_Flags |= CSkinDescriptor::FLAG_SIX;
-	str_copy(NinjaSkinDescriptor.m_aSkinName, "x_ninja");
-	m_pNinjaTeeRenderInfo = GameClient()->CreateManagedTeeRenderInfo(NinjaTeeRenderInfo, NinjaSkinDescriptor);
-}
 
 void CPlayers::CreateSpectatorTeeRenderInfo()
 {
@@ -1160,6 +1080,5 @@ void CPlayers::OnInit()
 	Graphics()->QuadsSetSubset(0.f, 0.f, 1.f, 1.f);
 	Graphics()->QuadsSetRotation(0.f);
 
-	CreateNinjaTeeRenderInfo();
 	CreateSpectatorTeeRenderInfo();
 }

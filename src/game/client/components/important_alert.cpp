@@ -247,7 +247,6 @@ bool CImportantAlert::OnTouchState(std::vector<IInput::CTouchFingerState> &vTouc
 		GameClient()->m_Chat.IsActive() ||
 		GameClient()->m_GameConsole.IsActive() ||
 		GameClient()->m_Menus.IsActive() ||
-		GameClient()->m_Emoticon.IsActive() ||
 		GameClient()->m_Spectator.IsActive())
 	{
 		return false;

@@ -656,6 +656,7 @@ protected:
 	void UpdateColors();
 
 	IGraphics::CTextureHandle m_TextureBlob;
+	IGraphics::CTextureHandle m_aCharacterPortraits[10];
 
 public:
 	void RenderBackground();
@@ -673,6 +674,7 @@ public:
 	void SetActive(bool Active);
 
 	void OnInterfacesInit(CGameClient *pClient) override;
+	void RenderCharacterPortrait(CUIRect Rect, int Index);
 	void OnInit() override;
 
 	void OnStateChange(int NewState, int OldState) override;
