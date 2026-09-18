@@ -576,6 +576,9 @@ protected:
 	// found in menus_settings_credits.cpp
 	void RenderSettingsCredits(CUIRect MainView);
 	void RenderSettingsWallet(CUIRect MainView);
+	void RenderRaceLobby(CUIRect MainView);
+	void RenderCharacters(CUIRect MainView);
+	void RenderLeaders(CUIRect MainView);
 
 	// found in menus_settings_ddnet.cpp
 	void RenderSettingsDDNet(CUIRect MainView);
@@ -699,6 +702,10 @@ public:
 		PAGE_NETWORK,
 		PAGE_GHOST,
 
+		PAGE_RACES,
+		PAGE_CHARACTERS,
+		PAGE_WALLET,
+		PAGE_LEADERS,
 		PAGE_LENGTH,
 	};
 

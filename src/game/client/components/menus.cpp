@@ -435,250 +435,36 @@ int CMenus::DoButton_CheckBox_Number(const void *pId, const char *pText, int Che
 
 void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 {
-	CUIRect Button;
-
-	int NewPage = -1;
-	int ActivePage = -1;
 	if(ClientState == IClient::STATE_OFFLINE)
 	{
-		ActivePage = m_MenuPage;
+		const char *apLabels[] = {Localize("Play", "Start menu"), Localize("Characters"), Localize("Wallet"), Localize("Leaders"), Localize("Settings")};
+		const int aPages[] = {PAGE_RACES, PAGE_CHARACTERS, PAGE_WALLET, PAGE_LEADERS, PAGE_SETTINGS};
+		static CButtonContainer s_aTabs[5];
+		const float Width = Box.w / 5.0f;
+		for(int i = 0; i < 5; ++i)
+		{
+			CUIRect Tab;
+			Box.VSplitLeft(Width, &Tab, &Box);
+			if(DoButton_MenuTab(&s_aTabs[i], apLabels[i], m_MenuPage == aPages[i], &Tab, IGraphics::CORNER_T))
+				SetMenuPage(aPages[i]);
+		}
+		return;
 	}
-	else if(ClientState == IClient::STATE_ONLINE)
+	// Keep match controls while connected, without editor/demo shortcuts.
+	const char *apLabels[] = {Localize("Game"), Localize("Players"), Localize("Server info"), Localize("Call vote"), Localize("Settings")};
+	const int aPages[] = {PAGE_GAME, PAGE_PLAYERS, PAGE_SERVER_INFO, PAGE_CALLVOTE, PAGE_SETTINGS};
+	static CButtonContainer s_aMatchTabs[5];
+	const float Width = Box.w / 5.0f;
+	for(int i = 0; i < 5; ++i)
 	{
-		ActivePage = m_GamePage;
-	}
-	else
-	{
-		dbg_assert_failed("Client state %d is invalid for RenderMenubar", ClientState);
-	}
-
-	// First render buttons aligned from right side so remaining
-	// width is known when rendering buttons from left side.
-	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
-
-	Box.VSplitRight(33.0f, &Box, &Button);
-	static CButtonContainer s_QuitButton;
-	ColorRGBA QuitColor(1, 0, 0, 0.5f);
-	if(DoButton_MenuTab(&s_QuitButton, FontIcon::POWER_OFF, 0, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_QUIT], nullptr, nullptr, &QuitColor, 10.0f))
-	{
-		if(GameClient()->Editor()->HasUnsavedData() || (GameClient()->CurrentRaceTime() / 60 >= g_Config.m_ClConfirmQuitTime && g_Config.m_ClConfirmQuitTime >= 0) || m_MenusIngameTouchControls.UnsavedChanges() || GameClient()->m_TouchControls.HasEditingChanges())
+		CUIRect Tab;
+		Box.VSplitLeft(Width, &Tab, &Box);
+		if(DoButton_MenuTab(&s_aMatchTabs[i], apLabels[i], m_GamePage == aPages[i], &Tab, IGraphics::CORNER_T))
 		{
-			m_Popup = POPUP_QUIT;
+			m_GamePage = aPages[i];
+			if(aPages[i] == PAGE_CALLVOTE)
+				m_ControlPageOpening = true;
 		}
-		else
-		{
-			Client()->Quit();
-		}
-	}
-	GameClient()->m_Tooltips.DoToolTip(&s_QuitButton, &Button, Localize("Quit"));
-
-	Box.VSplitRight(10.0f, &Box, nullptr);
-	Box.VSplitRight(33.0f, &Box, &Button);
-	static CButtonContainer s_SettingsButton;
-	if(DoButton_MenuTab(&s_SettingsButton, FontIcon::GEAR, ActivePage == PAGE_SETTINGS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_SETTINGS]))
-	{
-		NewPage = PAGE_SETTINGS;
-	}
-	GameClient()->m_Tooltips.DoToolTip(&s_SettingsButton, &Button, Localize("Settings"));
-
-	Box.VSplitRight(10.0f, &Box, nullptr);
-	Box.VSplitRight(33.0f, &Box, &Button);
-	static CButtonContainer s_EditorButton;
-	if(DoButton_MenuTab(&s_EditorButton, FontIcon::PEN_TO_SQUARE, 0, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_EDITOR]))
-	{
-		g_Config.m_ClEditor = 1;
-	}
-	GameClient()->m_Tooltips.DoToolTip(&s_EditorButton, &Button, Localize("Editor"));
-
-	if(ClientState == IClient::STATE_OFFLINE)
-	{
-		Box.VSplitRight(10.0f, &Box, nullptr);
-		Box.VSplitRight(33.0f, &Box, &Button);
-		static CButtonContainer s_DemoButton;
-		if(DoButton_MenuTab(&s_DemoButton, FontIcon::CLAPPERBOARD, ActivePage == PAGE_DEMOS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_DEMOBUTTON]))
-		{
-			NewPage = PAGE_DEMOS;
-		}
-		GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
-		Box.VSplitRight(10.0f, &Box, nullptr);
-
-		Box.VSplitLeft(33.0f, &Button, &Box);
-
-		bool GotNewsOrUpdate = false;
-
-#if defined(CONF_AUTOUPDATE)
-		int State = Updater()->GetCurrentState();
-		bool NeedUpdate = str_comp(Client()->LatestVersion(), "0");
-		if(State == IUpdater::CLEAN && NeedUpdate)
-		{
-			GotNewsOrUpdate = true;
-		}
-#endif
-
-		GotNewsOrUpdate |= (bool)g_Config.m_UiUnreadNews;
-
-		ColorRGBA HomeButtonColorAlert(0, 1, 0, 0.25f);
-		ColorRGBA HomeButtonColorAlertHover(0, 1, 0, 0.5f);
-		ColorRGBA *pHomeButtonColor = nullptr;
-		ColorRGBA *pHomeButtonColorHover = nullptr;
-
-		const char *pHomeScreenButtonLabel = FontIcon::HOUSE;
-		if(GotNewsOrUpdate)
-		{
-			pHomeScreenButtonLabel = FontIcon::NEWSPAPER;
-			pHomeButtonColor = &HomeButtonColorAlert;
-			pHomeButtonColorHover = &HomeButtonColorAlertHover;
-		}
-
-		static CButtonContainer s_StartButton;
-		if(DoButton_MenuTab(&s_StartButton, pHomeScreenButtonLabel, false, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_HOME], pHomeButtonColor, pHomeButtonColor, pHomeButtonColorHover, 10.0f))
-		{
-			m_ShowStart = true;
-		}
-		GameClient()->m_Tooltips.DoToolTip(&s_StartButton, &Button, Localize("Main menu"));
-
-		const float BrowserButtonWidth = 75.0f;
-		Box.VSplitLeft(10.0f, nullptr, &Box);
-		Box.VSplitLeft(BrowserButtonWidth, &Button, &Box);
-		static CButtonContainer s_InternetButton;
-		if(DoButton_MenuTab(&s_InternetButton, FontIcon::EARTH_AMERICAS, ActivePage == PAGE_INTERNET, &Button, IGraphics::CORNER_T, &m_aAnimatorsBigPage[BIG_TAB_INTERNET]))
-		{
-			NewPage = PAGE_INTERNET;
-		}
-		GameClient()->m_Tooltips.DoToolTip(&s_InternetButton, &Button, Localize("Internet"));
-
-		Box.VSplitLeft(BrowserButtonWidth, &Button, &Box);
-		static CButtonContainer s_LanButton;
-		if(DoButton_MenuTab(&s_LanButton, FontIcon::NETWORK_WIRED, ActivePage == PAGE_LAN, &Button, IGraphics::CORNER_T, &m_aAnimatorsBigPage[BIG_TAB_LAN]))
-		{
-			NewPage = PAGE_LAN;
-		}
-		GameClient()->m_Tooltips.DoToolTip(&s_LanButton, &Button, Localize("LAN"));
-
-		Box.VSplitLeft(BrowserButtonWidth, &Button, &Box);
-		static CButtonContainer s_FavoritesButton;
-		if(DoButton_MenuTab(&s_FavoritesButton, FontIcon::STAR, ActivePage == PAGE_FAVORITES, &Button, IGraphics::CORNER_T, &m_aAnimatorsBigPage[BIG_TAB_FAVORITES]))
-		{
-			NewPage = PAGE_FAVORITES;
-		}
-		GameClient()->m_Tooltips.DoToolTip(&s_FavoritesButton, &Button, Localize("Favorites"));
-
-		const int MaxPage = PAGE_FAVORITES + ServerBrowser()->FavoriteCommunities().size();
-		if(
-			!Ui()->IsPopupOpen() &&
-			CLineInput::GetActiveInput() == nullptr &&
-			(g_Config.m_UiPage >= PAGE_INTERNET && g_Config.m_UiPage <= MaxPage) &&
-			(m_MenuPage >= PAGE_INTERNET && m_MenuPage <= PAGE_FAVORITE_COMMUNITY_5))
-		{
-			if(Input()->KeyPress(KEY_RIGHT))
-			{
-				NewPage = g_Config.m_UiPage + 1;
-				if(NewPage > MaxPage)
-					NewPage = PAGE_INTERNET;
-			}
-			if(Input()->KeyPress(KEY_LEFT))
-			{
-				NewPage = g_Config.m_UiPage - 1;
-				if(NewPage < PAGE_INTERNET)
-					NewPage = MaxPage;
-			}
-		}
-
-		size_t FavoriteCommunityIndex = 0;
-		static CButtonContainer s_aFavoriteCommunityButtons[5];
-		static_assert(std::size(s_aFavoriteCommunityButtons) == (size_t)PAGE_FAVORITE_COMMUNITY_5 - PAGE_FAVORITE_COMMUNITY_1 + 1);
-		static_assert(std::size(s_aFavoriteCommunityButtons) == (size_t)BIT_TAB_FAVORITE_COMMUNITY_5 - BIT_TAB_FAVORITE_COMMUNITY_1 + 1);
-		static_assert(std::size(s_aFavoriteCommunityButtons) == (size_t)IServerBrowser::TYPE_FAVORITE_COMMUNITY_5 - IServerBrowser::TYPE_FAVORITE_COMMUNITY_1 + 1);
-		for(const CCommunity *pCommunity : ServerBrowser()->FavoriteCommunities())
-		{
-			if(Box.w < BrowserButtonWidth)
-				break;
-			Box.VSplitLeft(BrowserButtonWidth, &Button, &Box);
-			const int Page = PAGE_FAVORITE_COMMUNITY_1 + FavoriteCommunityIndex;
-			if(DoButton_MenuTab(&s_aFavoriteCommunityButtons[FavoriteCommunityIndex], FontIcon::ELLIPSIS, ActivePage == Page, &Button, IGraphics::CORNER_T, &m_aAnimatorsBigPage[BIT_TAB_FAVORITE_COMMUNITY_1 + FavoriteCommunityIndex], nullptr, nullptr, nullptr, 10.0f, m_CommunityIcons.Find(pCommunity->Id())))
-			{
-				NewPage = Page;
-			}
-			GameClient()->m_Tooltips.DoToolTip(&s_aFavoriteCommunityButtons[FavoriteCommunityIndex], &Button, pCommunity->Name());
-
-			++FavoriteCommunityIndex;
-			if(FavoriteCommunityIndex >= std::size(s_aFavoriteCommunityButtons))
-				break;
-		}
-
-		TextRender()->SetRenderFlags(0);
-		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
-	}
-	else
-	{
-		TextRender()->SetRenderFlags(0);
-		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
-
-		// online menus
-		Box.VSplitLeft(90.0f, &Button, &Box);
-		static CButtonContainer s_GameButton;
-		if(DoButton_MenuTab(&s_GameButton, Localize("Game"), ActivePage == PAGE_GAME, &Button, IGraphics::CORNER_TL))
-			NewPage = PAGE_GAME;
-
-		Box.VSplitLeft(90.0f, &Button, &Box);
-		static CButtonContainer s_PlayersButton;
-		if(DoButton_MenuTab(&s_PlayersButton, Localize("Players"), ActivePage == PAGE_PLAYERS, &Button, IGraphics::CORNER_NONE))
-			NewPage = PAGE_PLAYERS;
-
-		Box.VSplitLeft(130.0f, &Button, &Box);
-		static CButtonContainer s_ServerInfoButton;
-		if(DoButton_MenuTab(&s_ServerInfoButton, Localize("Server info"), ActivePage == PAGE_SERVER_INFO, &Button, IGraphics::CORNER_NONE))
-			NewPage = PAGE_SERVER_INFO;
-
-		Box.VSplitLeft(90.0f, &Button, &Box);
-		static CButtonContainer s_NetworkButton;
-		if(DoButton_MenuTab(&s_NetworkButton, Localize("Browser"), ActivePage == PAGE_NETWORK, &Button, IGraphics::CORNER_NONE))
-			NewPage = PAGE_NETWORK;
-
-		if(GameClient()->m_GameInfo.m_Race)
-		{
-			Box.VSplitLeft(90.0f, &Button, &Box);
-			static CButtonContainer s_GhostButton;
-			if(DoButton_MenuTab(&s_GhostButton, Localize("Ghost"), ActivePage == PAGE_GHOST, &Button, IGraphics::CORNER_NONE))
-				NewPage = PAGE_GHOST;
-		}
-
-		Box.VSplitLeft(100.0f, &Button, &Box);
-		Box.VSplitLeft(4.0f, nullptr, &Box);
-		static CButtonContainer s_CallVoteButton;
-		if(DoButton_MenuTab(&s_CallVoteButton, Localize("Call vote"), ActivePage == PAGE_CALLVOTE, &Button, IGraphics::CORNER_TR))
-		{
-			NewPage = PAGE_CALLVOTE;
-			m_ControlPageOpening = true;
-		}
-
-		if(Box.w >= 10.0f + 33.0f + 10.0f)
-		{
-			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-			TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
-
-			Box.VSplitRight(10.0f, &Box, nullptr);
-			Box.VSplitRight(33.0f, &Box, &Button);
-			static CButtonContainer s_DemoButton;
-			if(DoButton_MenuTab(&s_DemoButton, FontIcon::CLAPPERBOARD, ActivePage == PAGE_DEMOS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_DEMOBUTTON]))
-			{
-				NewPage = PAGE_DEMOS;
-			}
-			GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
-			Box.VSplitRight(10.0f, &Box, nullptr);
-
-			TextRender()->SetRenderFlags(0);
-			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
-		}
-	}
-
-	if(NewPage != -1)
-	{
-		if(ClientState == IClient::STATE_OFFLINE)
-			SetMenuPage(NewPage);
-		else
-			m_GamePage = NewPage;
 	}
 }
 
@@ -822,7 +608,7 @@ void CMenus::OnInit()
 	{
 		m_ShowStart = false;
 	}
-	m_MenuPage = g_Config.m_UiPage;
+	m_MenuPage = PAGE_RACES;
 
 	m_RefreshButton.Init(Ui(), -1);
 	m_ConnectButton.Init(Ui(), -1);
@@ -1066,7 +852,18 @@ void CMenus::Render()
 			CUIRect TabBar, MainView;
 			Screen.HSplitTop(24.0f, &TabBar, &MainView);
 
-			if(m_MenuPage == PAGE_NEWS)
+			if(m_MenuPage == PAGE_RACES)
+				RenderRaceLobby(MainView);
+			else if(m_MenuPage == PAGE_CHARACTERS)
+				RenderCharacters(MainView);
+			else if(m_MenuPage == PAGE_WALLET)
+			{
+				MainView.Margin(20.0f, &MainView);
+				RenderSettingsWallet(MainView);
+			}
+			else if(m_MenuPage == PAGE_LEADERS)
+				RenderLeaders(MainView);
+			else if(m_MenuPage == PAGE_NEWS)
 			{
 				RenderNews(MainView);
 			}

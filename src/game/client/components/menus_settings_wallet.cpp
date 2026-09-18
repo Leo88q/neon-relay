@@ -10,6 +10,12 @@
 #include "menus.h"
 
 #include <base/color.h>
+#include <algorithm>
+#include <game/client/animstate.h>
+#include <game/client/gameclient.h>
+#include <game/client/render.h>
+#include <game/client/potato_catalog.h>
+#include <game/client/race_catalog.h>
 #include <base/str.h>
 #include <engine/graphics.h>
 #include <engine/textrender.h>
@@ -183,4 +189,92 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 			g_Config.m_ClNeonrelayBackendUrl, g_Config.m_ClNeonrelaySkrMint);
 		neonrelay_wallet_request_economy(aJson);
 	}
+}
+
+// Product pages use read-only catalogs until verified settlement is available.
+void CMenus::RenderRaceLobby(CUIRect MainView)
+{
+	MainView.Margin(20.0f, &MainView);
+	CUIRect Row, Tab;
+	MainView.HSplitTop(32.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Races"), 24.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(30.0f, &Row, &MainView);
+	static int s_Currency = 0;
+	static CButtonContainer s_aCurrencies[2];
+	const char *apCurrencies[] = {"SKR", "POTATO"};
+	for(int i = 0; i < 2; ++i)
+	{
+		Row.VSplitLeft(130.0f, &Tab, &Row);
+		if(DoButton_MenuTab(&s_aCurrencies[i], apCurrencies[i], s_Currency == i, &Tab, IGraphics::CORNER_ALL))
+			s_Currency = i;
+	}
+	MainView.HSplitTop(32.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Preview only. Paid entry is not available yet."), 14.0f, TEXTALIGN_ML);
+	for(const auto &Race : RACE_CATALOG)
+	{
+		MainView.HSplitTop(46.0f, &Row, &MainView);
+		Row.Draw(ColorRGBA(0.05f, 0.02f, 0.12f, 0.8f), IGraphics::CORNER_ALL, 6.0f);
+		CUIRect Name, Players, Fee;
+		Row.VSplitLeft(Row.w * 0.42f, &Name, &Row);
+		Row.VSplitLeft(Row.w * 0.4f, &Players, &Fee);
+		Name.VMargin(10.0f, &Name);
+		Ui()->DoLabel(&Name, Race.m_pName, 17.0f, TEXTALIGN_ML);
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), Localize("Players: %s"), Race.m_pPlayers);
+		Ui()->DoLabel(&Players, Race.m_LegendaryOnly ? Localize("Legendary holders only") : aBuf, 14.0f, TEXTALIGN_ML);
+		str_format(aBuf, sizeof(aBuf), "%s %s", Race.m_pEntry, apCurrencies[s_Currency]);
+		Ui()->DoLabel(&Fee, aBuf, 14.0f, TEXTALIGN_ML);
+		MainView.HSplitTop(5.0f, nullptr, &MainView);
+	}
+	MainView.HSplitTop(26.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Prize pool: 90% players / 10% developer"), 14.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(26.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Top 10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%"), 13.0f, TEXTALIGN_ML);
+	// Existing gameplay remains accessible without pretending it is a paid race.
+	MainView.HSplitTop(28.0f, &Row, &MainView);
+	Row.w = 260.0f;
+	static CButtonContainer s_Practice;
+	if(DoButton_Menu(&s_Practice, Localize("Practice - server browser"), 0, &Row))
+		SetMenuPage(PAGE_INTERNET);
+}
+
+void CMenus::RenderCharacters(CUIRect MainView)
+{
+	MainView.Margin(20.0f, &MainView);
+	CUIRect Row;
+	MainView.HSplitTop(32.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Characters"), 24.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(28.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Catalog preview. NFT purchases and equipping are not available yet."), 14.0f, TEXTALIGN_ML);
+	const float Width = MainView.w / 5.0f;
+	const float Height = std::min(MainView.h / 2.0f, 180.0f);
+	for(int i = 0; i < 10; ++i)
+	{
+		const auto &Entry = POTATO_CATALOG[i];
+		CUIRect Card = {MainView.x + (i % 5) * Width, MainView.y + (i / 5) * Height, Width - 6.0f, Height - 6.0f};
+		Card.Draw(ColorRGBA(0.05f, 0.02f, 0.12f, 0.8f), IGraphics::CORNER_ALL, 8.0f);
+		CTeeRenderInfo Info;
+		Info.Apply(GameClient()->m_Skins.Find(Entry.m_pSkin));
+		Info.m_Size = 64.0f;
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(1.0f, 0.0f), vec2(Card.x + Card.w / 2.0f, Card.y + 48.0f));
+		Card.HSplitTop(90.0f, nullptr, &Card);
+		Card.HSplitTop(22.0f, &Row, &Card);
+		Ui()->DoLabel(&Row, Entry.m_pName, 13.0f, TEXTALIGN_MC);
+		Card.HSplitTop(20.0f, &Row, &Card);
+		Ui()->DoLabel(&Row, Entry.m_pRarity, 12.0f, TEXTALIGN_MC);
+		Card.HSplitTop(22.0f, &Row, &Card);
+		char aPrice[32];
+		str_format(aPrice, sizeof(aPrice), "%d SKR", Entry.m_PriceSkr);
+		Ui()->DoLabel(&Row, aPrice, 15.0f, TEXTALIGN_MC);
+	}
+}
+
+void CMenus::RenderLeaders(CUIRect MainView)
+{
+	MainView.Margin(20.0f, &MainView);
+	CUIRect Row;
+	MainView.HSplitTop(40.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Leaders"), 24.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(30.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Localize("Rankings are unavailable until the race service is connected."), 15.0f, TEXTALIGN_ML);
 }

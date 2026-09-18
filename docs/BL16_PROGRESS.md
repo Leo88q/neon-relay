@@ -78,3 +78,29 @@ Do not run destructive matting helpers on already normalized sources. For replac
   environment. No wallet or validator transaction was broadcast here.
 - V2 state/DB/PDA migration, tier fee enforcement and the five-button client
   menu are still pending. All v2 payments remain disabled.
+
+## Part 4: native five-destination navigation
+
+- Home and offline navigation now expose Play, Characters, Wallet, Leaders,
+  Settings. Skip-start-menu opens the race catalog rather than the legacy
+  browser. Match controls remain available while connected.
+- Native race catalog has SKR/POTATO tabs and generated policy rows (same
+  source as backend). This is an offline preview, not an HTTP live-lobby client;
+  no join/payment action is offered. Ordinary play remains available through
+  the explicitly labelled Practice/server-browser button.
+- Character page previews the ten classic potato skins with rarity and SKR
+  prices from the JSON manifest. No purchase/equip or false ownership claim.
+  The same preview is used independently of protocol version; 0.7 in-match
+  skin rendering/equipping is still not implemented.
+- Wallet opens the existing connection screen. Leaders displays an unavailable
+  state until live ranking integration exists; no fabricated standings.
+- Editor/Demos/Local Server shortcuts removed from the main/menu bars. Settings
+  navigation is limited to language, graphics, sound and controls, with a legal
+  Credits link retained. Saved legacy settings IDs are normalized. Asset,
+  texture and community-icon customization tabs are no longer exposed here.
+- Editor code/data, console functionality and demo playback infrastructure are
+  still present; this is NOT full physical removal of the editor.
+- Added Russian translations, four source/generation regression tests and a
+  separate syntax check of all four modified menu translation units.
+- No native client link/run, screenshot, input or visual playtest in this
+  environment. Syntax checks and contract tests do not prove visual layout.

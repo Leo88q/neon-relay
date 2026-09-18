@@ -2,22 +2,29 @@
 #ifndef GAME_CLIENT_POTATO_CATALOG_H
 #define GAME_CLIENT_POTATO_CATALOG_H
 #include <base/str.h>
+struct CPotatoCatalogEntry
+{
+	const char *m_pSkin;
+	const char *m_pName;
+	const char *m_pRarity;
+	int m_PriceSkr;
+};
+inline constexpr CPotatoCatalogEntry POTATO_CATALOG[] = {
+	{"potato_cool_guy_1", "Cool Guy 1", "Common", 500},
+	{"potato_cool_girl_1", "Cool Girl 1", "Common", 500},
+	{"potato_guy_2", "Guy 2", "Common", 500},
+	{"potato_girl_2", "Girl 2", "Common", 500},
+	{"potato_guy_3", "Guy 3", "Common", 500},
+	{"potato_guy_4", "Guy 4", "Rare", 1000},
+	{"potato_girl_3", "Girl 3", "Rare", 1000},
+	{"potato_girl_4", "Girl 4", "Rare", 1000},
+	{"potato_legend_guy", "Legend Guy", "Legendary", 2000},
+	{"potato_legend_girl", "Legend Girl", "Legendary", 2000},
+};
 inline bool IsPotatoCatalogSkin(const char *pName)
 {
-	static const char *const s_apNames[] = {
-		"potato_cool_guy_1",
-		"potato_cool_girl_1",
-		"potato_guy_2",
-		"potato_girl_2",
-		"potato_guy_3",
-		"potato_guy_4",
-		"potato_girl_3",
-		"potato_girl_4",
-		"potato_legend_guy",
-		"potato_legend_girl",
-	};
-	for(const char *pAllowed : s_apNames)
-		if(str_comp(pName, pAllowed) == 0)
+	for(const auto &Entry : POTATO_CATALOG)
+		if(str_comp(pName, Entry.m_pSkin) == 0)
 			return true;
 	return false;
 }

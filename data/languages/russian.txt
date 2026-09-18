@@ -2671,3 +2671,39 @@ Always predict frozen players
 
 No country flags match your filter criteria
 == 
+
+Characters
+== Персонажи
+
+Wallet
+== Кошелёк
+
+Leaders
+== Лидеры
+
+Races
+== Забеги
+
+Preview only. Paid entry is not available yet.
+== Предпросмотр. Платный вход пока недоступен.
+
+Players: %s
+== Игроков: %s
+
+Legendary holders only
+== Только владельцы Legendary
+
+Prize pool: 90% players / 10% developer
+== Призовой фонд: 90% игрокам / 10% разработчику
+
+Top 10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%
+== Топ-10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%
+
+Practice - server browser
+== Тренировка — список серверов
+
+Catalog preview. NFT purchases and equipping are not available yet.
+== Каталог. Покупка NFT и выбор для игры пока недоступны.
+
+Rankings are unavailable until the race service is connected.
+== Рейтинг недоступен до подключения сервиса забегов.

@@ -40,28 +40,27 @@ void CMenus::RenderSettings(CUIRect MainView)
 	TabBar.HSplitTop(50.0f, &Button, &TabBar);
 	Button.Draw(ms_ColorTabbarActive, IGraphics::CORNER_BR, 10.0f);
 
-	const char *apTabs[SETTINGS_LENGTH] = {
-		Localize("Language"),
-		Localize("General"),
-		Localize("Player"),
-		Client()->IsSixup() ? "Tee 0.7" : Localize("Tee"),
-		Localize("Appearance"),
-		Localize("Controls"),
-		Localize("Graphics"),
-		Localize("Sound"),
-		Localize("Neon Relay"),
-		Localize("Assets"),
-		Localize("Wallet"),
-		Localize("Credits")};
-	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
-
-	for(int i = 0; i < SETTINGS_LENGTH; i++)
+	// Persisted legacy settings IDs are normalized to the slim settings surface.
+	const int aPages[] = {SETTINGS_LANGUAGE, SETTINGS_GRAPHICS, SETTINGS_SOUND, SETTINGS_CONTROLS};
+	const char *apTabs[] = {Localize("Language"), Localize("Graphics"), Localize("Sound"), Localize("Controls")};
+	bool Allowed = false;
+	for(int Page : aPages)
+		Allowed |= g_Config.m_UiSettingsPage == Page;
+	if(!Allowed && g_Config.m_UiSettingsPage != SETTINGS_CREDITS)
+		g_Config.m_UiSettingsPage = SETTINGS_LANGUAGE;
+	static CButtonContainer s_aTabButtons[4];
+	for(int i = 0; i < 4; ++i)
 	{
 		TabBar.HSplitTop(10.0f, nullptr, &TabBar);
 		TabBar.HSplitTop(26.0f, &Button, &TabBar);
-		if(DoButton_MenuTab(&s_aTabButtons[i], apTabs[i], g_Config.m_UiSettingsPage == i, &Button, IGraphics::CORNER_R, &m_aAnimatorsSettingsTab[i]))
-			g_Config.m_UiSettingsPage = i;
+		if(DoButton_MenuTab(&s_aTabButtons[i], apTabs[i], g_Config.m_UiSettingsPage == aPages[i], &Button, IGraphics::CORNER_R))
+			g_Config.m_UiSettingsPage = aPages[i];
 	}
+	// Retain access to legal attribution, not asset/editor customization.
+	TabBar.HSplitBottom(26.0f, &TabBar, &Button);
+	static CButtonContainer s_Credits;
+	if(DoButton_Menu(&s_Credits, Localize("Credits"), 0, &Button))
+		g_Config.m_UiSettingsPage = SETTINGS_CREDITS;
 
 	if(g_Config.m_UiSettingsPage == SETTINGS_LANGUAGE)
 	{
