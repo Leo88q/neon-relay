@@ -54,7 +54,7 @@ def visual_layers(m):
                     routes[v]='boundary-and-symbol'
                 else:routes[v]='symbol'
                 # Large regions use sparse interior markers, not a field of noisy icons.
-                if not family or family in ('stop','switch','speed') or (name=='tele' and v in (26,27,30)) or (x%3==0 and y%3==0):
+                if not family or family in ('stop','switch','speed') or (name=='tele' and (v in (26,27,30) or x%3==0)) or (x%3==0 and y%3==0):
                     # A column of mode/start tiles is one visual sign, not repeated labels.
                     repeated=family not in ('freeze','deep','thaw') and any(y+dy<h and values[i+dy*w]==v for dy in range(1,5))
                     glyph[i*4]=v if family in ('stop','speed') or not repeated else 0
@@ -74,6 +74,7 @@ def symbol(v):
     c=COLORS[FAMILIES.index(family)] if family else NEUTRAL
     if v in (26,27,29,30,31,63):c=PORTAL
     if 33<=v<=59:c=RACE
+    if v in (23,24,25,28,210,211,212,240):c=MECHANISM
     c=(*c,255)
     # Dark translucent medallion separates icons from terrain without a text plaque.
     d.ellipse((21,21,107,107),fill=(8,15,29,175))
