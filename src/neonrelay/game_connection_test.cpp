@@ -20,7 +20,10 @@ int main()
 	Context.ExplicitLinkConfirmed = true;
 	assert(!Connection->PlayerId(1000));
 	const auto First = Connection->Begin(Context.Domain, 1000).value();
+	assert(Connection->IsPending(First, 1000));
 	const auto Second = Connection->Begin(Context.Domain, 1000).value();
+	assert(!Connection->IsPending(First, 1000));
+	assert(Connection->IsPending(Second, 1000));
 	assert(!Connection->Complete(First, First.Nonce, Context, 1100));
 	Connection->Fail(First); // old failure must not cancel the current attempt
 	assert(Connection->Complete(Second, Second.Nonce, Context, 1100));
@@ -52,6 +55,7 @@ int main()
 	}
 	GameConnectionIdentity Timeout(Random);
 	const auto Expiring = Timeout.Begin(Context.Domain, 1000).value();
+	assert(!Timeout.IsPending(Expiring, 121000));
 	assert(!Timeout.Complete(Expiring, Expiring.Nonce, Context, 121000));
 
 	Connection = std::make_shared<GameConnectionIdentity>(Random);

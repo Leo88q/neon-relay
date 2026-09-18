@@ -171,8 +171,21 @@ int main(int argc, char **argv)
 	}
 	assert(Connection->PlayerId(Now()).value() == "registered-test-account");
 	assert(Pairing.Start(Connection, std::string(42, 'A') + "E", Signer, Now()));
+	// Supersession leaves the nonce unchanged. Poll must drop the old HTTP job
+	// immediately, whether the worker already finished or is still queued.
+	const auto Replacement = Connection->Begin("game.example", Now()).value();
+	Pairing.Poll(Now());
+	assert(Pairing.PendingCount() == 0);
+	assert(Connection->IsPending(Replacement, Now())); // old Fail cannot cancel new attempt
+	assert(Pairing.Start(Connection, std::string(42, 'A') + "E", Signer, Now()));
+	assert(Connection->BeginSealedPairing(Signer, "game.example", Now()));
+	Pairing.Poll(Now());
+	assert(Pairing.PendingCount() == 0);
+	assert(!Connection->PlayerId(Now()));
+	assert(Pairing.Start(Connection, std::string(42, 'A') + "E", Signer, Now()));
 	Connection->Disconnect();
 	Pairing.Poll(Now());
+	assert(Pairing.PendingCount() == 0);
 	assert(!Connection->PlayerId(Now()));
 	Http->Shutdown();
 	std::cout << "PASS: actual HTTP worker TLS/redirect/size/timeout/privacy and pairing Poll lifecycle\n";

@@ -1,10 +1,5 @@
-# Neon Relay CI (stage 10).
-#
-# Every gate below mirrors a command that was executed and evidenced locally
-# (docs/REWARD_SECURITY.md §9, docs/baseline/, docs/KNOWN_LIMITATIONS.md).
-# Jobs intentionally do NOT attempt full native/Android/Solana builds: those
-# toolchains are documented blockers (BL-01/BL-02/BL-03) and the honest
-# runbooks live in docs/BUILDING*.md and onchain/README.md.
+# Offline gates plus Linux server linking/boot and native TLS interoperability.
+# Client graphics/Android builds and live wallet transport remain separate gates.
 name: CI
 
 on:
@@ -97,6 +92,34 @@ jobs:
           import os
           from pathlib import Path
           tail = Path(os.environ["RUNNER_TEMP"], "native-https.log").read_text()[-3500:]
+          print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
+          PYLOG
+            exit 1
+          fi
+
+  native-server:
+    name: Linux server build and isolated boot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install server build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build pkg-config libcurl4-openssl-dev libssl-dev libsqlite3-dev zlib1g-dev
+          rustup toolchain install 1.89.0 --profile minimal
+          rustup default 1.89.0
+      - name: Compile and boot actual server target
+        env:
+          CARGO_BUILD_JOBS: 2
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! ./scripts/test_native_server.sh 2>&1 | tee "$RUNNER_TEMP/native-server.log"; then
+            python3 - <<'PYLOG'
+          import os
+          from pathlib import Path
+          tail = Path(os.environ["RUNNER_TEMP"], "native-server.log").read_text()[-3500:]
           print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
           PYLOG
             exit 1

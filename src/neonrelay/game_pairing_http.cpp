@@ -44,9 +44,10 @@ void GamePairingHttp::Poll(int64_t Now)
 	{
 		auto Connection = It->Connection.lock();
 		const bool TimedOut = Now < It->StartedAt || Now - It->StartedAt >= 10000;
-		if(Connection && Connection->Nonce() == It->Request.Nonce && !TimedOut && !It->Http->Done()) { ++It; continue; }
+		const bool Current = Connection && Connection->IsPending(It->Request, Now);
+		if(Current && !TimedOut && !It->Http->Done()) { ++It; continue; }
 		bool Accepted = false;
-		if(Connection && !TimedOut && It->Http->State() == EHttpState::DONE && It->Http->StatusCode() == 200)
+		if(Current && !TimedOut && It->Http->State() == EHttpState::DONE && It->Http->StatusCode() == 200)
 		{
 			unsigned char *pData = nullptr;
 			size_t Length = 0;

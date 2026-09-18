@@ -68,6 +68,14 @@ public:
 		m_Deadline = Now + 120000;
 		return Request{m_Nonce, ++m_Serial};
 	}
+	// Poll uses the full request generation, not just the connection nonce.
+	// A new seal invalidates pending HTTP without replacing that nonce.
+	bool IsPending(const Request &Request, int64_t Now)
+	{
+		if(!Clock(Now) || !Matches(Request)) return false;
+		if(Now >= m_Deadline) { Fail(Request); return false; }
+		return true;
+	}
 	bool Complete(const Request &Request, const std::string &EchoNonce,
 		const AuthenticatedGameIdentity &Identity, int64_t Now)
 	{
