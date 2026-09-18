@@ -78,6 +78,15 @@ export class EconomyV2Store {
     });
   }
 
+  /** Read immutable metadata for an authenticated player; no paid flag exists. */
+  getIntent(mint: Buffer, playerId: string, idempotencyKey: string) {
+    return this.db.get<{ mint: string; epoch: string; wallet: string; kind: 0 | 1;
+      tier: string; amount_base: string; reference: string }>(
+      `SELECT mint, epoch, wallet, kind, tier, amount_base, reference FROM economy_v2_intents
+       WHERE mint = ? AND player_id = ? AND idempotency_key = ?`,
+      mintHex(mint), text(playerId, 128), text(idempotencyKey, 128)) ?? null;
+  }
+
   /** One-way backend seal. Caller supplies already-authorized payouts, not scores.
    * Pool is a budget in this database, NOT an RPC-verified vault balance. */
   sealEpoch(mint: Buffer, epoch: bigint, payouts: { wallet: Buffer; amount: bigint }[]) {

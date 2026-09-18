@@ -90,3 +90,42 @@ funds are not automatically swept into another epoch.
 The TypeScript source-contract checks only inspect Rust source. The dedicated
 Rust workflow compiles account constraints and runs pure host tests; neither
 should be reported as a validator test or proof of deployed fund safety.
+
+## Part 7: backend read-only RPC inspection
+
+`backend/src/economy_v2_rpc.ts` parses v2 accounts separately from v1. It
+first discovers the treasury through the config PDA, then rereads config, mint,
+vault, treasury and optional ticket in one finalized `getMultipleAccounts`
+response with `minContextSlot`. Immutable market addresses must not change
+between discovery and the snapshot. RPC transport has a ten-second timeout.
+
+Checks include exact account size, canonical base64, non-executable status,
+program owner, Anchor discriminator, mint-qualified PDA/bump, canonical vault
+ATA, SPL mint initialization/decimals, treasury and vault mint/authority,
+expected tier fees, rake cap, pause encoding and reserved balance coverage.
+Only classic SPL Token is supported: Token-2022, frozen accounts, native token
+accounts, delegates and close authorities are rejected conservatively. Mint
+and freeze authorities may exist; this reader does not certify token economics,
+upgrade authority safety or operator identity beyond the configured program.
+
+Authenticated, rate-limited GET routes:
+
+- `/v2/economy/market?currency=SKR` (or POTATO): operator-configured market
+  snapshot; all base-unit integers are decimal strings.
+- `/v2/economy/ticket?currency=SKR&idempotency_key=...`: looks up an existing
+  immutable internal intent for the session's player, requires the same wallet,
+  and validates the ticket PDA, wallet, mint, reference, kind, tier and amount.
+  A missing ticket returns `ticketed:false`; malformed/incompatible accounts
+  fail closed. There is no public intent-creation route.
+
+Both payment and admission enablement remain **false**. A valid paid ticket is
+not authorization to join, a race-capacity reservation, an authenticated game
+identity, or proof of NFT/freeroll eligibility. In particular the existing
+self-service player link is not sufficient game identity attestation. Paused
+markets can be inspected, but cannot become enabled through these routes.
+The lobby remains an offline catalog and does not mark its mints verified.
+
+Tests use synthetic RPC data, real session signatures and an ephemeral HTTP
+RPC server. They do not demonstrate validator execution or live payment.
+Finalized RPC responses are trusted infrastructure input, not light-client
+proofs. SBF/validator tests and operator deployment verification remain gates.

@@ -156,3 +156,14 @@ PNG compression bytes are no longer mistaken for pixel changes by the UI
 check; manifest SHA256 validation remains separate. Alphabetical hygiene now
 uses --dry-run, with existing sorting issues fixed. Local CI includes these
 same checks so this gap does not recur silently.
+
+### Part 7 — read-only v2 RPC validation
+
+- Added separate strict Anchor/SPL v2 account reader, coherent finalized
+  snapshots, PDA/ATA/owner/mint/fee/reserve/ticket checks and bigint outputs.
+- Added authenticated/rate-limited market and existing-intent ticket inspection;
+  wallet binding is checked in addition to player ID. No public intent creation,
+  payment transaction, race admission, or v1 decoder reuse.
+- Added adversarial account fixtures and HTTP/session tests. Backend: 80 passing
+  tests (11 new). Payment/admission flags remain false; no validator/deployment
+  or native/Android runtime verification is claimed.
