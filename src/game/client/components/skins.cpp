@@ -3,6 +3,8 @@
 
 #include "skins.h"
 
+#include <game/client/potato_catalog.h>
+
 #include <base/dbg.h>
 #include <base/log.h>
 #include <base/math.h>
@@ -757,7 +759,7 @@ CSkins::CSkinList &CSkins::SkinList()
 	m_SkinList.m_vSkins.reserve(m_Skins.size());
 	for(const auto &[_, pSkinContainer] : m_Skins)
 	{
-		if(pSkinContainer->IsSpecial())
+		if(!IsPotatoCatalogSkin(pSkinContainer->Name()) || pSkinContainer->IsSpecial())
 		{
 			continue;
 		}

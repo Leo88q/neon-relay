@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "currency": "SKR",
+  "royalty_bps": 500,
+  "skins": [
+    {
+      "id": "potato_cool_guy_1",
+      "file": "potato_cool_guy_1.png",
+      "rarity": "Common",
+      "price_skr": 500
+    },
+    {
+      "id": "potato_cool_girl_1",
+      "file": "potato_cool_girl_1.png",
+      "rarity": "Common",
+      "price_skr": 500
+    },
+    {
+      "id": "potato_guy_2",
+      "file": "potato_guy_2.png",
+      "rarity": "Common",
+      "price_skr": 500
+    },
+    {
+      "id": "potato_girl_2",
+      "file": "potato_girl_2.png",
+      "rarity": "Common",
+      "price_skr": 500
+    },
+    {
+      "id": "potato_guy_3",
+      "file": "potato_guy_3.png",
+      "rarity": "Common",
+      "price_skr": 500
+    },
+    {
+      "id": "potato_guy_4",
+      "file": "potato_guy_4.png",
+      "rarity": "Rare",
+      "price_skr": 1000
+    },
+    {
+      "id": "potato_girl_3",
+      "file": "potato_girl_3.png",
+      "rarity": "Rare",
+      "price_skr": 1000
+    },
+    {
+      "id": "potato_girl_4",
+      "file": "potato_girl_4.png",
+      "rarity": "Rare",
+      "price_skr": 1000
+    },
+    {
+      "id": "potato_legend_guy",
+      "file": "potato_legend_guy.png",
+      "rarity": "Legendary",
+      "price_skr": 2000
+    },
+    {
+      "id": "potato_legend_girl",
+      "file": "potato_legend_girl.png",
+      "rarity": "Legendary",
+      "price_skr": 2000
+    }
+  ]
+}
