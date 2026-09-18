@@ -396,3 +396,19 @@ nonempty separate sprite cells/distinct eye states/dark outlines), backend
 User approval and actual walking/jumping/hook/weapon visual testing on macOS
 remain required before migrating any more characters. Catalog default remains
 unchanged; explicitly select `player_skin potato_cool_guy_1` for this playtest.
+
+### Art refinement — approved motion, jacket/skin detail and eye spacing
+
+The user approved prototype physics/movement on macOS and requested more body
+and costume detail plus slightly wider eye spacing. Only cool_guy_1 changes:
+continuous warm shading, sparse paired skin dimples, tuft highlights, raised
+jacket collar, contrasting lapels, panel seams, zipped pockets and metal details.
+All six eye sprites move 1.5 source pixels outward (the renderer mirrors the
+second eye); gaze/blink behavior and engine code remain unchanged.
+
+Added a regression against user-tested revision 237da76: hand/foot cells are
+byte-identical, body/outline alpha masks identical, and each eye's alpha centroid
+shifts -1.5 +/- 0.05 source pixels. Full local gates passed: assets 4/4, backend
+97/97, onchain TS 32/32 plus existing checks. Manifest regenerated; nine other
+skins and all face_alt sources unchanged. Final detail/spacing appearance still
+needs the user's in-game review; this is not a new gameplay verification claim.

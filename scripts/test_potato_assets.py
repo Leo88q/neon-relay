@@ -40,6 +40,21 @@ class Assets(unittest.TestCase):
             self.assertFalse(a[96:].any())
             self.assertFalse(a[:96, 192:].any())
 
+    def test_approved_prototype_motion_geometry(self):
+        # User approved motion at this revision; detail work must not move limbs
+        # or alter the body silhouette. Left eye art is mirrored for the right.
+        original = subprocess.check_output(['git', 'show', '237da76:data/skins/potato_cool_guy_1.png'], cwd=ROOT)
+        old = np.array(Image.open(io.BytesIO(original)).convert('RGBA'))
+        new = np.array(Image.open(ROOT / 'data/skins/potato_cool_guy_1.png'))
+        self.assertTrue(np.array_equal(old[:96, 192:], new[:96, 192:]))
+        self.assertTrue(np.array_equal(old[:96, :192, 3], new[:96, :192, 3]))
+        for i in range(6):
+            x = 64 + i*32
+            def center(image):
+                a = image[96:128, x:x+32, 3].astype(float)
+                return (a * np.arange(32)[None, :]).sum() / a.sum()
+            self.assertAlmostEqual(center(new) - center(old), -1.5, delta=0.05)
+
     def test_atlas_outside_rects_unchanged(self):
         original = subprocess.check_output(['git', 'show', 'aef3363:data/game.png'], cwd=ROOT)
         a = np.array(Image.open(io.BytesIO(original)).convert('RGBA'))
