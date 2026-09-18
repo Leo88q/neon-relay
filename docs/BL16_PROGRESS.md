@@ -529,3 +529,14 @@ console. Full client link/boot still requires CI; SDL headers are unavailable
 locally. Native smoke tests now also pass an obsolete `cl_editor 1` argument and
 press Ctrl+Shift+E before opening each product page. They check liveness, not
 visual equality; static regression checks enforce absence of editor entrypoints.
+
+### Map serialization correction after macOS server report
+
+The original Python v4 writer was invalid: an extra raw offset, missing item
+payload-length words, zero starts for every item type and incorrect size/swap
+header offsets. Fixed these against CDataFileReader/CDataFileWriter, plus packed
+layer names against StrToInts. Rebuilt five race maps and two Night Drive theme
+maps without changing their layouts or artwork. Three independent structural
+regression tests cover all seven maps, multi-type/raw-block serialization and
+name encoding. Native server CI now loads every generated race map, rather than
+only LearnToPlay. Loading is not evidence of full gameplay/route acceptance.

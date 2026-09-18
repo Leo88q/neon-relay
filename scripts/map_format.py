@@ -7,9 +7,9 @@ Implements the datafile v4 layout used by src/engine/shared/datafile.cpp:
           num_raw_data, item_size, data_size
   then:   CDatafileItemType[num_item_types]      (type, start_id, count)
           int item_offsets[num_items]            (bytes from item start)
-          int data_offsets[num_raw_data + 1]     (bytes from data start)
+          int data_offsets[num_raw_data]     (bytes from data start)
           int data_sizes[num_raw_data]           (uncompressed sizes)
-          item region (item_size bytes): per item int typeAndId + payload
+          item region (item_size bytes): per item int typeAndId + int payload_size + payload
           data region: zlib-compressed raw blocks, concatenated
 
 Item structs follow src/game/mapitems.h field order. Little-endian on disk.
@@ -23,9 +23,10 @@ TILE = 4  # sizeof(CTile)
 
 
 def pack_name(name):
-	b = name.encode("utf-8")[:12]
-	b = b + b"\0" * (12 - len(b))
-	return [int.fromstring if False else struct.unpack("<i", b[i:i + 4])[0] for i in (0, 4, 8)]
+	b = name.encode("utf-8")[:11].ljust(12, b"\0")
+	b = bytes((v + 128) % 256 for v in b)
+	b = b[:-1] + b"\0"
+	return [struct.unpack(">i", b[i:i + 4])[0] for i in (0, 4, 8)]
 
 
 class Raw:
@@ -88,7 +89,7 @@ class MapWriter:
 		offsets = []
 		for t, i, payload in flat:
 			offsets.append(len(item_bytes))
-			item_bytes += struct.pack("<i", (t << 16) | i)
+			item_bytes += struct.pack("<ii", (t << 16) | i, len(payload) * 4)
 			item_bytes += struct.pack("<%di" % len(payload), *payload)
 		item_size = len(item_bytes)
 
@@ -100,12 +101,14 @@ class MapWriter:
 		data_sizes = [len(r) for r in self.raws]
 
 		types = []
+		start = 0
 		for t in sorted(self.items):
-			types.append((t, 0, len(self.items[t])))
+			types.append((t, start, len(self.items[t])))
+			start += len(self.items[t])
 		ntypes = len(types)
 		nitems = len(flat)
 		nraw = len(self.raws)
-		swaplen = ntypes * 12 + nitems * 4 + (nraw + 1) * 4 + nraw * 4 + item_size
+		swaplen = 36 - 16 + ntypes * 12 + nitems * 4 + nraw * 8 + item_size
 		size = swaplen + len(data_blob)
 
 		out = bytearray()
@@ -116,7 +119,7 @@ class MapWriter:
 			out += struct.pack("<iii", t, s, c)
 		for o in offsets:
 			out += struct.pack("<i", o)
-		for o in data_offsets:
+		for o in data_offsets[:-1]:
 			out += struct.pack("<i", o)
 		for s in data_sizes:
 			out += struct.pack("<i", s)

@@ -33,6 +33,14 @@ with tempfile.TemporaryDirectory(prefix="neonrelay-boot-") as tmp:
     assert "server name is 'neonrelay-ci-boot'" in output, diagnostic
     assert "Found 1 maps for maplist" in output, diagnostic
     assert "No such command" not in output, diagnostic
+    # Exercise every generated race map with the actual engine reader/game init.
+    names = ['Neon Relay Basin', 'Chromatic Canyon', 'Vector Spire', 'Midnight Circuit', 'Aurora Ascent']
+    for name in names:
+        shutil.copyfile(root / f'data/maps/{name}.map', data / f'maps/{name}.map')
+        code, output, diagnostic = run([arg.replace('sv_map LearnToPlay', f'sv_map "{name}"') for arg in args])
+        assert code == 0 and "server name is 'neonrelay-ci-boot'" in output, diagnostic
+        assert 'failed to load map' not in output and 'invalid header' not in output, diagnostic
+        print(f'PASS: native server loaded {name}')
     # Map load is mandatory before server/game initialization. Prove this gate
     # cannot pass merely because the process accepts CLI args and exits zero.
     code, output, diagnostic = run([arg.replace("sv_map LearnToPlay", "sv_map MissingCiMap") for arg in args])
