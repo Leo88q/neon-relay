@@ -129,3 +129,40 @@ Tests use synthetic RPC data, real session signatures and an ephemeral HTTP
 RPC server. They do not demonstrate validator execution or live payment.
 Finalized RPC responses are trusted infrastructure input, not light-client
 proofs. SBF/validator tests and operator deployment verification remain gates.
+
+## Part 8: native bank/runtime integration
+
+`onchain/programs/neonrelay-economy/tests/v2_runtime.rs` runs the actual Anchor
+entrypoint and SPL Token processor under `solana-program-test = 1.18.26`, not
+mock token-transfer callbacks. The transaction signer keys are ephemeral,
+generated inside the test process; no keys are persisted or sent to a cluster.
+
+The scenario verifies:
+
+- 50-token entry debits 50, credits treasury 5 and vault 45, and creates the
+  mint/player-bound ticket; a duplicate cannot charge again.
+- A 100-token entry with only 50 available reaches the first (10-token rake)
+  CPI, then fails the 90-token prize CPI. Both transfers and ticket initialization
+  roll back atomically; all three token balances remain unchanged.
+- Unauthorized pause fails; authorized pause prevents payment and claim.
+- Publication reserves 45; duplicate publication and a second epoch attempting
+  to reserve one more token fail without leaving the second epoch account.
+- Incorrect claim amount fails without leaving a claim account or reducing
+  reserves. A valid claim uses the config PDA signer to transfer 45 back to the
+  player, exhausts epoch/config reserves, and cannot execute twice.
+
+Retries use different compute-budget instructions so the bank cannot satisfy
+negative tests from a cached identical transaction signature. Anchor's native
+entrypoint lifetime adapter retains a small cloned AccountInfo slice per test
+invocation, without unsafe casts; it is test-only and never linked into the
+program. Test-profile debug info is disabled to limit CI linker disk use.
+
+Verified Rust run (host tests plus native runtime scenario):
+https://github.com/Leo88q/neon-relay/actions/runs/35305393273
+at commit `d6ca9d0`. Full local gates also pass (`80` backend, `32` onchain TS).
+
+**Scope limitation:** config and token balances are seeded in genesis; this is
+not an `initialize_v2`/mint initialization test. It is not SBF execution, a
+validator/deployment test, exhaustive cross-mint attack testing, or proof that
+an operator deployment is safe. Those remain release gates. No public payments
+or race admission have been enabled.

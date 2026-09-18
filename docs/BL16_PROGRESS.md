@@ -167,3 +167,16 @@ same checks so this gap does not recur silently.
 - Added adversarial account fixtures and HTTP/session tests. Backend: 80 passing
   tests (11 new). Payment/admission flags remain false; no validator/deployment
   or native/Android runtime verification is claimed.
+
+### Part 8 — native bank/runtime integration (verified)
+
+- Added real Anchor entrypoint + SPL Token CPI scenario under
+  solana-program-test 1.18.26: fee split, payment replay, atomic CPI failure,
+  pause authorization, epoch reservation/overcommit, invalid proof amount,
+  PDA-signed claim and anti-double-claim. No production instruction changes.
+- GitHub Rust host/runtime run 35305393273 succeeded at d6ca9d0.
+- Full local ci-local passed: backend 80/80 and onchain TS 32/32, plus existing
+  assets/branding/secrets/menu/syntax/signer gates.
+- Config/token state is seeded, so initialization remains untested in runtime.
+  This is native bank execution, NOT an SBF binary or validator/deployment test.
+  Public payment and admission flags remain disabled. Full BL-16 is incomplete.
