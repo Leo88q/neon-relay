@@ -1,6 +1,42 @@
 # BL-16: asset stage (not a release)
 
-## Implemented
+## Current visual milestone — generated bodies and retired legacy appearances
+
+As of code commit `4bfe536`, the earlier procedural/animated-face prototypes
+below are superseded. Ten real RGBA 1024×1024 generated body illustrations feed
+ten 256×128 classic sheets with fixed painted faces and independent approved
+hands/feet. The original female face references remain archived; generated
+faces are reference-assisted, **not pixel-identical imports**. Enclosed green
+chroma gaps in Stella were corrected; source import is separate from baking.
+
+235 legacy runtime PNG/JSON files, procedural authoring sheets and the old
+procedural body generator are removed. Only catalog skins load. Unknown,
+legacy, prefix and 0.7-only skin descriptions normalize to catalog visuals
+(default Nox). Freeze/ninja and ghost paths no longer replace appearances.
+The emotion wheel, its default/imported binding, touch action, changing eyes,
+and player smiley bubbles are retired. Protocol fields remain for compatibility.
+
+Home and collection now have opaque navy panels and high-resolution art.
+Desktop collection: 5×2 plus details. Compact collection: paged 2×2, separate
+detail/back state. Wallet/settings/popups are **not** all premium-redesigned.
+NFT purchase/ownership, the complete economy integration and Editor removal
+remain unfinished; this is not completion of BL-16 or a production release.
+
+Validation: local full `ci-local.sh` passed after `f20b3b2`; assets 5, menu 6,
+backend 97 and on-chain conformance 32 tests. CI run
+[35367881648](https://github.com/Leo88q/neon-relay/actions/runs/35367881648)
+passed all seven jobs for `4bfe536`, including a full Linux client build and
+Xvfb desktop/portrait boot with home/store screenshot capture. Artifact:
+`native-client-preview`. Artifact download failed in this workspace, so those
+screenshots were **not visually inspected** here. Source art contact sheet was
+inspected. Native mobile/macOS gameplay and touch acceptance remain untested.
+The store keypress capture is a smoke test, not a UI-content assertion.
+
+The remainder of this document records historical milestones; earlier claims
+about procedural bodies, movable eyes or keeping old skin files are obsolete.
+
+
+## Initial asset milestone (historical; superseded where noted below)
 
 - Ten generated potato sheets, RGBA 256x128, body at most 80x80 inside the 96x96 body cell.
 - Female character faces kept as approved. New guy_3 without ground clouds; horizontal ninja.
