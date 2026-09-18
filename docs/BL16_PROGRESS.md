@@ -302,3 +302,18 @@ same checks so this gap does not recur silently.
 - Local TLS build was not run: curl headers absent and apt mirror unavailable.
   Full game packet -> production backend integration/native gameplay remain
   outstanding; no wallet-login handler or paid admission enabled.
+
+### Part 18 — real backend/native TLS identity chain (verified)
+
+- Extended the compiled native HTTP harness to redeem a wallet-issued pairing
+  token against the actual backend dispatcher over trusted local HTTPS, install
+  the returned connection context, sign an identity challenge and verify it at
+  the backend. Registry/session/signature/nonce behavior is not mocked.
+- Added consumed-token retry, wrong connection nonce, disabled account and
+  token/bearer log-privacy checks. Backend admission remains disabled.
+- CI run 35344279857 passed at f3de11b, including real native TLS execution and
+  existing adversarial TLS tests. Local offline gates passed (backend 94,
+  onchain TS 32 plus assets/signer/native syntax).
+- Confidential wallet-to-game delivery is still test-only private stdin. No
+  unencrypted game token packet was introduced. Production client transport,
+  packet/main-loop wiring and live native playtests remain outstanding.

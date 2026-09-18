@@ -277,3 +277,43 @@ Local offline gates passed (backend 94/94, onchain TS 32/32, compiled protocol a
 connection tests). The native TLS executable itself ran in GitHub CI: the local
 sandbox lacked curl development headers and its apt package mirror was
 unreachable. This is recorded separately, not represented as local TLS success.
+
+## Part 18: native TLS worker against the real backend (verified)
+
+The TLS harness now also runs `scripts/test_native_backend_https.ts`. It creates
+an in-memory instance of the **production backend app** and forwards a loopback
+HTTPS server's request events to the app's actual dispatcher. Registry, wallet
+challenge/session authentication, pairing signature/replay checks and identity
+verification are not replaced or reimplemented.
+
+The focused native executable's `--backend` mode generates a fresh connection
+nonce with `secure_random_fill`, receives a pairing token over private test IPC,
+and redeems it through the real engine curl worker. `GamePairingHttp::Poll`
+installs only the backend-returned context. The connection then signs the real
+backend identity challenge, which the backend accepts as a verified identity
+for the operator-provisioned account. This tests more than manually constructing
+a trusted context on the C++ side.
+
+The test additionally verifies:
+
+- Reusing the consumed token fails and clears native identity on failed refresh.
+- A token issued for another connection nonce does not authenticate the native
+  connection, even though its server request has a valid signature.
+- Disabling the registered account between issue and redemption rejects it.
+- The wallet bearer and pairing token are absent from native stdout/stderr.
+- `admissionEnabled` remains false after successful identity verification.
+
+Verified source revision `f3de11b`, GitHub CI run:
+https://github.com/Leo88q/neon-relay/actions/runs/35344279857
+The existing adversarial TLS tests and all ordinary CI jobs also passed. Local
+offline gates passed with backend 94/94 and onchain TS 32/32; native TLS execution
+was verified in CI, not in the local sandbox without curl development headers.
+
+**Remaining trust/transport gap:** the harness uses private subprocess stdin
+for wallet-to-game token delivery. This is explicitly not a game packet protocol
+or a deployed client channel. Sending bearer-like pairing tokens through chat,
+RCON logs or ordinary unencrypted game UDP is not an acceptable replacement.
+A confidential authenticated client channel and actual game message/main-loop
+wiring still need implementation and playtesting. This result also does not
+validate production backend TLS termination or operator key provisioning. No
+live wallet login, public payment or paid race admission was enabled.
