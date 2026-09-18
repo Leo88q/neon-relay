@@ -23,6 +23,7 @@
 #include <game/client/components/skins.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
+#include <game/client/potato_catalog.h>
 #include <game/collision.h>
 #include <game/gamecore.h>
 #include <game/mapitems.h>
@@ -986,7 +987,7 @@ void CPlayers::OnRender()
 			Frozen = GameClient()->m_Snap.m_aCharacters[i].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[i].m_ExtendedData.m_FreezeEnd != 0;
 		}
 
-		if((GameClient()->m_aClients[i].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
+		if(!IsPotatoCatalogSkin(GameClient()->m_aClients[i].m_aSkinName) && (GameClient()->m_aClients[i].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
 		{
 			// change the skin for the player to the ninja
 			aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();

@@ -240,32 +240,79 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 
 void CMenus::RenderCharacters(CUIRect MainView)
 {
-	MainView.Margin(20.0f, &MainView);
+	MainView.Margin(16.0f, &MainView);
+	const bool Russian = str_find(g_Config.m_ClLanguagefile, "russian") != nullptr;
 	CUIRect Row;
-	MainView.HSplitTop(32.0f, &Row, &MainView);
+	MainView.HSplitTop(30.0f, &Row, &MainView);
 	Ui()->DoLabel(&Row, Localize("Characters"), 24.0f, TEXTALIGN_ML);
-	MainView.HSplitTop(28.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Catalog preview. NFT purchases and equipping are not available yet."), 14.0f, TEXTALIGN_ML);
-	const float Width = MainView.w / 5.0f;
-	const float Height = std::min(MainView.h / 2.0f, 180.0f);
+	MainView.HSplitTop(26.0f, &Row, &MainView);
+	Ui()->DoLabel(&Row, Russian ? "Витрина • Покупки NFT пока недоступны. Только примерка." : "Store preview • NFT purchases unavailable. Local try-on only.", 12.0f, TEXTALIGN_ML);
+	CUIRect Grid, Details;
+	MainView.VSplitLeft(MainView.w * 0.61f, &Grid, &Details);
+	Details.VSplitLeft(10.0f, nullptr, &Details);
+	Details.Draw(ColorRGBA(0.035f, 0.045f, 0.09f, 0.96f), IGraphics::CORNER_ALL, 8.0f);
+	Details.Margin(12.0f, &Details);
+	static int s_Selected = 0;
+	static CButtonContainer s_aSelect[10], s_TryOn;
+	const float Width = Grid.w / 5.0f;
+	const float Height = std::min(Grid.h / 2.0f, 190.0f);
 	for(int i = 0; i < 10; ++i)
 	{
 		const auto &Entry = POTATO_CATALOG[i];
-		CUIRect Card = {MainView.x + (i % 5) * Width, MainView.y + (i / 5) * Height, Width - 6.0f, Height - 6.0f};
-		Card.Draw(ColorRGBA(0.05f, 0.02f, 0.12f, 0.8f), IGraphics::CORNER_ALL, 8.0f);
+		CUIRect Card = {Grid.x + (i % 5) * Width, Grid.y + (i / 5) * Height, Width - 5.0f, Height - 5.0f};
+		const ColorRGBA Tint = Entry.m_PriceSkr == 2000 ? ColorRGBA(0.23f, 0.15f, 0.06f, 0.94f) :
+			Entry.m_PriceSkr == 1000 ? ColorRGBA(0.13f, 0.08f, 0.23f, 0.94f) : ColorRGBA(0.04f, 0.10f, 0.15f, 0.94f);
+		if(DoButton_Menu(&s_aSelect[i], "", s_Selected == i, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 8.0f, 0.0f, Tint))
+			s_Selected = i;
 		CTeeRenderInfo Info;
 		Info.Apply(GameClient()->m_Skins.Find(Entry.m_pSkin));
-		Info.m_Size = 64.0f;
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(1.0f, 0.0f), vec2(Card.x + Card.w / 2.0f, Card.y + 48.0f));
-		Card.HSplitTop(90.0f, nullptr, &Card);
-		Card.HSplitTop(22.0f, &Row, &Card);
-		Ui()->DoLabel(&Row, Entry.m_pName, 13.0f, TEXTALIGN_MC);
+		Info.m_Size = std::min(60.0f, Card.w * 0.7f);
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(0.15f, 0.0f), vec2(Card.x + Card.w / 2.0f, Card.y + Height * 0.3f));
+		Card.HSplitTop(Height * 0.57f, nullptr, &Card);
 		Card.HSplitTop(20.0f, &Row, &Card);
-		Ui()->DoLabel(&Row, Entry.m_pRarity, 12.0f, TEXTALIGN_MC);
-		Card.HSplitTop(22.0f, &Row, &Card);
+		Ui()->DoLabel(&Row, Russian ? Entry.m_pNameRu : Entry.m_pName, 13.0f, TEXTALIGN_MC);
+		Card.HSplitTop(18.0f, &Row, &Card);
+		Ui()->DoLabel(&Row, Entry.m_pRarity, 10.0f, TEXTALIGN_MC);
+		Card.HSplitTop(20.0f, &Row, &Card);
 		char aPrice[32];
 		str_format(aPrice, sizeof(aPrice), "%d SKR", Entry.m_PriceSkr);
-		Ui()->DoLabel(&Row, aPrice, 15.0f, TEXTALIGN_MC);
+		Ui()->DoLabel(&Row, aPrice, 13.0f, TEXTALIGN_MC);
+	}
+	const auto &Entry = POTATO_CATALOG[s_Selected];
+	CUIRect Footer;
+	Details.HSplitBottom(66.0f, &Details, &Footer);
+	Details.HSplitTop(26.0f, &Row, &Details);
+	Ui()->DoLabel(&Row, Russian ? Entry.m_pNameRu : Entry.m_pName, 22.0f, TEXTALIGN_ML);
+	Details.HSplitTop(20.0f, &Row, &Details);
+	Ui()->DoLabel(&Row, Russian ? Entry.m_pTitleRu : Entry.m_pTitle, 13.0f, TEXTALIGN_ML);
+	Details.HSplitTop(82.0f, &Row, &Details);
+	CTeeRenderInfo Info;
+	Info.Apply(GameClient()->m_Skins.Find(Entry.m_pSkin));
+	Info.m_Size = 86.0f;
+	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(0.15f, 0.0f), Row.Center());
+	const char *pSkill = Russian ? Entry.m_pSkillRu : Entry.m_pSkill;
+	const char *pLegend = Russian ? Entry.m_pLegendRu : Entry.m_pLegend;
+	float Font = 12.0f;
+	while(Font > 8.0f && TextRender()->TextBoundingBox(Font, pSkill, -1, Details.w).m_H + TextRender()->TextBoundingBox(Font, pLegend, -1, Details.w).m_H + 16.0f > Details.h)
+		Font -= 0.5f;
+	SLabelProperties Wrapped;
+	Wrapped.m_MaxWidth = Details.w;
+	for(const char *pText : {pSkill, pLegend})
+	{
+		const float H = TextRender()->TextBoundingBox(Font, pText, -1, Details.w).m_H + 8.0f;
+		Details.HSplitTop(H, &Row, &Details);
+		Ui()->DoLabel(&Row, pText, Font, TEXTALIGN_TL, Wrapped);
+	}
+	Footer.HSplitTop(32.0f, &Row, &Footer);
+	Wrapped.m_MaxWidth = Row.w;
+	Ui()->DoLabel(&Row, Russian ? "Навыки — только легенда. Бонусов к физике нет." : "Skills are lore only. No gameplay bonuses.", 10.0f, TEXTALIGN_TL, Wrapped);
+	Footer.HSplitTop(26.0f, &Row, &Footer);
+	if(DoButton_Menu(&s_TryOn, Russian ? "Примерить бесплатно (тест)" : "Try on free (preview)", 0, &Row))
+	{
+		str_copy(g_Config.m_ClPlayerSkin, Entry.m_pSkin);
+		g_Config.m_ClPlayerUseCustomColor = 0;
+		g_Config.m_ClVanillaSkinsOnly = 0;
+		m_NeedSendinfo = true; // catalog try-on always targets the main player, not the dummy
 	}
 }
 

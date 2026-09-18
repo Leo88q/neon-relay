@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Original procedural prototype: separate classic 0.6 body/feet/hand/eye cells.
 No engine/physics changes. Draw at 4x resolution for clean transparent edges.
-Only cool_guy_1 is migrated; approved female sources remain untouched.
+Ten articulated characters; archived female face references remain untouched.
 """
 from pathlib import Path
 import numpy as np
@@ -40,7 +40,58 @@ def outline(image):
     return result
 
 
-def build_sheet():
+# Colors and silhouette accents follow the archived v2 character references.
+PROFILES = {
+    'cool_guy_1': ('#344b60', '#293e52', '#57d4d2', None, 'leather'),
+    'cool_girl_1': ('#26a9b8', '#31778e', '#f771cf', '#ee48b7', 'bomber'),
+    'guy_2': ('#454179', '#292e59', '#3de0d8', None, 'cap'),
+    'girl_2': ('#a644a8', '#522e72', '#e996ec', '#8c47c8', 'punk'),
+    'guy_3': ('#426b97', '#294b73', '#6dddda', None, 'denim'),
+    'guy_4': ('#4c4547', '#2e2b36', '#eebd76', None, 'bandana'),
+    'girl_3': ('#674889', '#3e376d', '#64eee6', '#3ed3d7', 'varsity'),
+    'girl_4': ('#424355', '#282b3e', '#ec8cbd', '#efd285', 'biker'),
+    'legend_guy': ('#9d6532', '#6b3c39', '#ffe298', None, 'gold'),
+    'legend_girl': ('#4a428b', '#292d67', '#66eee5', '#e64baa', 'crown'),
+}
+
+
+def decorate_head(body, hair, style):
+    layer = canvas((96, 96)); d = ImageDraw.Draw(layer)
+    if hair:
+        # Hair frames the face; eyes remain independent emote sprites.
+        polygon(d, [(14, 54), (16, 29), (26, 15), (51, 11), (73, 22), (82, 48),
+                    (75, 62), (68, 39), (65, 28), (48, 31), (30, 26), (24, 53)], hair)
+        polygon(d, [(21, 32), (28, 19), (51, 14), (64, 19), (46, 21), (31, 29)], '#f6b8dc' if style != 'varsity' else '#a2fff0')
+        for x in (20, 24, 70, 74):
+            line(d, [(x, 33), (x-1, 42), (x+2, 54)], '#743b79' if style != 'varsity' else '#218496', .75)
+        line(d, [(44, 55), (48, 57), (53, 54)], '#9f465a', 1)
+        ellipse(d, (46, 57, 51, 58), '#e8818c')
+        for x in (25, 69):
+            ellipse(d, (x-1, 48, x+1, 51), '#efc772')
+    if style == 'cap':
+        polygon(d, [(21, 29), (24, 16), (39, 11), (60, 14), (70, 29)], '#292949')
+        line(d, [(40, 14), (39, 27)], '#675daa', 1.5)
+        polygon(d, [(23, 27), (68, 27), (77, 31), (21, 33)], '#49c4cc')
+        line(d, [(26, 30), (70, 30)], '#b0ece5', 1)
+    if style == 'bandana':
+        polygon(d, [(17, 29), (23, 19), (71, 20), (79, 30)], '#673d42')
+        line(d, [(22, 26), (74, 26)], '#c67a66', 1)
+        for x in (30, 43, 56, 69):
+            polygon(d, [(x, 22), (x+2, 25), (x, 28), (x-2, 25)], '#d6aa7a')
+        line(d, [(36, 54), (41, 59), (55, 59), (61, 53)], '#624130', 3)
+    if style in ('gold', 'crown'):
+        polygon(d, [(31, 26), (28, 15), (38, 20), (46, 10), (54, 20), (65, 14), (61, 27)], '#b67c32')
+        line(d, [(31, 23), (61, 23)], '#ffe49c', 2)
+        for x in (35, 46, 57):
+            ellipse(d, (x-1.5, 20, x+1.5, 23), '#ed6ba7' if style == 'crown' else '#62e3d9')
+    # Accessories never enlarge the body collision/render silhouette.
+    from PIL import ImageChops
+    layer.putalpha(ImageChops.multiply(layer.getchannel('A'), body.getchannel('A')))
+    body.alpha_composite(layer)
+
+
+def build_sheet(name='cool_guy_1', high_resolution=False):
+    primary, secondary, accent, hair, style = PROFILES[name]
     body = canvas((96, 96))
     d = ImageDraw.Draw(body)
     ellipse(d, (12, 12, 84, 83), '#ac713b')
@@ -67,6 +118,8 @@ def build_sheet():
     polygon(d, [(31, 19), (34, 12), (44, 13), (51, 10), (59, 16), (48, 19)], '#654534')
     line(d, [(35, 15), (43, 16), (50, 13)], '#aa7846', 1)
     line(d, [(40, 18), (49, 17), (54, 15)], '#885735', .75)
+    if name != "cool_guy_1":
+        decorate_head(body, hair, style)
     # Raised collar/lapels remain visible above the separate animated feet.
     jacket = canvas((96, 96)); j = ImageDraw.Draw(jacket)
     polygon(j, [(10, 60), (29, 49), (47, 60), (67, 48), (86, 59), (86, 90), (10, 90)], INK)
@@ -95,6 +148,32 @@ def build_sheet():
     polygon(j, [(47, 63), (49, 64), (49, 67), (47, 68)], '#d0d9d2')
     line(j, [(25, 80), (40, 83)], '#517280', .75)
     line(j, [(56, 83), (72, 79)], '#415c74', .75)
+    if name != 'cool_guy_1':
+        from PIL import ImageColor
+        pixels = np.array(jacket)
+        for old, new in [('#344b60', primary), ('#293e52', secondary), ('#57d4d2', accent),
+                         ('#40596c', primary), ('#334b62', secondary), ('#50677a', accent)]:
+            mask = (pixels[..., :3] == ImageColor.getrgb(old)).all(axis=2)
+            pixels[mask, :3] = ImageColor.getrgb(new)
+        jacket = Image.fromarray(pixels); j = ImageDraw.Draw(jacket)
+        if style == 'cap':
+            for x in (22, 30, 65, 72):
+                line(j, [(x, 62), (x, 75), (x+4, 75), (x+4, 79)], accent, .75)
+                ellipse(j, (x-1, 61, x+1, 63), '#c9f4e7')
+        elif style in ('bomber', 'varsity', 'denim'):
+            polygon(j, [(25, 62), (31, 62), (32, 70), (25, 70)], accent)
+            line(j, [(27, 64), (30, 65), (27, 66), (27, 69)], INK, .75)
+            for y in (77, 79, 81):
+                line(j, [(20, y), (37, y+2)], accent, .5)
+        elif style in ('punk', 'biker', 'bandana'):
+            for x in (23, 28, 65, 70):
+                polygon(j, [(x, 61), (x+1, 63), (x, 65), (x-1, 63)], '#d4dce0')
+            line(j, [(32, 66), (40, 73), (53, 73), (63, 65)], '#c2a983', 1)
+        elif style in ('gold', 'crown'):
+            for y in (61, 65):
+                line(j, [(27, y), (37, y+8), (49, y+10), (62, y+3), (69, y-2)], '#f4ce72', 1.5)
+            polygon(j, [(48, 69), (52, 74), (48, 79), (44, 74)], accent)
+            line(j, [(20, 70), (26, 80), (33, 76)], '#e58acb', 1)
     # Clip the jacket to the original rounded body alpha, not a human silhouette.
     from PIL import ImageChops
     jacket.putalpha(ImageChops.multiply(jacket.getchannel('A'), body.getchannel('A')))
@@ -111,10 +190,12 @@ def build_sheet():
     ellipse(d, (8, 7, 23, 22), '#e9bc74')
     line(d, [(12, 11), (18, 10)], '#f7d99f', 1.5)
 
-    sheet = Image.new('RGBA', (256, 128))
+    factor = SCALE if high_resolution else 1
+    sheet = Image.new('RGBA', (256*factor, 128*factor))
     for art, pos, border in [(body, (0, 0), (96, 0)), (hand, (192, 0), (224, 0)), (foot, (192, 32), (192, 64))]:
-        sheet.paste(finish(art), pos)
-        sheet.paste(finish(outline(art)), border)
+        sheet.paste(art if high_resolution else finish(art), tuple(v*factor for v in pos))
+        edge = outline(art)
+        sheet.paste(edge if high_resolution else finish(edge), tuple(v*factor for v in border))
     # One lens/eye per cell: the renderer mirrors it for the second eye and
     # applies gaze/blink/emote transforms. No eyes are baked into the body.
     for index in range(6):
@@ -135,14 +216,24 @@ def build_sheet():
         else:
             line(d, [(9, 8), (23, 24)], INK, 3)
             line(d, [(23, 8), (9, 24)], INK, 3)
+        if hair and index in (0, 1, 5):
+            # Expressive iris and lashes, not replacement black-dot faces.
+            ellipse(d, (13, 13, 20, 24), '#754e9c' if style in ('punk', 'crown') else '#267f88')
+            ellipse(d, (15, 15, 18, 23), '#24304a')
+            ellipse(d, (13, 13, 16, 16), '#f6eee0')
+            line(d, [(8, 8), (5, 5)], INK, 1.5)
+            line(d, [(10, 6), (8, 3)], INK, 1.5)
+        if style == 'gold' and index in (0, 1, 5):
+            line(d, [(8, 7), (12, 5), (23, 8)], '#f4cb70', 1.5)
         shifted = canvas((32, 32))
         shifted.alpha_composite(eye, (-int(EYE_OUTWARD_SHIFT*SCALE), 0))
-        sheet.paste(finish(shifted), (64 + index*32, 96))
+        sheet.paste(shifted if high_resolution else finish(shifted), ((64 + index*32)*factor, 96*factor))
     return sheet
 
 
 def main():
-    build_sheet().save(ROOT / 'data/skins/potato_cool_guy_1.png')
+    for name in PROFILES:
+        build_sheet(name).save(ROOT / f'data/skins/potato_{name}.png')
 
 
 if __name__ == '__main__':

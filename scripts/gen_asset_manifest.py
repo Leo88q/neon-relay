@@ -192,7 +192,7 @@ def main() -> int:
 
     for path in watched:
         rel = path.relative_to(ROOT).as_posix()
-        if rel == "data/skins/potato_cool_guy_1.png":
+        if (rel.startswith("data/skins/potato_") and rel.endswith(".png")) or rel.startswith("assets-src/potato/articulated/"):
             add(rel, path, "Neon Relay project (AI-assisted procedural artwork)",
                 "AI-assisted artwork; human copyright eligibility not assessed",
                 "Zlib", OWN_URL,

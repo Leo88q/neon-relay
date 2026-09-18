@@ -47,11 +47,27 @@ class MenuContract(unittest.TestCase):
             self.assertIn('"' + item['id'] + '"', header)
             self.assertIn(str(item['price_skr']), header)
 
+    def test_character_lore_and_freeze_identity(self):
+        catalog = json.loads(self.text('data/skins/potato_catalog.json'))
+        self.assertFalse(catalog['purchase_enabled'])
+        self.assertTrue(catalog['skills_are_lore_only'])
+        self.assertEqual(sorted(s['price_skr'] for s in catalog['skins']), [500]*5+[1000]*3+[2000]*2)
+        for row in catalog['skins']:
+            self.assertFalse(row['gameplay_bonuses'])
+            for field in ('name', 'title', 'skill_lore', 'legend'):
+                self.assertTrue(row[field]['ru'])
+                self.assertTrue(row[field]['en'])
+        players = self.text('src/game/client/components/players.cpp')
+        self.assertIn('!IsPotatoCatalogSkin(GameClient()->m_aClients[i].m_aSkinName)', players)
+        self.assertIn('TEE_EFFECT_FROZEN | TEE_NO_WEAPON', players)
+
     def test_no_fake_purchase_or_rankings(self):
         pages = self.text('src/game/client/components/menus_settings_wallet.cpp')
         pages = pages[pages.index('void CMenus::RenderRaceLobby'):]
         self.assertIn('Paid entry is not available yet.', pages)
-        self.assertIn('NFT purchases and equipping are not available yet.', pages)
+        self.assertIn('NFT purchases unavailable.', pages)
+        self.assertIn('Skills are lore only. No gameplay bonuses.', pages)
+        self.assertIn('Try on free (preview)', pages)
         self.assertIn('Rankings are unavailable', pages)
         self.assertNotIn('neonrelay_wallet_request_', pages)
         self.assertIn('Practice - server browser', pages)

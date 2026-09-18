@@ -16,14 +16,24 @@ struct CPotatoCatalogEntry
 	const char *m_pName;
 	const char *m_pRarity;
 	int m_PriceSkr;
+	const char *m_pNameRu;
+	const char *m_pTitle;
+	const char *m_pTitleRu;
+	const char *m_pSkill;
+	const char *m_pSkillRu;
+	const char *m_pLegend;
+	const char *m_pLegendRu;
 };
 inline constexpr CPotatoCatalogEntry POTATO_CATALOG[] = {
 '''
 for row in rows:
     assert row['id'].replace('_', '').isalnum()
     assert (ROOT / 'data/skins' / row['file']).is_file()
-    name = row['id'].removeprefix('potato_').replace('_', ' ').title()
-    header += '\t{' + ', '.join([json.dumps(row['id']), json.dumps(name), json.dumps(row['rarity']), str(row['price_skr'])]) + '},\n'
+    assert row['gameplay_bonuses'] is False
+    values = [row['id'], row['name']['en'], row['rarity'], row['price_skr'], row['name']['ru'],
+              row['title']['en'], row['title']['ru'], row['skill_lore']['en'], row['skill_lore']['ru'],
+              row['legend']['en'], row['legend']['ru']]
+    header += '\t{' + ', '.join(json.dumps(value, ensure_ascii=False) for value in values) + '},\n'
 header += '''};
 inline bool IsPotatoCatalogSkin(const char *pName)
 {

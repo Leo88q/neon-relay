@@ -7,61 +7,233 @@
       "id": "potato_cool_guy_1",
       "file": "potato_cool_guy_1.png",
       "rarity": "Common",
-      "price_skr": 500
+      "price_skr": 500,
+      "name": {
+        "ru": "Нокс",
+        "en": "Nox"
+      },
+      "title": {
+        "ru": "Ночной трассер",
+        "en": "Night runner"
+      },
+      "skill_lore": {
+        "ru": "Читает ритм трассы и выбирает точку для крюка.",
+        "en": "Reads a route and plans the next hook."
+      },
+      "legend": {
+        "ru": "Нокс доставлял посылки между крышами неонового города. Его потёртая куртка хранит следы сотен маршрутов, а бирюзовые линзы отражают следующий поворот.",
+        "en": "Nox delivered parcels across the neon rooftops. His worn jacket remembers hundreds of routes; his cyan lenses always face the next turn."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_cool_girl_1",
       "file": "potato_cool_girl_1.png",
       "rarity": "Common",
-      "price_skr": 500
+      "price_skr": 500,
+      "name": {
+        "ru": "Люма",
+        "en": "Luma"
+      },
+      "title": {
+        "ru": "Искра команды",
+        "en": "Team spark"
+      },
+      "skill_lore": {
+        "ru": "Поддерживает команду и находит выход из сложной секции.",
+        "en": "Keeps the crew together through difficult sections."
+      },
+      "legend": {
+        "ru": "Люма превратила заброшенную станцию в место встреч гонщиков. Розовые волосы и бирюзовый бомбер видны издалека: если она на старте, никто не остаётся позади.",
+        "en": "Luma made an abandoned station a home for racers. Pink hair and a turquoise bomber announce her arrival: nobody gets left behind."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_guy_2",
       "file": "potato_guy_2.png",
       "rarity": "Common",
-      "price_skr": 500
+      "price_skr": 500,
+      "name": {
+        "ru": "Бит",
+        "en": "Bit"
+      },
+      "title": {
+        "ru": "Мастер схем",
+        "en": "Circuit maker"
+      },
+      "skill_lore": {
+        "ru": "Запоминает последовательности и разбирается в механизмах.",
+        "en": "Remembers sequences and understands mechanisms."
+      },
+      "legend": {
+        "ru": "Бит собирал игровые автоматы из списанных деталей. Теперь узоры на его худи повторяют схемы любимых устройств, а кепка неизменно повёрнута к следующему приключению.",
+        "en": "Bit built arcade machines from discarded parts. The circuits on his hoodie recall his favourite inventions, and his cap points toward the next adventure."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_girl_2",
       "file": "potato_girl_2.png",
       "rarity": "Common",
-      "price_skr": 500
+      "price_skr": 500,
+      "name": {
+        "ru": "Рокси",
+        "en": "Roxy"
+      },
+      "title": {
+        "ru": "Ритм улиц",
+        "en": "Street rhythm"
+      },
+      "skill_lore": {
+        "ru": "Держит темп и не теряется после неудачного прыжка.",
+        "en": "Finds her rhythm again after a missed jump."
+      },
+      "legend": {
+        "ru": "Рокси начинала с выступлений во дворах. Она сменила сцену на трассу, но сохранила фиолетовую чёлку, дерзкую улыбку и привычку превращать каждую попытку в шоу.",
+        "en": "Roxy began on courtyard stages. She traded the stage for a race route, keeping her violet fringe and her habit of making every attempt a show."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_guy_3",
       "file": "potato_guy_3.png",
       "rarity": "Common",
-      "price_skr": 500
+      "price_skr": 500,
+      "name": {
+        "ru": "Риф",
+        "en": "Riff"
+      },
+      "title": {
+        "ru": "Курьер рассвета",
+        "en": "Dawn courier"
+      },
+      "skill_lore": {
+        "ru": "Ищет понятную линию движения на незнакомой карте.",
+        "en": "Looks for a clear route through unfamiliar maps."
+      },
+      "legend": {
+        "ru": "Риф знает город по утренним доставкам. На джинсовой куртке остались нашивки старых районов; он приходит на старт раньше всех, чтобы встретить рассвет на финише.",
+        "en": "Riff knows the city from his morning deliveries. District patches cover his denim jacket; he starts early to greet the sunrise at the finish."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_guy_4",
       "file": "potato_guy_4.png",
       "rarity": "Rare",
-      "price_skr": 1000
+      "price_skr": 1000,
+      "name": {
+        "ru": "Бруно",
+        "en": "Bruno"
+      },
+      "title": {
+        "ru": "Стальная выдержка",
+        "en": "Steady resolve"
+      },
+      "skill_lore": {
+        "ru": "Терпеливо отрабатывает сложные участки и помогает новичкам.",
+        "en": "Practises difficult sections and helps newcomers."
+      },
+      "legend": {
+        "ru": "Бруно чинил мотоциклы ночной смены. Бандана и металлические заклёпки остались с тех времён. За суровым видом скрывается самый терпеливый наставник квартала.",
+        "en": "Bruno repaired motorcycles on the night shift. His bandana and metal studs remain, but behind the tough look is the most patient mentor in the district."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_girl_3",
       "file": "potato_girl_3.png",
       "rarity": "Rare",
-      "price_skr": 1000
+      "price_skr": 1000,
+      "name": {
+        "ru": "Вега",
+        "en": "Vega"
+      },
+      "title": {
+        "ru": "Капитан импульса",
+        "en": "Pulse captain"
+      },
+      "skill_lore": {
+        "ru": "Согласует действия команды и задаёт общий темп.",
+        "en": "Coordinates the crew and sets a shared rhythm."
+      },
+      "legend": {
+        "ru": "Вега собрала первую команду своего района из незнакомцев. Бирюзовая прядь и клубная куртка стали её знаком: победа имеет смысл, когда до финиша дошли все.",
+        "en": "Vega formed her district’s first crew from strangers. Her turquoise hair and varsity jacket became a promise: a finish matters when everyone reaches it."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_girl_4",
       "file": "potato_girl_4.png",
       "rarity": "Rare",
-      "price_skr": 1000
+      "price_skr": 1000,
+      "name": {
+        "ru": "Стелла",
+        "en": "Stella"
+      },
+      "title": {
+        "ru": "Холодная точность",
+        "en": "Cool precision"
+      },
+      "skill_lore": {
+        "ru": "Разбирает ошибки и доводит маршрут до уверенного прохождения.",
+        "en": "Studies mistakes and practises a route until it feels natural."
+      },
+      "legend": {
+        "ru": "Стелла фотографировала ночной город, пока сама не оказалась в кадре гонки. Светлые пряди, тёмная кожа куртки и спокойный взгляд — её подпись на каждой трассе.",
+        "en": "Stella photographed the city at night before entering the frame herself. Blonde hair, dark leather and a calm gaze are her signature on every route."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_legend_guy",
       "file": "potato_legend_guy.png",
       "rarity": "Legendary",
-      "price_skr": 2000
+      "price_skr": 2000,
+      "name": {
+        "ru": "Мидас",
+        "en": "Midas"
+      },
+      "title": {
+        "ru": "Хранитель финала",
+        "en": "Keeper of the finish"
+      },
+      "skill_lore": {
+        "ru": "Сохраняет хладнокровие в решающей попытке.",
+        "en": "Keeps his composure on a decisive attempt."
+      },
+      "legend": {
+        "ru": "Мидас не покупал свою корону: друзья собрали её из медалей дворовых турниров. Золотые цепи напоминают не о богатстве, а о людях, с которыми он прошёл путь.",
+        "en": "Midas never bought his crown: friends made it from local tournament medals. His gold chains recall not wealth, but the people who shared the journey."
+      },
+      "gameplay_bonuses": false
     },
     {
       "id": "potato_legend_girl",
       "file": "potato_legend_girl.png",
       "rarity": "Legendary",
-      "price_skr": 2000
+      "price_skr": 2000,
+      "name": {
+        "ru": "Аврора",
+        "en": "Aurora"
+      },
+      "title": {
+        "ru": "Королева неона",
+        "en": "Neon queen"
+      },
+      "skill_lore": {
+        "ru": "Вдохновляет команду пробовать снова после поражения.",
+        "en": "Inspires her crew to try again after defeat."
+      },
+      "legend": {
+        "ru": "Аврора зажгла огни первой ночной гонки после долгого затишья. Розовые волосы, сияющая корона и узоры на костюме стали символом возвращения города к жизни.",
+        "en": "Aurora lit the first night race after a long silence. Pink hair, a radiant crown and luminous costume patterns became symbols of a city coming back to life."
+      },
+      "gameplay_bonuses": false
     }
-  ]
+  ],
+  "purchase_enabled": false,
+  "skills_are_lore_only": true
 }
