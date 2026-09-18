@@ -1,4 +1,5 @@
-//! Native bank/runtime + real SPL CPI tests. Not an SBF/validator test.
+//! Bank/runtime + real SPL CPI tests. NEONRELAY_TEST_SBF=1 requires the built ELF.
+//! Default mode is native; neither mode contacts a validator or deploys a program.
 use anchor_lang::{prelude::*, AccountDeserialize, AccountSerialize, InstructionData, ToAccountMetas};
 use anchor_lang::solana_program::{entrypoint::ProgramResult, program_pack::Pack};
 use anchor_spl::token::spl_token;
@@ -11,6 +12,21 @@ use solana_sdk::{account::Account, instruction::Instruction, signature::{Keypair
 // Only this short-lived test process leaks these slices; never production code.
 fn entry<'a, 'b, 'c, 'd>(id: &'a Pubkey, accounts: &'b [AccountInfo<'c>], data: &'d [u8]) -> ProgramResult {
     neonrelay_economy::entry(id, Box::leak(accounts.to_vec().into_boxed_slice()), data)
+}
+fn economy_test() -> ProgramTest {
+    let sbf = std::env::var("NEONRELAY_TEST_SBF").as_deref() == Ok("1");
+    if sbf {
+        let directory = std::env::var("BPF_OUT_DIR").expect("SBF mode requires BPF_OUT_DIR");
+        let elf = std::path::Path::new(&directory).join("neonrelay_economy.so");
+        assert!(elf.is_file(), "SBF binary missing: {}", elf.display());
+    }
+    let mut test = ProgramTest::default();
+    test.prefer_bpf(sbf);
+    // None in SBF mode prevents a silent native fallback for the economy.
+    test.add_program("neonrelay_economy", neonrelay_economy::id(), if sbf { None } else { processor!(entry) });
+    // SPL/ATA dependencies retain their actual native processors in both modes.
+    test.prefer_bpf(false);
+    test
 }
 fn pda(seeds: &[&[u8]]) -> (Pubkey, u8) { Pubkey::find_program_address(seeds, &neonrelay_economy::id()) }
 fn stored(data: Vec<u8>, owner: Pubkey) -> Account {
@@ -52,7 +68,7 @@ async fn payment_reservations_claims_and_atomic_failures() {
     let mint = Pubkey::new_unique(); let source = Pubkey::new_unique(); let treasury = Pubkey::new_unique();
     let (config, bump) = pda(&[b"neonrelay_economy_v2", mint.as_ref()]);
     let vault = anchor_spl::associated_token::get_associated_token_address(&config, &mint);
-    let mut test = ProgramTest::new("neonrelay_economy", neonrelay_economy::id(), processor!(entry));
+    let mut test = economy_test();
     test.add_program("spl_token", spl_token::id(), processor!(spl_token::processor::Processor::process));
     for key in [admin.pubkey(), player.pubkey()] {
         test.add_account(key, Account { lamports: 10_000_000_000, owner: system_program::id(), ..Default::default() });
@@ -136,7 +152,7 @@ async fn initialize_and_isolate_two_mint_markets() {
     let sources = [Pubkey::new_unique(), Pubkey::new_unique(), Pubkey::new_unique()];
     let configs = mints.map(|mint| pda(&[b"neonrelay_economy_v2", mint.as_ref()]).0);
     let vaults: Vec<_> = (0..3).map(|i| associated_token::get_associated_token_address(&configs[i], &mints[i])).collect();
-    let mut test = ProgramTest::new("neonrelay_economy", neonrelay_economy::id(), processor!(entry));
+    let mut test = economy_test();
     test.add_program("spl_token", spl_token::id(), processor!(spl_token::processor::Processor::process));
     test.add_program("spl_associated_token_account", associated_token::ID,
         processor!(spl_associated_token_account::processor::process_instruction));
