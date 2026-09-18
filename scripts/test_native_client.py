@@ -35,6 +35,11 @@ for name, width, height in [('desktop', 1280, 800), ('portrait', 480, 900)]:
                 time.sleep(3)
                 assert process.poll() is None, 'client crashed while rendering'
                 subprocess.run(['import','-window',window,str(output/f'{name}.png')],check=True,timeout=10)
+                subprocess.run(['xdotool','windowfocus','--sync',window],check=True)
+                subprocess.run(['xdotool','key','c'],check=True)
+                time.sleep(2)
+                assert process.poll() is None, 'client crashed while opening character store'
+                subprocess.run(['import','-window',window,str(output/f'{name}-store.png')],check=True,timeout=10)
                 # Ask the application to close rather than leaving an orphan.
                 subprocess.run(['xdotool','windowclose',window], check=False)
                 try: process.wait(timeout=8)
