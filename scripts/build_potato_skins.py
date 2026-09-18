@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Potato v2 mascots: matte the black-backdrop generations, store 512x512
+"""cool_guy_1 uses the articulated prototype in build_potato_animated.py.
+All other skins retain this legacy layout pending user playtest approval.
+
+Potato v2 mascots: matte the black-backdrop generations, store 512x512
 sources + the 1280x512 collage, and bake DDNet-compatible 256x128 skin sheets.
 
 Skin sheet layout (tee grid 8x4 -> 32px cells, see datasrc/content.py):
@@ -18,6 +21,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build_potato_animated import build_sheet
 from build_potato_weapon_sheet import contain, prepare_source  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -53,6 +57,10 @@ def main() -> int:
     print(f"[collage] {SRC / 'potato_v2_all_10.png'} 1280x512")
 
     for name in POTATOES:
+        if name == "cool_guy_1":
+            build_sheet().save(SKINS / "potato_cool_guy_1.png")
+            print("[skin] potato_cool_guy_1.png: articulated prototype, separate limbs/eyes")
+            continue
         art = sources[name].crop(sources[name].getchannel("A").getbbox())
         body = contain(art, (BODY_PX, BODY_PX))
         sheet = Image.new("RGBA", (256, 128), (0, 0, 0, 0))

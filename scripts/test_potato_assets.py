@@ -25,6 +25,18 @@ class Assets(unittest.TestCase):
             self.assertLessEqual(box[2] - box[0], 80)
             self.assertLessEqual(box[3] - box[1], 80)
             self.assertTrue(a[:96, 96:192].any())
+            if name == 'cool_guy_1':
+                cells = [(192, 0, 224, 32), (224, 0, 256, 32), (192, 32, 256, 64), (192, 64, 256, 96)]
+                cells += [(64+i*32, 96, 96+i*32, 128) for i in range(6)]
+                for cell in cells:
+                    self.assertIsNotNone(im.crop(cell).getchannel('A').getbbox())
+                eyes = [im.crop(cell).tobytes() for cell in cells[4:]]
+                self.assertEqual(len(set(eyes)), 6)
+                border = np.array(im.crop((96, 0, 192, 96)))
+                visible = border[..., 3] > 128
+                self.assertTrue((border[visible, :3] < 100).all())
+                self.assertFalse(a[96:, :64].any())
+                continue
             self.assertFalse(a[96:].any())
             self.assertFalse(a[:96, 192:].any())
 

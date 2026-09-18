@@ -569,7 +569,6 @@ docs/BUILDING.md,9,historical-documentation,document that describes the upstream
 docs/BUILDING.md,25,historical-documentation,document that describes the upstream derivation,CREATE DATABASE ddnet;
 docs/BUILDING.md,26,historical-documentation,document that describes the upstream derivation,CREATE USER 'ddnet'@'localhost' IDENTIFIED BY 'thebestpassword';
 docs/BUILDING.md,27,historical-documentation,document that describes the upstream derivation,GRANT ALL PRIVILEGES ON ddnet.* TO 'ddnet'@'localhost';
-docs/BUILDING.md,35,historical-documentation,document that describes the upstream derivation,"Whether to enable client compilation. If set to OFF, DDNet will not depend on Curl, Freetype, Ogg, Opus, Opusfile, and SDL2. Default value is ON."
 docs/CONTRIBUTING.md,1,historical-documentation,document that describes the upstream derivation,# Contributing code to DDNet
 docs/CONTRIBUTING.md,6,historical-documentation,document that describes the upstream derivation,It would be unfortunate if you spend time working on a contribution that does not align with the ideals of the DDNet project.
 docs/CONTRIBUTING.md,10,historical-documentation,document that describes the upstream derivation,https://github.com/ddnet/ddnet/pull/8275
@@ -837,7 +836,7 @@ scripts/android/cmake_android.sh,271,comment,"source comment, not shown to users
 scripts/android/cmake_android.sh,273,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),cp -R ../ddnet-libs/sdl/java/org src/main/java/
 scripts/build_neon_mapres.py,41,code/api-identifier,identifier kept for protocol/build compatibility ((ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|r),"""desert_main.png"", ""ddnet_tiles.png"", ""round_tiles.png"", ""snow.png"","
 scripts/build_neon_skins_all.py,505,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",The 128x128 sheet is the standard DDNet 0.7 eye layout: each cell is a
-scripts/build_potato_skins.py,3,code/api-identifier,"brand appears only as a variable/type name, not in a string literal","sources + the 1280x512 collage, and bake DDNet-compatible 256x128 skin sheets."
+scripts/build_potato_skins.py,6,code/api-identifier,"brand appears only as a variable/type name, not in a string literal","sources + the 1280x512 collage, and bake DDNet-compatible 256x128 skin sheets."
 scripts/compile_libs/gen_libs.sh,141,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),# Copy files into ddnet-libs structure
 scripts/compile_libs/gen_libs.sh,142,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"log_info_header ""Copying files into ddnet-libs structure..."""
 scripts/compile_libs/gen_libs.sh,144,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),mkdir -p ddnet-libs
@@ -870,10 +869,10 @@ scripts/gen_asset_manifest.py,39,historical-documentation,document that describe
 scripts/gen_asset_manifest.py,86,historical-documentation,document that describes the upstream derivation,"""grass_main is redrawn from the original Teeworlds grass_main mapres (Apache-2.0)"","
 scripts/gen_asset_manifest.py,190,historical-documentation,document that describes the upstream derivation,"unnamed = ""DDNet contributors (no individual author named upstream)"""
 scripts/gen_asset_manifest.py,191,historical-documentation,document that describes the upstream derivation,"unnamed_cc = ""Copyright DDNet contributors (no individual author named upstream)"""
-scripts/gen_asset_manifest.py,249,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
-scripts/gen_asset_manifest.py,253,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
-scripts/gen_asset_manifest.py,310,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""Teeworlds 0.7 contributors"", ""no per-file license upstream"","
-scripts/gen_asset_manifest.py,312,historical-documentation,document that describes the upstream derivation,"""Teeworlds 0.7 skin system; upstream names neither author nor license here"","
+scripts/gen_asset_manifest.py,256,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
+scripts/gen_asset_manifest.py,260,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
+scripts/gen_asset_manifest.py,317,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""Teeworlds 0.7 contributors"", ""no per-file license upstream"","
+scripts/gen_asset_manifest.py,319,historical-documentation,document that describes the upstream derivation,"""Teeworlds 0.7 skin system; upstream names neither author nor license here"","
 scripts/git_revision.py,6,code/api-identifier,brand appears only inside code identifiers,"git_hash = os.environ.get(""DDNET_GIT_SHORTREV_HASH"")"
 scripts/import_file_score.py,72,code/api-identifier,brand appears only inside code identifiers,"""DDNet7 BOOL DEFAULT FALSE"""
 scripts/import_file_score.py,76,code/api-identifier,brand appears only inside code identifiers,"""INSERT INTO record_race (Map, Name, Time, Server, "" + """".join(f""cp{i + 1}, "" for i in range(25)) + ""GameId, DDNet7) "" + f""VALUES ({','.join('?' * 31)})"","

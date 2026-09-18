@@ -371,3 +371,28 @@ same checks so this gap does not recur silently.
   not in the local sandbox, where Rust/curl development dependencies are absent.
 - Outstanding: native client build and visual playtest, active relay defenses,
   packet/UI integration and full economy/admission flow. Payments remain off.
+
+### Art prototype — articulated cool_guy_1 after macOS visual feedback
+
+The user successfully built/ran the macOS client and connected to a local
+server, then reported the paper-cutout body, white outline and unmoving painted
+limbs. This is direct visual feedback, not an automated macOS build gate.
+
+Only `data/skins/potato_cool_guy_1.png` is replaced by a new original procedural
+prototype (`scripts/build_potato_animated.py`, invoked by the existing skin
+builder). It uses a rounded potato/jacket body with no painted limbs or eyes,
+separate hand/foot and dark-outline cells, and six distinct eye cells. Native
+classic 0.6 rendering supplies gait, weapon/ hook hand positioning, gaze and
+blink transforms. No physics, rendering code, payment or ownership flags change.
+
+The other nine sheets, all female face_alt references, weapons and v2 source
+collage are unchanged. The old v2 collage remains a historical reference, not a
+preview of this prototype. The new design is deliberately simplified original
+procedural artwork, not a pixel-identical import or cutout of the old source.
+
+Local full gates passed: assets 3/3 (including deterministic regeneration and
+nonempty separate sprite cells/distinct eye states/dark outlines), backend
+97/97, onchain TS 32/32, branding/licenses/syntax/signer. Asset manifest updated.
+User approval and actual walking/jumping/hook/weapon visual testing on macOS
+remain required before migrating any more characters. Catalog default remains
+unchanged; explicitly select `player_skin potato_cool_guy_1` for this playtest.

@@ -192,6 +192,13 @@ def main() -> int:
 
     for path in watched:
         rel = path.relative_to(ROOT).as_posix()
+        if rel == "data/skins/potato_cool_guy_1.png":
+            add(rel, path, "Neon Relay project (AI-assisted procedural artwork)",
+                "AI-assisted artwork; human copyright eligibility not assessed",
+                "Zlib", OWN_URL,
+                "Original procedural articulated prototype: scripts/build_potato_animated.py; not copied from reference art",
+                "ship")
+            continue
         if rel.startswith(("assets-src/potato/", "assets-src/weapons/", "data/skins/potato_")):
             add(rel, path, "Neon Relay project (AI-assisted artwork)",
                 "AI-generated artwork; human copyright eligibility not assessed",
