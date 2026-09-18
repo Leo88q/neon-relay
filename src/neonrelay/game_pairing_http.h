@@ -16,6 +16,7 @@ public:
 	GamePairingHttp &operator=(const GamePairingHttp &) = delete;
 	bool Start(const std::shared_ptr<GameConnectionIdentity> &Connection, const std::string &Token, const MatchSigner &Signer, int64_t Now);
 	void Poll(int64_t Now);
+	size_t PendingCount() const { return m_Pending.size(); }
 private:
 	struct Pending
 	{

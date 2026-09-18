@@ -3,6 +3,7 @@
 import collections
 import http.server
 import json
+import os
 import pathlib
 import ssl
 import subprocess
@@ -95,6 +96,11 @@ with tempfile.TemporaryDirectory(prefix="neon-https-") as tmp:
         assert counts["/redirect-target"] == 0 and counts["/forbidden"] == 0, "redirect/downgrade reached server"
         assert counts["/ok"] == 1, "bad certificate or hostname was accepted"
         assert counts["/control"] == 1 and counts["/v2/game/redeem"] >= 1
+        # Same temporary CA, but now use real backend routes instead of mock replies.
+        env = dict(os.environ, NODE_EXTRA_CA_CERTS=str(root / "ca.crt"))
+        subprocess.run(["node", "--experimental-strip-types", "scripts/test_native_backend_https.ts",
+                        sys.argv[1], str(root / "good.crt"), str(root / "good.key")],
+                       check=True, env=env, timeout=90)
         print("PASS: real native worker + local trusted/untrusted TLS, hostname, redirect, downgrade, streaming cap, timeout, log privacy and pairing adapter")
     finally:
         for server in servers:

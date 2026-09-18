@@ -3,6 +3,7 @@
 #include <engine/http.h>
 #include <engine/shared/config.h>
 #include <base/logger.h>
+#include <base/secure.h>
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -24,8 +25,61 @@ static int64_t Now()
 {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
+// Confidential test IPC substitutes only for the not-yet-implemented client channel.
+static int RealBackend(const std::string &Origin, bool ExpectAccepted)
+{
+	log_set_global_logger(new TestLogger);
+	g_Config.m_DbgHttp = 1;
+	g_Config.m_HttpAllowInsecure = 1;
+	std::unique_ptr<IEngineHttp> Http(CreateEngineHttp());
+	assert(Http->Init(std::chrono::milliseconds(0)));
+	neonrelay::MatchSigner Signer;
+	assert(Signer.LoadSeedHex(std::string(64, '1'))); // isolated test key only
+	std::array<unsigned char, 32> Entropy;
+	secure_random_fill(Entropy.data(), Entropy.size());
+	auto Connection = std::make_shared<neonrelay::GameConnectionIdentity>(Entropy);
+	neonrelay::GamePairingHttp Pairing(*Http, Origin, "test.neonrelay.example");
+	std::cout << "NONCE " << Connection->Nonce() << std::endl;
+	std::string Token;
+	assert(std::getline(std::cin, Token));
+	assert(Pairing.Start(Connection, Token, Signer, Now()));
+	auto Drain = [&]() {
+		const auto Deadline = std::chrono::steady_clock::now() + std::chrono::seconds(12);
+		while(Pairing.PendingCount())
+		{
+			assert(std::chrono::steady_clock::now() < Deadline);
+			Pairing.Poll(Now());
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		}
+	};
+	Drain();
+	if(!ExpectAccepted)
+	{
+		assert(!Connection->PlayerId(Now()));
+		Http->Shutdown();
+		std::cout << "REJECTED" << std::endl;
+		return 0;
+	}
+	assert(Connection->PlayerId(Now()).value() == "registered-account");
+	std::cout << "PAIRED registered-account" << std::endl;
+	std::string Nonce, Issued, Expires, Challenge;
+	for(auto *Field : {&Nonce, &Issued, &Expires, &Challenge}) assert(std::getline(std::cin, *Field));
+	const auto Signature = Connection->SignChallenge(Signer, Nonce, std::stoll(Issued), std::stoll(Expires), Challenge, Now());
+	assert(!Signature.empty());
+	std::cout << "SIGNATURE " << Signature << std::endl;
+	// Retry the actual consumed token: failed refresh must clear old authentication.
+	assert(Pairing.Start(Connection, Token, Signer, Now()));
+	Drain();
+	assert(!Connection->PlayerId(Now()));
+	Connection->Disconnect();
+	Http->Shutdown();
+	std::cout << "REPLAY_REJECTED" << std::endl;
+	return 0;
+}
 int main(int argc, char **argv)
 {
+	if(argc == 4 && std::string(argv[1]) == "--backend")
+		return RealBackend(argv[2], std::string(argv[3]) == "accept");
 	assert(argc == 5);
 	log_set_global_logger(new TestLogger);
 	g_Config.m_DbgHttp = 1;
