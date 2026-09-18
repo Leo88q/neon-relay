@@ -52,7 +52,7 @@ def transform(source=SOURCE,output=OUTPUT,terrace=False):
             if v not in (1,3):continue
             mask=sum(bit for dx,dy,bit in [(0,-1,1),(1,0,2),(0,1,4),(-1,0,8)] if not solid(x+dx,y+dy))
             visual[(y*w+x)*4]=(32+mask) if v==3 else (16+mask)
-            if mask&1 and x%3==0 and v==1:surfaces.append((x,y))
+            if mask&1 and x%(6 if v==1 else 12)==0:surfaces.append((x,y))
     # 8 independent envelopes: light and peak position share the same 120 BPM clock.
     motion=[]
     segment_envelopes=[]
@@ -77,7 +77,7 @@ def transform(source=SOURCE,output=OUTPUT,terrace=False):
             xx=x*32+4+col*13;yy=y*32
             k=(x+y+col)%8
             bars.append(quad(xx-1,yy+5,xx+9,yy+31,(5,10,25,250)))
-            for row,c in enumerate([(171,190,214),(153,174,203),(133,154,183),(114,137,167),(96,119,151)]):
+            for row,c in enumerate([(219,119,185),(190,110,204),(160,120,209),(123,135,200),(109,160,199)]):
                 bars.append(quad(xx,yy+6+row*5,xx+8,yy+9+row*5,(*c,230),colour=segment_envelopes[k][row]))
             peaks.append(quad(xx,yy+29,xx+8,yy+31,(245,240,255,230),position=motion[k]))
     # Replace existing decorative slots without renumbering any original item.
@@ -99,7 +99,7 @@ def transform(source=SOURCE,output=OUTPUT,terrace=False):
         for x in range(-1500,1500,16):
             yy=round(-120+lane*45+math.sin(x*.008+lane)*24)
             yn=round(-120+lane*45+math.sin((x+16)*.008+lane)*24)
-            q=list(struct.unpack('<38i',quad(x,yy,x+16,yy+2,[(90,155,210,18),(220,100,200,16),(161,145,222,14)][lane],position=wave,phase=lane*350)))
+            q=list(struct.unpack('<38i',quad(x,yy,x+16,yy+2,[(90,155,210,28),(220,100,200,26),(161,145,222,20)][lane],position=wave,phase=lane*350)))
             q[3]=yn*1024;q[7]=(yn+2)*1024
             waves.append(struct.pack('<38i',*q))
     quads_at(1,waves,-1,'Drifting waves')
@@ -134,9 +134,13 @@ def transform(source=SOURCE,output=OUTPUT,terrace=False):
         gates.append(landmark(0,x,y,112,144));anchors.append((x,y))
     for k,(x,y) in enumerate(anchors):
         ruins.append(landmark(2,x-180 if k%2 else x+200,y+32,290,240+(k%3)*75,170))
-    quads_at(23,ruins,architecture,'Distant ruins')
+    quads_at(23,ruins,architecture,'Sound silhouettes')
     quads_at(24,gates,architecture,'Route landmarks')
 
+    from learn_oil import add as add_oil
+    oil_image=embedded('neonrelay_learn_oil',ROOT/'data/mapres/neonrelay_learn_oil.png')
+    oil_report=add_oil(m,env,quad,quads_at,oil_image)
+    if not terrace:(ROOT/'docs/learntoplay-oil-audit.json').write_text(json.dumps(oil_report,indent=2)+'\n')
     m.save(output)
     if not terrace:(ROOT/'docs/learntoplay-visual-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
     print(f'{output}: {len(surfaces)*2} animated LED columns; {len(m.items[3])-6} new envelopes; {original_count} original raw blocks retained')

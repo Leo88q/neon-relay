@@ -1,4 +1,5 @@
-"""Native background architecture anchored to real race/teleporter regions, no collision."""
+"""Holographic Sound landmarks anchored to race/teleporter regions, no collision."""
+import math
 from PIL import Image, ImageDraw
 from world_palette import PORTAL,RACE
 from learn_visibility import ROOT,OUT
@@ -7,35 +8,33 @@ def build():
     atlas=Image.new('RGBA',(1024,1024))
     for style in range(4):
         im=Image.new('RGBA',(512,512));d=ImageDraw.Draw(im)
-        def block(x,y,w,h,base=(49,61,80)):
-            d.rectangle((x,y,x+w,y+h),fill=(*base,255))
-            d.polygon([(x,y),(x+9,y-9),(x+w+9,y-9),(x+w,y)],fill=tuple(v+17 for v in base)+(255,))
-            d.polygon([(x+w,y),(x+w+9,y-9),(x+w+9,y+h-9),(x+w,y+h)],fill=tuple(v-13 for v in base)+(255,))
-            d.line((x+3,y+3,x+w-3,y+3),fill=tuple(v+29 for v in base)+(255,),width=2)
         if style==2:
-            # Dark distant stepped towers: never use the playable surface's bright edge.
-            for x,height in [(36,155),(126,264),(216,355),(306,210),(396,104)]:
-                for y in range(480-height,480,32):block(x,y,63,29,(25,34,49))
-                d.rectangle((x+22,488-height,x+30,512-height),fill=(57,73,92,255))
+            # Recessive acoustic-bank silhouette, not masonry or climbable-looking ruins.
+            for k,x in enumerate(range(58,450,32)):
+                height=80+int(170*(.5+.5*math.sin(k*.75)))
+                d.rounded_rectangle((x,480-height,x+13,480),4,fill=(40,24,56,145))
+                for y in range(485-height,480,24):d.line((x+3,y,x+10,y),fill=(91,52,105,95),width=2)
         else:
             c=PORTAL if style==0 else RACE
-            for y in range(174,458,47):
-                for x in (95,365):block(x,y,44,43)
-            for x,y in [(126,135),(169,98),(212,78),(255,78),(298,98),(341,135)]:block(x,y,43,43)
-            for x in (77,350):block(x,458,82,24)
-            d.line((148,446,148,190,192,143,222,125,293,125,352,189,352,446),fill=(*c,245),width=7)
-            d.line((159,430,159,196,201,154,226,139,288,139,338,197,338,430),fill=(*c,65),width=3)
             if style==0:
-                for inset,a in [(0,125),(23,65),(44,28)]:
-                    d.ellipse((180+inset//2,195+inset,326-inset//2,423-inset),outline=(*c,a),width=5)
-                d.polygon([(251,52),(273,74),(251,96),(229,74)],fill=(*c,255))
+                for width,alpha in [(30,12),(18,25),(10,65),(4,235)]:
+                    d.ellipse((137,94,375,464),outline=(*c,alpha),width=width)
+                d.arc((152,110,360,448),210,345,fill=(*c,255),width=7)
+                d.arc((152,110,360,448),30,155,fill=(*c,180),width=4)
+                for x,y in [(150,180),(355,355),(256,98)]:
+                    d.ellipse((x-7,y-7,x+7,y+7),fill=(*c,240))
             else:
-                d.rectangle((180,187,324,224),fill=(14,32,28,240))
+                for x in (141,365):
+                    d.rounded_rectangle((x-13,156,x+13,476),10,fill=(24,19,39,240))
+                    d.line((x,166,x,465),fill=(*c,220),width=4)
+                d.arc((141,61,365,266),180,360,fill=(*c,150),width=5)
+                d.line((173,151,333,151),fill=(*c,90),width=2)
                 if style==3:
-                    for x in range(183,321,17):
-                        for y in (191,208):
-                            if (x//17+y//17)%2:d.rectangle((x,y,x+14,y+13),fill=(*c,255))
-                else:d.polygon([(235,194),(260,205),(235,216)],fill=(*c,255))
+                    for x in range(191,320,18):
+                        for y in (105,123):
+                            if (x//18+y//18)%2:d.rectangle((x,y,x+14,y+14),fill=(*c,230))
+                else:d.polygon([(239,106),(268,121),(239,136)],fill=(*c,235))
+            d.ellipse((109,467,404,487),outline=(*c,95),width=3)
         atlas.paste(im,((style%2)*512,(style//2)*512))
     atlas.save(OUT/'neonrelay_learn_landmarks.png')
 

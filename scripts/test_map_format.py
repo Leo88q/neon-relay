@@ -97,7 +97,7 @@ class MapFormatTests(unittest.TestCase):
         for i in [*range(6,23),25,54]:self.assertEqual(dict(a.items[5])[i],layers[i])
         # Segment visibility and moving peaks are actual map envelopes, not a GIF.
         envs=dict(b.items[3]);points=dict(b.items[6])[0]
-        self.assertEqual(len(envs)-len(a.items[3]),51)
+        self.assertEqual(len(envs)-len(a.items[3]),67)
         animated=0
         for i,p in b.items[3][len(a.items[3]):]:
             frames=[points[n*6:n*6+6] for n in range(p[2],p[2]+p[3])]
@@ -200,6 +200,60 @@ class MapFormatTests(unittest.TestCase):
         for i in range(33,37):self.assertEqual(a[i],b[i])
         desc=b[32].copy();desc[14]=a[32][14]
         self.assertEqual(a[32],desc)
+
+    def test_oil_stays_in_hazards_and_animates_real_frames(self):
+        from datafile_v4 import read
+        from learn_oil import pools,FRAMES,FRAME_MS
+        from PIL import Image
+        import hashlib
+        m=read(ROOT/'data/maps/LearnToPlay Sound.map');layers=dict(m.items[5]);w=layers[32][4]
+        cells,surface=pools(m)
+        self.assertGreater(len(surface),100)
+        g=m.raws[layers[32][14]][::4];f=m.raws[layers[33][20]][::4];t=m.raws[layers[35][18]][1::2]
+        for i in cells:
+            self.assertNotIn(g[i],(1,3,11,13,60,61,62))
+            self.assertNotIn(f[i],(11,13,60,61,62))
+            self.assertTrue(g[i] in (2,9,12) or f[i] in (2,9,12) or t[i] in (10,63))
+        self.assertLess(layers[50][4],16384) # bounded single-layer quad/index budget
+        raw=m.raws[layers[50][5]];covered=set();used=set()
+        for off in range(0,len(raw),152*FRAMES):
+            group=[struct.unpack_from('<38i',raw,off+j*152) for j in range(FRAMES)]
+            q=group[0];x0,y0=q[0]//32768,q[1]//32768;x1=q[2]//32768
+            self.assertEqual(q[5]-q[1],32768)
+            covered.update(y0*w+x for x in range(x0,x1))
+            self.assertEqual(len({v[26:34] for v in group}),FRAMES)
+            for v in group:
+                self.assertEqual(v[:10],q[:10]);used.add(v[-2])
+        self.assertEqual(covered,cells)
+        self.assertEqual(len(used),FRAMES)
+        points=dict(m.items[6])[0];envs=dict(m.items[3])
+        for j in range(FRAMES+1):
+            alphas=[]
+            for eid in used:
+                p=envs[eid];point=points[(p[2]+j)*6:(p[2]+j+1)*6]
+                self.assertEqual(point[0],j*FRAME_MS);self.assertEqual(point[1],0)
+                alphas.append(point[5])
+            self.assertEqual(sum(alphas),1024) # exactly one visible pose per phase
+        atlas=Image.open(ROOT/'data/mapres/neonrelay_learn_oil.png')
+        frames=[atlas.crop((i%8*128,i//8*128,i%8*128+128,i//8*128+128)) for i in range(FRAMES)]
+        self.assertEqual(len({hashlib.sha256(im.tobytes()).digest() for im in frames}),FRAMES)
+
+    def test_oil_selection_leaves_columns_ceilings_and_safe_thaw_alone(self):
+        from learn_oil import pools
+        from types import SimpleNamespace
+        w=h=10;g=bytearray(w*h*4);f=bytearray(w*h*4);t=bytearray(w*h*2)
+        for x in range(1,7):
+            g[(5*w+x)*4]=9;g[(6*w+x)*4]=3
+            g[x*4]=3;g[(w+x)*4]=9 # freeze on the underside of a ceiling
+        for y in range(1,5):g[(y*w+9)*4]=9 # a narrow ice column
+        g[(5*w+7)*4]=11
+        game=[0]*23;game[4:6]=[w,h];game[14]=0
+        front=[0]*23;front[20]=1
+        tele=[0]*23;tele[18]=2
+        m=SimpleNamespace(items={5:[(32,game),(33,front),(35,tele)]},raws=[g,f,t])
+        cells,surface=pools(m)
+        self.assertEqual(cells,{5*w+x for x in range(1,7)})
+        self.assertEqual(surface,cells)
 
     def test_name_matches_engine_encoding(self):
         self.assertEqual(struct.pack('>3i', *pack_name('abc')), b'\xe1\xe2\xe3'+b'\x80'*8+b'\x00')

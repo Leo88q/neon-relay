@@ -131,21 +131,20 @@ def build():
     atlas=Image.new('RGBA',(1024,1024))
     for nohook in (False,True):
         for mask in range(16):
-            base=(68,79,99) if nohook else (85,105,131)
+            # Sound stage, not stone blocks: smooth dark shell, sparse acoustic detail.
+            base=(31,17,43) if nohook else (23,23,46)
             t=Image.new('RGBA',(64,64),(*base,255));d=ImageDraw.Draw(t)
-            # Original cut-block material: recessed face, broad lit bevel, dark lower facet.
-            d.rectangle((3,3,60,60),fill=tuple(v+9 for v in base)+(255,))
-            d.polygon([(4,4),(60,4),(53,11),(11,11)],fill=tuple(v+25 for v in base)+(255,))
-            d.polygon([(53,11),(60,4),(60,60),(53,53)],fill=tuple(v-13 for v in base)+(255,))
-            d.polygon([(4,60),(11,53),(53,53),(60,60)],fill=tuple(v-25 for v in base)+(255,))
-            d.rectangle((11,12,52,52),fill=(*base,255))
-            if not nohook:
-                for xx in (21,42):
-                    d.rectangle((xx-3,27,xx+3,34),fill=(30,42,60,255))
-                    d.line((xx-3,35,xx+3,35),fill=(133,151,175,255),width=2)
+            for y in range(64):
+                c=tuple(v+round(5*math.cos(y/64*math.pi)) for v in base)
+                d.line((0,y,63,y),fill=(*c,255))
+            for x in (14,30,46):
+                d.line((x,24,x,39),fill=(56,38,72,255),width=2)
             edge=(*NEUTRAL,255)
             for bit,line in [(1,(0,1,63,1)),(2,(62,0,62,63)),(4,(0,62,63,62)),(8,(1,0,1,63))]:
                 if mask&bit:d.line(line,fill=edge,width=4)
+            if mask&1:
+                d.line((0,6,63,6),fill=(178,90,157,255) if nohook else (111,112,174,255),width=2)
+                if nohook:d.line((0,10,63,10),fill=(84,41,80,255),width=1)
             idx=32+mask if nohook else 16+mask
             atlas.paste(t,((idx%16)*64,(idx//16)*64))
     atlas.save(OUT/'neonrelay_learn_terrain.png')
@@ -171,7 +170,7 @@ def build():
     # Seamless, low-contrast atmospheric texture; no photo rights/tiling artifacts.
     n=768;yy,xx=np.meshgrid(np.linspace(0,math.tau,n),np.linspace(0,math.tau,n),indexing='ij')
     cloud=np.sin(xx+np.sin(yy*2))*.45+np.cos(yy+np.sin(xx*3))*.3+np.sin(xx*4+yy*3)*.12
-    img=np.stack([15+cloud*3,21+cloud*4,35+cloud*7],axis=-1).clip(0,255).astype('uint8')
+    img=np.stack([16+cloud*3,11+cloud*3,31+cloud*7],axis=-1).clip(0,255).astype('uint8')
     # Explicit identical opposite edges for lossless tiling.
     img[-1]=img[0];img[:,-1]=img[:,0]
     Image.fromarray(img).save(OUT/'neonrelay_learn_atmosphere.png')
@@ -180,3 +179,5 @@ if __name__=='__main__':
     build()
     from learn_landmarks import build as build_landmarks
     build_landmarks()
+    from learn_oil import build as build_oil
+    build_oil()

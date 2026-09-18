@@ -49,10 +49,13 @@ for index,name in enumerate(names):
       subprocess.run(['xdotool','key','Return'],check=True);time.sleep(.25)
       subprocess.run(['xdotool','key','F1'],check=True);time.sleep(.4)
      console('team -1')
-     for label,x,y in [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22),('terrace',345,21)]:
+     for label,x,y in [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22),('terrace',345,21),('boiling-oil',368,22)]:
       console(f'set_view {x} {y}')
       time.sleep(.5)
       subprocess.run(['import','-window',window,str(out/f'learn-{index}-{label}.png')],check=True,timeout=10)
+      if label=='boiling-oil':
+       time.sleep(.40)
+       subprocess.run(['import','-window',window,str(out/f'learn-{index}-oil-phase-2.png')],check=True,timeout=10)
 
     assert cl.poll() is None,'client exited while rendering world'
     text=clog.read_text(errors='replace').lower()
