@@ -5,6 +5,7 @@ import math,struct,json,hashlib
 from PIL import Image
 from datafile_v4 import read
 from map_format import pack_name,quad_rect
+from learn_visibility import visual_layers
 ROOT=Path(__file__).resolve().parent.parent
 SOURCE=ROOT/'data/maps/LearnToPlay.map'
 OUTPUT=ROOT/'data/maps/LearnToPlay Sound.map'
@@ -18,12 +19,12 @@ def transform(source=SOURCE,output=OUTPUT):
     assert len(tiles)==w*h*4
     grid=tiles[::4]
     original_count=len(m.raws)
-    hint_indices=set(range(16,64))|set(range(192,208))
+    semantic,audit=visual_layers(m)
     def embedded(name,path):
         im=Image.open(path).convert('RGBA')
         return m.item(2,[1,im.width,im.height,0,m.string(name),m.raw(im.tobytes())])
-    img=embedded('neonrelay_sound_tiles',ROOT/'data/mapres/neonrelay_sound_tiles.png')
-    sky=embedded('neonrelay_sound_sky',ROOT/'data/mapres/neonrelay_sound_sky.png')
+    img=embedded('neonrelay_learn_terrain',ROOT/'data/mapres/neonrelay_learn_terrain.png')
+    sky=embedded('neonrelay_learn_atmosphere',ROOT/'data/mapres/neonrelay_learn_atmosphere.png')
     points=dict(m.items[6])[0]
     def env(name,channels,frames):
         start=len(points)//6
@@ -36,15 +37,8 @@ def transform(source=SOURCE,output=OUTPUT):
     def quads_at(index,quads,image,name):
         layers[index][:]=[0,3,0,2,len(quads),m.raw(b''.join(quads)),image]+pack_name(name)
     # Retain tutorial cards (6..22), map title (25), authors' attribution (54).
-    # Source glyphs remain useful instructions; ornamental blocks/faces are retired.
+    # Original instructional cards remain; all terrain/special-tile art is replaced.
     for i in (23,24,26,27,28,29,30,31,53):quads_at(i,[],-1,'Retired art')
-    for i,p in layers.items():
-        if p[1]==2 and not p[6] and p[13]==32:
-            raw=bytearray(m.raws[p[14]])
-            for j in range(0,len(raw),4):
-                if raw[j] not in hint_indices:raw[j:j+4]=b'\0'*4
-                else:raw[j+2]=0 # skip metadata belongs to the old visual layout
-            p[14]=m.raw(raw);p[7:11]=[188,211,237,230]
     # Flat stationary surfaces; animated LED faces never move their collision edge.
     visual=bytearray(w*h*4);bars=[];peaks=[];surfaces=[]
     def solid(x,y):return 0<=x<w and 0<=y<h and grid[y*w+x] in (1,3)
@@ -53,9 +47,7 @@ def transform(source=SOURCE,output=OUTPUT):
             v=grid[y*w+x]
             if v not in (1,3):continue
             mask=sum(bit for dx,dy,bit in [(0,-1,1),(1,0,2),(0,1,4),(-1,0,8)] if not solid(x+dx,y+dy))
-            depth=0
-            while depth<9 and solid(x,y-depth-1):depth+=1
-            visual[(y*w+x)*4]=(32+mask) if v==3 else (80+16*depth+mask)
+            visual[(y*w+x)*4]=(32+mask) if v==3 else (16+mask)
             if mask&1 and x%3==0 and v==1:surfaces.append((x,y))
     # 8 independent envelopes: light and peak position share the same 120 BPM clock.
     motion=[]
@@ -88,25 +80,40 @@ def transform(source=SOURCE,output=OUTPUT):
     template=[0,2,0,3,w,h,0,255,255,255,255,-1,0,img,m.raw(visual)]+pack_name('LED terrain')+[-1]*5
     layers[37][:]=template
     quads_at(38,bars,-1,'LED segments');quads_at(39,peaks,-1,'Moving peaks')
+    boundary_image=embedded('neonrelay_learn_boundaries',ROOT/'data/mapres/neonrelay_learn_boundaries.png')
+    symbol_image=embedded('neonrelay_learn_symbols',ROOT/'data/mapres/neonrelay_learn_symbols.png')
+    for slot,(name,(bound,glyph)) in enumerate(semantic.items()):
+        for delta,data,image in [(0,bound,boundary_image),(1,glyph,symbol_image)]:
+            layers[40+slot*2+delta][:]=[0,2,0,3,w,h,0,255,255,255,255,-1,0,image,m.raw(data)]+pack_name(name+(' edges' if delta==0 else ' signs'))+[-1]*5
+    for slot in (50,51,52):quads_at(slot,[],-1,'Retired hints')
+
     # Background and slowly travelling light waves use native position envelopes.
-    quads_at(0,[quad(-1600,-1000,1600,1000)],sky,'Sound sky')
+    quads_at(0,[quad(x,y,x+768,y+768) for y in range(-1536,1536,768) for x in range(-2304,2304,768)],sky,'Atmosphere')
     wave=env('Wave drift',3,[(0,[0,0,0]),(3000,[0,14*1024,0]),(6000,[0,0,0])])
     waves=[]
     for lane in range(3):
-        for x in range(-1500,1500,12):
+        for x in range(-1500,1500,16):
             yy=round(-120+lane*45+math.sin(x*.008+lane)*24)
-            waves.append(quad(x,yy,x+12,yy+2,[(90,155,210,45),(220,100,200,45),(161,145,222,35)][lane],position=wave,phase=lane*350))
+            yn=round(-120+lane*45+math.sin((x+16)*.008+lane)*24)
+            q=list(struct.unpack('<38i',quad(x,yy,x+16,yy+2,[(90,155,210,18),(220,100,200,16),(161,145,222,14)][lane],position=wave,phase=lane*350)))
+            q[3]=yn*1024;q[7]=(yn+2)*1024
+            waves.append(struct.pack('<38i',*q))
     quads_at(1,waves,-1,'Drifting waves')
     # Mid-distance spectrum anchored in the background group, no collision.
     spectrum=[]
     for x in range(-1500,1500,24):
         height=round(30+60*(.5+.5*math.sin(x*.021)))
         spectrum.append(quad(x,200-height,x+10,200,(145,88,188,48),position=motion[(x//24)%8],colour=beat))
+    drift=env('Slow depth drift',3,[(0,[0,0,0]),(8000,[24*1024,-18*1024,0]),(16000,[0,0,0])])
+    for k in range(90):
+        x=(k*317)%2800-1400;y=(k*193)%1500-750
+        spectrum.append(quad(x,y,x+2,y+2,(139,181,207,40),position=drift,phase=k*173))
     quads_at(2,spectrum,-1,'Spectrum')
     # Early slots were old decorative shadows/circuit scribbles. Remove them;
     # keep all original gameplay layers, custom items and instructions unchanged.
     for i in (3,4,5):quads_at(i,[],-1,'Retired art')
     m.save(output)
+    (ROOT/'docs/learntoplay-visual-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
     print(f'{output}: {len(surfaces)*2} animated LED columns; {len(m.items[3])-6} new envelopes; {original_count} original raw blocks retained')
     return m
 

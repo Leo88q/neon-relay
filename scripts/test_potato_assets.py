@@ -11,6 +11,7 @@ import numpy as np
 from PIL import Image
 from build_potato_skins import POTATOES
 from build_potato_weapon_sheet import RECTS
+from build_potato_effects import EFFECT_RECTS
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -62,7 +63,7 @@ class Assets(unittest.TestCase):
         self.assertEqual((im.size, im.mode), ((1024, 512), 'RGBA'))
         b = np.array(im)
         mask = np.zeros(a.shape[:2], dtype=bool)
-        for x, y, w, h in RECTS.values():
+        for x, y, w, h in [*RECTS.values(), *EFFECT_RECTS.values()]:
             mask[y:y+h, x:x+w] = True
             self.assertTrue(b[y:y+h, x:x+w, 3].any())
         self.assertTrue(np.array_equal(a[~mask], b[~mask]))
@@ -75,7 +76,7 @@ class Assets(unittest.TestCase):
         def hashes():
             return {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
         before = hashes()
-        for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'gen_potato_catalog.py']:
+        for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'build_potato_effects.py', 'gen_potato_catalog.py']:
             subprocess.run([sys.executable, str(ROOT / 'scripts' / script)], check=True, stdout=subprocess.DEVNULL)
         self.assertEqual(before, hashes())
 

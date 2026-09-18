@@ -5,7 +5,7 @@ Replaces the remaining visible upstream art sheets with procedurally drawn,
 deterministic Neon Relay originals in the exact same files and grids:
 
   data/emoticons.png        512x512, 32px cells - emote glyphs
-  data/particles.png        512x512, 32px cells - soft particles / streaks
+  data/particles.png        512x512, 64px cells - potato fragments / dust
   data/gui_icons.png        384x64,  32px cells - interface line icons
   data/hud.png              512x512, 32px cells - HUD glyphs (rows 0-7)
   data/blob.png             512x512 - menu glow blob
@@ -170,23 +170,8 @@ PARTICLE_MASK = [(c, r) for r in range(8) for c in range(12 if r < 2 else (12 if
 
 
 def build_particles():
-    w = h = 512
-    img = canvas(w, h)
-    d = ImageDraw.Draw(img)
-    rng = random.Random(0xC0FFEE)
-    for (col, row) in PARTICLE_MASK:
-        cx = col * 32 * SS + 16 * SS
-        cy = row * 32 * SS + 16 * SS
-        color = (CYAN, MAGENTA, VIOLET, WHITE)[(row * 3 + col) % 4]
-        if (row + col) % 7 == 3:  # streak
-            ang = rng.uniform(0, math.pi)
-            dx, dy = math.cos(ang) * 10 * SS, math.sin(ang) * 10 * SS
-            stroke(d, [(cx - dx, cy - dy), (cx + dx, cy + dy)], color + (200,), 3 * SS)
-            glow_dot(d, cx + dx, cy + dy, 3 * SS, color)
-        else:
-            r = (4 + ((row * 5 + col * 3) % 9)) * SS * 0.9
-            glow_dot(d, cx, cy, r, color, steps=7)
-    return finish(img, w, h)
+    from build_potato_effects import particles
+    return particles()
 
 
 # ---------------------------------------------------------------- gui icons

@@ -40,6 +40,20 @@ for index,name in enumerate(names):
      for phase in range(2):
       time.sleep(.24)
       subprocess.run(['import','-window',window,str(out/f'learn-animation-{phase}.png')],check=True,timeout=10)
+     # Inspect real render order in the previously unreadable hazard/stop sections.
+     # Spectator captures are visual checks, never a claim of completing the route.
+     def console(command):
+      subprocess.run(['xdotool','windowfocus','--sync',window],check=True)
+      subprocess.run(['xdotool','key','F1'],check=True);time.sleep(.25)
+      subprocess.run(['xdotool','type','--clearmodifiers','--delay','1',command],check=True)
+      subprocess.run(['xdotool','key','Return'],check=True);time.sleep(.25)
+      subprocess.run(['xdotool','key','F1'],check=True);time.sleep(.4)
+     console('team -1')
+     for label,x,y in [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',310,40)]:
+      console(f'set_view {x} {y}')
+      time.sleep(.5)
+      subprocess.run(['import','-window',window,str(out/f'learn-{label}.png')],check=True,timeout=10)
+
     assert cl.poll() is None,'client exited while rendering world'
     text=clog.read_text(errors='replace').lower()
     assert 'failed to load' not in text and 'invalid header' not in text,text[-1500:]

@@ -97,7 +97,7 @@ class MapFormatTests(unittest.TestCase):
         for i in [*range(6,23),25,54]:self.assertEqual(dict(a.items[5])[i],layers[i])
         # Segment visibility and moving peaks are actual map envelopes, not a GIF.
         envs=dict(b.items[3]);points=dict(b.items[6])[0]
-        self.assertEqual(len(envs)-len(a.items[3]),50)
+        self.assertEqual(len(envs)-len(a.items[3]),51)
         animated=0
         for i,p in b.items[3][len(a.items[3]):]:
             frames=[points[n*6:n*6+6] for n in range(p[2],p[2]+p[3])]
@@ -112,6 +112,46 @@ class MapFormatTests(unittest.TestCase):
             output=Path(tmp)/'roundtrip.map';a.save(output)
             again=read(output)
             self.assertEqual(a.items,again.items);self.assertEqual(a.raws,again.raws)
+
+    def test_learn_visual_coverage_and_directions(self):
+        from datafile_v4 import read
+        from learn_visibility import fields,visual_layers
+        source=read(ROOT/'data/maps/LearnToPlay.map')
+        output=read(ROOT/'data/maps/LearnToPlay Sound.map')
+        layers=dict(output.items[5]);visuals,audit=visual_layers(source)
+        for slot,(name,p,raw,stride,offset,flag_offset) in enumerate(fields(source)):
+            edges,glyphs=visuals[name]
+            self.assertEqual(output.raws[layers[40+slot*2][14]],edges)
+            self.assertEqual(output.raws[layers[41+slot*2][14]],glyphs)
+            for i in range(p[4]*p[5]):
+                value=raw[i*stride+offset]
+                if not value:continue
+                self.assertIn(str(value),audit[name])
+                if name in ('game','front') and value in (9,11,12,13,60):
+                    self.assertNotEqual(edges[i*4],0,(name,i,value))
+                if name in ('game','front') and value==60:
+                    self.assertEqual(edges[i*4+1],raw[i*stride+1]&11)
+                    self.assertEqual(glyphs[i*4+1],raw[i*stride+1]&11)
+                if name=='speed':
+                    angle=struct.unpack_from('<h',raw,i*stride+4)[0]%360
+                    self.assertEqual(glyphs[i*4+1],{0:0,90:8,180:3,270:11}[angle])
+                if name=='game' and value in (1,3):
+                    material=output.raws[layers[37][14]][i*4]
+                    self.assertTrue(16<=material<32 if value==1 else 32<=material<48)
+
+    def test_readable_atlas_and_seamless_background(self):
+        from PIL import Image
+        import numpy as np
+        atlas=Image.open(ROOT/'data/mapres/neonrelay_learn_terrain.png')
+        for idx in range(16,48):
+            x,y=idx%16*64,idx//16*64
+            tile=np.array(atlas.crop((x,y,x+64,y+64)))
+            self.assertTrue((tile[:,:,3]==255).all())
+            if idx%16&1:self.assertGreater(tile[1,:,:3].mean(),170)
+        sky=np.array(Image.open(ROOT/'data/mapres/neonrelay_learn_atmosphere.png'))
+        self.assertTrue((sky[0]==sky[-1]).all())
+        self.assertTrue((sky[:,0]==sky[:,-1]).all())
+        self.assertLess(sky.max(),48) # background cannot compete with collision caps
 
     def test_name_matches_engine_encoding(self):
         self.assertEqual(struct.pack('>3i', *pack_name('abc')), b'\xe1\xe2\xe3'+b'\x80'*8+b'\x00')
