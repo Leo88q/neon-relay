@@ -164,3 +164,37 @@ client and context lifecycle adapter remain **unimplemented**. There is no
 public signing endpoint and no claim that a live game connection is now
 wallet-authenticated. This stage supplies the registry and server-authenticated
 backend protocol that the adapter will consume. No paid admission is enabled.
+
+## Part 15: native connection lifecycle (no HTTP transport yet)
+
+`GameConnectionIdentity` in `src/neonrelay/game_connection.h` owns an ephemeral
+nonce, pending-request serial and optional leased identity. `CGameContext` now
+creates a fresh instance using `secure_random_fill` on connection, disconnects
+and releases it on drop, and disconnects all instances on destruction/map reset.
+No identity is loaded from persistent client state or a nickname.
+
+A valid `Begin` clears the previous identity and supersedes the pending attempt.
+`Complete` requires the original nonce/serial, matching backend echo/domain,
+valid consent/context fields, a live request deadline and a context expiry no
+later than that deadline. A matching completion is terminal even when rejected.
+Stale successes/failures cannot alter a newer pending request. Expiry and clock
+rollback clear authentication; disconnect is terminal for that instance.
+
+The future HTTP adapter MUST validate the backend TLS endpoint and response
+schema before calling `Complete`, and marshal completion to the game thread.
+It must capture a weak pointer to the original instance plus the request token,
+not look up a client slot when a response arrives. A reused slot gets a different
+instance and nonce. Even a retained old instance rejects operations after drop.
+The lifecycle class is not thread-safe and does not authenticate arbitrary
+context structs by itself. Its guarded signing method checks freshness on use.
+
+The compiled harness checks stale/reordered/duplicate replies, old failure
+callbacks, re-pairing, domain/context substitutions, request timeout, exact
+expiry, clock rollback, disconnect and client-slot reuse. The full syntax gate
+checks the modified game-context translation unit. These are not live gameplay
+or full native-link tests.
+
+No pairing packets, chat/RCON endpoint, nonce display, HTTPS client or backend
+response adapter is connected yet. Thus this stage wires lifetime/reset hooks
+into the native server, but still does not authenticate a live game connection
+or enable any payment/admission flow.

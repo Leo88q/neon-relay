@@ -2193,86 +2193,86 @@ src/game/server/eventhandler.cpp,2,code/api-identifier,identifier kept for proto
 src/game/server/eventhandler.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/server/gamecontext.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/server/gamecontext.cpp,6,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),"#include ""gamemodes/ddnet.h"""
-src/game/server/gamecontext.cpp,563,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Context.GetClientVersion() >= VERSION_DDNET_MULTI_LASER)
-src/game/server/gamecontext.cpp,565,code/api-identifier,brand appears only inside code identifiers,CNetObj_DDNetLaser Laser = {};
-src/game/server/gamecontext.cpp,594,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Type == POWERUP_FREEZE && Context.GetClientVersion() < VERSION_DDNET_PICKUP_FREEZE)
-src/game/server/gamecontext.cpp,606,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),else if(Context.GetClientVersion() >= VERSION_DDNET_ENTITY_NETOBJS)
-src/game/server/gamecontext.cpp,608,code/api-identifier,brand appears only inside code identifiers,CNetObj_DDNetPickup Pickup = {};
-src/game/server/gamecontext.cpp,625,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Context.GetClientVersion() < VERSION_DDNET_WEAPON_SHIELDS)
-src/game/server/gamecontext.cpp,698,code/api-identifier,brand appears only inside code identifiers,if(m_apPlayers[i] != nullptr && GetDDRaceTeam(i) == Team)
-src/game/server/gamecontext.cpp,838,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(m_apPlayers[ClientId]->GetClientVersion() >= VERSION_DDNET_IMPORTANT_ALERT)
-src/game/server/gamecontext.cpp,854,code/api-identifier,identifier kept for protocol/build compatibility (github\.com/ddnet/ddnet/(issues|pull|blob|compar),"// TODO: Workaround https://github.com/ddnet/ddnet/issues/11144 by using client ID 0,"
-src/game/server/gamecontext.cpp,866,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(m_apPlayers[ToClientId]->GetClientVersion() >= VERSION_DDNET_IMPORTANT_ALERT)
-src/game/server/gamecontext.cpp,1191,code/api-identifier,brand appears only inside code identifiers,"m_TeeHistorian.RecordPlayerTeam(i, GetDDRaceTeam(i));"
-src/game/server/gamecontext.cpp,1233,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_apPlayers[i]->m_DDNetVersionKickTick > 0 && Server()->Tick() >= m_apPlayers[i]->m_DDNetVersionKickTick && !Server()->IsSixup(i) &&
-src/game/server/gamecontext.cpp,1234,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),"Server()->GetClientInfo(i, &Info) && Info.m_DDNetVersion < VERSION_DDNET_OLD)"
-src/game/server/gamecontext.cpp,1241,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_apPlayers[i]->m_DDNetVersionKickTick = -1;
-src/game/server/gamecontext.cpp,1373,code/api-identifier,brand appears only inside code identifiers,(m_apPlayers[j]->GetCharacter() && m_apPlayers[j]->GetCharacter()->m_DDRaceState == ERaceState::STARTED &&
-src/game/server/gamecontext.cpp,1464,code/api-identifier,brand appears only inside code identifiers,for(int j = 0; j < NUM_DDRACE_TEAMS; ++j)
-src/game/server/gamecontext.cpp,1539,code/api-identifier,brand appears only inside code identifiers,const int Team = GetDDRaceTeam(ClientId);
-src/game/server/gamecontext.cpp,1550,code/api-identifier,brand appears only inside code identifiers,if(pPlayer->GetTeam() == TEAM_SPECTATORS || Team != GetDDRaceTeam(Id) || pPlayer->IsAfk())
-src/game/server/gamecontext.cpp,1553,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->GetClientVersion(Id) < VERSION_DDNET_PREINPUT)
-src/game/server/gamecontext.cpp,1739,comment,brand appears only in a source comment,"// 0.7 clients can send ddnet message, F-Client does that for example"
-src/game/server/gamecontext.cpp,1740,code/api-identifier,brand appears only inside code identifiers,if(Info.m_GotDDNetVersion)
-src/game/server/gamecontext.cpp,1742,code/api-identifier,brand appears only inside code identifiers,if(OnClientDDNetVersionKnown(ClientId))
-src/game/server/gamecontext.cpp,1881,code/api-identifier,brand appears only inside code identifiers,"m_pController->Teams().SetPractice(GetDDRaceTeam(ClientId), true);"
-src/game/server/gamecontext.cpp,1976,code/api-identifier,brand appears only inside code identifiers,bool CGameContext::OnClientDDNetVersionKnown(int ClientId)
-src/game/server/gamecontext.cpp,1980,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),int ClientVersion = Info.m_DDNetVersion;
-src/game/server/gamecontext.cpp,1985,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(Info.m_pConnectionId && Info.m_pDDNetVersionStr)
-src/game/server/gamecontext.cpp,1987,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),"m_TeeHistorian.RecordDDNetVersion(ClientId, *Info.m_pConnectionId, ClientVersion, Info.m_pDDNetVersionStr);"
-src/game/server/gamecontext.cpp,1991,code/api-identifier,brand appears only inside code identifiers,"m_TeeHistorian.RecordDDNetVersionOld(ClientId, ClientVersion);"
-src/game/server/gamecontext.cpp,2003,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion >= VERSION_DDNET_GAMETICK)
-src/game/server/gamecontext.cpp,2013,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion < VERSION_DDNET_EARLY_VERSION)
-src/game/server/gamecontext.cpp,2017,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion < VERSION_DDNET_UPDATER_FIXED && g_Config.m_SvClientSuggestionOld[0] != '\0')
-src/game/server/gamecontext.cpp,2229,code/api-identifier,brand appears only inside code identifiers,case NETMSGTYPE_CL_ISDDNETLEGACY:
-src/game/server/gamecontext.cpp,2230,code/api-identifier,brand appears only inside code identifiers,"OnIsDDNetLegacyNetMessage(static_cast<CNetMsg_Cl_IsDDNetLegacy *>(pRawMsg), ClientId, pUnpacker);"
-src/game/server/gamecontext.cpp,2315,code/api-identifier,brand appears only inside code identifiers,int GameTeam = GetDDRaceTeam(pPlayer->GetCid());
-src/game/server/gamecontext.cpp,2477,code/api-identifier,brand appears only inside code identifiers,if(g_Config.m_SvVoteKickMin && !GetDDRaceTeam(ClientId))
-src/game/server/gamecontext.cpp,2490,code/api-identifier,brand appears only inside code identifiers,if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !GetDDRaceTeam(i))
-src/game/server/gamecontext.cpp,2495,code/api-identifier,brand appears only inside code identifiers,if(m_apPlayers[j] && m_apPlayers[j]->GetTeam() != TEAM_SPECTATORS && !GetDDRaceTeam(j))
-src/game/server/gamecontext.cpp,2550,code/api-identifier,brand appears only inside code identifiers,if(GetDDRaceTeam(ClientId) != GetDDRaceTeam(KickId))
-src/game/server/gamecontext.cpp,2569,code/api-identifier,brand appears only inside code identifiers,if(!GetDDRaceTeam(ClientId))
-src/game/server/gamecontext.cpp,2584,code/api-identifier,brand appears only inside code identifiers,"str_format(aCmd, sizeof(aCmd), ""uninvite %d %d; set_team_ddr %d 0"", KickId, GetDDRaceTeam(KickId), KickId);"
-src/game/server/gamecontext.cpp,2627,code/api-identifier,brand appears only inside code identifiers,if(!GetPlayerChar(ClientId) || !GetPlayerChar(SpectateId) || GetDDRaceTeam(ClientId) != GetDDRaceTeam(SpectateId))
-src/game/server/gamecontext.cpp,2638,code/api-identifier,brand appears only inside code identifiers,"str_format(aCmd, sizeof(aCmd), ""uninvite %d %d; force_pause %d %d"", SpectateId, GetDDRaceTeam(SpectateId), SpectateId, g_Config.m_SvVotePauseTime);"
-src/game/server/gamecontext.cpp,2644,code/api-identifier,brand appears only inside code identifiers,"str_format(aCmd, sizeof(aCmd), ""uninvite %d %d; set_team %d -1 %d"", SpectateId, GetDDRaceTeam(SpectateId), SpectateId, g_Config.m_SvVoteSpectateRejoindelay);"
-src/game/server/gamecontext.cpp,2702,code/api-identifier,brand appears only inside code identifiers,if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == ERaceState::STARTED)
-src/game/server/gamecontext.cpp,2734,code/api-identifier,brand appears only inside code identifiers,"void CGameContext::OnIsDDNetLegacyNetMessage(const CNetMsg_Cl_IsDDNetLegacy *pMsg, int ClientId, CUnpacker *pUnpacker)"
-src/game/server/gamecontext.cpp,2737,code/api-identifier,brand appears only inside code identifiers,"if(Server()->GetClientInfo(ClientId, &Info) && Info.m_GotDDNetVersion)"
-src/game/server/gamecontext.cpp,2741,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),int DDNetVersion = pUnpacker->GetInt();
-src/game/server/gamecontext.cpp,2742,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),if(pUnpacker->Error() || DDNetVersion < 0)
-src/game/server/gamecontext.cpp,2744,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),DDNetVersion = VERSION_DDRACE;
-src/game/server/gamecontext.cpp,2746,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),"Server()->SetClientDDNetVersion(ClientId, DDNetVersion);"
-src/game/server/gamecontext.cpp,2747,code/api-identifier,brand appears only inside code identifiers,if(OnClientDDNetVersionKnown(ClientId))
-src/game/server/gamecontext.cpp,2961,code/api-identifier,brand appears only inside code identifiers,if(IsRunningKickOrSpecVote(ClientId) && GetDDRaceTeam(ClientId))
-src/game/server/gamecontext.cpp,2978,code/api-identifier,brand appears only inside code identifiers,if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == ERaceState::STARTED)
-src/game/server/gamecontext.cpp,3410,code/api-identifier,brand appears only inside code identifiers,pSelf->m_aTeamMapping[i] = pSelf->GetDDRaceTeam(i);
-src/game/server/gamecontext.cpp,3819,code/api-identifier,brand appears only inside code identifiers,for(int Team = 0; Team < NUM_DDRACE_TEAMS; Team++)
-src/game/server/gamecontext.cpp,3874,code/api-identifier,identifier kept for protocol/build compatibility (@ddnet\.(org|tw)),"Console()->Register(""mapbug"", ""s[mapbug]"", CFGFLAG_SERVER | CFGFLAG_GAME, ConMapbug, this, ""Enable map compatibility mode using the specified bug (example: grenade-doubleexplosion@ddnet.tw)"");"
-src/game/server/gamecontext.cpp,3906,code/api-identifier,brand appears only inside code identifiers,RegisterDDRaceCommands();
-src/game/server/gamecontext.cpp,3910,code/api-identifier,brand appears only inside code identifiers,void CGameContext::RegisterDDRaceCommands()
-src/game/server/gamecontext.cpp,4168,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),if(g_Config.m_SvDDRaceTuneReset)
-src/game/server/gamecontext.cpp,4211,code/api-identifier,brand appears only inside code identifiers,m_pController = new CGameControllerDDNet(this);
-src/game/server/gamecontext.cpp,4730,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->IsSixup(ClientId) || GetClientVersion(ClientId) >= VERSION_DDNET_MAP_BESTTIME)
-src/game/server/gamecontext.cpp,4738,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(GetClientVersion(ClientId) < VERSION_DDNET_MSG_LEGACY)
-src/game/server/gamecontext.cpp,4750,code/api-identifier,brand appears only inside code identifiers,CNetMsg_Sv_DDRaceTime Msg;
-src/game/server/gamecontext.cpp,4751,code/api-identifier,brand appears only inside code identifiers,CNetMsg_Sv_DDRaceTimeLegacy MsgLegacy;
-src/game/server/gamecontext.cpp,4761,code/api-identifier,brand appears only inside code identifiers,if(VERSION_DDRACE <= ClientVersion)
-src/game/server/gamecontext.cpp,4763,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion < VERSION_DDNET_MSG_LEGACY)
-src/game/server/gamecontext.cpp,4806,code/api-identifier,brand appears only inside code identifiers,if(GetDDRaceTeam(MemberId) != Team)
-src/game/server/gamecontext.cpp,4825,code/api-identifier,brand appears only inside code identifiers,if(GetDDRaceTeam(MemberId) != Team)
-src/game/server/gamecontext.cpp,4828,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(GetClientVersion(MemberId) >= VERSION_DDNET_SAVE_CODE)
-src/game/server/gamecontext.cpp,4934,code/api-identifier,brand appears only inside code identifiers,int CGameContext::GetDDRaceTeam(int ClientId) const
-src/game/server/gamecontext.cpp,5073,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->IsSixup(ClientId) || GetClientVersion(ClientId) >= VERSION_DDNET_WHISPER)
-src/game/server/gamecontext.cpp,5091,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->IsSixup(VictimId) || GetClientVersion(VictimId) >= VERSION_DDNET_WHISPER)
-src/game/server/gamecontext.cpp,5343,code/api-identifier,brand appears only inside code identifiers,const int Team = m_pController->IsTeamPlay() ? m_apPlayers[ClientId]->GetTeam() : (m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS ? -1 : GetDDRaceTeam(ClientId));
+src/game/server/gamecontext.cpp,567,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Context.GetClientVersion() >= VERSION_DDNET_MULTI_LASER)
+src/game/server/gamecontext.cpp,569,code/api-identifier,brand appears only inside code identifiers,CNetObj_DDNetLaser Laser = {};
+src/game/server/gamecontext.cpp,598,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Type == POWERUP_FREEZE && Context.GetClientVersion() < VERSION_DDNET_PICKUP_FREEZE)
+src/game/server/gamecontext.cpp,610,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),else if(Context.GetClientVersion() >= VERSION_DDNET_ENTITY_NETOBJS)
+src/game/server/gamecontext.cpp,612,code/api-identifier,brand appears only inside code identifiers,CNetObj_DDNetPickup Pickup = {};
+src/game/server/gamecontext.cpp,629,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Context.GetClientVersion() < VERSION_DDNET_WEAPON_SHIELDS)
+src/game/server/gamecontext.cpp,702,code/api-identifier,brand appears only inside code identifiers,if(m_apPlayers[i] != nullptr && GetDDRaceTeam(i) == Team)
+src/game/server/gamecontext.cpp,842,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(m_apPlayers[ClientId]->GetClientVersion() >= VERSION_DDNET_IMPORTANT_ALERT)
+src/game/server/gamecontext.cpp,858,code/api-identifier,identifier kept for protocol/build compatibility (github\.com/ddnet/ddnet/(issues|pull|blob|compar),"// TODO: Workaround https://github.com/ddnet/ddnet/issues/11144 by using client ID 0,"
+src/game/server/gamecontext.cpp,870,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(m_apPlayers[ToClientId]->GetClientVersion() >= VERSION_DDNET_IMPORTANT_ALERT)
+src/game/server/gamecontext.cpp,1195,code/api-identifier,brand appears only inside code identifiers,"m_TeeHistorian.RecordPlayerTeam(i, GetDDRaceTeam(i));"
+src/game/server/gamecontext.cpp,1237,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_apPlayers[i]->m_DDNetVersionKickTick > 0 && Server()->Tick() >= m_apPlayers[i]->m_DDNetVersionKickTick && !Server()->IsSixup(i) &&
+src/game/server/gamecontext.cpp,1238,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),"Server()->GetClientInfo(i, &Info) && Info.m_DDNetVersion < VERSION_DDNET_OLD)"
+src/game/server/gamecontext.cpp,1245,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_apPlayers[i]->m_DDNetVersionKickTick = -1;
+src/game/server/gamecontext.cpp,1377,code/api-identifier,brand appears only inside code identifiers,(m_apPlayers[j]->GetCharacter() && m_apPlayers[j]->GetCharacter()->m_DDRaceState == ERaceState::STARTED &&
+src/game/server/gamecontext.cpp,1468,code/api-identifier,brand appears only inside code identifiers,for(int j = 0; j < NUM_DDRACE_TEAMS; ++j)
+src/game/server/gamecontext.cpp,1543,code/api-identifier,brand appears only inside code identifiers,const int Team = GetDDRaceTeam(ClientId);
+src/game/server/gamecontext.cpp,1554,code/api-identifier,brand appears only inside code identifiers,if(pPlayer->GetTeam() == TEAM_SPECTATORS || Team != GetDDRaceTeam(Id) || pPlayer->IsAfk())
+src/game/server/gamecontext.cpp,1557,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->GetClientVersion(Id) < VERSION_DDNET_PREINPUT)
+src/game/server/gamecontext.cpp,1743,comment,brand appears only in a source comment,"// 0.7 clients can send ddnet message, F-Client does that for example"
+src/game/server/gamecontext.cpp,1744,code/api-identifier,brand appears only inside code identifiers,if(Info.m_GotDDNetVersion)
+src/game/server/gamecontext.cpp,1746,code/api-identifier,brand appears only inside code identifiers,if(OnClientDDNetVersionKnown(ClientId))
+src/game/server/gamecontext.cpp,1895,code/api-identifier,brand appears only inside code identifiers,"m_pController->Teams().SetPractice(GetDDRaceTeam(ClientId), true);"
+src/game/server/gamecontext.cpp,1990,code/api-identifier,brand appears only inside code identifiers,bool CGameContext::OnClientDDNetVersionKnown(int ClientId)
+src/game/server/gamecontext.cpp,1994,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),int ClientVersion = Info.m_DDNetVersion;
+src/game/server/gamecontext.cpp,1999,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(Info.m_pConnectionId && Info.m_pDDNetVersionStr)
+src/game/server/gamecontext.cpp,2001,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),"m_TeeHistorian.RecordDDNetVersion(ClientId, *Info.m_pConnectionId, ClientVersion, Info.m_pDDNetVersionStr);"
+src/game/server/gamecontext.cpp,2005,code/api-identifier,brand appears only inside code identifiers,"m_TeeHistorian.RecordDDNetVersionOld(ClientId, ClientVersion);"
+src/game/server/gamecontext.cpp,2017,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion >= VERSION_DDNET_GAMETICK)
+src/game/server/gamecontext.cpp,2027,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion < VERSION_DDNET_EARLY_VERSION)
+src/game/server/gamecontext.cpp,2031,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion < VERSION_DDNET_UPDATER_FIXED && g_Config.m_SvClientSuggestionOld[0] != '\0')
+src/game/server/gamecontext.cpp,2243,code/api-identifier,brand appears only inside code identifiers,case NETMSGTYPE_CL_ISDDNETLEGACY:
+src/game/server/gamecontext.cpp,2244,code/api-identifier,brand appears only inside code identifiers,"OnIsDDNetLegacyNetMessage(static_cast<CNetMsg_Cl_IsDDNetLegacy *>(pRawMsg), ClientId, pUnpacker);"
+src/game/server/gamecontext.cpp,2329,code/api-identifier,brand appears only inside code identifiers,int GameTeam = GetDDRaceTeam(pPlayer->GetCid());
+src/game/server/gamecontext.cpp,2491,code/api-identifier,brand appears only inside code identifiers,if(g_Config.m_SvVoteKickMin && !GetDDRaceTeam(ClientId))
+src/game/server/gamecontext.cpp,2504,code/api-identifier,brand appears only inside code identifiers,if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !GetDDRaceTeam(i))
+src/game/server/gamecontext.cpp,2509,code/api-identifier,brand appears only inside code identifiers,if(m_apPlayers[j] && m_apPlayers[j]->GetTeam() != TEAM_SPECTATORS && !GetDDRaceTeam(j))
+src/game/server/gamecontext.cpp,2564,code/api-identifier,brand appears only inside code identifiers,if(GetDDRaceTeam(ClientId) != GetDDRaceTeam(KickId))
+src/game/server/gamecontext.cpp,2583,code/api-identifier,brand appears only inside code identifiers,if(!GetDDRaceTeam(ClientId))
+src/game/server/gamecontext.cpp,2598,code/api-identifier,brand appears only inside code identifiers,"str_format(aCmd, sizeof(aCmd), ""uninvite %d %d; set_team_ddr %d 0"", KickId, GetDDRaceTeam(KickId), KickId);"
+src/game/server/gamecontext.cpp,2641,code/api-identifier,brand appears only inside code identifiers,if(!GetPlayerChar(ClientId) || !GetPlayerChar(SpectateId) || GetDDRaceTeam(ClientId) != GetDDRaceTeam(SpectateId))
+src/game/server/gamecontext.cpp,2652,code/api-identifier,brand appears only inside code identifiers,"str_format(aCmd, sizeof(aCmd), ""uninvite %d %d; force_pause %d %d"", SpectateId, GetDDRaceTeam(SpectateId), SpectateId, g_Config.m_SvVotePauseTime);"
+src/game/server/gamecontext.cpp,2658,code/api-identifier,brand appears only inside code identifiers,"str_format(aCmd, sizeof(aCmd), ""uninvite %d %d; set_team %d -1 %d"", SpectateId, GetDDRaceTeam(SpectateId), SpectateId, g_Config.m_SvVoteSpectateRejoindelay);"
+src/game/server/gamecontext.cpp,2716,code/api-identifier,brand appears only inside code identifiers,if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == ERaceState::STARTED)
+src/game/server/gamecontext.cpp,2748,code/api-identifier,brand appears only inside code identifiers,"void CGameContext::OnIsDDNetLegacyNetMessage(const CNetMsg_Cl_IsDDNetLegacy *pMsg, int ClientId, CUnpacker *pUnpacker)"
+src/game/server/gamecontext.cpp,2751,code/api-identifier,brand appears only inside code identifiers,"if(Server()->GetClientInfo(ClientId, &Info) && Info.m_GotDDNetVersion)"
+src/game/server/gamecontext.cpp,2755,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),int DDNetVersion = pUnpacker->GetInt();
+src/game/server/gamecontext.cpp,2756,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),if(pUnpacker->Error() || DDNetVersion < 0)
+src/game/server/gamecontext.cpp,2758,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),DDNetVersion = VERSION_DDRACE;
+src/game/server/gamecontext.cpp,2760,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),"Server()->SetClientDDNetVersion(ClientId, DDNetVersion);"
+src/game/server/gamecontext.cpp,2761,code/api-identifier,brand appears only inside code identifiers,if(OnClientDDNetVersionKnown(ClientId))
+src/game/server/gamecontext.cpp,2975,code/api-identifier,brand appears only inside code identifiers,if(IsRunningKickOrSpecVote(ClientId) && GetDDRaceTeam(ClientId))
+src/game/server/gamecontext.cpp,2992,code/api-identifier,brand appears only inside code identifiers,if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == ERaceState::STARTED)
+src/game/server/gamecontext.cpp,3424,code/api-identifier,brand appears only inside code identifiers,pSelf->m_aTeamMapping[i] = pSelf->GetDDRaceTeam(i);
+src/game/server/gamecontext.cpp,3833,code/api-identifier,brand appears only inside code identifiers,for(int Team = 0; Team < NUM_DDRACE_TEAMS; Team++)
+src/game/server/gamecontext.cpp,3888,code/api-identifier,identifier kept for protocol/build compatibility (@ddnet\.(org|tw)),"Console()->Register(""mapbug"", ""s[mapbug]"", CFGFLAG_SERVER | CFGFLAG_GAME, ConMapbug, this, ""Enable map compatibility mode using the specified bug (example: grenade-doubleexplosion@ddnet.tw)"");"
+src/game/server/gamecontext.cpp,3920,code/api-identifier,brand appears only inside code identifiers,RegisterDDRaceCommands();
+src/game/server/gamecontext.cpp,3924,code/api-identifier,brand appears only inside code identifiers,void CGameContext::RegisterDDRaceCommands()
+src/game/server/gamecontext.cpp,4182,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),if(g_Config.m_SvDDRaceTuneReset)
+src/game/server/gamecontext.cpp,4225,code/api-identifier,brand appears only inside code identifiers,m_pController = new CGameControllerDDNet(this);
+src/game/server/gamecontext.cpp,4744,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->IsSixup(ClientId) || GetClientVersion(ClientId) >= VERSION_DDNET_MAP_BESTTIME)
+src/game/server/gamecontext.cpp,4752,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(GetClientVersion(ClientId) < VERSION_DDNET_MSG_LEGACY)
+src/game/server/gamecontext.cpp,4764,code/api-identifier,brand appears only inside code identifiers,CNetMsg_Sv_DDRaceTime Msg;
+src/game/server/gamecontext.cpp,4765,code/api-identifier,brand appears only inside code identifiers,CNetMsg_Sv_DDRaceTimeLegacy MsgLegacy;
+src/game/server/gamecontext.cpp,4775,code/api-identifier,brand appears only inside code identifiers,if(VERSION_DDRACE <= ClientVersion)
+src/game/server/gamecontext.cpp,4777,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(ClientVersion < VERSION_DDNET_MSG_LEGACY)
+src/game/server/gamecontext.cpp,4820,code/api-identifier,brand appears only inside code identifiers,if(GetDDRaceTeam(MemberId) != Team)
+src/game/server/gamecontext.cpp,4839,code/api-identifier,brand appears only inside code identifiers,if(GetDDRaceTeam(MemberId) != Team)
+src/game/server/gamecontext.cpp,4842,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(GetClientVersion(MemberId) >= VERSION_DDNET_SAVE_CODE)
+src/game/server/gamecontext.cpp,4948,code/api-identifier,brand appears only inside code identifiers,int CGameContext::GetDDRaceTeam(int ClientId) const
+src/game/server/gamecontext.cpp,5087,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->IsSixup(ClientId) || GetClientVersion(ClientId) >= VERSION_DDNET_WHISPER)
+src/game/server/gamecontext.cpp,5105,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(Server()->IsSixup(VictimId) || GetClientVersion(VictimId) >= VERSION_DDNET_WHISPER)
+src/game/server/gamecontext.cpp,5357,code/api-identifier,brand appears only inside code identifiers,const int Team = m_pController->IsTeamPlay() ? m_apPlayers[ClientId]->GetTeam() : (m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS ? -1 : GetDDRaceTeam(ClientId));
 src/game/server/gamecontext.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/server/gamecontext.h,351,code/api-identifier,brand appears only inside code identifiers,void RegisterDDRaceCommands();
-src/game/server/gamecontext.h,367,code/api-identifier,brand appears only inside code identifiers,"void OnIsDDNetLegacyNetMessage(const CNetMsg_Cl_IsDDNetLegacy *pMsg, int ClientId, CUnpacker *pUnpacker);"
-src/game/server/gamecontext.h,413,comment,brand appears only in a source comment,// DDRace
-src/game/server/gamecontext.h,415,code/api-identifier,brand appears only inside code identifiers,bool OnClientDDNetVersionKnown(int ClientId);
-src/game/server/gamecontext.h,418,code/api-identifier,brand appears only inside code identifiers,int GetDDRaceTeam(int ClientId) const;
-src/game/server/gamecontext.h,450,comment,brand appears only in a source comment,// DDRace Console Commands
+src/game/server/gamecontext.h,358,code/api-identifier,brand appears only inside code identifiers,void RegisterDDRaceCommands();
+src/game/server/gamecontext.h,374,code/api-identifier,brand appears only inside code identifiers,"void OnIsDDNetLegacyNetMessage(const CNetMsg_Cl_IsDDNetLegacy *pMsg, int ClientId, CUnpacker *pUnpacker);"
+src/game/server/gamecontext.h,420,comment,brand appears only in a source comment,// DDRace
+src/game/server/gamecontext.h,422,code/api-identifier,brand appears only inside code identifiers,bool OnClientDDNetVersionKnown(int ClientId);
+src/game/server/gamecontext.h,425,code/api-identifier,brand appears only inside code identifiers,int GetDDRaceTeam(int ClientId) const;
+src/game/server/gamecontext.h,457,comment,brand appears only in a source comment,// DDRace Console Commands
 src/game/server/gamecontroller.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/server/gamecontroller.cpp,566,code/api-identifier,brand appears only inside code identifiers,if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetClientVersion() >= VERSION_DDRACE)
 src/game/server/gamecontroller.cpp,600,code/api-identifier,identifier kept for protocol/build compatibility (\bVERSION_DDNET_[A-Z0-9_]+),if(pPlayer && (pPlayer->m_TimerType == CPlayer::TIMERTYPE_GAMETIMER || pPlayer->m_TimerType == CPlayer::TIMERTYPE_GAMETIMER_AND_BROADCAST) && pPlayer->GetClientVersion() >= VERSION_DDNET_GAMETICK)

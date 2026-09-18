@@ -142,6 +142,10 @@ CGameContext::CGameContext(bool Resetting) :
 
 CGameContext::~CGameContext()
 {
+	for(auto &pIdentity : m_aGameIdentities)
+		if(pIdentity)
+			pIdentity->Disconnect();
+
 	for(auto &pPlayer : m_apPlayers)
 		delete pPlayer;
 
@@ -1807,6 +1811,12 @@ bool CGameContext::OnClientDataPersist(int ClientId, void *pData)
 
 void CGameContext::OnClientConnected(int ClientId, void *pData)
 {
+	if(m_aGameIdentities[ClientId])
+		m_aGameIdentities[ClientId]->Disconnect();
+	std::array<unsigned char, 32> IdentityNonce;
+	secure_random_fill(IdentityNonce.data(), IdentityNonce.size());
+	m_aGameIdentities[ClientId] = std::make_shared<neonrelay::GameConnectionIdentity>(IdentityNonce);
+
 	CPersistentClientData *pPersistentData = (CPersistentClientData *)pData;
 	bool Spec = false;
 	bool Afk = true;
@@ -1862,6 +1872,10 @@ void CGameContext::OnClientInfoChange(int ClientId)
 
 void CGameContext::OnClientDrop(int ClientId, const char *pReason)
 {
+	if(m_aGameIdentities[ClientId])
+		m_aGameIdentities[ClientId]->Disconnect();
+	m_aGameIdentities[ClientId].reset();
+
 	LogEvent("Disconnect", ClientId);
 
 	AbortVoteKickOnDisconnect(ClientId);

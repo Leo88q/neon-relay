@@ -263,3 +263,14 @@ same checks so this gap does not recur silently.
 - The native connection transport/TLS client/nonce lifecycle adapter remains
   unimplemented; pairing context must not be fabricated from network input.
   Payments, public intent creation and race admission remain disabled.
+
+### Part 15 — native per-connection identity lifetime
+
+- Added game-thread identity state with pending serial/nonce binding, bounded
+  deadlines, terminal disconnect, expiry and fail-closed clock rollback.
+- Hooked fresh cryptographic nonces into OnClientConnected and invalidation into
+  OnClientDrop/context destruction. State is not persisted across map reset.
+- Added compiled lifecycle tests for stale replies, retries, client-slot reuse,
+  weak-handle expiry and invalid/expired contexts to the existing signer gate.
+- No HTTPS/pairing packet transport is implemented or enabled. Complete() remains
+  a trusted response boundary, not an authentication parser. No paid admission.

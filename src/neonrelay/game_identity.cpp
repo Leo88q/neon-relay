@@ -39,12 +39,20 @@ bool Uuid(const std::string &Text)
 }
 } // namespace
 
+bool IsGameIdentityContextValid(const AuthenticatedGameIdentity &Identity, int64_t Now)
+{
+	return Now >= 0 && Now <= 9007199254740991LL && Identity.ExplicitLinkConfirmed &&
+		Identity.AuthenticationExpiresAt > Now && Identity.AuthenticationExpiresAt <= 9007199254740991LL &&
+		SafeText(Identity.Domain, 253) && SafeText(Identity.PlayerId, 512) &&
+		Canonical32(Identity.Wallet) && Uuid(Identity.SessionId) && Uuid(Identity.WalletBindingId);
+}
+
 std::string SignGameIdentityChallenge(const MatchSigner &Signer,
 	const AuthenticatedGameIdentity &Identity, const std::string &Nonce,
 	int64_t IssuedAt, int64_t ExpiresAt, const std::string &ChallengeBytes, int64_t Now)
 {
 	constexpr int64_t MaxSafeInteger = 9007199254740991LL;
-	if(!Signer.Ready() || !Identity.ExplicitLinkConfirmed ||
+	if(!Signer.Ready() || !IsGameIdentityContextValid(Identity, Now) ||
 		Now < 0 || Now > MaxSafeInteger || IssuedAt < 0 || IssuedAt > Now ||
 		ExpiresAt <= Now || ExpiresAt > MaxSafeInteger || ExpiresAt - IssuedAt > 120000 ||
 		Identity.AuthenticationExpiresAt <= Now || Identity.AuthenticationExpiresAt > MaxSafeInteger ||

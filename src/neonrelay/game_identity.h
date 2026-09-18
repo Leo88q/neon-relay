@@ -19,6 +19,8 @@ struct AuthenticatedGameIdentity
 	bool ExplicitLinkConfirmed = false;
 };
 
+bool IsGameIdentityContextValid(const AuthenticatedGameIdentity &Identity, int64_t Now);
+
 // Exact backend-issued JSON bytes are signed only if they equal the canonical
 // challenge constructed from trusted context and bounded nonce/time inputs.
 // Caller must use a dedicated identity key, not the match-event signing key.
