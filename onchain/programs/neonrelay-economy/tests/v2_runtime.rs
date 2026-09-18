@@ -124,3 +124,122 @@ async fn payment_reservations_claims_and_atomic_failures() {
     assert_eq!(state::<EconomyConfigV2>(&mut ctx, config).await.reserved, 0);
     assert_eq!(state::<PrizeEpochV2>(&mut ctx, prizes).await.remaining, 0);
 }
+
+#[tokio::test]
+async fn initialize_and_isolate_two_mint_markets() {
+    use neonrelay_economy::EconomyConfig;
+    use anchor_spl::associated_token::{self, spl_associated_token_account};
+    let admin = Keypair::new(); let player = Keypair::new();
+    let (legacy, legacy_bump) = pda(&[b"neonrelay_economy_config"]);
+    let mints = [Pubkey::new_unique(), Pubkey::new_unique(), Pubkey::new_unique()];
+    let treasuries = [Pubkey::new_unique(), Pubkey::new_unique(), Pubkey::new_unique()];
+    let sources = [Pubkey::new_unique(), Pubkey::new_unique(), Pubkey::new_unique()];
+    let configs = mints.map(|mint| pda(&[b"neonrelay_economy_v2", mint.as_ref()]).0);
+    let vaults: Vec<_> = (0..3).map(|i| associated_token::get_associated_token_address(&configs[i], &mints[i])).collect();
+    let mut test = ProgramTest::new("neonrelay_economy", neonrelay_economy::id(), processor!(entry));
+    test.add_program("spl_token", spl_token::id(), processor!(spl_token::processor::Processor::process));
+    test.add_program("spl_associated_token_account", associated_token::ID,
+        processor!(spl_associated_token_account::processor::process_instruction));
+    for key in [admin.pubkey(), player.pubkey()] {
+        test.add_account(key, Account { lamports: 10_000_000_000, owner: system_program::id(), ..Default::default() });
+    }
+    // Only legacy operator bootstrap and initialized mint/source/treasury state
+    // are seeded. All v2 config, vault, ticket, epoch and claim accounts are real
+    // instruction-created accounts, including ATA/System/SPL CPI initialization.
+    let old = EconomyConfig { authority: admin.pubkey(), mint: mints[0], treasury_ata: treasuries[0],
+        vault_ata: Pubkey::new_unique(), rake_bps: 1000, fee_match: 50, fee_tournament: 100,
+        paused: false, bump: legacy_bump };
+    let mut data = Vec::new(); old.try_serialize(&mut data).unwrap();
+    test.add_account(legacy, stored(data, neonrelay_economy::id()));
+    for (i, decimals) in [0, 6, 16].into_iter().enumerate() {
+        let mint_state = spl_token::state::Mint { decimals, is_initialized: true, supply: 100_000_000,
+            ..Default::default() };
+        let mut data = vec![0; spl_token::state::Mint::LEN];
+        spl_token::state::Mint::pack(mint_state, &mut data).unwrap();
+        test.add_account(mints[i], stored(data, spl_token::id()));
+        test.add_account(treasuries[i], token(mints[i], admin.pubkey(), 0));
+        test.add_account(sources[i], token(mints[i], player.pubkey(), 100_000_000));
+    }
+    let mut ctx = test.start_with_context().await;
+    let initialize = |i: usize, authority, treasury_ata, rake_bps| ix(accounts::InitializeV2 {
+        authority, legacy_config: legacy, mint: mints[i], config: configs[i], treasury_ata,
+        vault_ata: vaults[i], token_program: spl_token::id(), associated_token_program: associated_token::ID,
+        system_program: system_program::id() }, instruction::InitializeV2 { rake_bps });
+    send(&mut ctx, &player, initialize(0, player.pubkey(), treasuries[0], 1000), false).await;
+    send(&mut ctx, &admin, initialize(0, admin.pubkey(), treasuries[1], 1000), false).await;
+    // Correct mint but treasury owned by the player must also fail.
+    send(&mut ctx, &admin, initialize(0, admin.pubkey(), sources[0], 1000), false).await;
+    send(&mut ctx, &admin, initialize(0, admin.pubkey(), treasuries[0], 2001), false).await;
+    send(&mut ctx, &admin, initialize(2, admin.pubkey(), treasuries[2], 1000), false).await;
+    for i in [0, 2] {
+        assert!(ctx.banks_client.get_account(configs[i]).await.unwrap().is_none());
+        assert!(ctx.banks_client.get_account(vaults[i]).await.unwrap().is_none());
+    }
+    for i in 0..2 {
+        send(&mut ctx, &admin, initialize(i, admin.pubkey(), treasuries[i], 1000), true).await;
+        send(&mut ctx, &admin, initialize(i, admin.pubkey(), treasuries[i], 1000), false).await;
+        let cfg: EconomyConfigV2 = state(&mut ctx, configs[i]).await;
+        assert_eq!((cfg.authority, cfg.mint, cfg.vault_ata, cfg.treasury_ata),
+            (admin.pubkey(), mints[i], vaults[i], treasuries[i]));
+        assert_eq!(cfg.fees, neonrelay_economy::tier_fees_v2(if i == 0 { 0 } else { 6 }).unwrap());
+        assert_eq!(cfg.reserved, 0); assert!(!cfg.paused);
+        let account = ctx.banks_client.get_account(vaults[i]).await.unwrap().unwrap();
+        let vault = spl_token::state::Account::unpack(&account.data).unwrap();
+        assert_eq!((vault.mint, vault.owner, vault.amount), (mints[i], configs[i], 0));
+    }
+    assert_ne!(configs[0], configs[1]); assert_ne!(vaults[0], vaults[1]);
+    let reference = [42; 32];
+    let tickets = mints.map(|mint| pda(&[b"neonrelay_entry_v2", mint.as_ref(), &reference, player.pubkey().as_ref()]).0);
+    let pay = |i: usize, source: usize, vault: usize, treasury: usize, ticket: usize| ix(accounts::PayEntryV2 {
+        player: player.pubkey(), config: configs[i], player_ata: sources[source], vault_ata: vaults[vault],
+        treasury_ata: treasuries[treasury], ticket: tickets[ticket], token_program: spl_token::id(), system_program: system_program::id() },
+        instruction::PayEntryV2 { reference, kind: 1, tier: 0 });
+    for args in [(0, 1, 0, 0, 0), (0, 0, 1, 0, 0), (0, 0, 0, 1, 0), (0, 0, 0, 0, 1)] {
+        send(&mut ctx, &player, pay(args.0, args.1, args.2, args.3, args.4), false).await;
+    }
+    for i in 0..2 {
+        assert!(ctx.banks_client.get_account(tickets[i]).await.unwrap().is_none());
+        assert_eq!(balance(&mut ctx, sources[i]).await, 100_000_000);
+        assert_eq!(balance(&mut ctx, vaults[i]).await, 0);
+        assert_eq!(balance(&mut ctx, treasuries[i]).await, 0);
+        send(&mut ctx, &player, pay(i, i, i, i, i), true).await;
+        let paid: EntryTicketV2 = state(&mut ctx, tickets[i]).await;
+        assert_eq!(paid.mint, mints[i]); assert_eq!(paid.reference, reference);
+    }
+    assert_ne!(tickets[0], tickets[1]);
+    let totals = [45, 45_000_000];
+    let roots: Vec<_> = (0..2).map(|i| neonrelay_economy::merkle_leaf_v2(&player.pubkey().to_bytes(), totals[i], &mints[i].to_bytes())).collect();
+    let prizes = mints.map(|mint| pda(&[b"neonrelay_prizes_v2", mint.as_ref(), &1u64.to_le_bytes()]).0);
+    let claims = mints.map(|mint| pda(&[b"neonrelay_claim_v2", mint.as_ref(), &1u64.to_le_bytes(), player.pubkey().as_ref()]).0);
+    for i in 0..2 {
+        let publish = ix(accounts::PublishPrizesV2 { authority: admin.pubkey(), config: configs[i],
+            vault_ata: vaults[i], prizes: prizes[i], system_program: system_program::id() },
+            instruction::PublishPrizesV2 { epoch: 1, root: roots[i], total: totals[i], leaf_count: 1 });
+        send(&mut ctx, &admin, publish, true).await;
+    }
+    let claim = |i: usize, vault: usize, epoch: usize, claim: usize| ix(accounts::ClaimPrizeV2 {
+        player: player.pubkey(), config: configs[i], player_ata: sources[i], vault_ata: vaults[vault],
+        prizes: prizes[epoch], claim: claims[claim], token_program: spl_token::id(), system_program: system_program::id() },
+        instruction::ClaimPrizeV2 { epoch: 1, amount: totals[i], leaf_index: 0, proof: vec![] });
+    for args in [(0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)] {
+        send(&mut ctx, &player, claim(args.0, args.1, args.2, args.3), false).await;
+    }
+    for i in 0..2 {
+        assert!(ctx.banks_client.get_account(claims[i]).await.unwrap().is_none());
+        assert_eq!(state::<EconomyConfigV2>(&mut ctx, configs[i]).await.reserved, totals[i]);
+    }
+    send(&mut ctx, &player, claim(0, 0, 0, 0), true).await;
+    assert_eq!(state::<EconomyConfigV2>(&mut ctx, configs[1]).await.reserved, totals[1]);
+    assert_eq!(balance(&mut ctx, vaults[1]).await, totals[1]);
+    send(&mut ctx, &player, claim(1, 1, 1, 1), true).await;
+    for i in 0..2 {
+        send(&mut ctx, &player, claim(i, i, i, i), false).await;
+        assert_eq!(state::<EconomyConfigV2>(&mut ctx, configs[i]).await.reserved, 0);
+        assert_eq!(state::<PrizeEpochV2>(&mut ctx, prizes[i]).await.remaining, 0);
+        assert_eq!(balance(&mut ctx, vaults[i]).await, 0);
+        let rake = if i == 0 { 5 } else { 5_000_000 };
+        assert_eq!(balance(&mut ctx, treasuries[i]).await, rake);
+        assert_eq!(balance(&mut ctx, sources[i]).await, 100_000_000 - rake);
+    }
+    assert_ne!(prizes[0], prizes[1]); assert_ne!(claims[0], claims[1]);
+}
