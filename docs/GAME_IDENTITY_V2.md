@@ -198,3 +198,38 @@ No pairing packets, chat/RCON endpoint, nonce display, HTTPS client or backend
 response adapter is connected yet. Thus this stage wires lifetime/reset hooks
 into the native server, but still does not authenticate a live game connection
 or enable any payment/admission flow.
+
+## Part 16: bounded native HTTPS transport adapter
+
+`GamePairingHttp` now builds the server's canonical pairing proof, submits a
+JSON POST using the engine HTTP queue, and exposes game-thread `Poll()` to apply
+a completed response to a weak handle of the original connection. It has a
+128-request cap, ten-second deadline, 4096-byte reply limit, no retry of a
+consumed token, and cancellation on adapter destruction. Responses require HTTP
+200, a nine-field object with unique required keys, exact types, explicit consent,
+`admissionEnabled:false`, valid public identifiers and a live authentication
+expiry. The connection state separately checks nonce/domain/request generation.
+
+The operator origin accepts only `https://host[:port]`, without userinfo, paths,
+queries, fragments or whitespace. The path is fixed to `/v2/game/redeem`.
+Credentials cannot be placed in the URL. A new engine `Sensitive()` request
+policy overrides global insecure/debug options for this native request: HTTPS
+only, peer/hostname verification, no redirect following, no curl wire-debug or
+request progress/error logging. Emscripten refuses sensitive requests because
+that backend does not implement the same no-redirect policy. Other requests keep
+their existing defaults. This is not a general engine HTTP behavior change.
+
+Compiled protocol tests now sign a real pairing request in C++, redeem it through
+the backend HTTP route and parse the actual reply in C++. They also reject
+incompatible/duplicate/oversized JSON, stale identity fields and unsafe origins.
+The signer gate syntax-checks the adapter; CI additionally installs curl headers
+and syntax-checks native engine HTTP code. The tests do **not** yet run the native
+HTTP worker over a real TLS connection, simulate TLS/redirect failures, or link
+and playtest the full game server. Do not infer those guarantees from protocol
+parity or source compilation.
+
+The adapter is in the server source list, but is not instantiated by a game
+packet handler: operator key/origin configuration, confidential client token
+transport, main-loop polling and integration tests still need wiring. Public
+payments/admission remain disabled. Calls to Start/Poll and destruction belong
+on the game thread; no callbacks are installed on the HTTP worker thread.

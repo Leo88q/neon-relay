@@ -78,6 +78,12 @@ jobs:
         run: |
           ./scripts/local_syntax_probe.sh
           ./scripts/check_menu_syntax.sh
+      - name: Compile native HTTP transport with curl headers
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libcurl4-openssl-dev
+          g++ -std=c++20 -fsyntax-only -Isrc -I/tmp/neonrelay-syntax-probe/src -Isrc/engine/external \
+            src/engine/http.cpp src/engine/shared/http_curl.cpp src/neonrelay/game_pairing_http.cpp
 
   # Builds the vendored ed25519-donna + match signer + CLI tool with plain
   # gcc/g++, signs fixed vectors and cross-verifies with node:crypto.

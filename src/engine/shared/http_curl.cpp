@@ -68,17 +68,22 @@ bool CHttpRequestCurl::ConfigureHandle(CURL *pHandle)
 		return false;
 	}
 
-	if(g_Config.m_DbgHttp)
+	if(g_Config.m_DbgHttp && !m_Sensitive)
 	{
 		curl_easy_setopt(pHandle, CURLOPT_VERBOSE, 1L);
 		curl_easy_setopt(pHandle, CURLOPT_DEBUGFUNCTION, CurlDebug);
 	}
 	long Protocols = CURLPROTO_HTTPS;
-	if(g_Config.m_HttpAllowInsecure)
+	if(g_Config.m_HttpAllowInsecure && !m_Sensitive)
 	{
 		Protocols |= CURLPROTO_HTTP;
 	}
 
+	if(m_Sensitive)
+	{
+		curl_easy_setopt(pHandle, CURLOPT_SSL_VERIFYPEER, 1L);
+		curl_easy_setopt(pHandle, CURLOPT_SSL_VERIFYHOST, 2L);
+	}
 	curl_easy_setopt(pHandle, CURLOPT_ERRORBUFFER, m_aErr);
 
 	curl_easy_setopt(pHandle, CURLOPT_CONNECTTIMEOUT_MS, m_Timeout.m_ConnectTimeoutMs);
@@ -105,7 +110,7 @@ bool CHttpRequestCurl::ConfigureHandle(CURL *pHandle)
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
-	curl_easy_setopt(pHandle, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(pHandle, CURLOPT_FOLLOWLOCATION, m_Sensitive ? 0L : 1L);
 	curl_easy_setopt(pHandle, CURLOPT_MAXREDIRS, 4L);
 	if(m_FailOnErrorStatus)
 	{
@@ -234,7 +239,7 @@ void CHttpRequestCurl::OnCompletionInternal(CURL *pHandle, CURLcode Code)
 	EHttpState State;
 	if(Code != CURLE_OK)
 	{
-		if(g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::FAILURE)
+		if(!m_Sensitive && (g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::FAILURE))
 		{
 			log_error("http", "%s failed. libcurl error (%u): %s", m_aUrl, Code, m_aErr[0] != '\0' ? m_aErr : curl_easy_strerror(Code));
 		}
@@ -242,7 +247,7 @@ void CHttpRequestCurl::OnCompletionInternal(CURL *pHandle, CURLcode Code)
 	}
 	else
 	{
-		if(g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::ALL)
+		if(!m_Sensitive && (g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::ALL))
 		{
 			log_info("http", "task done: %s", m_aUrl);
 		}
@@ -450,7 +455,7 @@ void CHttpCurl::RunLoop()
 		while(!NewRequests.empty())
 		{
 			auto &pRequest = NewRequests.front();
-			if(g_Config.m_DbgHttp)
+			if(g_Config.m_DbgHttp && !pRequest->m_Sensitive)
 				log_debug("http", "task: %s %s", CHttpRequestCurl::GetRequestType(pRequest->m_Type), pRequest->m_aUrl);
 
 			if(pRequest->ShouldSkipRequest())

@@ -274,3 +274,17 @@ same checks so this gap does not recur silently.
   weak-handle expiry and invalid/expired contexts to the existing signer gate.
 - No HTTPS/pairing packet transport is implemented or enabled. Complete() remains
   a trusted response boundary, not an authentication parser. No paid admission.
+
+### Part 16 — native pairing HTTPS adapter and strict protocol
+
+- Added canonical C++ pairing-proof construction and strict bounded response
+  parsing. Real backend HTTP redemption and reply parsing pass compiled parity
+  tests, alongside unsafe-origin/schema rejection cases.
+- Added queued engine-HTTP adapter with game-thread Poll(), original-connection
+  weak handles, fixed path, deadlines, cancellation and request/response caps.
+- Added opt-in Sensitive() HTTP policy: HTTPS-only, certificate/hostname checks,
+  no redirect or wire logging even under global insecure/debug settings;
+  Emscripten rejects this unsupported policy instead of silently weakening it.
+- Adapter/engine syntax gates added. Actual native TLS execution, game packet
+  transport/config/poll-loop wiring and full native linking remain unverified.
+  No live wallet login or paid admission has been enabled.

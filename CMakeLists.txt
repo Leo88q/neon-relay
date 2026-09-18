@@ -3144,7 +3144,7 @@ if(SERVER)
     src/generated/wordlist.h
     # tidy-alphabetical-end
   )
-  list(APPEND GAME_SERVER src/neonrelay/game_identity.cpp src/neonrelay/match_signer.cpp)
+  list(APPEND GAME_SERVER src/neonrelay/game_identity.cpp src/neonrelay/game_pairing_http.cpp src/neonrelay/game_pairing_protocol.cpp src/neonrelay/match_signer.cpp)
   set(SERVER_SRC ${ENGINE_SERVER_WITHOUT_MAIN} ${GAME_SERVER} ${GAME_GENERATED_SERVER} $<TARGET_OBJECTS:neonrelay-ed25519>)
   if(TARGET_OS STREQUAL "windows")
     set(VERSION_EXECUTABLE "${SERVER_EXECUTABLE}")

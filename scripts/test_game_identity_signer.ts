@@ -41,5 +41,30 @@ try {
   assert.equal(verified.json.admissionEnabled, false);
   assert.equal((await getJson(base, "/v2/identity", token)).json.player_id, p.player_id);
   assert.equal((await postJson(base, "/v2/identity/verify", { nonce: p.nonce, signature }, token)).status, 409);
+  const proto = (mode: string, input: string, extra: string[] = []) => spawnSync(process.env.NEONRELAY_PAIRING_PROTOCOL_TEST_BIN!,
+    [mode, ...extra], { input, encoding: "utf8" });
+  const connectionNonce = "cd".repeat(32);
+  const pair = await postJson(base, "/v2/game/pair", { connection_nonce: connectionNonce, consent: true }, token);
+  assert.equal(pair.status, 200);
+  const request = proto("request", [p.domain, connectionNonce, pair.json.pairing_token].join("\n") + "\n", [process.env.NEONRELAY_IDENTITY_TEST_SEED_FILE!]);
+  assert.equal(request.status, 0, request.stderr);
+  const redeemed = await postJson(base, "/v2/game/redeem", JSON.parse(request.stdout));
+  assert.equal(redeemed.status, 200);
+  const reply = JSON.stringify(redeemed.json);
+  const now = String(Date.now());
+  const parsed = proto("parse", reply, [now]);
+  assert.equal(parsed.status, 0); assert.equal(parsed.stdout, p.player_id);
+  for (const bad of ["", "null", "[]", "{".repeat(4097),
+    reply.replace('"domain":', '"domain":"duplicate","domain":'),
+    JSON.stringify({ ...redeemed.json, unknown: 1 }),
+    ...[ { wallet: "bad" }, { admissionEnabled: true }, { explicit_link_confirmed: false },
+      { authentication_expires_at: 0 }, { authentication_expires_at: 1.5 },
+      { connection_nonce: "invalid" }, { session_id: null } ].map((patch) => JSON.stringify({ ...redeemed.json, ...patch })),
+  ]) assert.equal(proto("parse", bad, [now]).status, 3, "reject incompatible backend response");
+  for (const origin of ["https://backend.example", "https://backend.example:8443"]) assert.equal(proto("origin", origin).status, 0);
+  for (const origin of ["http://backend.example", "https://user@backend.example", "https://backend.example/path", "https://backend.example?x", "https://backend.example#x", "https://backend.example:0", "https://backend.example:65536", "https://backend.example\n", "https://"]) {
+    assert.equal(proto("origin", origin).status, 3);
+  }
+  console.log("PASS: C++ pairing proof -> backend redemption -> strict C++ reply parser; origin/schema rejection cases");
   console.log("PASS: guarded C++ identity signing -> backend HTTP verification, 16 rejection cases and replay");
 } finally { await app.close(); }
