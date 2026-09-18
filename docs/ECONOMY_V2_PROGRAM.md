@@ -202,3 +202,44 @@ Still seeded: legacy operator config, initialized mint accounts, source token
 balances and treasury accounts. This does not test legacy bootstrap, SPL mint
 creation/minting, SBF binary execution, upgrade/deployment controls, every
 possible attack, or game admission. Payments remain disabled.
+
+## Part 10: built SBF execution (verified)
+
+CI now builds the economy ELF with the Agave v3.1.8 tool distribution. The
+Linux archive is pinned by SHA-256
+`e951bb8127c57460bc3ebca1671952e9b164e249d713fcebe2c125f70b8791e8`.
+The build does not deploy anything or use an operator wallet.
+
+The two `v2_runtime` scenarios run twice: first with the native Anchor
+entrypoint, then with `NEONRELAY_TEST_SBF=1` and `BPF_OUT_DIR` pointing to the
+freshly built ELF. SBF mode checks that the file exists and registers the economy
+with **no native processor fallback**. SPL Token and Associated Token remain
+real native processors in the bank harness. Thus the economy itself executes
+as SBF, including initialization, mint-isolated payments, reserves, PDA-signed
+claims, pause, replay rejection and atomic failures covered in parts 8–9.
+
+The first ELF built successfully but positive transactions failed with
+`ProgramFailedToComplete`, despite passing native tests. Moving v2 decoded
+`Account` fields into `Box<Account<...>>` resolved execution failures. This
+reduces stack pressure without changing account serialization, instruction
+arguments, PDA seeds or constraints. Transaction metadata is now included in
+assertion diagnostics, and CI publishes bounded failure annotations so a
+failed execution is not hidden behind successful compilation.
+
+Verified source revision: `fb85089`.
+
+- Rust host/native + SBF build + both SBF runtime scenarios:
+  https://github.com/Leo88q/neon-relay/actions/runs/35334434254
+- General CI: https://github.com/Leo88q/neon-relay/actions/runs/35334434283
+- Full local gates: backend 80/80, onchain TS 32/32, existing asset, branding,
+  secrets, menu, syntax and signer checks passed.
+
+The `economy-sbf` artifact contains only `neonrelay_economy.so` and
+`economy-sbf.sha256`. The resolved Cargo.lock is a separate review artifact;
+no keypair files are uploaded. This is an observed build/test result, not a
+claim of a fully reproducible audited release or locked transitive toolchain.
+
+Remaining gates: standalone validator/RPC lifecycle and deployment verification,
+legacy bootstrap trust, real mint setup, backend/mobile/game integration and
+admission authorization. These tests are not a cluster deployment and do not
+validate every legacy v1 instruction. Public payments/admission remain disabled.

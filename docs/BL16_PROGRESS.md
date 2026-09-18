@@ -192,3 +192,18 @@ same checks so this gap does not recur silently.
   gates passed: backend 80/80, onchain TS 32/32, existing asset/native checks.
 - Legacy bootstrap/mint/source state is still seeded. SBF/validator/deployment
   and game admission remain unverified; no payment/admission flags enabled.
+
+### Part 10 — SBF build and execution (verified)
+
+- CI builds an economy ELF with hash-checked Agave v3.1.8 and executes both
+  runtime scenarios with the ELF; missing binary/native fallback is disallowed.
+  SPL/ATA dependencies use their real native processors in the bank harness.
+- Found SBF-only ProgramFailedToComplete failures missed by native testing.
+  Boxed v2 decoded accounts to reduce stack pressure; ABI/seeds/constraints
+  unchanged. Both native and SBF scenarios now pass.
+- Rust/native/SBF run 35334434254 and general CI 35334434283 passed at fb85089.
+  Full local gates passed: backend 80/80 and onchain TS 32/32 plus prior checks.
+- Published CI artifacts: economy ELF + SHA-256 and separate resolved Cargo.lock;
+  no keypair upload, no deploy, no wallet use. Standalone validator/RPC lifecycle,
+  deployment verification and gameplay admission integration remain outstanding.
+  Payments and admission stay disabled; complete BL-16 is not yet delivered.
