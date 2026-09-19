@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Warmup content/serialization checks. These do not claim a native playthrough."""
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -22,13 +24,22 @@ class Warmup(unittest.TestCase):
         self.assertEqual(m.info.settings,['sv_solo_server 1'])
         self.assertEqual(len(m.images),4)
 
+    def test_physics_report_matches_shipped_map(self):
+        report=json.loads((OUTPUT.parents[2]/'docs/WARMUP_PHYSICS_PROBE.json').read_text())
+        self.assertEqual(report['sha256'],hashlib.sha256(OUTPUT.read_bytes()).hexdigest())
+        self.assertTrue(report['native_core']['finish_tile_reached'])
+        self.assertEqual(set(report['negative_controls_rejected']),{'--no-hook','--no-finish'})
+        # This probe must not silently promote core contact to a server race result.
+        self.assertFalse(report['server_race_completion_verified'])
+        self.assertFalse(report['server_checkpoint_relocation_verified'])
+
     def test_independent_wire_records(self):
         raw=read(OUTPUT)
         layers={p[6]:p for _,p in raw.items[5] if p[1]==2 and p[6]}
         game=raw.raws[layers[1][14]];tele=raw.raws[layers[2][18]]
-        for x,y,value in [(5,35,192),(10,35,33),(160,31,34),(80,19,1),(40,32,3)]:
+        for x,y,value in [(5,35,192),(10,35,33),(160,31,34),(95,19,1),(40,32,3)]:
             i=(y*W+x)*4;self.assertEqual(game[i:i+4],bytes([value,0,0,0]))
-        for x,y,number,tile in [(38,31,1,29),(40,30,1,30),(72,27,2,29),(74,26,2,30),(43,40,1,63)]:
+        for x,y,number,tile in [(38,31,1,29),(40,30,1,30),(84,27,2,29),(86,26,2,30),(43,40,1,63)]:
             i=(y*W+x)*2;self.assertEqual(tele[i:i+2],bytes([number,tile]))
 
     def test_safe_recovery_and_full_height_race_gates(self):

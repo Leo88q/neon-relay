@@ -14,17 +14,17 @@ OUTPUT = ROOT / 'data/maps/Neon Relay Warmup.map'
 W, H = 176, 48
 # Inclusive X intervals, floor Y. Authored blocks, no randomness.
 FLOORS = [(2,16,36),(17,19,35),(20,22,34),(23,25,33),(26,42,32),
-          (47,53,30),(58,64,29),(69,77,28),(86,89,35),(92,95,32),
-          (98,110,28),(111,116,29),(117,122,30),(123,129,31),(130,173,32)]
-PITS = [(43,46),(54,57),(65,68),(78,85),(90,91),(96,97)]
-CHECKPOINTS = [(1,38,31,40,30),(2,72,27,74,26),(3,106,27,108,26)]
+          (47,58,30),(63,74,29),(79,92,28),(101,104,35),(107,110,32),
+          (113,125,28),(126,131,29),(132,137,30),(138,144,31),(145,173,32)]
+PITS = [(43,46),(59,62),(75,78),(93,100),(105,106),(111,112)]
+CHECKPOINTS = [(1,38,31,40,30),(2,84,27,86,26),(3,121,27,123,26)]
 
 
 def geometry():
     game = np.zeros((H,W,2),dtype=np.uint8)
     game[0,:,0]=3;game[44:,:,0]=3;game[:,:2,0]=3;game[:,174:,0]=3
     for left,right,floor in FLOORS:game[floor:44,left:right+1,0]=3
-    game[19:21,79:99,0]=1 # hookable beam, separate from no-hook stage platforms
+    game[19:21,94:114,0]=1 # hookable beam, separate from no-hook stage platforms
     game[35,5]=(192,0)
     game[1:36,10,0]=33
     game[1:32,160,0]=34
@@ -40,7 +40,7 @@ def build(output=OUTPUT):
     require_version()
     m=twmap.Map.empty('DDNet06')
     m.info.author='The Neon Relay Authors'
-    m.info.version='warmup-test-1'
+    m.info.version='warmup-test-2'
     m.info.credits='Original authored geometry; original Neon Relay code-built artwork'
     m.info.license='Zlib'
     m.info.settings=['sv_solo_server 1']
@@ -103,7 +103,7 @@ def build(output=OUTPUT):
             q.position_env=motion[(x+c)%4];q.position_env_offset=(x%4)*250
     signs=group.layers.new_tiles(W,H);signs.name='Route icons';signs.image=image_ids['symbols']
     marks=signs.tiles
-    for x,y,tile in [(10,35,33),(160,31,34),(79,21,5),(98,21,5)]:marks[y,x,0]=tile
+    for x,y,tile in [(10,35,33),(160,31,34),(94,21,5),(113,21,5)]:marks[y,x,0]=tile
     for _,x,bottom,_,_ in CHECKPOINTS:marks[bottom,x,0]=29
     assign_tiles(signs,marks)
     gates=group.layers.new_quads();gates.name='Race gates'

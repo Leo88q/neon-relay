@@ -49,7 +49,7 @@ for index,name in enumerate(names):
       subprocess.run(['xdotool','key','Return'],check=True);time.sleep(.25)
       subprocess.run(['xdotool','key','F1'],check=True);time.sleep(.4)
      console('team -1')
-     views = ([('ascent',22,32),('jumps',54,30),('hook-beam',87,26),('boiling-oil',82,40),('finish',160,30)] if name == 'Neon Relay Warmup' else [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22),('terrace',345,21),('boiling-oil',368,22)])
+     views = ([('ascent',22,32),('jumps',54,30),('hook-beam',102,26),('boiling-oil',97,40),('finish',160,30)] if name == 'Neon Relay Warmup' else [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22),('terrace',345,21),('boiling-oil',368,22)])
      for label,x,y in views:
       console(f'set_view {x} {y}')
       time.sleep(.5)

@@ -17,6 +17,7 @@ python3 scripts/check_config_variables.py
 python3 scripts/check_header_guards.py
 python3 scripts/tidy_alphabetical.py --dry-run
 python3 scripts/check_standard_headers.py
+python3 scripts/test_warmup_physics.py --sanitize
 ./scripts/local_syntax_probe.sh
 ./scripts/check_menu_syntax.sh
 ./scripts/neonrelay_signer_test.sh
