@@ -571,6 +571,8 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 
 void CGameClient::OnConnected()
 {
+	if(!m_LocalServer.ValidateWarmupConnection())
+		return;
 	const char *pConnectCaption = DemoPlayer()->IsPlaying() ? Localize("Preparing demo playback") : Localize("Connected");
 	const char *pLoadMapContent = Localize("Initializing map logic");
 	// render loading before skip is calculated
@@ -1291,6 +1293,8 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 
 void CGameClient::OnStateChange(int NewState, int OldState)
 {
+	if(NewState == IClient::STATE_OFFLINE)
+		m_LocalServer.CancelWarmupConnection();
 	// reset everything when not already connected (to keep gathered stuff)
 	if(NewState < IClient::STATE_ONLINE)
 		OnReset();

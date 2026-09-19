@@ -20,21 +20,21 @@ CMakeLists.txt,1614,code/api-identifier,identifier kept for protocol/build compa
 CMakeLists.txt,1615,code/api-identifier,identifier kept for protocol/build compatibility ((game_entities|mapres|assets|skins7?|maps7?|them),game_entities/entities_clear/ddrace.png
 CMakeLists.txt,1616,code/api-identifier,identifier kept for protocol/build compatibility ((game_entities|mapres|assets|skins7?|maps7?|them),game_entities/entities_clear/f-ddrace.png
 CMakeLists.txt,2427,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),components/menus_settings_ddnet.cpp
-CMakeLists.txt,2766,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
-CMakeLists.txt,2767,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
-CMakeLists.txt,2796,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
-CMakeLists.txt,2797,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
-CMakeLists.txt,3236,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
-CMakeLists.txt,3375,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
-CMakeLists.txt,3632,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3634,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3635,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3636,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3637,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3638,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3639,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3640,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3641,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,2767,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
+CMakeLists.txt,2768,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
+CMakeLists.txt,2797,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
+CMakeLists.txt,2798,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
+CMakeLists.txt,3237,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
+CMakeLists.txt,3376,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
+CMakeLists.txt,3633,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3635,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3636,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3637,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3638,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3639,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3640,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3641,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3642,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
 Cargo.lock,120,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-base"""
 Cargo.lock,124,legal-attribution,upstream/third-party license notice (must stay),"""ddnet-test"","
 Cargo.lock,129,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-engine"""
@@ -349,7 +349,7 @@ docs/ASSET_MANIFEST.csv,618,legal-attribution,upstream/third-party license notic
 docs/ASSET_MANIFEST.csv,619,legal-attribution,upstream/third-party license notice (must stay),"data/languages/polish.txt,0a11ae078a683b35a3c7d19ae7597615dac4721c74aaf25381b7d2407b483098,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa28"
 docs/ASSET_MANIFEST.csv,620,legal-attribution,upstream/third-party license notice (must stay),"data/languages/portuguese.txt,e8d64936db900df7dc1314c2a69887faa572fb3c720aafea3de0a9e46b3f286a,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac9e61eb"
 docs/ASSET_MANIFEST.csv,621,legal-attribution,upstream/third-party license notice (must stay),"data/languages/romanian.txt,07a43c92457b0f9229b3ecc62c361f4d434eafce65c418f375c9ee6c946fe07a,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa"
-docs/ASSET_MANIFEST.csv,622,legal-attribution,upstream/third-party license notice (must stay),"data/languages/russian.txt,235c326f8d947beb70bfbfef0ca62dc65ba9f4cbb378395805336fc6640156ed,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2"
+docs/ASSET_MANIFEST.csv,622,legal-attribution,upstream/third-party license notice (must stay),"data/languages/russian.txt,db9d65f909fe3ca249435533b35e347f85f4adf9a1be359e5f6e8a25ec45aaaa,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2"
 docs/ASSET_MANIFEST.csv,623,legal-attribution,upstream/third-party license notice (must stay),"data/languages/serbian.txt,d3e14d82a327c5b88429e1ed749763c2ddbda214dc37b9680313f07dcd263350,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2"
 docs/ASSET_MANIFEST.csv,624,legal-attribution,upstream/third-party license notice (must stay),"data/languages/serbian_cyrillic.txt,8a2109304e57e1d8456b9c143ea93fbe33ca7c57f6bdfa36c3895685afd47152,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333ac"
 docs/ASSET_MANIFEST.csv,625,legal-attribution,upstream/third-party license notice (must stay),"data/languages/simplified_chinese.txt,298a3dd5224093f1609c5d95a18ef411b9ce8f0be921aaa02054a5f232f909b0,text/plain,DDNet/Teeworlds translation contributors,see translation file header,CC-BY-SA-3.0,https://github.com/ddnet/ddnet/blob/a853d333"
@@ -925,7 +925,7 @@ scripts/move_sqlite.py,73,code/api-identifier,identifier kept for protocol/build
 scripts/parse_crashlog_drmingw.py,25,code/api-identifier,identifier kept for protocol/build compatibility (CRASH_FILENAME_PATTERN),"CRASH_FILENAME_PATTERN = re.compile(r""(neonrelay|neonrelay-server|DDNet|DDNet-Server)(_([0-9\.\-]+))?_((win32|win64)(-steam)?)(_([a-zA-Z0-9]+))?_crash_log_([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2})_([0-9]+)_([0-9A-Fa-f]*)"")"
 scripts/parse_crashlog_drmingw.py,104,code/api-identifier,"identifier kept for protocol/build compatibility (^\s*if parsed_filename\.executable not in \[""neo)","if parsed_filename.executable not in [""neonrelay"", ""neonrelay-server"", ""DDNet"", ""DDNet-Server""]:"
 scripts/parse_crashlog_drmingw.py,109,code/api-identifier,identifier kept for protocol/build compatibility (^\s*(//|\*|#|;|--).*\bhttps?://[a-z0-9.\-]*ddnet),# TODO: Could implement search for correct folder. And parse HTML of https://ddnet.org/downloads/symbols/ to find correct symbols...
-scripts/test_menu_contract.py,121,test-fixture,test data or test assertion,"for name in ['ddnet', 'ddrace', 'f-ddrace', 'fng', 'race', 'vanilla', 'blockworlds']:"
+scripts/test_menu_contract.py,146,test-fixture,test data or test assertion,"for name in ['ddnet', 'ddrace', 'f-ddrace', 'fng', 'race', 'vanilla', 'blockworlds']:"
 scripts/test_warmup_server_contract.py,30,code/api-identifier,brand appears only inside code identifiers,"for forbidden in ('SetPosition(', 'SetCore(', 'const_cast', 'm_DDRaceState = ', 'm_StartTime = ', 'Core.m_Pos =', 'Core.m_Vel ='):"
 scripts/try_reference_maps.py,34,code/api-identifier,identifier kept for protocol/build compatibility (https://raw\.githubusercontent\.com/ddnet/ddnet-),"url = 'https://raw.githubusercontent.com/ddnet/ddnet-maps/' + row['revision'] + '/' + urllib.parse.quote(row['source_path'], safe='/')"
 scripts/try_reference_maps.py,42,code/api-identifier,identifier kept for protocol/build compatibility (https://raw\.githubusercontent\.com/ddnet/ddnet-),"endpoint = 'repos/ddnet/ddnet-maps/contents/' + urllib.parse.quote(row['source_path'], safe='/') + '?ref=' + row['revision']"
@@ -1681,97 +1681,97 @@ src/game/client/gameclient.cpp,387,code/api-identifier,brand appears only inside
 src/game/client/gameclient.cpp,420,code/api-identifier,brand appears only inside code identifiers,"m_Menus.RenderLoading(pLoadingDDNetCaption, pLoadingMessageAssets, 1);"
 src/game/client/gameclient.cpp,426,comment,brand appears only in a source comment,// Set free binds to DDRace binds if it's active
 src/game/client/gameclient.cpp,427,code/api-identifier,brand appears only inside code identifiers,m_Binds.SetDDRaceBinds(true);
-src/game/client/gameclient.cpp,625,code/api-identifier,brand appears only inside code identifiers,// m_aDDNetVersionStr is initialized once in OnInit
-src/game/client/gameclient.cpp,670,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayer = false;
-src/game/client/gameclient.cpp,671,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimes = false;
-src/game/client/gameclient.cpp,672,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimesMillis = false;
-src/game/client/gameclient.cpp,682,code/api-identifier,brand appears only inside code identifiers,"std::fill(std::begin(m_aDDRaceMsgSent), std::end(m_aDDRaceMsgSent), false);"
-src/game/client/gameclient.cpp,895,code/api-identifier,brand appears only inside code identifiers,m_aDDRaceMsgSent[1] = false;
-src/game/client/gameclient.cpp,1061,comment,brand appears only in a source comment,"// No jetpack on DDNet incompatible servers,"
-src/game/client/gameclient.cpp,1174,code/api-identifier,brand appears only inside code identifiers,if(!pUnpacker->Error() && Team >= TEAM_FLOCK && Team < NUM_DDRACE_TEAMS)
-src/game/client/gameclient.cpp,1186,code/api-identifier,brand appears only inside code identifiers,m_Teams.m_NumDDRaceTeams = VANILLA_MAX_CLIENTS + 1;
-src/game/client/gameclient.cpp,1282,comment,brand appears only in a source comment,"// some PvP mods based on DDNet accidentally send a best time of 0, despite having no finished races"
-src/game/client/gameclient.cpp,1408,code/api-identifier,brand appears only inside code identifiers,else if(ItemType == NETOBJTYPE_DDNETSPECTATORINFO)
-src/game/client/gameclient.cpp,1411,code/api-identifier,brand appears only inside code identifiers,CNetObj_DDNetSpectatorInfo *pDDNetSpectatorInfo = (CNetObj_DDNetSpectatorInfo *)((void *)pItem->Data());
-src/game/client/gameclient.cpp,1412,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_HasCameraInfo = true;
-src/game/client/gameclient.cpp,1413,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_Zoom = (m_Camera.m_Zooming ? m_Camera.m_ZoomSmoothingTarget : m_Camera.m_Zoom) * 1000.0f;
-src/game/client/gameclient.cpp,1414,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_Deadzone = m_Camera.Deadzone();
-src/game/client/gameclient.cpp,1415,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_FollowFactor = m_Camera.FollowFactor();
-src/game/client/gameclient.cpp,1546,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",bool DDRace;
-src/game/client/gameclient.cpp,1547,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",bool DDNet;
-src/game/client/gameclient.cpp,1552,code/api-identifier,brand appears only inside code identifiers,bool FDDrace;
-src/game/client/gameclient.cpp,1562,code/api-identifier,identifier kept for protocol/build compatibility (str_find_nocase\(pGame[Tt]ype),"DDRace = str_find_nocase(pGameType, ""ddrace"") || str_find_nocase(pGameType, ""mkrace"");"
-src/game/client/gameclient.cpp,1563,code/api-identifier,"identifier kept for protocol/build compatibility (""ddnet"")","DDNet = str_find_nocase(pGameType, ""ddracenet"") || str_find_nocase(pGameType, ""ddnet"");"
-src/game/client/gameclient.cpp,1568,code/api-identifier,brand appears only inside code identifiers,FDDrace = false;
-src/game/client/gameclient.cpp,1575,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",DDRace = Flags & GAMEINFOFLAG_GAMETYPE_DDRACE;
-src/game/client/gameclient.cpp,1576,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",DDNet = Flags & GAMEINFOFLAG_GAMETYPE_DDNET;
-src/game/client/gameclient.cpp,1581,code/api-identifier,brand appears only inside code identifiers,FDDrace = Version >= 6 && Flags2 & GAMEINFOFLAG2_GAMETYPE_FDDRACE;
-src/game/client/gameclient.cpp,1584,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",DDRace = DDRace || DDNet || FDDrace;
-src/game/client/gameclient.cpp,1585,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Race = Race || FastCap || DDRace;
-src/game/client/gameclient.cpp,1592,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_DDRaceRecordMessage = DDRace && !DDNet;
-src/game/client/gameclient.cpp,1593,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_RaceRecordMessage = DDNet || (Race && !DDRace);
-src/game/client/gameclient.cpp,1594,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_RaceSounds = DDRace || FNG || BlockWorlds;
-src/game/client/gameclient.cpp,1595,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_AllowEyeWheel = DDRace || BlockWorlds || City || Plus;
-src/game/client/gameclient.cpp,1596,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_AllowHookColl = DDRace;
-src/game/client/gameclient.cpp,1598,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_BugDDRaceGhost = DDRace;
-src/game/client/gameclient.cpp,1599,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_BugDDRaceInput = DDRace;
-src/game/client/gameclient.cpp,1603,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_PredictDDRace = DDRace;
-src/game/client/gameclient.cpp,1604,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_PredictDDRaceTiles = DDRace && !BlockWorlds;
-src/game/client/gameclient.cpp,1606,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_EntitiesDDNet = DDNet;
-src/game/client/gameclient.cpp,1607,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_EntitiesDDRace = DDRace;
-src/game/client/gameclient.cpp,1614,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_DontMaskEntities = !DDNet;
-src/game/client/gameclient.cpp,1616,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesFDDrace = FDDrace;
-src/game/client/gameclient.cpp,1619,code/api-identifier,brand appears only inside code identifiers,Info.m_HudDDRace = false;
-src/game/client/gameclient.cpp,1622,code/api-identifier,brand appears only inside code identifiers,Info.m_DDRaceTeam = false;
-src/game/client/gameclient.cpp,1626,code/api-identifier,brand appears only inside code identifiers,"Info.m_NumDDRaceTeams = 65; // `TEAM_SUPER + 1`, fallback for ddrace64 servers"
-src/game/client/gameclient.cpp,1637,code/api-identifier,brand appears only inside code identifiers,Info.m_DDRaceRecordMessage = Flags & GAMEINFOFLAG_DDRACE_RECORD_MESSAGE;
-src/game/client/gameclient.cpp,1642,code/api-identifier,brand appears only inside code identifiers,Info.m_BugDDRaceGhost = Flags & GAMEINFOFLAG_BUG_DDRACE_GHOST;
-src/game/client/gameclient.cpp,1643,code/api-identifier,brand appears only inside code identifiers,Info.m_BugDDRaceInput = Flags & GAMEINFOFLAG_BUG_DDRACE_INPUT;
-src/game/client/gameclient.cpp,1647,code/api-identifier,brand appears only inside code identifiers,Info.m_PredictDDRace = Flags & GAMEINFOFLAG_PREDICT_DDRACE;
-src/game/client/gameclient.cpp,1648,code/api-identifier,brand appears only inside code identifiers,Info.m_PredictDDRaceTiles = Flags & GAMEINFOFLAG_PREDICT_DDRACE_TILES;
-src/game/client/gameclient.cpp,1650,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesDDNet = Flags & GAMEINFOFLAG_ENTITIES_DDNET;
-src/game/client/gameclient.cpp,1651,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesDDRace = Flags & GAMEINFOFLAG_ENTITIES_DDRACE;
-src/game/client/gameclient.cpp,1671,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesFDDrace = Flags2 & GAMEINFOFLAG2_ENTITIES_FDDRACE;
-src/game/client/gameclient.cpp,1677,code/api-identifier,brand appears only inside code identifiers,Info.m_HudDDRace = Flags2 & GAMEINFOFLAG2_HUD_DDRACE;
-src/game/client/gameclient.cpp,1689,code/api-identifier,brand appears only inside code identifiers,Info.m_DDRaceTeam = Flags2 & GAMEINFOFLAG2_DDRACE_TEAM;
-src/game/client/gameclient.cpp,1699,code/api-identifier,brand appears only inside code identifiers,Info.m_NumDDRaceTeams = pInfoEx->m_NumDDRaceTeams;
-src/game/client/gameclient.cpp,1760,code/api-identifier,brand appears only inside code identifiers,bool HasUnsetDDNetFinishTimes = false;
-src/game/client/gameclient.cpp,1847,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_DDNETPLAYER)
-src/game/client/gameclient.cpp,1849,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayer = true;
-src/game/client/gameclient.cpp,1850,code/api-identifier,brand appears only inside code identifiers,const CNetObj_DDNetPlayer *pInfo = (const CNetObj_DDNetPlayer *)Item.m_pData;
-src/game/client/gameclient.cpp,1861,code/api-identifier,brand appears only inside code identifiers,HasUnsetDDNetFinishTimes = true;
-src/game/client/gameclient.cpp,1909,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_DDNETCHARACTER)
-src/game/client/gameclient.cpp,1911,code/api-identifier,brand appears only inside code identifiers,const CNetObj_DDNetCharacter *pCharacterData = (const CNetObj_DDNetCharacter *)Item.m_pData;
-src/game/client/gameclient.cpp,1916,code/api-identifier,brand appears only inside code identifiers,"m_Snap.m_aCharacters[Item.m_Id].m_pPrevExtendedData = (const CNetObj_DDNetCharacter *)Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_DDNETCHARACTER, Item.m_Id);"
-src/game/client/gameclient.cpp,1950,code/api-identifier,brand appears only inside code identifiers,pClient->m_Predicted.ReadDDNet(pCharacterData);
-src/game/client/gameclient.cpp,1978,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_DDNETSPECTATORINFO)
-src/game/client/gameclient.cpp,1980,code/api-identifier,brand appears only inside code identifiers,const CNetObj_DDNetSpectatorInfo *pDDNetSpecInfo = (const CNetObj_DDNetSpectatorInfo *)Item.m_pData;
-src/game/client/gameclient.cpp,1981,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_HasCameraInfo = pDDNetSpecInfo->m_HasCameraInfo;
-src/game/client/gameclient.cpp,1982,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_Zoom = pDDNetSpecInfo->m_Zoom / 1000.0f;
-src/game/client/gameclient.cpp,1983,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_Deadzone = pDDNetSpecInfo->m_Deadzone;
-src/game/client/gameclient.cpp,1984,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_FollowFactor = pDDNetSpecInfo->m_FollowFactor;
-src/game/client/gameclient.cpp,2064,code/api-identifier,brand appears only inside code identifiers,"int Team = std::clamp(Item.m_Id, (int)TEAM_FLOCK, NUM_DDRACE_TEAMS - 1);"
-src/game/client/gameclient.cpp,2122,code/api-identifier,brand appears only inside code identifiers,m_Teams.m_NumDDRaceTeams = m_GameInfo.m_NumDDRaceTeams;
-src/game/client/gameclient.cpp,2193,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimes = m_ReceivedDDNetPlayer && !HasUnsetDDNetFinishTimes;
-src/game/client/gameclient.cpp,2194,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimesMillis = m_ReceivedDDNetPlayer && HasTrueMillisecondFinishTimes;
-src/game/client/gameclient.cpp,2212,code/api-identifier,brand appears only inside code identifiers,"auto TimeComparator = CGameClient::GetScoreComparator(TimeScore, m_ReceivedDDNetPlayerFinishTimes, Race7);"
-src/game/client/gameclient.cpp,2218,code/api-identifier,brand appears only inside code identifiers,if(m_ReceivedDDNetPlayerFinishTimes)
-src/game/client/gameclient.cpp,2224,comment,brand appears only in a source comment,// sort player infos by DDRace Team (and score between)
-src/game/client/gameclient.cpp,2226,code/api-identifier,brand appears only inside code identifiers,for(int Team = TEAM_FLOCK; Team < NUM_DDRACE_TEAMS; ++Team)
-src/game/client/gameclient.cpp,2235,comment,brand appears only in a source comment,// sort player infos by DDRace Team (and name between)
-src/game/client/gameclient.cpp,2237,code/api-identifier,brand appears only inside code identifiers,for(int Team = TEAM_FLOCK; Team < NUM_DDRACE_TEAMS; ++Team)
-src/game/client/gameclient.cpp,2248,comment,brand appears only in a source comment,"// Vanilla servers send laser_bounce_num 1, DDNet has laser_bounce_num 1000 since ~2014"
-src/game/client/gameclient.cpp,2281,code/api-identifier,brand appears only inside code identifiers,if(m_aDDRaceMsgSent[i] || !m_Snap.m_pLocalInfo)
-src/game/client/gameclient.cpp,2289,code/api-identifier,brand appears only inside code identifiers,"CMsgPacker Msg(NETMSGTYPE_CL_ISDDNETLEGACY, false);"
-src/game/client/gameclient.cpp,2290,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),Msg.AddInt(DDNetVersion());
-src/game/client/gameclient.cpp,2292,code/api-identifier,brand appears only inside code identifiers,m_aDDRaceMsgSent[i] = true;
-src/game/client/gameclient.cpp,3180,code/api-identifier,identifier kept for protocol/build compatibility (\b(Teeworlds|Teeworlds 0\.7|0\.6|0\.7)\b.*(forma),// TODO: add name change ddnet extension to 0.7 protocol
-src/game/client/gameclient.cpp,3410,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_UseTuneZones = m_GameInfo.m_PredictDDRaceTiles;
-src/game/client/gameclient.cpp,3489,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_IsDDRace = m_GameInfo.m_PredictDDRace;
-src/game/client/gameclient.cpp,3491,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_PredictDDRace = m_GameInfo.m_PredictDDRace;
-src/game/client/gameclient.cpp,3492,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_PredictTiles = m_GameInfo.m_PredictDDRace && m_GameInfo.m_PredictDDRaceTiles;
-src/game/client/gameclient.cpp,3495,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_BugDDRaceInput = m_GameInfo.m_BugDDRaceInput;
-src/game/client/gameclient.cpp,4821,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_PICKUP || Item.m_Type == NETOBJTYPE_DDNETPICKUP || Item.m_Type == NETOBJTYPE_LASER || Item.m_Type == NETOBJTYPE_DDNETLASER || Item.m_Type == NETOBJTYPE_PROJECTILE || Item.m_Type == NETOBJTYPE_DDRACEPROJECTI
+src/game/client/gameclient.cpp,627,code/api-identifier,brand appears only inside code identifiers,// m_aDDNetVersionStr is initialized once in OnInit
+src/game/client/gameclient.cpp,672,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayer = false;
+src/game/client/gameclient.cpp,673,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimes = false;
+src/game/client/gameclient.cpp,674,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimesMillis = false;
+src/game/client/gameclient.cpp,684,code/api-identifier,brand appears only inside code identifiers,"std::fill(std::begin(m_aDDRaceMsgSent), std::end(m_aDDRaceMsgSent), false);"
+src/game/client/gameclient.cpp,897,code/api-identifier,brand appears only inside code identifiers,m_aDDRaceMsgSent[1] = false;
+src/game/client/gameclient.cpp,1063,comment,brand appears only in a source comment,"// No jetpack on DDNet incompatible servers,"
+src/game/client/gameclient.cpp,1176,code/api-identifier,brand appears only inside code identifiers,if(!pUnpacker->Error() && Team >= TEAM_FLOCK && Team < NUM_DDRACE_TEAMS)
+src/game/client/gameclient.cpp,1188,code/api-identifier,brand appears only inside code identifiers,m_Teams.m_NumDDRaceTeams = VANILLA_MAX_CLIENTS + 1;
+src/game/client/gameclient.cpp,1284,comment,brand appears only in a source comment,"// some PvP mods based on DDNet accidentally send a best time of 0, despite having no finished races"
+src/game/client/gameclient.cpp,1412,code/api-identifier,brand appears only inside code identifiers,else if(ItemType == NETOBJTYPE_DDNETSPECTATORINFO)
+src/game/client/gameclient.cpp,1415,code/api-identifier,brand appears only inside code identifiers,CNetObj_DDNetSpectatorInfo *pDDNetSpectatorInfo = (CNetObj_DDNetSpectatorInfo *)((void *)pItem->Data());
+src/game/client/gameclient.cpp,1416,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_HasCameraInfo = true;
+src/game/client/gameclient.cpp,1417,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_Zoom = (m_Camera.m_Zooming ? m_Camera.m_ZoomSmoothingTarget : m_Camera.m_Zoom) * 1000.0f;
+src/game/client/gameclient.cpp,1418,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_Deadzone = m_Camera.Deadzone();
+src/game/client/gameclient.cpp,1419,code/api-identifier,brand appears only inside code identifiers,pDDNetSpectatorInfo->m_FollowFactor = m_Camera.FollowFactor();
+src/game/client/gameclient.cpp,1550,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",bool DDRace;
+src/game/client/gameclient.cpp,1551,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",bool DDNet;
+src/game/client/gameclient.cpp,1556,code/api-identifier,brand appears only inside code identifiers,bool FDDrace;
+src/game/client/gameclient.cpp,1566,code/api-identifier,identifier kept for protocol/build compatibility (str_find_nocase\(pGame[Tt]ype),"DDRace = str_find_nocase(pGameType, ""ddrace"") || str_find_nocase(pGameType, ""mkrace"");"
+src/game/client/gameclient.cpp,1567,code/api-identifier,"identifier kept for protocol/build compatibility (""ddnet"")","DDNet = str_find_nocase(pGameType, ""ddracenet"") || str_find_nocase(pGameType, ""ddnet"");"
+src/game/client/gameclient.cpp,1572,code/api-identifier,brand appears only inside code identifiers,FDDrace = false;
+src/game/client/gameclient.cpp,1579,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",DDRace = Flags & GAMEINFOFLAG_GAMETYPE_DDRACE;
+src/game/client/gameclient.cpp,1580,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",DDNet = Flags & GAMEINFOFLAG_GAMETYPE_DDNET;
+src/game/client/gameclient.cpp,1585,code/api-identifier,brand appears only inside code identifiers,FDDrace = Version >= 6 && Flags2 & GAMEINFOFLAG2_GAMETYPE_FDDRACE;
+src/game/client/gameclient.cpp,1588,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",DDRace = DDRace || DDNet || FDDrace;
+src/game/client/gameclient.cpp,1589,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Race = Race || FastCap || DDRace;
+src/game/client/gameclient.cpp,1596,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_DDRaceRecordMessage = DDRace && !DDNet;
+src/game/client/gameclient.cpp,1597,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_RaceRecordMessage = DDNet || (Race && !DDRace);
+src/game/client/gameclient.cpp,1598,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_RaceSounds = DDRace || FNG || BlockWorlds;
+src/game/client/gameclient.cpp,1599,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_AllowEyeWheel = DDRace || BlockWorlds || City || Plus;
+src/game/client/gameclient.cpp,1600,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_AllowHookColl = DDRace;
+src/game/client/gameclient.cpp,1602,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_BugDDRaceGhost = DDRace;
+src/game/client/gameclient.cpp,1603,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_BugDDRaceInput = DDRace;
+src/game/client/gameclient.cpp,1607,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_PredictDDRace = DDRace;
+src/game/client/gameclient.cpp,1608,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_PredictDDRaceTiles = DDRace && !BlockWorlds;
+src/game/client/gameclient.cpp,1610,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_EntitiesDDNet = DDNet;
+src/game/client/gameclient.cpp,1611,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_EntitiesDDRace = DDRace;
+src/game/client/gameclient.cpp,1618,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Info.m_DontMaskEntities = !DDNet;
+src/game/client/gameclient.cpp,1620,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesFDDrace = FDDrace;
+src/game/client/gameclient.cpp,1623,code/api-identifier,brand appears only inside code identifiers,Info.m_HudDDRace = false;
+src/game/client/gameclient.cpp,1626,code/api-identifier,brand appears only inside code identifiers,Info.m_DDRaceTeam = false;
+src/game/client/gameclient.cpp,1630,code/api-identifier,brand appears only inside code identifiers,"Info.m_NumDDRaceTeams = 65; // `TEAM_SUPER + 1`, fallback for ddrace64 servers"
+src/game/client/gameclient.cpp,1641,code/api-identifier,brand appears only inside code identifiers,Info.m_DDRaceRecordMessage = Flags & GAMEINFOFLAG_DDRACE_RECORD_MESSAGE;
+src/game/client/gameclient.cpp,1646,code/api-identifier,brand appears only inside code identifiers,Info.m_BugDDRaceGhost = Flags & GAMEINFOFLAG_BUG_DDRACE_GHOST;
+src/game/client/gameclient.cpp,1647,code/api-identifier,brand appears only inside code identifiers,Info.m_BugDDRaceInput = Flags & GAMEINFOFLAG_BUG_DDRACE_INPUT;
+src/game/client/gameclient.cpp,1651,code/api-identifier,brand appears only inside code identifiers,Info.m_PredictDDRace = Flags & GAMEINFOFLAG_PREDICT_DDRACE;
+src/game/client/gameclient.cpp,1652,code/api-identifier,brand appears only inside code identifiers,Info.m_PredictDDRaceTiles = Flags & GAMEINFOFLAG_PREDICT_DDRACE_TILES;
+src/game/client/gameclient.cpp,1654,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesDDNet = Flags & GAMEINFOFLAG_ENTITIES_DDNET;
+src/game/client/gameclient.cpp,1655,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesDDRace = Flags & GAMEINFOFLAG_ENTITIES_DDRACE;
+src/game/client/gameclient.cpp,1675,code/api-identifier,brand appears only inside code identifiers,Info.m_EntitiesFDDrace = Flags2 & GAMEINFOFLAG2_ENTITIES_FDDRACE;
+src/game/client/gameclient.cpp,1681,code/api-identifier,brand appears only inside code identifiers,Info.m_HudDDRace = Flags2 & GAMEINFOFLAG2_HUD_DDRACE;
+src/game/client/gameclient.cpp,1693,code/api-identifier,brand appears only inside code identifiers,Info.m_DDRaceTeam = Flags2 & GAMEINFOFLAG2_DDRACE_TEAM;
+src/game/client/gameclient.cpp,1703,code/api-identifier,brand appears only inside code identifiers,Info.m_NumDDRaceTeams = pInfoEx->m_NumDDRaceTeams;
+src/game/client/gameclient.cpp,1764,code/api-identifier,brand appears only inside code identifiers,bool HasUnsetDDNetFinishTimes = false;
+src/game/client/gameclient.cpp,1851,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_DDNETPLAYER)
+src/game/client/gameclient.cpp,1853,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayer = true;
+src/game/client/gameclient.cpp,1854,code/api-identifier,brand appears only inside code identifiers,const CNetObj_DDNetPlayer *pInfo = (const CNetObj_DDNetPlayer *)Item.m_pData;
+src/game/client/gameclient.cpp,1865,code/api-identifier,brand appears only inside code identifiers,HasUnsetDDNetFinishTimes = true;
+src/game/client/gameclient.cpp,1913,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_DDNETCHARACTER)
+src/game/client/gameclient.cpp,1915,code/api-identifier,brand appears only inside code identifiers,const CNetObj_DDNetCharacter *pCharacterData = (const CNetObj_DDNetCharacter *)Item.m_pData;
+src/game/client/gameclient.cpp,1920,code/api-identifier,brand appears only inside code identifiers,"m_Snap.m_aCharacters[Item.m_Id].m_pPrevExtendedData = (const CNetObj_DDNetCharacter *)Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_DDNETCHARACTER, Item.m_Id);"
+src/game/client/gameclient.cpp,1954,code/api-identifier,brand appears only inside code identifiers,pClient->m_Predicted.ReadDDNet(pCharacterData);
+src/game/client/gameclient.cpp,1982,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_DDNETSPECTATORINFO)
+src/game/client/gameclient.cpp,1984,code/api-identifier,brand appears only inside code identifiers,const CNetObj_DDNetSpectatorInfo *pDDNetSpecInfo = (const CNetObj_DDNetSpectatorInfo *)Item.m_pData;
+src/game/client/gameclient.cpp,1985,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_HasCameraInfo = pDDNetSpecInfo->m_HasCameraInfo;
+src/game/client/gameclient.cpp,1986,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_Zoom = pDDNetSpecInfo->m_Zoom / 1000.0f;
+src/game/client/gameclient.cpp,1987,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_Deadzone = pDDNetSpecInfo->m_Deadzone;
+src/game/client/gameclient.cpp,1988,code/api-identifier,brand appears only inside code identifiers,m_Snap.m_SpecInfo.m_FollowFactor = pDDNetSpecInfo->m_FollowFactor;
+src/game/client/gameclient.cpp,2068,code/api-identifier,brand appears only inside code identifiers,"int Team = std::clamp(Item.m_Id, (int)TEAM_FLOCK, NUM_DDRACE_TEAMS - 1);"
+src/game/client/gameclient.cpp,2126,code/api-identifier,brand appears only inside code identifiers,m_Teams.m_NumDDRaceTeams = m_GameInfo.m_NumDDRaceTeams;
+src/game/client/gameclient.cpp,2197,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimes = m_ReceivedDDNetPlayer && !HasUnsetDDNetFinishTimes;
+src/game/client/gameclient.cpp,2198,code/api-identifier,brand appears only inside code identifiers,m_ReceivedDDNetPlayerFinishTimesMillis = m_ReceivedDDNetPlayer && HasTrueMillisecondFinishTimes;
+src/game/client/gameclient.cpp,2216,code/api-identifier,brand appears only inside code identifiers,"auto TimeComparator = CGameClient::GetScoreComparator(TimeScore, m_ReceivedDDNetPlayerFinishTimes, Race7);"
+src/game/client/gameclient.cpp,2222,code/api-identifier,brand appears only inside code identifiers,if(m_ReceivedDDNetPlayerFinishTimes)
+src/game/client/gameclient.cpp,2228,comment,brand appears only in a source comment,// sort player infos by DDRace Team (and score between)
+src/game/client/gameclient.cpp,2230,code/api-identifier,brand appears only inside code identifiers,for(int Team = TEAM_FLOCK; Team < NUM_DDRACE_TEAMS; ++Team)
+src/game/client/gameclient.cpp,2239,comment,brand appears only in a source comment,// sort player infos by DDRace Team (and name between)
+src/game/client/gameclient.cpp,2241,code/api-identifier,brand appears only inside code identifiers,for(int Team = TEAM_FLOCK; Team < NUM_DDRACE_TEAMS; ++Team)
+src/game/client/gameclient.cpp,2252,comment,brand appears only in a source comment,"// Vanilla servers send laser_bounce_num 1, DDNet has laser_bounce_num 1000 since ~2014"
+src/game/client/gameclient.cpp,2285,code/api-identifier,brand appears only inside code identifiers,if(m_aDDRaceMsgSent[i] || !m_Snap.m_pLocalInfo)
+src/game/client/gameclient.cpp,2293,code/api-identifier,brand appears only inside code identifiers,"CMsgPacker Msg(NETMSGTYPE_CL_ISDDNETLEGACY, false);"
+src/game/client/gameclient.cpp,2294,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),Msg.AddInt(DDNetVersion());
+src/game/client/gameclient.cpp,2296,code/api-identifier,brand appears only inside code identifiers,m_aDDRaceMsgSent[i] = true;
+src/game/client/gameclient.cpp,3184,code/api-identifier,identifier kept for protocol/build compatibility (\b(Teeworlds|Teeworlds 0\.7|0\.6|0\.7)\b.*(forma),// TODO: add name change ddnet extension to 0.7 protocol
+src/game/client/gameclient.cpp,3414,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_UseTuneZones = m_GameInfo.m_PredictDDRaceTiles;
+src/game/client/gameclient.cpp,3493,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_IsDDRace = m_GameInfo.m_PredictDDRace;
+src/game/client/gameclient.cpp,3495,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_PredictDDRace = m_GameInfo.m_PredictDDRace;
+src/game/client/gameclient.cpp,3496,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_PredictTiles = m_GameInfo.m_PredictDDRace && m_GameInfo.m_PredictDDRaceTiles;
+src/game/client/gameclient.cpp,3499,code/api-identifier,brand appears only inside code identifiers,m_GameWorld.m_WorldConfig.m_BugDDRaceInput = m_GameInfo.m_BugDDRaceInput;
+src/game/client/gameclient.cpp,4825,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_PICKUP || Item.m_Type == NETOBJTYPE_DDNETPICKUP || Item.m_Type == NETOBJTYPE_LASER || Item.m_Type == NETOBJTYPE_DDNETLASER || Item.m_Type == NETOBJTYPE_PROJECTILE || Item.m_Type == NETOBJTYPE_DDRACEPROJECTI
 src/game/client/gameclient.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/gameclient.h,83,code/api-identifier,brand appears only inside code identifiers,bool m_DDRaceRecordMessage;
 src/game/client/gameclient.h,91,code/api-identifier,brand appears only inside code identifiers,bool m_BugDDRaceGhost;

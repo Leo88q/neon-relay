@@ -1,11 +1,19 @@
 #include "local_server.h"
 
 #include <base/fs.h>
+#include <base/hash_ctxt.h>
+#include <base/io.h>
+#include <base/log.h>
+#include <base/net.h>
 #include <base/mem.h>
 #include <base/secure.h>
 #include <base/str.h>
 
+#include <engine/map.h>
+#include <engine/storage.h>
+
 #include <game/client/gameclient.h>
+#include <game/client/practice_course.h>
 #include <game/localization.h>
 
 #if defined(CONF_PLATFORM_ANDROID)
@@ -72,6 +80,8 @@ bool CLocalServer::RunServer(const std::vector<const char *> &vpArguments)
 
 void CLocalServer::KillServer()
 {
+	m_WarmupServer = false;
+	m_WarmupPending = false;
 #if defined(CONF_PLATFORM_ANDROID)
 	ExecuteAndroidServerCommand("shutdown");
 	GameClient()->m_Menus.ForceRefreshLanPage();
@@ -107,4 +117,108 @@ void CLocalServer::RconAuthIfPossible()
 		return;
 	}
 	Client()->RconAuth(DEFAULT_SAVED_RCON_USER, m_aRconPassword, g_Config.m_ClDummy);
+}
+
+namespace
+{
+bool IsWarmupDigest(SHA256_DIGEST Digest)
+{
+	SHA256_DIGEST Expected{};
+	return sha256_from_str(&Expected, WARMUP_MAP_SHA256) == 0 && Digest == Expected;
+}
+}
+
+bool CLocalServer::IsWarmupRunning()
+{
+	return IsServerRunning() && m_WarmupServer;
+}
+
+bool CLocalServer::StartWarmup()
+{
+	if(Client()->State() != IClient::STATE_OFFLINE || IsServerRunning())
+	{
+		Client()->AddWarning(SWarning(Localize("Disconnect and stop the existing local server before starting Warmup.")));
+		return false;
+	}
+	IOHANDLE File = Storage()->OpenFile(WARMUP_MAP_PATH, IOFLAG_READ, IStorage::TYPE_ALL);
+	bool MapValid = false;
+	if(File)
+	{
+		SHA256_CTX Hash;
+		sha256_init(&Hash);
+		unsigned char aBuffer[4096];
+		unsigned Read;
+		while((Read = io_read(File, aBuffer, sizeof(aBuffer))) != 0)
+			sha256_update(&Hash, aBuffer, Read);
+		MapValid = !io_error(File) && IsWarmupDigest(sha256_finish(&Hash));
+		io_close(File);
+	}
+	if(!MapValid)
+	{
+		Client()->AddWarning(SWarning(Localize("Warmup map is missing or outdated. Update the game data.")));
+		return false;
+	}
+	// Do not accidentally join an unrelated server already using this port.
+	NETADDR Address{};
+	Address.type = NETTYPE_IPV4;
+	Address.ip[0] = 127;
+	Address.ip[3] = 1;
+	Address.port = WARMUP_PORT;
+	NETSOCKET Probe = net_udp_create(Address);
+	if(!Probe)
+	{
+		Client()->AddWarning(SWarning(Localize("Warmup port 8305 is busy. Stop that server or use the server browser.")));
+		return false;
+	}
+	net_udp_close(Probe);
+	char aMap[192], aPort[32], aAddress[64], aPassword[32], aPasswordCommand[64];
+	str_format(aMap, sizeof(aMap), "sv_map \"%s\"", WARMUP_MAP_NAME);
+	str_format(aPort, sizeof(aPort), "sv_port %d", WARMUP_PORT);
+	str_format(aAddress, sizeof(aAddress), "127.0.0.1:%d", WARMUP_PORT);
+	secure_random_password(aPassword, sizeof(aPassword), 16);
+	str_format(aPasswordCommand, sizeof(aPasswordCommand), "password %s", aPassword);
+	const bool Started = RunServer({"bindaddr 127.0.0.1", aPort, "sv_register 0",
+		"sv_sixup 0", "sv_dnsbl 0", "sv_test_cmds 0", "sv_practice_by_default 0",
+		"sv_neonrelay_signing 0", "sv_neonrelay_reward_per_match_micro 0",
+		"sv_use_sql 0", "sv_sqlite_file warmup-practice.sqlite", aPasswordCommand,
+		"sv_name \"Neon Relay - Warmup practice\"", aMap});
+	if(Started)
+	{
+		m_WarmupServer = true;
+		Client()->Connect(aAddress, aPassword);
+		// Connect first clears the previous connection and its pending state.
+		m_WarmupPending = true;
+	}
+	mem_zero(aPassword, sizeof(aPassword));
+	mem_zero(aPasswordCommand, sizeof(aPasswordCommand));
+	return Started;
+}
+
+void CLocalServer::StopWarmup()
+{
+	if(Client()->State() != IClient::STATE_OFFLINE)
+	{
+		Client()->AddWarning(SWarning(Localize("Disconnect before stopping the practice server.")));
+		return;
+	}
+	if(IsWarmupRunning())
+		KillServer();
+}
+
+bool CLocalServer::ValidateWarmupConnection()
+{
+	if(!m_WarmupPending)
+		return true;
+	m_WarmupPending = false;
+	if(!IsWarmupRunning() || str_comp(GameClient()->Map()->BaseName(), WARMUP_MAP_NAME) != 0 ||
+		!IsWarmupDigest(GameClient()->Map()->Sha256()))
+	{
+		Client()->Disconnect();
+		if(IsWarmupRunning())
+			KillServer();
+		Client()->AddWarning(SWarning(Localize("Practice connection rejected: the expected Warmup map was not loaded.")));
+		return false;
+	}
+	log_info("practice", "verified course=%s map=%s", WARMUP_COURSE_ID, WARMUP_MAP_NAME);
+	return true;
 }

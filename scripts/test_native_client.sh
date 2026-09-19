@@ -14,3 +14,5 @@ xvfb-run -a -s '-screen 0 1400x1200x24' python3 scripts/test_native_client.py "$
 xvfb-run -a -s '-screen 0 1400x1200x24' python3 scripts/test_native_worlds.py "$BUILD/neonrelay" "$BUILD/neonrelay-server" "${RUNNER_TEMP:-/tmp}/client-preview"
 
 xvfb-run -a -s '-screen 0 1400x1200x24' python3 scripts/test_warmup_server.py "$BUILD/neonrelay" "$BUILD/neonrelay-server" "${RUNNER_TEMP:-/tmp}/client-preview"
+
+xvfb-run -a -s '-screen 0 1400x1200x24' python3 scripts/test_warmup_lobby.py "$BUILD/neonrelay" "${RUNNER_TEMP:-/tmp}/client-preview"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Source/generation regression checks. Not a native render or input test."""
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -46,6 +47,30 @@ class MenuContract(unittest.TestCase):
         for item in catalog:
             self.assertIn('"' + item['id'] + '"', header)
             self.assertIn(str(item['price_skr']), header)
+
+    def test_warmup_card_and_verified_course_identity(self):
+        header=self.text('src/game/client/practice_course.h')
+        digest=hashlib.sha256((ROOT/'data/maps/Neon Relay Warmup.map').read_bytes()).hexdigest()
+        self.assertIn('"'+digest+'"',header)
+        self.assertIn('WARMUP_COURSE_ID = "warmup"',header)
+        launch=self.text('src/game/client/components/local_server.cpp')
+        for value in ['sv_register 0','bindaddr 127.0.0.1','sv_neonrelay_signing 0',
+                      'sv_neonrelay_reward_per_match_micro 0','sv_use_sql 0',
+                      'sv_sqlite_file warmup-practice.sqlite','sv_test_cmds 0']:
+            self.assertIn(value,launch)
+        self.assertLess(launch.index('net_udp_create(Address)'),launch.index('const bool Started = RunServer'))
+        self.assertIn('GameClient()->Map()->Sha256()',launch)
+        self.assertIn('GameClient()->Map()->BaseName()',launch)
+        self.assertIn('Client()->State() != IClient::STATE_OFFLINE || IsServerRunning()',launch)
+        self.assertNotIn('neonrelay_wallet_',launch)
+        pages=self.text('src/game/client/components/menus_settings_wallet.cpp')
+        self.assertIn('Localize("Warmup", "Original course")',pages)
+        self.assertIn('m_LocalServer.StartWarmup()',pages)
+        self.assertIn('m_LocalServer.StopWarmup()',pages)
+        self.assertLess(pages.index('m_LocalServer.StartWarmup()'),pages.index('for(const auto &Race : RACE_CATALOG)'))
+        translations=self.text('data/languages/russian.txt')
+        self.assertIn('[Original course]\nWarmup\n== Разогрев',translations)
+        self.assertIn('Warmup\n== Разминка',translations)
 
     def test_character_lore_and_freeze_identity(self):
         catalog = json.loads(self.text('data/skins/potato_catalog.json'))

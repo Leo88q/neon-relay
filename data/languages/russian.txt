@@ -2725,3 +2725,34 @@ No verified results yet
 
 Only verified race results will appear here. Practice does not award ranked prizes.
 == Здесь появятся только проверенные результаты забегов. Тренировка не приносит рейтинговых призов.
+
+[Original course]
+Warmup
+== Разогрев
+
+Beginner / Solo / Free
+== Новичок / Соло / Бесплатно
+
+Original course. Local practice, no wallet or ranked prizes.
+== Своя трасса. Локальная тренировка без кошелька и рейтинговых призов.
+
+Start Warmup
+== Начать «Разогрев»
+
+Stop practice server
+== Остановить тренировочный сервер
+
+Disconnect and stop the existing local server before starting Warmup.
+== Перед запуском «Разогрева» отключитесь и остановите уже запущенный локальный сервер.
+
+Warmup map is missing or outdated. Update the game data.
+== Карта «Разогрев» отсутствует или устарела. Обновите данные игры.
+
+Warmup port 8305 is busy. Stop that server or use the server browser.
+== Порт 8305 занят. Остановите тот сервер или воспользуйтесь списком серверов.
+
+Disconnect before stopping the practice server.
+== Перед остановкой тренировочного сервера отключитесь от игры.
+
+Practice connection rejected: the expected Warmup map was not loaded.
+== Подключение отклонено: ожидаемая карта «Разогрев» не загрузилась.

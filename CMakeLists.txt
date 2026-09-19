@@ -2472,6 +2472,7 @@ if(CLIENT)
     multiview.cpp
     pickup_data.cpp
     pickup_data.h
+    practice_course.h
     prediction/entities/character.cpp
     prediction/entities/character.h
     prediction/entities/door.cpp

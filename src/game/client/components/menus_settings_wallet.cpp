@@ -146,6 +146,34 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		s_RaceScroll.AddRect(Row);
 		Ui()->DoLabel(&Row, pText, 14.0f, TEXTALIGN_TL, Props);
 	};
+	// The free local course is separate from the currency-dependent race tiers.
+	MainView.HSplitTop(Compact ? 196.0f : 164.0f, &Row, &MainView);
+	if(s_RaceScroll.AddRect(Row))
+	{
+		Row.Draw(ColorRGBA(0.10f, 0.065f, 0.17f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+		Row.Margin(12.0f, &Row);
+		CUIRect Name, Detail, Action;
+		Row.HSplitBottom(40.0f, &Row, &Action);
+		Row.HSplitTop(28.0f, &Name, &Row);
+		Ui()->DoLabel(&Name, Localize("Warmup", "Original course"), 22.0f, TEXTALIGN_ML);
+		Row.HSplitTop(24.0f, &Detail, &Row);
+		TextRender()->TextColor(ColorRGBA(0.47f, 0.92f, 0.60f, 1.0f));
+		Ui()->DoLabel(&Detail, Localize("Beginner / Solo / Free"), 14.0f, TEXTALIGN_ML);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+		SLabelProperties Props;
+		Props.m_MaxWidth = Row.w;
+		Ui()->DoLabel(&Row, Localize("Original course. Local practice, no wallet or ranked prizes."), 14.0f, TEXTALIGN_TL, Props);
+		static CButtonContainer s_Warmup;
+		const bool Running = GameClient()->m_LocalServer.IsWarmupRunning();
+		if(DoButton_Menu(&s_Warmup, Running ? Localize("Stop practice server") : Localize("Start Warmup"), 0, &Action))
+		{
+			if(Running)
+				GameClient()->m_LocalServer.StopWarmup();
+			else
+				GameClient()->m_LocalServer.StartWarmup();
+		}
+	}
+	MainView.HSplitTop(12.0f, nullptr, &MainView);
 	Paragraph(Localize("Preview only. Paid entry is not available yet."));
 	for(const auto &Race : RACE_CATALOG)
 	{
