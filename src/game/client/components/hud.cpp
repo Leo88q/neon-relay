@@ -13,6 +13,7 @@
 #include <engine/font_icons.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
+#include <engine/storage.h>
 #include <engine/textrender.h>
 
 #include <generated/client_data.h>
@@ -91,6 +92,52 @@ void CHud::OnReset()
 	ResetHudContainers();
 }
 
+void CHud::RenderYieldBloomPanel(float x, float y, float w, float h, float Rounding)
+{
+	// YIELDBLOOM industrial panel – gunmetal #1C1E22, amber top 2px, cyan bottom 2.5px, rivets, double border
+	CUIRect Rect = {x, y, w, h};
+	CUIRect Outer = {x - 1.0f, y - 1.0f, w + 2.0f, h + 2.0f};
+	Outer.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), IGraphics::CORNER_ALL, Rounding + 1.0f);
+	Rect.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f), IGraphics::CORNER_ALL, Rounding);
+	CUIRect Top = {x, y, w, 2.5f};
+	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.85f), IGraphics::CORNER_T, 2.0f);
+	CUIRect Bottom = {x, y + h - 2.5f, w, 2.5f};
+	Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.75f), IGraphics::CORNER_B, 2.0f);
+	// rivets
+	float riv = 2.5f;
+	CUIRect R1 = {x + 3.0f, y + 3.0f, riv, riv};
+	CUIRect R2 = {x + w - 5.5f, y + 3.0f, riv, riv};
+	R1.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.0f);
+	R2.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.0f);
+}
+
+void CHud::RenderYieldBloomProgressBar(float x, float y, float w, float h, float Progress, ColorRGBA FillColor)
+{
+	Progress = std::clamp(Progress, 0.0f, 1.0f);
+	// background gunmetal
+	CUIRect Bg = {x, y, w, h};
+	Bg.Draw(ColorRGBA(0.08f, 0.09f, 0.10f, 0.95f), IGraphics::CORNER_ALL, 3.0f);
+	// fill live
+	if(Progress > 0.0f)
+	{
+		CUIRect Fill = {x + 2.0f, y + 2.0f, (w - 4.0f) * Progress, h - 4.0f};
+		Fill.Draw(FillColor, IGraphics::CORNER_ALL, 2.0f);
+		// cyan glow on fill edge
+		CUIRect Edge = {Fill.x + Fill.w - 2.0f, Fill.y, 2.0f, Fill.h};
+		Edge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_R, 1.0f);
+	}
+	// frame overlay texture if available
+	if(m_aYieldBloomHud.size() > 2 && m_aYieldBloomHud[2].IsValid())
+	{
+		Graphics()->TextureSet(m_aYieldBloomHud[2]);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.35f);
+		IGraphics::CQuadItem Quad(x, y, w, h);
+		Graphics()->QuadsDrawTL(&Quad, 1);
+		Graphics()->QuadsEnd();
+	}
+}
+
 void CHud::OnInit()
 {
 	OnReset();
@@ -115,6 +162,26 @@ void CHud::OnInit()
 	PreparePlayerStateQuads();
 
 	Graphics()->QuadContainerUpload(m_HudQuadContainerIndex);
+
+	// YIELDBLOOM HUD – load industrial frames for live in-game panels
+	const char *apHudNames[] = {
+		"ui/yieldbloom/bottom_action_bar.png", "ui/yieldbloom/top_header_bar.png", "ui/yieldbloom/progress_bar.png",
+		"ui/yieldbloom/frame_small_card.png", "ui/yieldbloom/character_card_frame.png", "ui/yieldbloom/rack_unit.png",
+		"ui/yieldbloom/panel_races.png", "ui/yieldbloom/left_menu_panel.png"};
+	for(size_t i = 0; i < std::size(apHudNames) && i < m_aYieldBloomHud.size(); ++i)
+	{
+		CImageInfo Info;
+		if(Graphics()->LoadPng(Info, apHudNames[i], IStorage::TYPE_ALL))
+		{
+			m_aYieldBloomHud[i] = Graphics()->LoadTextureRaw(Info, 0, apHudNames[i]);
+		}
+	}
+}
+
+void CHud::OnShutdown()
+{
+	for(auto &Tex : m_aYieldBloomHud)
+		Graphics()->UnloadTexture(&Tex);
 }
 
 void CHud::RenderGameTimer()
@@ -128,13 +195,11 @@ void CHud::RenderGameTimer()
 		if(GameClient()->m_Snap.m_pGameInfoObj->m_TimeLimit && (GameClient()->m_Snap.m_pGameInfoObj->m_WarmupTimer <= 0))
 		{
 			Time = GameClient()->m_Snap.m_pGameInfoObj->m_TimeLimit * 60 - ((Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick) / Client()->GameTickSpeed());
-
 			if(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER)
 				Time = 0;
 		}
 		else if(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_RACETIME)
 		{
-			// The Warmup timer is negative in this case to make sure that incompatible clients will not see a warmup timer
 			Time = (Client()->GameTick(g_Config.m_ClDummy) + GameClient()->m_Snap.m_pGameInfoObj->m_WarmupTimer) / Client()->GameTickSpeed();
 		}
 		else
@@ -144,19 +209,17 @@ void CHud::RenderGameTimer()
 
 		str_time((int64_t)Time * 100, ETimeFormat::DAYS, aBuf, sizeof(aBuf));
 		float FontSize = 10.0f;
-		static float s_TextWidthM = TextRender()->TextWidth(FontSize, "00:00", -1, -1.0f);
-		static float s_TextWidthH = TextRender()->TextWidth(FontSize, "00:00:00", -1, -1.0f);
-		static float s_TextWidth0D = TextRender()->TextWidth(FontSize, "0d 00:00:00", -1, -1.0f);
-		static float s_TextWidth00D = TextRender()->TextWidth(FontSize, "00d 00:00:00", -1, -1.0f);
-		static float s_TextWidth000D = TextRender()->TextWidth(FontSize, "000d 00:00:00", -1, -1.0f);
-		float w = Time >= 3600 * 24 * 100 ? s_TextWidth000D : (Time >= 3600 * 24 * 10 ? s_TextWidth00D : (Time >= 3600 * 24 ? s_TextWidth0D : (Time >= 3600 ? s_TextWidthH : s_TextWidthM)));
-		// last 60 sec red, last 10 sec blink
+		float w = TextRender()->TextWidth(FontSize, aBuf, -1, -1.0f) + 16.0f;
+		float PanelW = w + 20.0f;
+		float PanelH = 16.0f;
+		// YIELDBLOOM top header bar – live timer panel
+		RenderYieldBloomPanel(Half - PanelW / 2.0f, 1.0f, PanelW, PanelH, 4.0f);
 		if(GameClient()->m_Snap.m_pGameInfoObj->m_TimeLimit && Time <= 60 && (GameClient()->m_Snap.m_pGameInfoObj->m_WarmupTimer <= 0))
 		{
 			float Alpha = Time <= 10 && (2 * time() / time_freq()) % 2 ? 0.5f : 1.0f;
 			TextRender()->TextColor(1.0f, 0.25f, 0.25f, Alpha);
 		}
-		TextRender()->Text(Half - w / 2, 2, FontSize, aBuf, -1.0f);
+		TextRender()->Text(Half - w / 2, 3, FontSize, aBuf, -1.0f);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 }
@@ -226,15 +289,16 @@ void CHud::RenderScoreHud()
 			float ImageSize = (GameClient()->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_FLAGS) ? 16.0f : Split;
 			for(int t = 0; t < 2; t++)
 			{
-				// draw box
+				// YIELDBLOOM industrial score panel – live team score in gunmetal frame
+				RenderYieldBloomPanel(m_Width - ScoreWidthMax - ImageSize - 2 * Split - 2, StartY + t * 20 - 1, ScoreWidthMax + ImageSize + 2 * Split + 4, ScoreSingleBoxHeight + 2, 4.0f);
+				// draw box (keep for compatibility but with YIELDBLOOM tint)
 				if(RecreateRect)
 				{
 					Graphics()->DeleteQuadContainer(m_aScoreInfo[t].m_RoundRectQuadContainerIndex);
-
 					if(t == 0)
-						Graphics()->SetColor(0.975f, 0.17f, 0.17f, 0.3f);
+						Graphics()->SetColor(0.92f, 0.68f, 0.12f, 0.25f);
 					else
-						Graphics()->SetColor(0.17f, 0.46f, 0.975f, 0.3f);
+						Graphics()->SetColor(0.05f, 0.90f, 0.92f, 0.25f);
 					m_aScoreInfo[t].m_RoundRectQuadContainerIndex = Graphics()->CreateRectQuadContainer(m_Width - ScoreWidthMax - ImageSize - 2 * Split, StartY + t * 20, ScoreWidthMax + ImageSize + 2 * Split, ScoreSingleBoxHeight, 5.0f, IGraphics::CORNER_L);
 				}
 				Graphics()->TextureClear();
@@ -745,19 +809,38 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 	bool IsSixupGameSkin = GameClient()->m_GameSkin.IsSixup();
 	int QuadOffsetSixup = (IsSixupGameSkin ? 10 : 0);
 
+	// YIELDBLOOM industrial bottom action bar – live panel for resources
+	float PanelX = 5.0f;
+	float PanelY = 5.0f;
+	float PanelW = 140.0f;
+	float PanelH = 48.0f;
+	if(GameClient()->m_GameInfo.m_HudHealthArmor && GameClient()->m_GameInfo.m_HudAmmo)
+		PanelH = 52.0f;
+	RenderYieldBloomPanel(PanelX, PanelY, PanelW, PanelH, 6.0f);
+	// inner live indicators background
+	if(m_aYieldBloomHud.size() > 0 && m_aYieldBloomHud[0].IsValid())
+	{
+		Graphics()->TextureSet(m_aYieldBloomHud[0]);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.18f);
+		IGraphics::CQuadItem Quad(PanelX, PanelY, PanelW, PanelH);
+		Graphics()->QuadsDrawTL(&Quad, 1);
+		Graphics()->QuadsEnd();
+	}
+
 	if(GameClient()->m_GameInfo.m_HudAmmo)
 	{
-		// ammo display
+		// ammo display – live count
 		float AmmoOffsetY = GameClient()->m_GameInfo.m_HudHealthArmor ? 24 : 0;
 		int CurWeapon = pCharacter->m_Weapon % NUM_WEAPONS;
-		// 0.7 only
 		if(CurWeapon == WEAPON_NINJA)
 		{
 			if(!GameClient()->m_GameInfo.m_HudDDRace && Client()->IsSixup())
 			{
 				const int Max = g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000;
 				float NinjaProgress = std::clamp(pCharacter->m_AmmoCount - Client()->GameTick(g_Config.m_ClDummy), 0, Max) / (float)Max;
-				RenderNinjaBarPos(5 + 10 * 12, 5, 6.f, 24.f, NinjaProgress);
+				// YIELDBLOOM progress bar for ninja – live
+				RenderYieldBloomProgressBar(PanelX + 10 * 12 + 8, PanelY + 2, 8, 24, NinjaProgress, ColorRGBA(0.05f, 0.90f, 0.92f, 0.95f));
 			}
 		}
 		else if(CurWeapon >= 0 && GameClient()->m_GameSkin.m_aSpriteWeaponProjectiles[CurWeapon].IsValid())
@@ -771,20 +854,27 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 			{
 				Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_aAmmoOffset[CurWeapon] + QuadOffsetSixup, std::clamp(pCharacter->m_AmmoCount, 0, 10));
 			}
+			// live ammo number
+			char aAmmo[16];
+			str_format(aAmmo, sizeof(aAmmo), "%d", pCharacter->m_AmmoCount);
+			TextRender()->Text(PanelX + PanelW - 18, PanelY + AmmoOffsetY + 2, 8.0f, aAmmo);
 		}
 	}
 
 	if(GameClient()->m_GameInfo.m_HudHealthArmor)
 	{
-		// health display
+		// health display – live bars with YIELDBLOOM colors
 		const int DisplayHealth = std::min(pCharacter->m_Health, 10);
+		// live health progress bar background
+		RenderYieldBloomProgressBar(PanelX + 8, PanelY + 6, 100, 8, DisplayHealth / 10.0f, ColorRGBA(0.92f, 0.68f, 0.12f, 0.95f));
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHealthFull);
 		Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_HealthOffset + QuadOffsetSixup, DisplayHealth);
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHealthEmpty);
 		Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_EmptyHealthOffset + QuadOffsetSixup + DisplayHealth, 10 - DisplayHealth);
 
-		// armor display
+		// armor display – live
 		const int DisplayArmor = std::min(pCharacter->m_Armor, 10);
+		RenderYieldBloomProgressBar(PanelX + 8, PanelY + 20, 100, 8, DisplayArmor / 10.0f, ColorRGBA(0.05f, 0.90f, 0.92f, 0.90f));
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteArmorFull);
 		Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_ArmorOffset + QuadOffsetSixup, DisplayArmor);
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteArmorEmpty);
@@ -853,6 +943,12 @@ void CHud::PreparePlayerStateQuads()
 
 void CHud::RenderPlayerState(const int ClientId)
 {
+	// YIELDBLOOM rack unit panel for player state – live jumps/weapons/capabilities
+	float StatePanelX = 4.0f;
+	float StatePanelY = 60.0f;
+	float StatePanelW = 160.0f;
+	float StatePanelH = 36.0f;
+	RenderYieldBloomPanel(StatePanelX, StatePanelY, StatePanelW, StatePanelH, 5.0f);
 	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
 
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
@@ -1110,152 +1206,8 @@ void CHud::RenderPlayerState(const int ClientId)
 void CHud::RenderNinjaBarPos(const float x, float y, const float Width, const float Height, float Progress, const float Alpha)
 {
 	Progress = std::clamp(Progress, 0.0f, 1.0f);
-
-	// what percentage of the end pieces is used for the progress indicator and how much is the rest
-	// half of the ends are used for the progress display
-	const float RestPct = 0.5f;
-	const float ProgPct = 0.5f;
-
-	const float EndHeight = Width; // to keep the correct scale - the width of the sprite is as long as the height
-	const float BarWidth = Width;
-	const float WholeBarHeight = Height;
-	const float MiddleBarHeight = WholeBarHeight - (EndHeight * 2.0f);
-	const float EndProgressHeight = EndHeight * ProgPct;
-	const float EndRestHeight = EndHeight * RestPct;
-	const float ProgressBarHeight = WholeBarHeight - (EndProgressHeight * 2.0f);
-	const float EndProgressProportion = EndProgressHeight / ProgressBarHeight;
-	const float MiddleProgressProportion = MiddleBarHeight / ProgressBarHeight;
-
-	// beginning piece
-	float BeginningPieceProgress = 1;
-	if(Progress <= 1)
-	{
-		if(Progress <= (EndProgressProportion + MiddleProgressProportion))
-		{
-			BeginningPieceProgress = 0;
-		}
-		else
-		{
-			BeginningPieceProgress = (Progress - EndProgressProportion - MiddleProgressProportion) / EndProgressProportion;
-		}
-	}
-	// empty
-	Graphics()->WrapClamp();
-	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudNinjaBarEmptyRight);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1.f, 1.f, 1.f, Alpha);
-	// Subset: btm_r, top_r, top_m, btm_m | it is mirrored on the horizontal axe and rotated 90 degrees counterclockwise
-	Graphics()->QuadsSetSubsetFree(1, 1, 1, 0, ProgPct - ProgPct * (1.0f - BeginningPieceProgress), 0, ProgPct - ProgPct * (1.0f - BeginningPieceProgress), 1);
-	IGraphics::CQuadItem QuadEmptyBeginning(x, y, BarWidth, EndRestHeight + EndProgressHeight * (1.0f - BeginningPieceProgress));
-	Graphics()->QuadsDrawTL(&QuadEmptyBeginning, 1);
-	Graphics()->QuadsEnd();
-	// full
-	if(BeginningPieceProgress > 0.0f)
-	{
-		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudNinjaBarFullLeft);
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.f, 1.f, 1.f, Alpha);
-		// Subset: btm_m, top_m, top_r, btm_r | it is rotated 90 degrees clockwise
-		Graphics()->QuadsSetSubsetFree(RestPct + ProgPct * (1.0f - BeginningPieceProgress), 1, RestPct + ProgPct * (1.0f - BeginningPieceProgress), 0, 1, 0, 1, 1);
-		IGraphics::CQuadItem QuadFullBeginning(x, y + (EndRestHeight + EndProgressHeight * (1.0f - BeginningPieceProgress)), BarWidth, EndProgressHeight * BeginningPieceProgress);
-		Graphics()->QuadsDrawTL(&QuadFullBeginning, 1);
-		Graphics()->QuadsEnd();
-	}
-
-	// middle piece
-	y += EndHeight;
-
-	float MiddlePieceProgress = 1;
-	if(Progress <= EndProgressProportion + MiddleProgressProportion)
-	{
-		if(Progress <= EndProgressProportion)
-		{
-			MiddlePieceProgress = 0;
-		}
-		else
-		{
-			MiddlePieceProgress = (Progress - EndProgressProportion) / MiddleProgressProportion;
-		}
-	}
-
-	const float FullMiddleBarHeight = MiddleBarHeight * MiddlePieceProgress;
-	const float EmptyMiddleBarHeight = MiddleBarHeight - FullMiddleBarHeight;
-
-	// empty ninja bar
-	if(EmptyMiddleBarHeight > 0.0f)
-	{
-		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudNinjaBarEmpty);
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.f, 1.f, 1.f, Alpha);
-		// select the middle portion of the sprite so we don't get edge bleeding
-		if(EmptyMiddleBarHeight <= EndHeight)
-		{
-			// prevent pixel puree, select only a small slice
-			// Subset: btm_r, top_r, top_m, btm_m | it is mirrored on the horizontal axe and rotated 90 degrees counterclockwise
-			Graphics()->QuadsSetSubsetFree(1, 1, 1, 0, 1.0f - (EmptyMiddleBarHeight / EndHeight), 0, 1.0f - (EmptyMiddleBarHeight / EndHeight), 1);
-		}
-		else
-		{
-			// Subset: btm_r, top_r, top_l, btm_l | it is mirrored on the horizontal axe and rotated 90 degrees counterclockwise
-			Graphics()->QuadsSetSubsetFree(1, 1, 1, 0, 0, 0, 0, 1);
-		}
-		IGraphics::CQuadItem QuadEmpty(x, y, BarWidth, EmptyMiddleBarHeight);
-		Graphics()->QuadsDrawTL(&QuadEmpty, 1);
-		Graphics()->QuadsEnd();
-	}
-
-	// full ninja bar
-	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudNinjaBarFull);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1.f, 1.f, 1.f, Alpha);
-	// select the middle portion of the sprite so we don't get edge bleeding
-	if(FullMiddleBarHeight <= EndHeight)
-	{
-		// prevent pixel puree, select only a small slice
-		// Subset: btm_m, top_m, top_r, btm_r | it is rotated 90 degrees clockwise
-		Graphics()->QuadsSetSubsetFree(1.0f - (FullMiddleBarHeight / EndHeight), 1, 1.0f - (FullMiddleBarHeight / EndHeight), 0, 1, 0, 1, 1);
-	}
-	else
-	{
-		// Subset: btm_l, top_l, top_r, btm_r | it is rotated 90 degrees clockwise
-		Graphics()->QuadsSetSubsetFree(0, 1, 0, 0, 1, 0, 1, 1);
-	}
-	IGraphics::CQuadItem QuadFull(x, y + EmptyMiddleBarHeight, BarWidth, FullMiddleBarHeight);
-	Graphics()->QuadsDrawTL(&QuadFull, 1);
-	Graphics()->QuadsEnd();
-
-	// ending piece
-	y += MiddleBarHeight;
-	float EndingPieceProgress = 1;
-	if(Progress <= EndProgressProportion)
-	{
-		EndingPieceProgress = Progress / EndProgressProportion;
-	}
-	// empty
-	if(EndingPieceProgress < 1.0f)
-	{
-		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudNinjaBarEmptyRight);
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.f, 1.f, 1.f, Alpha);
-		// Subset: btm_l, top_l, top_m, btm_m | it is rotated 90 degrees clockwise
-		Graphics()->QuadsSetSubsetFree(0, 1, 0, 0, ProgPct - ProgPct * EndingPieceProgress, 0, ProgPct - ProgPct * EndingPieceProgress, 1);
-		IGraphics::CQuadItem QuadEmptyEnding(x, y, BarWidth, EndProgressHeight * (1.0f - EndingPieceProgress));
-		Graphics()->QuadsDrawTL(&QuadEmptyEnding, 1);
-		Graphics()->QuadsEnd();
-	}
-	// full
-	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudNinjaBarFullLeft);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1.f, 1.f, 1.f, Alpha);
-	// Subset: btm_m, top_m, top_l, btm_l | it is mirrored on the horizontal axe and rotated 90 degrees counterclockwise
-	Graphics()->QuadsSetSubsetFree(RestPct + ProgPct * EndingPieceProgress, 1, RestPct + ProgPct * EndingPieceProgress, 0, 0, 0, 0, 1);
-	IGraphics::CQuadItem QuadFullEnding(x, y + (EndProgressHeight * (1.0f - EndingPieceProgress)), BarWidth, EndRestHeight + EndProgressHeight * EndingPieceProgress);
-	Graphics()->QuadsDrawTL(&QuadFullEnding, 1);
-	Graphics()->QuadsEnd();
-
-	Graphics()->QuadsSetSubset(0, 0, 1, 1);
-	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
-	Graphics()->WrapNormal();
+	// YIELDBLOOM industrial progress – live, not static
+	RenderYieldBloomProgressBar(x, y, Width, Height, Progress, ColorRGBA(0.05f, 0.90f, 0.92f, Alpha));
 }
 
 void CHud::RenderSpectatorCount()
