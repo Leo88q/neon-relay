@@ -126,31 +126,44 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	CUIRect Text = *pRect;
 
 	if(Checked)
-		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+		Color = ColorRGBA(0.32f, 0.28f, 0.12f, 0.85f);
 	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
 
-	// Cyberpunk – sharp 4-6px, use provided rounding but clamp to 6
-	float R = Rounding > 6.0f ? 6.0f : Rounding;
-	if(R < 2.0f) R = 4.0f;
+	// YIELDBLOOM industrial – gunmetal beveled, amber top, cyan bottom
+	float R = Rounding > 8.0f ? 8.0f : Rounding;
+	if(R < 3.0f) R = 4.0f;
+	// Outer dark border
+	CUIRect Outer = {pRect->x - 1.0f, pRect->y - 1.0f, pRect->w + 2.0f, pRect->h + 2.0f};
+	Outer.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), Corners, R+1.0f);
 	pRect->Draw(Color, Corners, R);
-	// Neon edge for active/hover
-	if(Ui()->HotItem() == pButtonContainer)
+	// Top amber industrial edge
+	if(Ui()->HotItem() == pButtonContainer || Checked)
+	{
+		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 3.0f};
+		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.95f), IGraphics::CORNER_T, 2.0f);
+		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 2.5f, pRect->w, 2.5f};
+		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_B, 1.0f);
+	}
+	else
 	{
 		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 2.0f};
-		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.75f), IGraphics::CORNER_T, 2.0f);
+		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.45f), IGraphics::CORNER_T, 2.0f);
+		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 1.5f, pRect->w, 1.5f};
+		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.35f), IGraphics::CORNER_B, 1.0f);
 	}
-	else if(Color.a > 0.8f && Color.r > 0.2f)
+	// Rivets
 	{
-		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 1.5f};
-		Edge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.65f), IGraphics::CORNER_T, 2.0f);
+		float riv = 3.0f;
+		CUIRect R1 = {pRect->x + 3.0f, pRect->y + 3.0f, riv, riv};
+		CUIRect R2 = {pRect->x + pRect->w - 6.0f, pRect->y + 3.0f, riv, riv};
+		R1.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
+		R2.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
 	}
 
 	if(pImageName)
 	{
 		CUIRect Image;
-		pRect->VSplitRight(pRect->h * 4.0f, &Text, &Image); // always correct ratio for image
-
-		// render image
+		pRect->VSplitRight(pRect->h * 4.0f, &Text, &Image);
 		const CMenuImage *pImage = FindMenuImage(pImageName);
 		if(pImage)
 		{
@@ -202,20 +215,21 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 		pAnimator->m_Time = Time;
 	}
 
-	// Cyberpunk tab rendering – sharp 4-6px, pixel grid, neon border
-	float Round = 4.0f;
+	// YIELDBLOOM tab – gunmetal with amber active top, cyan bottom glow, rivets
+	float Round = 6.0f;
 	if(Checked)
 	{
 		ColorRGBA ColorMenuTab = ms_ColorTabbarActive;
 		if(pActiveColor)
 			ColorMenuTab = *pActiveColor;
+		// outer border
+		CUIRect Out = {Rect.x - 1.0f, Rect.y - 1.0f, Rect.w + 2.0f, Rect.h + 2.0f};
+		Out.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), Corners, Round+1.0f);
 		Rect.Draw(ColorMenuTab, Corners, Round);
-		// Active neon top line cyan
 		CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
-		Top.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 1.0f), IGraphics::CORNER_T, 2.0f);
-		// Magenta glow bottom
-		CUIRect Bottom = {Rect.x, Rect.y + Rect.h - 2.0f, Rect.w, 2.0f};
-		Bottom.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.55f), 0, 0);
+		Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 1.0f), IGraphics::CORNER_T, 2.0f);
+		CUIRect Bottom = {Rect.x, Rect.y + Rect.h - 2.5f, Rect.w, 2.5f};
+		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), 0, 0);
 	}
 	else
 	{
@@ -224,6 +238,8 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 			ColorRGBA HoverColorMenuTab = ms_ColorTabbarHover;
 			if(pHoverColor)
 				HoverColorMenuTab = *pHoverColor;
+			CUIRect Out = {Rect.x - 1.0f, Rect.y - 1.0f, Rect.w + 2.0f, Rect.h + 2.0f};
+			Out.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), Corners, Round+1.0f);
 			Rect.Draw(HoverColorMenuTab, Corners, Round);
 			CUIRect Top = {Rect.x, Rect.y, Rect.w, 2.0f};
 			Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.85f), IGraphics::CORNER_T, 2.0f);
@@ -234,7 +250,6 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 			if(pDefaultColor)
 				ColorMenuTab = *pDefaultColor;
 			Rect.Draw(ColorMenuTab, Corners, Round);
-			// Subtle grid line
 			CUIRect Line = {Rect.x, Rect.y + Rect.h - 1.0f, Rect.w, 1.0f};
 			Line.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.18f), 0, 0);
 		}
@@ -671,6 +686,37 @@ void CMenus::OnInit()
 		if(Graphics()->LoadPng(Info, apBgNames[i], IStorage::TYPE_ALL))
 		{
 			m_aBgTextures[i] = Graphics()->LoadTextureRaw(Info, 0, apBgNames[i]);
+		}
+	}
+	// YIELDBLOOM industrial frames – 29 assets
+	const char *apYieldNames[] = {
+		"ui/yieldbloom/frame_main_panel.png", "ui/yieldbloom/frame_small_card.png", "ui/yieldbloom/button_primary.png", "ui/yieldbloom/button_tab.png",
+		"ui/yieldbloom/character_card_frame.png", "ui/yieldbloom/top_header_bar.png", "ui/yieldbloom/left_menu_panel.png", "ui/yieldbloom/right_info_panel.png",
+		"ui/yieldbloom/bottom_action_bar.png", "ui/yieldbloom/rack_unit.png", "ui/yieldbloom/input_field.png", "ui/yieldbloom/window_large.png",
+		"ui/yieldbloom/connector_cyan.png", "ui/yieldbloom/chat_panel.png", "ui/yieldbloom/panel_races.png", "ui/yieldbloom/panel_wallet.png",
+		"ui/yieldbloom/panel_leaders.png", "ui/yieldbloom/panel_settings_block.png", "ui/yieldbloom/frame_transition.png", "ui/yieldbloom/button_small.png",
+		"ui/yieldbloom/progress_bar.png", "ui/yieldbloom/potato_card_cool_guy_1.png", "ui/yieldbloom/potato_card_legend_guy.png", "ui/yieldbloom/potato_card_cool_girl_1.png",
+		"ui/yieldbloom/potato_card_girl_2.png", "ui/yieldbloom/potato_card_girl_3.png", "ui/yieldbloom/potato_card_guy_2.png", "ui/yieldbloom/potato_card_guy_3.png",
+		"ui/yieldbloom/potato_card_legend_girl.png"};
+	for(size_t i = 0; i < std::size(apYieldNames) && i < m_aYieldBloomFrames.size(); ++i)
+	{
+		CImageInfo Info;
+		if(Graphics()->LoadPng(Info, apYieldNames[i], IStorage::TYPE_ALL))
+		{
+			m_aYieldBloomFrames[i] = Graphics()->LoadTextureRaw(Info, 0, apYieldNames[i]);
+		}
+	}
+	// Character portraits from YIELDBLOOM potato cards
+	const char *apPortraitNames[] = {
+		"ui/yieldbloom/potato_card_cool_guy_1.png", "ui/yieldbloom/potato_card_legend_guy.png", "ui/yieldbloom/potato_card_cool_girl_1.png",
+		"ui/yieldbloom/potato_card_girl_2.png", "ui/yieldbloom/potato_card_girl_3.png", "ui/yieldbloom/potato_card_guy_2.png",
+		"ui/yieldbloom/potato_card_guy_3.png", "ui/yieldbloom/potato_card_legend_girl.png"};
+	for(size_t i = 0; i < std::size(apPortraitNames) && i < std::size(m_aCharacterPortraits); ++i)
+	{
+		CImageInfo Info;
+		if(Graphics()->LoadPng(Info, apPortraitNames[i], IStorage::TYPE_ALL))
+		{
+			m_aCharacterPortraits[i] = Graphics()->LoadTextureRaw(Info, 0, apPortraitNames[i]);
 		}
 	}
 
@@ -2127,6 +2173,7 @@ void CMenus::OnShutdown()
 {
 	for(auto &Texture : m_aCharacterPortraits) Graphics()->UnloadTexture(&Texture);
 	for(auto &Texture : m_aBgTextures) Graphics()->UnloadTexture(&Texture);
+	for(auto &Texture : m_aYieldBloomFrames) Graphics()->UnloadTexture(&Texture);
 	m_CommunityIcons.Shutdown();
 }
 
@@ -2254,81 +2301,75 @@ void CMenus::OnRender()
 
 void CMenus::UpdateColors()
 {
-	// Cyberpunk – sharp, bright neon, pixel grid
-	ms_GuiColor = ColorRGBA(0.06f, 0.08f, 0.16f, 1.0f);
+	// YIELDBLOOM industrial – gunmetal base, amber active, cyan hover
+	ms_GuiColor = ColorRGBA(0.11f, 0.12f, 0.14f, 1.0f);
 
-	// Outgame – cyberpunk tabs: inactive dark with grid, active cyan with magenta edge, hover magenta
-	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.06f, 0.08f, 0.15f, 0.82f);
-	ms_ColorTabbarActiveOutgame = ColorRGBA(0.08f, 0.42f, 0.52f, 0.96f);
-	ms_ColorTabbarHoverOutgame = ColorRGBA(0.52f, 0.12f, 0.38f, 0.92f);
+	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
+	ms_ColorTabbarActiveOutgame = ColorRGBA(0.92f, 0.68f, 0.12f, 0.92f);
+	ms_ColorTabbarHoverOutgame = ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f);
 
-	ms_ColorTabbarInactiveIngame = ColorRGBA(0.05f, 0.07f, 0.13f, 0.86f);
-	ms_ColorTabbarActiveIngame = ColorRGBA(0.08f, 0.40f, 0.50f, 0.96f);
-	ms_ColorTabbarHoverIngame = ColorRGBA(0.48f, 0.14f, 0.42f, 0.92f);
+	ms_ColorTabbarInactiveIngame = ColorRGBA(0.11f, 0.12f, 0.14f, 0.90f);
+	ms_ColorTabbarActiveIngame = ColorRGBA(0.92f, 0.68f, 0.12f, 0.90f);
+	ms_ColorTabbarHoverIngame = ColorRGBA(0.05f, 0.90f, 0.92f, 0.82f);
 }
 
 void CMenus::RenderBackground()
 {
 	Ui()->MapScreen();
 	const CUIRect Screen = *Ui()->Screen();
-	// Cyberpunk base – deep dark with cyan grid
-	Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.08f, 1.0f), 0, 0);
+	// YIELDBLOOM industrial base – gunmetal
+	Screen.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 1.0f), 0, 0);
 
-	// Photo background per page – try to load texture, fallback to color
-	// Determine background type
 	int BgIndex = 0;
 	if(m_ShowStart)
-		BgIndex = 0; // start_cyan_grid
+		BgIndex = 0;
 	else
 	{
 		switch(m_MenuPage)
 		{
-		case PAGE_RACES: BgIndex = 1; break; // play_races_blue
-		case PAGE_CHARACTERS: BgIndex = 2; break; // characters_magenta
-		case PAGE_WALLET: BgIndex = 3; break; // wallet_gold
-		case PAGE_LEADERS: BgIndex = 4; break; // leaders_blue
-		case PAGE_SETTINGS: BgIndex = 5; break; // settings_grid
+		case PAGE_RACES: BgIndex = 1; break;
+		case PAGE_CHARACTERS: BgIndex = 2; break;
+		case PAGE_WALLET: BgIndex = 3; break;
+		case PAGE_LEADERS: BgIndex = 4; break;
+		case PAGE_SETTINGS: BgIndex = 5; break;
 		default:
 			if(m_MenuPage >= PAGE_INTERNET && m_MenuPage <= PAGE_FAVORITE_COMMUNITY_5)
-				BgIndex = 6; // browser_nodes
+				BgIndex = 6;
 			else
 				BgIndex = 0;
 			break;
 		}
 		if(Client()->State() == IClient::STATE_ONLINE)
-			BgIndex = 7; // ingame_combat
+			BgIndex = 7;
 	}
 
-	// Try to draw photo background if loaded
 	if(BgIndex >= 0 && BgIndex < (int)m_aBgTextures.size() && m_aBgTextures[BgIndex].IsValid())
 	{
 		Graphics()->TextureSet(m_aBgTextures[BgIndex]);
 		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.55f);
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.38f);
 		IGraphics::CQuadItem Quad(Screen.x, Screen.y, Screen.w, Screen.h);
 		Graphics()->QuadsDrawTL(&Quad, 1);
 		Graphics()->QuadsEnd();
-		// Darken overlay for readability
-		Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.08f, 0.58f), 0, 0);
+		Screen.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.62f), 0, 0);
 	}
 
-	// Cyberpunk grid overlay
-	CUIRect Grid = {Screen.x, Screen.y, Screen.w, Screen.h * 0.02f};
-	for(int i = 0; i < 40; ++i)
+	// Industrial grid – subtle horizontal lines
+	for(int i = 0; i < 32; ++i)
 	{
-		float y = Screen.y + i * Screen.h / 40.0f;
+		float y = Screen.y + i * Screen.h / 32.0f;
 		CUIRect Line = {Screen.x, y, Screen.w, 1.0f};
-		Line.Draw(ColorRGBA(0.08f, 0.38f, 0.48f, 0.06f), 0, 0);
+		Line.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 0.08f), 0, 0);
 	}
-	// Vertical accent lines
-	CUIRect VAccent = {Screen.x + Screen.w * 0.58f, Screen.y, 2.0f, Screen.h};
-	VAccent.Draw(ColorRGBA(0.08f, 0.42f, 0.52f, 0.22f), 0, 0);
-	CUIRect VAccent2 = {Screen.x + Screen.w * 0.60f, Screen.y, 1.0f, Screen.h};
-	VAccent2.Draw(ColorRGBA(0.52f, 0.12f, 0.38f, 0.14f), 0, 0);
-
-	// Top scanline
-	CUIRect TopLine = {Screen.x, Screen.y, Screen.w, 2.0f};
-	TopLine.Draw(ColorRGBA(0.08f, 0.42f, 0.52f, 0.85f), 0, 0);
+	// Amber top industrial beam
+	CUIRect TopBeam = {Screen.x, Screen.y, Screen.w, 3.0f};
+	TopBeam.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.55f), 0, 0);
+	// Cyan bottom glow
+	CUIRect BottomGlow = {Screen.x, Screen.y + Screen.h - 3.0f, Screen.w, 3.0f};
+	BottomGlow.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.45f), 0, 0);
+	// Side vents
+	CUIRect VAccent = {Screen.x + Screen.w * 0.72f, Screen.y, 2.0f, Screen.h};
+	VAccent.Draw(ColorRGBA(0.16f, 0.17f, 0.18f, 0.55f), 0, 0);
 }
 
 int CMenus::DoButton_CheckBox_Tristate(const void *pId, const char *pText, TRISTATE Checked, const CUIRect *pRect)
