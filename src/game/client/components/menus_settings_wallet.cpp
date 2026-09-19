@@ -11,7 +11,9 @@
 
 #include <base/color.h>
 #include <base/log.h>
+#include <base/time.h>
 #include <algorithm>
+#include <cmath>
 #include <game/client/animstate.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
