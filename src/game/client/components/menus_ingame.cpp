@@ -496,7 +496,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 
 	// list background color
 	MainView.Margin(10.0f, &PlayerList);
-	PlayerList.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	PlayerList.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.94f), IGraphics::CORNER_ALL, 6.0f);
 	PlayerList.Margin(10.0f, &PlayerList);
 
 	// headline
@@ -636,7 +636,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	MainView.HSplitMid(&ServerInfo, &Motd, 10.0f);
 	ServerInfo.VSplitMid(&ServerInfo, &GameInfo, 10.0f);
 
-	ServerInfo.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	ServerInfo.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.94f), IGraphics::CORNER_ALL, 6.0f);
 	ServerInfo.Margin(10.0f, &ServerInfo);
 
 	CUIRect Label;
@@ -724,7 +724,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 		}
 	}
 
-	GameInfo.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	GameInfo.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.94f), IGraphics::CORNER_ALL, 6.0f);
 	GameInfo.Margin(10.0f, &GameInfo);
 
 	GameInfo.HSplitTop(FontSizeTitle, &Label, &GameInfo);
@@ -814,7 +814,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 void CMenus::RenderServerInfoMotd(CUIRect Motd)
 {
 	const float MotdFontSize = 16.0f;
-	Motd.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	Motd.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.94f), IGraphics::CORNER_ALL, 6.0f);
 	Motd.Margin(10.0f, &Motd);
 
 	CUIRect MotdHeader;

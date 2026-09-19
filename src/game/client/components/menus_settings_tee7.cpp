@@ -43,7 +43,7 @@ void CMenus::RenderSettingsTee7(CUIRect MainView)
 	TabBar.VSplitMid(&LeftTab, &RightTab);
 	TabBars.HSplitTop(10.0f, nullptr, &TabBars);
 
-	SkinPreview.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), IGraphics::CORNER_ALL, 5.0f);
+	SkinPreview.Draw(ColorRGBA(0.05f, 0.07f, 0.14f, 0.92f), IGraphics::CORNER_ALL, 4.0f);
 	SkinPreview.VMargin(10.0f, &SkinPreview);
 	SkinPreview.VSplitRight(50.0f, &SkinPreview, &BlueTeamSkinPreview);
 	SkinPreview.VSplitRight(10.0f, &SkinPreview, nullptr);
@@ -237,7 +237,7 @@ void CMenus::RenderSettingsTeeCustom7(CUIRect MainView)
 	CUIRect ButtonBar, SkinPartSelection, CustomColors;
 
 	MainView.HSplitTop(20.0f, &ButtonBar, &MainView);
-	MainView.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), IGraphics::CORNER_B, 5.0f);
+	MainView.Draw(ColorRGBA(0.05f, 0.07f, 0.14f, 0.92f), IGraphics::CORNER_B, 4.0f);
 	MainView.VSplitMid(&SkinPartSelection, &CustomColors, 10.0f);
 	CustomColors.Margin(5.0f, &CustomColors);
 	CUIRect CustomColorsButton, RandomSkinButton;

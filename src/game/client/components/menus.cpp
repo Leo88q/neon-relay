@@ -274,9 +274,9 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 int CMenus::DoButton_GridHeader(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Align)
 {
 	if(Checked == 2)
-		pRect->Draw(ColorRGBA(1, 0.98f, 0.5f, 0.55f), IGraphics::CORNER_T, 5.0f);
+		pRect->Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.55f), IGraphics::CORNER_T, 4.0f);
 	else if(Checked)
-		pRect->Draw(ColorRGBA(1, 1, 1, 0.5f), IGraphics::CORNER_T, 5.0f);
+		pRect->Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_T, 4.0f);
 
 	CUIRect Temp;
 	pRect->VMargin(5.0f, &Temp);
@@ -309,7 +309,7 @@ int CMenus::DoButton_CheckBox_Common(const void *pId, const char *pText, const c
 	Label.VSplitLeft(5.0f, nullptr, &Label);
 
 	Box.Margin(2.0f, &Box);
-	Box.Draw(ColorRGBA(1, 1, 1, 0.25f * Ui()->ButtonColorMul(pId)), IGraphics::CORNER_ALL, 3.0f);
+	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.92f * Ui()->ButtonColorMul(pId)), IGraphics::CORNER_ALL, 4.0f);
 
 	const bool Checkable = *pBoxText == 'X';
 	if(Checkable)
@@ -527,7 +527,7 @@ void CMenus::RenderLoadingDirect(const char *pCaption, const char *pContent, std
 	Ui()->Screen()->Margin(160.0f, &Box);
 
 	Graphics()->TextureClear();
-	Box.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f), IGraphics::CORNER_ALL, 15.0f);
+	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
 	Box.Margin(20.0f, &Box);
 
 	CUIRect Label;
@@ -1895,7 +1895,7 @@ void CMenus::RenderPopupConnecting(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f), IGraphics::CORNER_ALL, 15.0f);
+	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);
@@ -2026,7 +2026,7 @@ void CMenus::RenderPopupLoading(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f), IGraphics::CORNER_ALL, 15.0f);
+	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);

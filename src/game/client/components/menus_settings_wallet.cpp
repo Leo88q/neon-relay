@@ -49,7 +49,11 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 	};
 
 	MainView.HSplitTop(pInfo->connected ? 128.0f : 72.0f, &Panel, &MainView);
-	Panel.Draw(ColorRGBA(0.07f, 0.11f, 0.19f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+	Panel.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	CUIRect WalletEdge = {Panel.x, Panel.y, Panel.w, 2.5f};
+	WalletEdge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.85f), IGraphics::CORNER_T, 4.0f);
+	CUIRect WalletEdgeL = {Panel.x, Panel.y, 2.5f, Panel.h};
+	WalletEdgeL.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.55f), IGraphics::CORNER_L, 4.0f);
 	s_WalletScroll.AddRect(Panel);
 	Panel.Margin(16.0f, &Panel);
 	Panel.HSplitTop(28.0f, &Line, &Panel);
@@ -151,7 +155,9 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 	MainView.HSplitTop(Compact ? 196.0f : 164.0f, &Row, &MainView);
 	if(s_RaceScroll.AddRect(Row))
 	{
-		Row.Draw(ColorRGBA(0.10f, 0.065f, 0.17f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+		Row.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+		CUIRect RaceEdge = {Row.x, Row.y, Row.w, 3.0f};
+		RaceEdge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.90f), IGraphics::CORNER_T, 4.0f);
 		Row.Margin(12.0f, &Row);
 		CUIRect Name, Detail, Action;
 		Row.HSplitBottom(40.0f, &Row, &Action);
@@ -184,7 +190,9 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		const bool Visible = s_RaceScroll.AddRect(Row);
 		if(Visible)
 		{
-			Row.Draw(ColorRGBA(0.07f, 0.11f, 0.19f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+			Row.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.94f), IGraphics::CORNER_ALL, 6.0f);
+			CUIRect FeeEdge = {Row.x, Row.y, 2.0f, Row.h};
+			FeeEdge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.35f), IGraphics::CORNER_L, 3.0f);
 			Row.Margin(12.0f, &Row);
 			CUIRect Name, Players, Fee;
 			Row.HSplitTop(28.0f, &Name, &Row);
@@ -276,7 +284,9 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		MainView.VSplitLeft(MainView.w * 0.61f, &Grid, &Details);
 		Details.VSplitLeft(12.0f, nullptr, &Details);
 	}
-	Details.Draw(ColorRGBA(0.035f, 0.045f, 0.09f, 0.96f), IGraphics::CORNER_ALL, 8.0f);
+	Details.Draw(ColorRGBA(0.04f, 0.06f, 0.12f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	CUIRect DetEdge = {Details.x, Details.y, Details.w, 2.0f};
+	DetEdge.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.65f), IGraphics::CORNER_T, 3.0f);
 	Details.Margin(12.0f, &Details);
 	static int s_Selected = 0;
 	static CButtonContainer s_aSelect[10], s_TryOn;
@@ -289,9 +299,9 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		if(i >= 10) break;
 		const auto &Entry = POTATO_CATALOG[i];
 		CUIRect Card = {Grid.x + (Slot % Columns) * Width, Grid.y + (Slot / Columns) * Height, Width - 5.0f, Height - 5.0f};
-		const ColorRGBA Tint = Entry.m_PriceSkr == 2000 ? ColorRGBA(0.23f, 0.15f, 0.06f, 0.94f) :
-			Entry.m_PriceSkr == 1000 ? ColorRGBA(0.13f, 0.08f, 0.23f, 0.94f) : ColorRGBA(0.04f, 0.10f, 0.15f, 0.94f);
-		if(DoButton_Menu(&s_aSelect[i], "", s_Selected == i, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 8.0f, 0.0f, Tint))
+		const ColorRGBA Tint = Entry.m_PriceSkr == 2000 ? ColorRGBA(0.18f, 0.14f, 0.05f, 0.96f) :
+			Entry.m_PriceSkr == 1000 ? ColorRGBA(0.10f, 0.07f, 0.18f, 0.96f) : ColorRGBA(0.05f, 0.09f, 0.16f, 0.96f);
+		if(DoButton_Menu(&s_aSelect[i], "", s_Selected == i, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, Tint))
 		{ s_Selected = i; if(Compact) s_DetailOpen = true; }
 		CUIRect Portrait = Card;
 		Portrait.h = Height * 0.57f;
@@ -353,7 +363,9 @@ void CMenus::RenderLeaders(CUIRect MainView)
 	static CButtonContainer s_Races;
 	if(DoButton_Menu(&s_Races, Localize("View races"), 0, &Footer))
 		SetMenuPage(PAGE_RACES);
-	MainView.Draw(ColorRGBA(0.07f, 0.11f, 0.19f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+	MainView.Draw(ColorRGBA(0.05f, 0.07f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	CUIRect LeadEdge = {MainView.x, MainView.y, MainView.w, 3.0f};
+	LeadEdge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.75f), IGraphics::CORNER_T, 4.0f);
 	MainView.Margin(16.0f, &MainView);
 	static CScrollRegion s_LeadersScroll;
 	CScrollRegionParams ScrollParams;

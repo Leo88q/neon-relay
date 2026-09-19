@@ -31,7 +31,9 @@ void CMenus::RenderSettings(CUIRect MainView)
 		MainView.HSplitTop(104.0f, &TabBar, &MainView);
 	else
 		MainView.VSplitRight(152.0f, &MainView, &TabBar);
-	MainView.Draw(ColorRGBA(0.055f, 0.08f, 0.135f, 1.0f), IGraphics::CORNER_ALL, 12.0f);
+	MainView.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	CUIRect MainEdge = {MainView.x, MainView.y, MainView.w, 3.0f};
+	MainEdge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.85f), IGraphics::CORNER_T, 4.0f);
 	MainView.Margin(Compact ? 12.0f : 20.0f, &MainView);
 
 	const bool NeedRestart = m_NeedRestartGraphics || m_NeedRestartSound || m_NeedRestartUpdate;
@@ -372,7 +374,7 @@ bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alp
 		Button.VSplitLeft(140.0f, &Label, &Button);
 		Label.VMargin(10.0f, &Label);
 
-		Button.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 1.0f);
+		Button.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 1.0f), IGraphics::CORNER_ALL, 4.0f);
 
 		CUIRect Rail;
 		Button.Margin(2.0f, &Rail);

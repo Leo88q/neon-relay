@@ -82,7 +82,7 @@ void CMenusIngameTouchControls::RenderTouchButtonEditor(CUIRect MainView)
 	}
 
 	// Edit blocks.
-	Block.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_B, 5.0f);
+	Block.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_B, 4.0f);
 	Block.HSplitTop(ROWGAP, nullptr, &Block);
 	Block.VMargin(SUBMARGIN, &Block);
 	switch(m_EditElement)
@@ -428,7 +428,7 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 			Block.HSplitTop(ROWSIZE, &EditBox, &Block);
 			if(s_BindToggleScrollRegion.AddRect(EditBox))
 			{
-				EditBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_T, 5.0f);
+				EditBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_T, 4.0f);
 				EditBox.VSplitMid(&EditBox, &RightButton);
 				RightButton.VSplitLeft(ScrollParam.m_ScrollbarThickness / 2.0f, nullptr, &RightButton);
 				EditBox.VSplitLeft(ROWSIZE, &MiddleButton, &EditBox);
@@ -464,12 +464,12 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 			Block.HSplitTop(ROWGAP, &EditBox, &Block);
 			if(s_BindToggleScrollRegion.AddRect(EditBox))
 			{
-				EditBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_NONE, 0.0f);
+				EditBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_NONE, 0.0f);
 			}
 			Block.HSplitTop(ROWSIZE, &EditBox, &Block);
 			if(s_BindToggleScrollRegion.AddRect(EditBox))
 			{
-				EditBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_NONE, 0.0f);
+				EditBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_NONE, 0.0f);
 				EditBox.VSplitMid(&LeftButton, &MiddleButton);
 				MiddleButton.VSplitLeft(ScrollParam.m_ScrollbarThickness / 2.0f, nullptr, &MiddleButton);
 				str_format(aBuf, sizeof(aBuf), "%s:", Localize("Command"));
@@ -484,12 +484,12 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 			Block.HSplitTop(ROWGAP, &EditBox, &Block);
 			if(s_BindToggleScrollRegion.AddRect(EditBox))
 			{
-				EditBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_NONE, 0.0f);
+				EditBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_NONE, 0.0f);
 			}
 			Block.HSplitTop(ROWSIZE, &EditBox, &Block);
 			if(s_BindToggleScrollRegion.AddRect(EditBox))
 			{
-				EditBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_NONE, 0.0f);
+				EditBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_NONE, 0.0f);
 				EditBox.VSplitMid(&LeftButton, &MiddleButton);
 				MiddleButton.VSplitLeft(ScrollParam.m_ScrollbarThickness / 2.0f, nullptr, &MiddleButton);
 				str_format(aBuf, sizeof(aBuf), "%s:", Localize("Label"));
@@ -504,12 +504,12 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 			Block.HSplitTop(ROWGAP, &EditBox, &Block);
 			if(s_BindToggleScrollRegion.AddRect(EditBox))
 			{
-				EditBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_NONE, 0.0f);
+				EditBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_NONE, 0.0f);
 			}
 			Block.HSplitTop(ROWSIZE, &EditBox, &Block);
 			if(s_BindToggleScrollRegion.AddRect(EditBox))
 			{
-				EditBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_B, 5.0f);
+				EditBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_B, 4.0f);
 				EditBox.VSplitMid(&LeftButton, &MiddleButton);
 				MiddleButton.VSplitLeft(ScrollParam.m_ScrollbarThickness / 2.0f, nullptr, &MiddleButton);
 				str_format(aBuf, sizeof(aBuf), "%s:", Localize("Label type"));
@@ -693,7 +693,7 @@ void CMenusIngameTouchControls::RenderTouchButtonBrowser(CUIRect MainView)
 	// Makes the header labels looks better.
 	MainView.HSplitTop(FONTSIZE / CUi::ms_FontmodHeight, &EditBox, &MainView);
 	static CListBox s_PreviewListBox;
-	EditBox.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_T, 5.0f);
+	EditBox.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_T, 4.0f);
 	EditBox.VSplitRight(s_PreviewListBox.ScrollbarWidthMax(), &EditBox, nullptr);
 	EditBox.VSplitLeft(ROWSIZE, nullptr, &EditBox);
 
@@ -1006,7 +1006,7 @@ void CMenusIngameTouchControls::RenderPreviewSettings(CUIRect MainView)
 	{
 		GameClient()->m_TouchControls.SetPreviewAllButtons(!Preview);
 	}
-	MainView.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_ALL, 10.0f);
+	MainView.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_ALL, 6.0f);
 	MainView.VMargin(MAINMARGIN, &MainView);
 	MainView.HMargin(ROWGAP, &MainView);
 	static CScrollRegion s_VirtualVisibilityScrollRegion;
