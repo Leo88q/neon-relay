@@ -192,6 +192,13 @@ def main() -> int:
 
     for path in watched:
         rel = path.relative_to(ROOT).as_posix()
+        if rel.startswith("data/ui/backgrounds/"):
+            add(rel, path, "Neon Relay project (AI-assisted generated artwork)",
+                "AI-generated artwork; human copyright eligibility not assessed",
+                "Zlib", OWN_URL,
+                "Cyberpunk space backgrounds for menu tabs – generated in Arena via generate_image, 1024x614 optimized; original artwork for Neon Relay",
+                "ship")
+            continue
         if rel.startswith("assets-src/maps/warm-workshops/"):
             add(rel, path, "Neon Relay project (AI-assisted generated artwork)",
                 "AI-generated artwork; human copyright eligibility not assessed",
