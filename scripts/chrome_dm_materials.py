@@ -1,4 +1,4 @@
-"""Dark pixel neon materials with space background and meteors."""
+"""v6 final – bright space, visible freeze, large meteors."""
 import math
 import random
 from pathlib import Path
@@ -24,7 +24,6 @@ def textures(folder):
     folder = Path(folder)
     rng = random.Random(1337)
 
-    # Dark pixel neon chrome
     atlas = Image.new('RGBA', (1024,1024), (0,0,0,0))
     for yy in range(8):
         for xx in range(8):
@@ -53,7 +52,6 @@ def textures(folder):
             atlas.paste(tile, ((idx%16)*64,(idx//16)*64))
     atlas.save(folder/'chrome.png')
 
-    # Bevels – dark with cyan
     edges = Image.new('RGBA', (1024,1024), (0,0,0,0))
     for mask in range(1,16):
         tile = Image.new('RGBA', (64,64), (0,0,0,0)); d = ImageDraw.Draw(tile)
@@ -68,99 +66,102 @@ def textures(folder):
         edges.paste(tile, ((mask%16)*64,(mask//16)*64))
     edges.save(folder/'bevels.png')
 
-    # Freeze visible texture – cyan pixel freeze wall
+    # Bright freeze – visible walls
     freeze_atlas = Image.new('RGBA', (256,256), (0,0,0,0))
     for yy in range(4):
         for xx in range(4):
-            tile = Image.new('RGBA', (64,64), (8,18,36,255))
+            tile = Image.new('RGBA', (64,64), (22,48,92,255))
             d = ImageDraw.Draw(tile)
-            # ice crystal pattern
-            d.rectangle((0,0,63,63), outline=(77,200,230,180), width=2)
+            d.rectangle((0,0,63,63), outline=(77,227,247,255), width=3)
+            d.rectangle((2,2,61,61), outline=(140,245,255,200), width=1)
             for i in range(0,64,16):
-                d.line((i,0,i,63), fill=(30,60,110,90), width=1)
-                d.line((0,i,63,i), fill=(30,60,110,90), width=1)
-            # cyan center glow
-            d.ellipse((20,20,44,44), fill=(77,227,247,40), outline=(120,240,255,120), width=2)
+                d.line((i,0,i,63), fill=(80,140,200,140), width=1)
+                d.line((0,i,63,i), fill=(80,140,200,140), width=1)
+            d.ellipse((14,14,50,50), fill=(77,227,247,110), outline=(190,250,255,240), width=2)
+            d.ellipse((22,22,42,42), fill=(120,240,255,80))
+            d.line((32,4,32,60), fill=(77,227,247,180), width=1)
+            d.line((4,32,60,32), fill=(77,227,247,180), width=1)
             freeze_atlas.paste(tile, (xx*64, yy*64))
     freeze_atlas.save(folder/'freeze.png')
 
-    # Space background – photo + code effects – BRIGHTER v6 for visible cosmos
+    # Bright space – photo kept bright
     space_path = ROOT / '.cache/chrome-dm/space_bg.jpg'
     if not space_path.exists():
-        photo = Image.new('RGB', (1600,960), (10,14,28))
+        photo = Image.new('RGB', (1600,960), (18,24,48))
     else:
         photo = Image.open(space_path).convert('RGB').resize((1600,960), Image.Resampling.LANCZOS)
-        # Keep photo bright – only 15% dark blend, boost blue
-        dark = Image.new('RGB', photo.size, (6,8,18))
-        photo = Image.blend(photo, dark, 0.15)
+        dark = Image.new('RGB', photo.size, (12,18,36))
+        photo = Image.blend(photo, dark, 0.12)
         arr = np.array(photo).astype(float)
-        arr[:,:,0] *= 0.95
-        arr[:,:,1] *= 1.05
-        arr[:,:,2] *= 1.25
-        # boost overall brightness
-        arr = arr * 1.15 + 10
-        photo = Image.fromarray(np.clip(arr,0,255).astype('uint8'))
+        arr[:,:,0] *= 1.0
+        arr[:,:,1] *= 1.12
+        arr[:,:,2] *= 1.38
+        arr = np.clip(arr*1.4, 0, 255)
+        photo = Image.fromarray(arr.astype('uint8'))
 
-    yy, xx = np.mgrid[0:960, 0:1600]; px = xx/380; py = yy/380
+    yy, xx = np.mgrid[0:960, 0:1600]; px = xx/290; py = yy/290
     qx = fbm(px, py); qy = fbm(px+4.2, py+1.1)
     f = fbm(px+2.2*qx, py+2.2*qy)
 
-    # Nebula veil – brighter
-    pal = .5+.5*np.cos(2*math.pi*(f[:,:,None]*1.0+qx[:,:,None]*.35+np.array([0.55,0.65,0.9])))
-    veil = pal*.35 + np.array([.12,.18,.36])*.65
-    veil *= (.85+.15*f)[:,:,None]
-    ribbon = np.exp(-((np.mod(f*4,1)-.5)/.07)**2)
-    veil = veil*(1-ribbon[:,:,None]*.15)+ribbon[:,:,None]*np.array([0.3,0.8,1.0])*0.35
+    pal = .5+.5*np.cos(2*math.pi*(f[:,:,None]*1.35+qx[:,:,None]*.55+np.array([0.55,0.65,0.9])))
+    veil = pal*.60 + np.array([.18,.26,.50])*.40
+    veil *= (.90+.10*f)[:,:,None]
+    ribbon = np.exp(-((np.mod(f*3.0,1)-.5)/.045)**2)
+    veil = veil*(1-ribbon[:,:,None]*.08)+ribbon[:,:,None]*np.array([0.40,0.92,1.0])*0.60
     veil_img = Image.fromarray(np.clip(veil*255,0,255).astype('uint8'))
 
-    # Starfield overlay – more stars, brighter
     stars = Image.new('RGBA', (1600,960), (0,0,0,0))
     sd = ImageDraw.Draw(stars)
-    for _ in range(1200):
+    for _ in range(1500):
         x = rng.randint(0,1599); y = rng.randint(0,959)
-        b = rng.randint(180,255)
-        sd.point((x,y), fill=(b,b,b+15, rng.randint(120,255)))
-        if rng.random()<0.15:
-            sd.ellipse((x-1,y-1,x+1,y+1), fill=(b,b,255,90))
-            sd.point((x,y), fill=(255,255,255,220))
-    # extra nebula sparkles
-    for _ in range(80):
-        x = rng.randint(0,1599); y = rng.randint(0,959)
-        sd.ellipse((x-2,y-2,x+2,y+2), fill=(77,227,247,40))
+        b = rng.randint(200,255)
+        sd.point((x,y), fill=(b,b,min(255,b+12), rng.randint(150,255)))
+        if rng.random()<0.18:
+            sd.ellipse((x-1,y-1,x+1,y+1), fill=(b,b,255,110))
+        if rng.random()<0.05:
+            sd.ellipse((x-2,y-2,x+2,y+2), fill=(b,b,255,60))
 
     base = np.array(photo).astype(float)
     veil_arr = np.array(veil_img).astype(float)
-    blended = base*0.92 + veil_arr*0.48
+    blended = base*0.98 + veil_arr*0.82
     vy, vx = np.mgrid[0:960,0:1600]
-    vign = 1 - 0.18*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
+    vign = 1 - 0.10*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
     blended = blended * vign[:,:,None]
-    # slight contrast boost
-    blended = np.clip((blended-128)*1.08+128,0,255)
     result = Image.fromarray(np.clip(blended,0,255).astype('uint8')).convert('RGBA')
     result.alpha_composite(stars)
-    bloom = result.filter(ImageFilter.GaussianBlur(1.0))
-    result = Image.blend(result, bloom, 0.22)
+    bloom = result.filter(ImageFilter.GaussianBlur(2.0))
+    result = Image.blend(result, bloom, 0.38)
+    glow = Image.new('RGBA', (1600,960), (0,0,0,0))
+    gd = ImageDraw.Draw(glow)
+    for _ in range(14):
+        x = rng.randint(120,1480); y = rng.randint(60,900)
+        r = rng.randint(100,280)
+        gd.ellipse((x-r,y-r,x+r,y+r), fill=(77,227,247, rng.randint(12,26)))
+    for _ in range(8):
+        x = rng.randint(120,1480); y = rng.randint(60,900)
+        r = rng.randint(80,200)
+        gd.ellipse((x-r,y-r,x+r,y+r), fill=(255,46,136, rng.randint(8,18)))
+    result = Image.alpha_composite(result, glow)
     result.save(folder/'pastel.png')
 
-    # Meteors – small pixel meteors with trail
+    # Large bright meteors
     meteor_atlas = Image.new('RGBA', (256,256), (0,0,0,0))
     for i in range(4):
         x = (i%2)*128; y = (i//2)*128
         tile = Image.new('RGBA', (128,128), (0,0,0,0))
         d = ImageDraw.Draw(tile)
-        # meteor body – dark rock with cyan glow
-        d.ellipse((30,40,90,80), fill=(40,30,28,255), outline=(80,60,50,200), width=2)
-        d.ellipse((35,45,85,75), fill=(60,50,45,255))
-        # glow trail
-        for t in range(5):
-            alpha = int(120*(1-t/5))
-            d.ellipse((10+t*4,45+t*2,30+t*4,65+t*2), fill=(77,227,247,alpha))
-        # pixel sparkle
-        d.point((70,50), fill=(255,200,100,200))
+        d.ellipse((16,26,104,94), fill=(85,70,62,255), outline=(150,130,110,255), width=2)
+        d.ellipse((24,34,96,86), fill=(110,92,80,255))
+        d.ellipse((32,42,88,78), fill=(140,120,105,255))
+        for t in range(10):
+            alpha = int(180*(1-t/10))
+            d.ellipse((0+t*5,34+t*3,26+t*5,64+t*3), fill=(77,227,247,alpha))
+            d.ellipse((2+t*5,38+t*3,22+t*5,60+t*3), fill=(170,245,255,alpha//2))
+        d.ellipse((64,44,78,58), fill=(255,235,150,255))
+        d.ellipse((68,48,74,54), fill=(255,255,255,230))
         meteor_atlas.paste(tile, (x,y))
     meteor_atlas.save(folder/'meteor.png')
 
-    # Ring (kept for parallax bubbles)
     yy, xx = np.mgrid[0:128,0:128]; dx=(xx-64)/64; dy=(yy-64)/64; r=np.sqrt(dx*dx+dy*dy)
     a=np.arctan2(dy,dx); profile=np.clip(1-np.abs(r-.78)/.07,0,1)
     spec=np.clip(.55+.45*np.cos(a+2.2),0,1)
