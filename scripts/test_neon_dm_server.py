@@ -93,7 +93,7 @@ def scenario(client, server, name, marker, output):
                     'gfx_screen_width 1000','gfx_screen_height 700','cl_show_welcome 0','cl_skip_start_menu 1',
                     f'player_name {who}',f'connect 127.0.0.1:{port}'],cwd=directory,env=ce,stdout=cf,stderr=subprocess.STDOUT))
                 # Keep the two native connections distinguishable and let each join.
-                wait(lambda:who in logs(),30,f'join {who}')
+                wait(lambda:logs().count('player has entered the game.') >= index + 1,30,f'join {who}')
             wait(lambda:marker in logs(),160,'combat proof' if name=='Neon DM Fixture' else 'arena entry')
             if name=='Neon DM Fixture':
                 for stage in MARKERS:

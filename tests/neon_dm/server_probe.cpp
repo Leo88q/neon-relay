@@ -24,6 +24,15 @@ bool Check(CGameContext *pGame, bool Condition, const char *pMessage)
 	{
 		s_Failed = true;
 		log_error("dm-probe", "FAIL stage=%d: %s", s_Stage, pMessage);
+		for(int Id = 0; Id < MAX_CLIENTS; ++Id)
+		{
+			auto *pChr = pGame->GetPlayerChar(Id);
+			if(pChr)
+				log_error("dm-probe", "actor=%d pos=%.1f,%.1f hp=%d armor=%d gun=%d sg=%d laser=%d score=%d", Id,
+					pChr->m_Pos.x, pChr->m_Pos.y, pChr->GetHealth(), pChr->GetArmor(), pChr->GetWeaponAmmo(WEAPON_GUN),
+					pChr->GetWeaponAmmo(WEAPON_SHOTGUN), pChr->GetWeaponAmmo(WEAPON_LASER),
+					pGame->m_pController->SnapPlayerScore(Id, pGame->m_apPlayers[Id]));
+		}
 		pGame->Server()->SetErrorShutdown("DM server probe failed");
 	}
 	return Condition;
