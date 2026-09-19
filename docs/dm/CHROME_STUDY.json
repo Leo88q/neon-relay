@@ -1,5 +1,5 @@
 {
-  "status": "expanded atrium v2; native validation must match this map hash",
+  "status": "expanded atrium v3 520x180 with freeze, obstacles, all 6 weapons and photo background",
   "source": {
     "file": "dm7.map",
     "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
@@ -20,12 +20,12 @@
   },
   "physics_preserved": false,
   "map": "Neon Relay Chrome DM Study.map",
-  "output_sha256": "292c5f9d12b4141572574adc12e94266f88c3fdf1bedddaac27f2e7ec4c8a07a",
-  "width": 274,
-  "height": 120,
-  "spawn_count": 19,
+  "output_sha256": "37527dcf9d7a6d546fdae29ca104a845764fdfec06ee1c370156ee2eca4c429a",
+  "width": 520,
+  "height": 180,
+  "spawn_count": 42,
   "original_open_cells": 6432,
-  "open_cells": 15355,
+  "open_cells": 57868,
   "old_region_preserved_except_junctions": true,
   "junctions": [
     [
@@ -39,9 +39,15 @@
       69,
       158,
       78
+    ],
+    [
+      132,
+      105,
+      162,
+      115
     ]
   ],
-  "added_spawns": [
+  "added_spawns_v2": [
     [
       170,
       35
@@ -83,6 +89,101 @@
       95
     ]
   ],
+  "added_spawns_v3": [
+    [
+      295,
+      27
+    ],
+    [
+      360,
+      27
+    ],
+    [
+      410,
+      27
+    ],
+    [
+      300,
+      47
+    ],
+    [
+      375,
+      47
+    ],
+    [
+      425,
+      47
+    ],
+    [
+      290,
+      67
+    ],
+    [
+      355,
+      67
+    ],
+    [
+      445,
+      67
+    ],
+    [
+      315,
+      107
+    ],
+    [
+      375,
+      107
+    ],
+    [
+      430,
+      107
+    ],
+    [
+      325,
+      127
+    ],
+    [
+      385,
+      127
+    ],
+    [
+      455,
+      127
+    ],
+    [
+      175,
+      117
+    ],
+    [
+      235,
+      117
+    ],
+    [
+      285,
+      117
+    ],
+    [
+      345,
+      147
+    ],
+    [
+      415,
+      147
+    ],
+    [
+      465,
+      17
+    ],
+    [
+      465,
+      77
+    ],
+    [
+      465,
+      137
+    ]
+  ],
+  "front_freeze_tiles": 904,
   "candidates": [
     {
       "file": "dm1.map",
@@ -201,5 +302,7 @@
   "upstream_repository": "https://github.com/teeworlds/teeworlds-maps",
   "release_enabled": false,
   "source_artwork_copied": false,
-  "realtime_shader_installed": false
+  "realtime_shader_installed": false,
+  "photo_background": true,
+  "photo_source": ".cache/chrome-dm/photo_bg.jpg (AI original)"
 }
