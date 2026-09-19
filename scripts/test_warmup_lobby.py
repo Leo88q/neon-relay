@@ -76,7 +76,11 @@ def main():
                         dx-=sx;dy-=sy
                         time.sleep(.1)
                     time.sleep(.2)
-                    tool('xdotool','click','1')
+                    # CUi samples held mouse state once per frame. A synthetic
+                    # press+release in one X11 batch can disappear between frames.
+                    tool('xdotool','mousedown','1')
+                    time.sleep(.2)
+                    tool('xdotool','mouseup','1')
                 click()
                 wait(lambda:'launch requested course=warmup' in text(),5,'card click reaches launch handler')
                 time.sleep(1)
