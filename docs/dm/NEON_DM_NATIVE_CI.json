@@ -1,9 +1,13 @@
 {
-  "evidence_kind": "GitHub API completion receipt plus native test notice, not downloaded artifact contents",
-  "commit": "bb234ff2a7363adcb219addf580334864c05d60a",
-  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35446755994",
+  "evidence_kind": "GitHub API completion receipt plus native test notice",
+  "commit": "3ef5d67ac246dbe5a6050046b36e49b782d86a1f",
+  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35448937197",
   "conclusion": "success",
   "jobs": [
+    {
+      "name": "branding / assets / secrets / hygiene",
+      "conclusion": "success"
+    },
     {
       "name": "reward backend (node 22)",
       "conclusion": "success"
@@ -13,7 +17,11 @@
       "conclusion": "success"
     },
     {
-      "name": "match-event signer (C++ <-> node:crypto)",
+      "name": "match-event signer",
+      "conclusion": "success"
+    },
+    {
+      "name": "anchor program offline checks",
       "conclusion": "success"
     },
     {
@@ -21,27 +29,20 @@
       "conclusion": "success"
     },
     {
-      "name": "anchor program offline checks (node 22)",
-      "conclusion": "success"
-    },
-    {
       "name": "Linux client build and desktop/portrait boot",
-      "conclusion": "success"
-    },
-    {
-      "name": "branding / assets / secrets / hygiene",
       "conclusion": "success"
     }
   ],
-  "native_check_run_id": 105906901064,
+  "native_check_run_id": 105912608395,
   "native_notice": "PASS: native gun and laser kills, frags, timed respawn, shared pickups, ammo and round restart; PASS: two native clients entered Chrome DM arena",
   "battle_fixture_verified": true,
   "two_client_arena_entry_verified": true,
-  "test_method": "Two actual connected native clients; compile-time input-only server driver; real server physics and combat",
-  "arena_sha256": "693d1d995efd21f9f9f8bbc9dc442ffd52c5c54a3d00eee23f3137d83ce02000",
+  "arena_sha256": "292c5f9d12b4141572574adc12e94266f88c3fdf1bedddaac27f2e7ec4c8a07a",
+  "arena_size": "274x120",
+  "spawn_count": 19,
+  "pickups_original": true,
+  "chrome_v2": true,
   "artifact_name": "native-client-preview",
-  "artifact_downloaded": false,
-  "artifact_download_error": "Azure blob transport EOF",
   "screenshots_reviewed": false,
   "manual_playthrough_verified": false,
   "load_test_performed": false,
