@@ -225,7 +225,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 
 void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 {
-	if(Index < 0 || Index >= (int)m_aCharacterPortraits.size()) return;
+	if(Index < 0 || Index >= 10) return;
 	auto &Portrait = m_aCharacterPortraits[Index];
 	if(!Portrait.IsValid())
 	{
