@@ -38,8 +38,8 @@ def build(folder):
     textures(folder)
     m=twmap.Map.empty('DDNet06')
     m.info.author='Teeworlds / Neon Relay'
-    m.info.version='chrome-v5'
-    m.info.credits='Modified dm7; v5 520x180 dark neon, space photo, visible freeze, meteors code, many small jumps by Neon Relay'
+    m.info.version='chrome-v6'
+    m.info.credits='Modified dm7; v6 520x180 bright cosmos photo, visible freeze, meteors code, vertical hook walls, many small jumps by Neon Relay'
     m.info.license='CC-BY-SA 3.0'
     m.info.settings=list(source.info.settings)
     for name in ('chrome','pastel','ring','bevels','freeze','meteor'):
@@ -53,11 +53,18 @@ def build(folder):
     def quad(layer,x,y,w_,h_):
         return layer.quads.new(x+w_/2,y+h_/2,w_,h_)
 
-    # Space background – dark cosmos
+    # Space background – bright cosmos photo, full map coverage
     bg=m.groups.new(); bg.name='Space'; bg.parallax_x=0; bg.parallax_y=0
     sky=bg.layers.new_quads(); sky.name='Cosmos'; sky.image=1
-    q=quad(sky,-100,-70,220,180)
-    q.position_env=env('Space drift','Position',[(0,(0,0,0)),(15000,(.8,-.5,0)),(30000,(0,0,0))])
+    # Huge quad covering entire 520x180 map, centered
+    q=quad(sky,-20,-20,560,220)
+    q.colors=[(255,255,255,255)]*4
+    q.position_env=env('Space drift','Position',[(0,(0,0,0)),(15000,(1.2,-0.8,0)),(30000,(0,0,0))])
+    # Second layer slightly parallax for depth
+    bg2=m.groups.new(); bg2.name='Space2'; bg2.parallax_x=5; bg2.parallax_y=5
+    sky2=bg2.layers.new_quads(); sky2.name='Cosmos2'; sky2.image=1
+    q2=quad(sky2,-10,-15,540,210)
+    q2.colors=[(220,230,255,220)]*4
 
     # Meteors flying via code – quad layer with position envelopes
     meteor_drift = env('Meteor','Position',[(0,(0,0,0)),(8000,(25,-12,0)),(16000,(50,-24,0))])
@@ -140,7 +147,7 @@ def build(folder):
     assert np.array_equal(actual_front[:,:,0],front[:,:,0])
     preserved=~change_mask()
     assert np.array_equal(actual[:120,:146,0][preserved],original[:,:,0][preserved])
-    report={'status':'v5 dark pixel neon, space photo, visible freeze, meteors code, many small jumps',
+    report={'status':'v6 bright cosmos, visible freeze, meteors code, vertical hook walls, many small jumps',
             'source':audit(SOURCE),'map':path.name,
             'output_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
             'width':w,'height':h,'spawn_count':int(np.count_nonzero(game[:,:,0]==192)),

@@ -1,5 +1,5 @@
 {
-  "status": "v5 dark pixel neon, space photo, visible freeze walls, meteors code, many small jumps 520x180",
+  "status": "v6 bright cosmos, visible freeze, meteors code, vertical hook walls, many small jumps 520x180",
   "source": {
     "file": "dm7.map",
     "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
@@ -20,7 +20,7 @@
   },
   "physics_preserved": false,
   "map": "Neon Relay Chrome DM Study.map",
-  "output_sha256": "fcfa486ad7569039280f4ca5478895d4378d0bd7289c6a661bd8012a62cb8c92",
+  "output_sha256": "6256cbcdf4bd179833686a412bea88e79b5d8e1a269722297939b0bf8a0c120d",
   "width": 520,
   "height": 180,
   "spawn_count": 42,

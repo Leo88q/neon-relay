@@ -84,53 +84,62 @@ def textures(folder):
             freeze_atlas.paste(tile, (xx*64, yy*64))
     freeze_atlas.save(folder/'freeze.png')
 
-    # Space background – photo + code effects
+    # Space background – photo + code effects – BRIGHTER v6 for visible cosmos
     space_path = ROOT / '.cache/chrome-dm/space_bg.jpg'
     if not space_path.exists():
-        photo = Image.new('RGB', (1600,960), (6,8,18))
+        photo = Image.new('RGB', (1600,960), (10,14,28))
     else:
         photo = Image.open(space_path).convert('RGB').resize((1600,960), Image.Resampling.LANCZOS)
-        # Darken and add neon tint
+        # Keep photo bright – only 15% dark blend, boost blue
         dark = Image.new('RGB', photo.size, (6,8,18))
-        photo = Image.blend(photo, dark, 0.45)
+        photo = Image.blend(photo, dark, 0.15)
         arr = np.array(photo).astype(float)
-        arr[:,:,0] *= 0.8
-        arr[:,:,1] *= 0.9
-        arr[:,:,2] *= 1.15
+        arr[:,:,0] *= 0.95
+        arr[:,:,1] *= 1.05
+        arr[:,:,2] *= 1.25
+        # boost overall brightness
+        arr = arr * 1.15 + 10
         photo = Image.fromarray(np.clip(arr,0,255).astype('uint8'))
 
     yy, xx = np.mgrid[0:960, 0:1600]; px = xx/380; py = yy/380
     qx = fbm(px, py); qy = fbm(px+4.2, py+1.1)
     f = fbm(px+2.2*qx, py+2.2*qy)
 
-    # Dark nebula veil
+    # Nebula veil – brighter
     pal = .5+.5*np.cos(2*math.pi*(f[:,:,None]*1.0+qx[:,:,None]*.35+np.array([0.55,0.65,0.9])))
-    veil = pal*.25 + np.array([.08,.12,.28])*.75
-    veil *= (.78+.22*f)[:,:,None]
+    veil = pal*.35 + np.array([.12,.18,.36])*.65
+    veil *= (.85+.15*f)[:,:,None]
     ribbon = np.exp(-((np.mod(f*4,1)-.5)/.07)**2)
-    veil = veil*(1-ribbon[:,:,None]*.2)+ribbon[:,:,None]*np.array([0.2,0.7,1.0])*0.25
+    veil = veil*(1-ribbon[:,:,None]*.15)+ribbon[:,:,None]*np.array([0.3,0.8,1.0])*0.35
     veil_img = Image.fromarray(np.clip(veil*255,0,255).astype('uint8'))
 
-    # Starfield overlay
+    # Starfield overlay – more stars, brighter
     stars = Image.new('RGBA', (1600,960), (0,0,0,0))
     sd = ImageDraw.Draw(stars)
-    for _ in range(600):
+    for _ in range(1200):
         x = rng.randint(0,1599); y = rng.randint(0,959)
-        b = rng.randint(120,255)
-        sd.point((x,y), fill=(b,b,b+10, rng.randint(80,200)))
-        if rng.random()<0.08:
-            sd.ellipse((x-1,y-1,x+1,y+1), fill=(b,b,255,60))
+        b = rng.randint(180,255)
+        sd.point((x,y), fill=(b,b,b+15, rng.randint(120,255)))
+        if rng.random()<0.15:
+            sd.ellipse((x-1,y-1,x+1,y+1), fill=(b,b,255,90))
+            sd.point((x,y), fill=(255,255,255,220))
+    # extra nebula sparkles
+    for _ in range(80):
+        x = rng.randint(0,1599); y = rng.randint(0,959)
+        sd.ellipse((x-2,y-2,x+2,y+2), fill=(77,227,247,40))
 
     base = np.array(photo).astype(float)
     veil_arr = np.array(veil_img).astype(float)
-    blended = base*0.75 + veil_arr*0.55
+    blended = base*0.92 + veil_arr*0.48
     vy, vx = np.mgrid[0:960,0:1600]
-    vign = 1 - 0.35*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
+    vign = 1 - 0.18*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
     blended = blended * vign[:,:,None]
+    # slight contrast boost
+    blended = np.clip((blended-128)*1.08+128,0,255)
     result = Image.fromarray(np.clip(blended,0,255).astype('uint8')).convert('RGBA')
     result.alpha_composite(stars)
-    bloom = result.filter(ImageFilter.GaussianBlur(1.2))
-    result = Image.blend(result, bloom, 0.18)
+    bloom = result.filter(ImageFilter.GaussianBlur(1.0))
+    result = Image.blend(result, bloom, 0.22)
     result.save(folder/'pastel.png')
 
     # Meteors – small pixel meteors with trail

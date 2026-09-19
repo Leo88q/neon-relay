@@ -57,9 +57,9 @@ class ChromeDmTest(unittest.TestCase):
             np.testing.assert_array_equal(expected[:,:,0],m.game_layer().tiles[:,:,0])
             np.testing.assert_array_equal(expected_front[:,:,0],m.front_layer().tiles[:,:,0])
             report=json.loads((Path(tmp)/'report.json').read_text())
-            # v5 report structure
+            # v6 report structure
             self.assertIn('status', report)
-            self.assertIn('v5', report['status'])
+            self.assertIn('v6', report['status'])
             self.assertEqual(m.info.license,'CC-BY-SA 3.0')
             self.assertEqual([i.name for i in m.images],['chrome','pastel','ring','bevels','freeze','meteor'])
             self.assertGreaterEqual(len(m.envelopes),6)

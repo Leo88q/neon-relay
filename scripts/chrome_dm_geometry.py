@@ -34,6 +34,19 @@ SMALL_JUMPS = [
     (300,303,140),(308,311,136),(316,319,132),(324,327,128),(332,335,124),
 ]
 
+# Vertical hookable walls – for hooking gameplay, pillars and ceilings
+VERTICAL_WALLS = [
+    # x, y0, y1, thickness
+    (200, 20, 88, 2), (250, 20, 92, 2), (300, 20, 90, 2), (350, 20, 100, 2), (400, 20, 110, 2), (450, 20, 120, 2),
+    (180, 100, 148, 2), (230, 100, 135, 2), (280, 100, 148, 2), (330, 100, 140, 2), (380, 100, 148, 2), (430, 100, 148, 2),
+    (160, 20, 50, 3), (220, 50, 80, 2), (270, 60, 90, 2), (320, 70, 100, 2), (370, 80, 110, 2),
+]
+CEILINGS = [
+    # left, right, y
+    (170, 210, 18), (220, 260, 18), (280, 330, 18), (340, 390, 18), (400, 460, 18),
+    (170, 210, 110), (220, 260, 110), (280, 330, 120), (340, 390, 120), (400, 460, 120),
+]
+
 NEW_SPAWNS_V2 = [(170,35),(224,35),(177,55),(242,55),(169,75),(214,75),(258,75),(159,95),(200,95),(260,95)]
 NEW_SPAWNS_V3 = [
     (295,27),(360,27),(410,27),
@@ -80,6 +93,16 @@ def extend(original):
     game[10:170,146:520]=0
     game[0,:,0]=1; game[-1,:,0]=1; game[:,0,0]=1; game[:,-1,0]=1
     for left,right,y in DECKS_V2+DECKS_V3+SMALL_JUMPS:
+        if y < HEIGHT and left < WIDTH:
+            r = min(right, WIDTH-2)
+            game[y:y+2,left:r+1,0]=1
+    # Vertical hookable walls
+    for x,y0,y1,thick in VERTICAL_WALLS:
+        if x < WIDTH:
+            y0c = max(0,y0); y1c = min(HEIGHT,y1)
+            x1 = min(WIDTH-1, x+thick)
+            game[y0c:y1c, x:x1, 0]=1
+    for left,right,y in CEILINGS:
         if y < HEIGHT and left < WIDTH:
             r = min(right, WIDTH-2)
             game[y:y+2,left:r+1,0]=1
