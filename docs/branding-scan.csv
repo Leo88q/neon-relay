@@ -755,9 +755,7 @@ docs/baseline/cmake-configure-upstream.log,123,historical-documentation,document
 docs/baseline/cmake-configure-upstream.log,144,historical-documentation,document that describes the upstream derivation,You must install Curl to compile DDNet
 docs/baseline/cmake-configure-upstream.log,148,historical-documentation,document that describes the upstream derivation,You must install Rust and Cargo to compile DDNet
 docs/baseline/cmake-configure-upstream.log,152,historical-documentation,document that describes the upstream derivation,You must install SQLite3 to compile DDNet
-docs/dm/CHROME_DM_RU.md,61,historical-documentation,document that describes the upstream derivation,- исходник: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/dm7.map
-docs/dm/CHROME_DM_RU.md,62,historical-documentation,document that describes the upstream derivation,- лицензия: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/license.txt
-docs/dm/CHROME_DM_RU.md,65,historical-documentation,document that describes the upstream derivation,"**Атрибуция:** dm7, Teeworlds map contributors. Геометрия оригинала сохранена кроме двух стыков. Neon Relay: новый атриум, предметы, хромовые материалы, фон, 2026. Адаптированная карта — **CC-BY-SA 3.0**."
+docs/dm/CHROME_DM_RU.md,60,historical-documentation,document that describes the upstream derivation,Источник: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/dm7.map
 docs/dm/CHROME_STUDY.json,302,legal-attribution,upstream/third-party license notice (must stay),"""upstream_repository"": ""https://github.com/teeworlds/teeworlds-maps"","
 docs/dm/NEON_DM_RU.md,6,historical-documentation,document that describes the upstream derivation,`sv_gametype neon-dm`. Значение по умолчанию `ddnet` и выбор контроллера
 docs/dm/NEON_DM_RU.md,26,historical-documentation,document that describes the upstream derivation,- Дробовик выпускает пять снарядов. Обычный DDRace-дробовик остаётся лучом.

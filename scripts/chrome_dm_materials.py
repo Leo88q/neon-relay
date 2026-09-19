@@ -1,5 +1,6 @@
-"""Chrome materials with photo background plus code-driven effects."""
+"""Dark pixel neon materials with photo background plus code effects."""
 import math
+import random
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -21,87 +22,125 @@ def fbm(x, y):
 
 def textures(folder):
     folder = Path(folder)
-    # Chrome field – periodic, world-sampled, no per-cell moire
-    y, x = np.mgrid[0:512, 0:512]; u = x/512; v = y/512
-    phase = v + .025*np.sin(u*2*math.pi) + .009*np.sin(u*6*math.pi)
-    ramp = .5-.5*np.cos(phase*2*math.pi)
-    stops = np.array([0,.08,.22,.34,.40,.46,.60,.80,1])
-    colors = np.array([[255,255,255],[223,233,255],[143,163,216],[42,50,102],
-                       [14,18,48],[85,104,168],[199,211,245],[255,255,255],[127,139,189]])
-    rgb = np.stack([np.interp(ramp, stops, colors[:,c]) for c in range(3)], axis=-1)
-    film = .5+.5*np.cos(2*math.pi*(u[:,:,None]+v[:,:,None]+np.array([0,.33,.67])))
-    rgb = rgb*.94 + film*12 + (np.sin(y*math.pi/2)*.7)[:,:,None]
-    field = Image.fromarray(np.clip(rgb,0,255).astype('uint8')).convert('RGBA')
-    atlas = Image.new('RGBA', (1024,1024))
+    rng = random.Random(1337)
+
+    # Dark pixel neon chrome – 8x8 tiles, each 64x64, dark base with pixel noise and cyan top
+    atlas = Image.new('RGBA', (1024,1024), (0,0,0,0))
     for yy in range(8):
         for xx in range(8):
             idx = 1+yy*8+xx
-            atlas.paste(field.crop((xx*64,yy*64,xx*64+64,yy*64+64)), ((idx%16)*64,(idx//16)*64))
+            # Dark base varies slightly with depth
+            base_lum = 14 + yy*3
+            tile = Image.new('RGBA', (64,64), (base_lum-2, base_lum, base_lum+8, 255))
+            d = ImageDraw.Draw(tile)
+            # Subtle pixel grid – 8px blocks
+            for py in range(0,64,8):
+                for px in range(0,64,8):
+                    if rng.random() < 0.12:
+                        col = (18, 28, 52, 255) if rng.random()<0.6 else (22, 34, 62, 255)
+                        d.rectangle((px,py,px+6,py+6), fill=col)
+            # Pixel sparkles – cyan/magenta single pixels
+            for _ in range(18):
+                px = rng.randint(2,61); py = rng.randint(4,61)
+                if rng.random() < 0.5:
+                    d.point((px,py), fill=(77,227,247,180))
+                else:
+                    d.point((px,py), fill=(255,46,136,140))
+            # Darker bottom shade for depth
+            shade = int(6 + yy*2.2)
+            d.rectangle((0,64-shade,63,63), fill=(4,6,16,200))
+            # Top cyan neon edge – stronger for top tiles (yy==0)
+            if yy==0 or rng.random()<0.35:
+                d.line((0,0,63,0), fill=(77,227,247,255), width=3)
+                d.line((0,1,63,1), fill=(140,245,255,180), width=1)
+                d.line((0,2,63,2), fill=(40,120,160,90), width=1)
+            # Side pixel bevel – dark
+            d.line((0,0,0,63), fill=(10,16,32,255), width=2)
+            d.line((63,0,63,63), fill=(10,16,32,255), width=2)
+
+            atlas.paste(tile, ((idx%16)*64,(idx//16)*64))
+
     atlas.save(folder/'chrome.png')
 
-    edges = Image.new('RGBA', (1024,1024))
+    # Bevels – dark with cyan inner highlight
+    edges = Image.new('RGBA', (1024,1024), (0,0,0,0))
     for mask in range(1,16):
-        tile = Image.new('RGBA', (64,64)); d = ImageDraw.Draw(tile)
+        tile = Image.new('RGBA', (64,64), (0,0,0,0)); d = ImageDraw.Draw(tile)
         for bit, line, inner in [(1,(0,0,63,0),(0,3,63,3)),(2,(63,0,63,63),(60,0,60,63)),
                                  (4,(0,63,63,63),(0,60,63,60)),(8,(0,0,0,63),(3,0,3,63))]:
             if mask & bit:
-                d.line(line, fill=(16,27,58,255), width=5)
-                d.line(inner, fill=(237,248,255,230) if bit in (1,8) else (124,164,212,210), width=2)
+                d.line(line, fill=(6,10,22,255), width=5)
+                if bit==1:
+                    d.line(inner, fill=(77,227,247,220), width=2)
+                else:
+                    d.line(inner, fill=(30,50,90,200), width=2)
         edges.paste(tile, ((mask%16)*64,(mask//16)*64))
     edges.save(folder/'bevels.png')
 
-    # Photo background + code effects: user wanted a beautiful photo with effects on top
-    # Load AI-generated chrome atrium photo (original, Zlib) and blend procedural veil
+    # Photo background – now darkened for neon dark theme
     photo_path = ROOT / '.cache/chrome-dm/photo_bg.jpg'
     if not photo_path.exists():
-        # fallback to procedural if photo missing (CI will have it from cache or generate)
-        photo = Image.new('RGB', (1600,960), (200,210,230))
+        photo = Image.new('RGB', (1600,960), (10,12,24))
     else:
         photo = Image.open(photo_path).convert('RGB').resize((1600,960), Image.Resampling.LANCZOS)
+        # Darken photo for dark theme
+        dark = Image.new('RGB', photo.size, (8,10,22))
+        photo = Image.blend(photo, dark, 0.62)
+        # Add slight blue tint
+        arr = np.array(photo).astype(float)
+        arr[:,:,0] *= 0.75
+        arr[:,:,1] *= 0.85
+        arr[:,:,2] *= 1.05
+        photo = Image.fromarray(np.clip(arr,0,255).astype('uint8'))
 
     yy, xx = np.mgrid[0:960, 0:1600]; px = xx/440; py = yy/440
     qx = fbm(px, py); qy = fbm(px+5.2, py+1.3)
     f = fbm(px+2.5*qx, py+2.5*qy)
 
-    # Domain-warp pastel veil
-    pal = .5+.5*np.cos(2*math.pi*(f[:,:,None]*1.2+qx[:,:,None]*.5+np.array([0,.33,.67])))
-    veil = pal*.28 + np.array([.78,.83,.96])*.72
-    veil *= (.86+.14*f)[:,:,None]
-    ribbon = np.exp(-((np.mod(f*5,1)-.5)/.055)**2)
-    veil = veil*(1-ribbon[:,:,None]*.14)+ribbon[:,:,None]*.14
+    # Dark neon veil – less pastel, more indigo/cyan
+    pal = .5+.5*np.cos(2*math.pi*(f[:,:,None]*1.1+qx[:,:,None]*.4+np.array([0.55,0.65,0.85])))
+    veil = pal*.22 + np.array([.12,.18,.32])*.78
+    veil *= (.82+.18*f)[:,:,None]
+    ribbon = np.exp(-((np.mod(f*4.5,1)-.5)/.06)**2)
+    veil = veil*(1-ribbon[:,:,None]*.18)+ribbon[:,:,None]*np.array([0.3,0.9,1.0])*0.22
     veil_img = Image.fromarray(np.clip(veil*255,0,255).astype('uint8'))
 
-    # Light ribbons – thin-film curves following domain warp
+    # Neon light ribbons – cyan/magenta on dark
     light = Image.new('RGBA', (1600,960), (0,0,0,0))
     ld = ImageDraw.Draw(light)
-    for k in range(6):
+    for k in range(7):
         pts = []
         for x in range(0,1600,8):
-            y = 120 + k*140 + 60*math.sin(x/220 + k*1.3) + 30*math.sin(x/90)
+            y = 100 + k*130 + 50*math.sin(x/200 + k*1.1) + 25*math.sin(x/80)
             pts.append((x,y))
-        ld.line(pts, fill=(120+k*20, 230, 255, 35), width=6)
-        ld.line(pts, fill=(255,255,255,90), width=2)
+        col = (77,227,247,28) if k%2==0 else (255,46,136,22)
+        ld.line(pts, fill=col, width=7)
+        ld.line(pts, fill=(200,240,255,70) if k%2==0 else (255,180,210,50), width=2)
 
-    # Composite: photo * 0.85 + veil * 0.35 + light ribbons
     base = np.array(photo).astype(float)
     veil_arr = np.array(veil_img).astype(float)
-    blended = base*0.72 + veil_arr*0.32
-    # subtle vignette
+    blended = base*0.78 + veil_arr*0.45
     vy, vx = np.mgrid[0:960,0:1600]
-    vign = 1 - 0.18*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
+    vign = 1 - 0.32*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
     blended = blended * vign[:,:,None]
     result = Image.fromarray(np.clip(blended,0,255).astype('uint8')).convert('RGBA')
     result.alpha_composite(light)
-    # soft bloom
-    bloom = result.filter(ImageFilter.GaussianBlur(1.2))
-    result = Image.blend(result, bloom, 0.18)
+    bloom = result.filter(ImageFilter.GaussianBlur(1.4))
+    result = Image.blend(result, bloom, 0.22)
+    # Add subtle pixel dither for pixel neon feel
+    dither = Image.new('RGBA', result.size, (0,0,0,0))
+    dd = ImageDraw.Draw(dither)
+    for _ in range(800):
+        x = rng.randint(0,1599); y = rng.randint(0,959)
+        dd.point((x,y), fill=(77,227,247,60))
+    result.alpha_composite(dither)
     result.save(folder/'pastel.png')
 
-    # Film torus
+    # Film torus – keep but darker
     yy, xx = np.mgrid[0:128,0:128]; dx=(xx-64)/64; dy=(yy-64)/64; r=np.sqrt(dx*dx+dy*dy)
     a=np.arctan2(dy,dx); profile=np.clip(1-np.abs(r-.78)/.07,0,1)
     spec=np.clip(.55+.45*np.cos(a+2.2),0,1)
-    c=(.5+.5*np.cos(a[:,:,None]+np.array([0,.33,.67])*2*math.pi))*.18+.68
-    c*= (.4+.6*profile*spec)[:,:,None]
-    rgba=np.dstack((np.clip(c*255,0,255),np.clip(profile*190,0,190))).astype('uint8')
+    c=(.5+.5*np.cos(a[:,:,None]+np.array([0.55,0.65,0.85])*2*math.pi))*.18+.55
+    c*= (.35+.65*profile*spec)[:,:,None]
+    rgba=np.dstack((np.clip(c*255,0,255),np.clip(profile*160,0,160))).astype('uint8')
     Image.fromarray(rgba).save(folder/'ring.png')
