@@ -925,7 +925,7 @@ scripts/move_sqlite.py,73,code/api-identifier,identifier kept for protocol/build
 scripts/parse_crashlog_drmingw.py,25,code/api-identifier,identifier kept for protocol/build compatibility (CRASH_FILENAME_PATTERN),"CRASH_FILENAME_PATTERN = re.compile(r""(neonrelay|neonrelay-server|DDNet|DDNet-Server)(_([0-9\.\-]+))?_((win32|win64)(-steam)?)(_([a-zA-Z0-9]+))?_crash_log_([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2})_([0-9]+)_([0-9A-Fa-f]*)"")"
 scripts/parse_crashlog_drmingw.py,104,code/api-identifier,"identifier kept for protocol/build compatibility (^\s*if parsed_filename\.executable not in \[""neo)","if parsed_filename.executable not in [""neonrelay"", ""neonrelay-server"", ""DDNet"", ""DDNet-Server""]:"
 scripts/parse_crashlog_drmingw.py,109,code/api-identifier,identifier kept for protocol/build compatibility (^\s*(//|\*|#|;|--).*\bhttps?://[a-z0-9.\-]*ddnet),# TODO: Could implement search for correct folder. And parse HTML of https://ddnet.org/downloads/symbols/ to find correct symbols...
-scripts/test_menu_contract.py,153,test-fixture,test data or test assertion,"for name in ['ddnet', 'ddrace', 'f-ddrace', 'fng', 'race', 'vanilla', 'blockworlds']:"
+scripts/test_menu_contract.py,158,test-fixture,test data or test assertion,"for name in ['ddnet', 'ddrace', 'f-ddrace', 'fng', 'race', 'vanilla', 'blockworlds']:"
 scripts/test_warmup_server_contract.py,30,code/api-identifier,brand appears only inside code identifiers,"for forbidden in ('SetPosition(', 'SetCore(', 'const_cast', 'm_DDRaceState = ', 'm_StartTime = ', 'Core.m_Pos =', 'Core.m_Vel ='):"
 scripts/try_reference_maps.py,34,code/api-identifier,identifier kept for protocol/build compatibility (https://raw\.githubusercontent\.com/ddnet/ddnet-),"url = 'https://raw.githubusercontent.com/ddnet/ddnet-maps/' + row['revision'] + '/' + urllib.parse.quote(row['source_path'], safe='/')"
 scripts/try_reference_maps.py,42,code/api-identifier,identifier kept for protocol/build compatibility (https://raw\.githubusercontent\.com/ddnet/ddnet-),"endpoint = 'repos/ddnet/ddnet-maps/contents/' + urllib.parse.quote(row['source_path'], safe='/') + '?ref=' + row['revision']"
@@ -1004,52 +1004,52 @@ src/engine/client/backend_sdl.cpp,575,code/api-identifier,brand appears only ins
 src/engine/client/client.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/engine/client/client.cpp,243,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),MsgVer.AddInt(GameClient()->DDNetVersion());
 src/engine/client/client.cpp,244,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),MsgVer.AddString(GameClient()->DDNetVersionStr());
-src/engine/client/client.cpp,836,code/api-identifier,identifier kept for protocol/build compatibility (github\.com/ddnet/ddnet/(issues|pull|blob|compar),// https://github.com/ddnet/ddnet/issues/9426
-src/engine/client/client.cpp,1157,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),LoadDDNetInfo();
-src/engine/client/client.cpp,1597,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",bool DDNet = false;
-src/engine/client/client.cpp,1600,code/api-identifier,identifier kept for protocol/build compatibility (\bSERVERCAPFLAG_DDNET\b),DDNet = Flags & SERVERCAPFLAG_DDNET;
-src/engine/client/client.cpp,1602,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Result.m_ChatTimeoutCode = DDNet;
-src/engine/client/client.cpp,2406,code/api-identifier,identifier kept for protocol/build compatibility (github\.com/ddnet/ddnet/(issues|pull|blob|compar),// the client handles only vital messages https://github.com/ddnet/ddnet/issues/11178
-src/engine/client/client.cpp,2534,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),void CClient::ResetDDNetInfoTask()
-src/engine/client/client.cpp,2536,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask)
-src/engine/client/client.cpp,2538,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask->Abort();
-src/engine/client/client.cpp,2539,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask = nullptr;
-src/engine/client/client.cpp,2566,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),void CClient::LoadDDNetInfo()
-src/engine/client/client.cpp,2568,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),const json_value *pDDNetInfo = m_ServerBrowser.LoadDDNetInfo();
-src/engine/client/client.cpp,2570,code/api-identifier,brand appears only inside code identifiers,if(!pDDNetInfo)
-src/engine/client/client.cpp,2576,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),const json_value &DDNetInfo = *pDDNetInfo;
-src/engine/client/client.cpp,2577,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &CurrentVersion = DDNetInfo[""version""];"
-src/engine/client/client.cpp,2595,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &News = DDNetInfo[""news""];"
-src/engine/client/client.cpp,2605,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &MapDownloadUrl = DDNetInfo[""map-download-url""];"
-src/engine/client/client.cpp,2611,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &Points = DDNetInfo[""points""];"
-src/engine/client/client.cpp,2617,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &StunServersIpv6 = DDNetInfo[""stun-servers-ipv6""];"
-src/engine/client/client.cpp,2626,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &StunServersIpv4 = DDNetInfo[""stun-servers-ipv4""];"
-src/engine/client/client.cpp,2635,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &ConnectingIp = DDNetInfo[""connecting-ip""];"
-src/engine/client/client.cpp,2646,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &WarnPngliteIncompatibleImages = DDNetInfo[""warn-pnglite-incompatible-images""];"
-src/engine/client/client.cpp,3049,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask)
-src/engine/client/client.cpp,3051,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask->State() == EHttpState::DONE)
-src/engine/client/client.cpp,3053,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_ServerBrowser.DDNetInfoSha256() == m_pDDNetInfoTask->ResultSha256())
-src/engine/client/client.cpp,3061,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),LoadDDNetInfo();
-src/engine/client/client.cpp,3064,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),ResetDDNetInfoTask();
-src/engine/client/client.cpp,3066,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),else if(m_pDDNetInfoTask->State() == EHttpState::ERROR || m_pDDNetInfoTask->State() == EHttpState::ABORTED)
-src/engine/client/client.cpp,3068,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),ResetDDNetInfoTask();
-src/engine/client/client.cpp,3261,comment,brand appears only in a source comment,// loads the existing ddnet info file if it exists
-src/engine/client/client.cpp,3262,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),LoadDDNetInfo();
-src/engine/client/client.cpp,3294,comment,brand appears only in a source comment,// request the new ddnet info from server if already past the welcome dialog
-src/engine/client/client.cpp,3298,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),RequestDDNetInfo();
-src/engine/client/client.cpp,4310,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),pData->m_Version = GameClient()->DDNetVersion();
-src/engine/client/client.cpp,4316,code/api-identifier,brand appears only inside code identifiers,#ifndef DDNET_CHECKSUM_SALT
-src/engine/client/client.cpp,4317,comment,brand appears only in a source comment,// salt@checksum.ddnet.tw: db877f2b-2ddb-3ba6-9f67-a6d169ec671d
-src/engine/client/client.cpp,4318,code/api-identifier,brand appears only inside code identifiers,#define DDNET_CHECKSUM_SALT \
-src/engine/client/client.cpp,4393,code/api-identifier,brand appears only inside code identifiers,CUuid Salt = DDNET_CHECKSUM_SALT;
-src/engine/client/client.cpp,5239,comment,brand appears only in a source comment,// DDRace
-src/engine/client/client.cpp,5274,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),void CClient::RequestDDNetInfo()
-src/engine/client/client.cpp,5276,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask && !m_pDDNetInfoTask->Done())
-src/engine/client/client.cpp,5295,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),"m_pDDNetInfoTask = HttpGetFile(aUrl, Storage(), RELAY_INFO_FILE, IStorage::TYPE_SAVE);"
-src/engine/client/client.cpp,5296,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),"m_pDDNetInfoTask->Timeout(CTimeout{10000, 0, 500, 10});"
-src/engine/client/client.cpp,5297,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask->SkipByFileTime(false); // Always re-download.
-src/engine/client/client.cpp,5299,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask->IpResolve(IPRESOLVE::V4);
-src/engine/client/client.cpp,5300,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),Http()->Run(m_pDDNetInfoTask);
+src/engine/client/client.cpp,838,code/api-identifier,identifier kept for protocol/build compatibility (github\.com/ddnet/ddnet/(issues|pull|blob|compar),// https://github.com/ddnet/ddnet/issues/9426
+src/engine/client/client.cpp,1159,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),LoadDDNetInfo();
+src/engine/client/client.cpp,1599,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",bool DDNet = false;
+src/engine/client/client.cpp,1602,code/api-identifier,identifier kept for protocol/build compatibility (\bSERVERCAPFLAG_DDNET\b),DDNet = Flags & SERVERCAPFLAG_DDNET;
+src/engine/client/client.cpp,1604,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",Result.m_ChatTimeoutCode = DDNet;
+src/engine/client/client.cpp,2408,code/api-identifier,identifier kept for protocol/build compatibility (github\.com/ddnet/ddnet/(issues|pull|blob|compar),// the client handles only vital messages https://github.com/ddnet/ddnet/issues/11178
+src/engine/client/client.cpp,2536,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),void CClient::ResetDDNetInfoTask()
+src/engine/client/client.cpp,2538,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask)
+src/engine/client/client.cpp,2540,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask->Abort();
+src/engine/client/client.cpp,2541,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask = nullptr;
+src/engine/client/client.cpp,2568,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),void CClient::LoadDDNetInfo()
+src/engine/client/client.cpp,2570,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),const json_value *pDDNetInfo = m_ServerBrowser.LoadDDNetInfo();
+src/engine/client/client.cpp,2572,code/api-identifier,brand appears only inside code identifiers,if(!pDDNetInfo)
+src/engine/client/client.cpp,2578,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),const json_value &DDNetInfo = *pDDNetInfo;
+src/engine/client/client.cpp,2579,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &CurrentVersion = DDNetInfo[""version""];"
+src/engine/client/client.cpp,2597,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &News = DDNetInfo[""news""];"
+src/engine/client/client.cpp,2607,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &MapDownloadUrl = DDNetInfo[""map-download-url""];"
+src/engine/client/client.cpp,2613,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &Points = DDNetInfo[""points""];"
+src/engine/client/client.cpp,2619,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &StunServersIpv6 = DDNetInfo[""stun-servers-ipv6""];"
+src/engine/client/client.cpp,2628,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &StunServersIpv4 = DDNetInfo[""stun-servers-ipv4""];"
+src/engine/client/client.cpp,2637,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &ConnectingIp = DDNetInfo[""connecting-ip""];"
+src/engine/client/client.cpp,2648,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),"const json_value &WarnPngliteIncompatibleImages = DDNetInfo[""warn-pnglite-incompatible-images""];"
+src/engine/client/client.cpp,3051,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask)
+src/engine/client/client.cpp,3053,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask->State() == EHttpState::DONE)
+src/engine/client/client.cpp,3055,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_ServerBrowser.DDNetInfoSha256() == m_pDDNetInfoTask->ResultSha256())
+src/engine/client/client.cpp,3063,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),LoadDDNetInfo();
+src/engine/client/client.cpp,3066,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),ResetDDNetInfoTask();
+src/engine/client/client.cpp,3068,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),else if(m_pDDNetInfoTask->State() == EHttpState::ERROR || m_pDDNetInfoTask->State() == EHttpState::ABORTED)
+src/engine/client/client.cpp,3070,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),ResetDDNetInfoTask();
+src/engine/client/client.cpp,3263,comment,brand appears only in a source comment,// loads the existing ddnet info file if it exists
+src/engine/client/client.cpp,3264,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),LoadDDNetInfo();
+src/engine/client/client.cpp,3296,comment,brand appears only in a source comment,// request the new ddnet info from server if already past the welcome dialog
+src/engine/client/client.cpp,3300,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),RequestDDNetInfo();
+src/engine/client/client.cpp,4312,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetVersion(Str)?\b),pData->m_Version = GameClient()->DDNetVersion();
+src/engine/client/client.cpp,4318,code/api-identifier,brand appears only inside code identifiers,#ifndef DDNET_CHECKSUM_SALT
+src/engine/client/client.cpp,4319,comment,brand appears only in a source comment,// salt@checksum.ddnet.tw: db877f2b-2ddb-3ba6-9f67-a6d169ec671d
+src/engine/client/client.cpp,4320,code/api-identifier,brand appears only inside code identifiers,#define DDNET_CHECKSUM_SALT \
+src/engine/client/client.cpp,4395,code/api-identifier,brand appears only inside code identifiers,CUuid Salt = DDNET_CHECKSUM_SALT;
+src/engine/client/client.cpp,5241,comment,brand appears only in a source comment,// DDRace
+src/engine/client/client.cpp,5276,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),void CClient::RequestDDNetInfo()
+src/engine/client/client.cpp,5278,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),if(m_pDDNetInfoTask && !m_pDDNetInfoTask->Done())
+src/engine/client/client.cpp,5297,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),"m_pDDNetInfoTask = HttpGetFile(aUrl, Storage(), RELAY_INFO_FILE, IStorage::TYPE_SAVE);"
+src/engine/client/client.cpp,5298,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),"m_pDDNetInfoTask->Timeout(CTimeout{10000, 0, 500, 10});"
+src/engine/client/client.cpp,5299,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask->SkipByFileTime(false); // Always re-download.
+src/engine/client/client.cpp,5301,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),m_pDDNetInfoTask->IpResolve(IPRESOLVE::V4);
+src/engine/client/client.cpp,5302,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),Http()->Run(m_pDDNetInfoTask);
 src/engine/client/client.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/engine/client/client.h,163,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(p)?DDNet[A-Za-z]*\b),std::shared_ptr<IHttpRequest> m_pDDNetInfoTask = nullptr;
 src/engine/client/client.h,395,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),void RequestDDNetInfo() override;
