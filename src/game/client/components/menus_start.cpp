@@ -46,16 +46,16 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		Menu.VSplitLeft(20.0f, nullptr, &Menu);
 	}
 	// Cyberpunk panel – sharp angles, pixel grid, bright neon
-	Hero.Draw(ColorRGBA(0.04f, 0.06f, 0.12f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	Hero.Draw(ColorRGBA(0.09f, 0.10f, 0.12f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
 	// Inner neon border cyan
 	CUIRect Border = Hero;
 	Border.Margin(2.0f, &Border);
 	Border.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f), IGraphics::CORNER_ALL, 4.0f);
 	// Cyan edge top
 	CUIRect TopEdge = {Hero.x, Hero.y, Hero.w, 3.0f};
-	TopEdge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.95f), IGraphics::CORNER_T, 4.0f);
+	TopEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.95f), IGraphics::CORNER_T, 4.0f);
 	CUIRect LeftEdge = {Hero.x, Hero.y, 3.0f, Hero.h};
-	LeftEdge.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.65f), IGraphics::CORNER_L, 4.0f);
+	LeftEdge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.65f), IGraphics::CORNER_L, 4.0f);
 	CUIRect Art = Hero;
 	Art.Margin(8.0f, &Art);
 	if(!Compact)
@@ -77,7 +77,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		Menu.HSplitTop(ButtonHeight, &Button, &Menu);
 		Menu.HSplitTop(8.0f, nullptr, &Menu);
 		// Cyberpunk: primary cyan bright #4de3f7, secondary dark with magenta hover
-		const ColorRGBA Color = i == 0 ? ColorRGBA(0.30f, 0.89f, 0.97f, 1.0f) : ColorRGBA(0.06f, 0.09f, 0.16f, 0.94f);
+		const ColorRGBA Color = i == 0 ? ColorRGBA(0.05f, 0.90f, 0.92f, 1.0f) : ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
 		if(GameClient()->m_Menus.DoButton_Menu(&s_aButtons[i], apLabels[i], 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, Color) || CheckHotKey(aKeys[i]) || (i == 0 && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 			NewPage = aPages[i];
 	}

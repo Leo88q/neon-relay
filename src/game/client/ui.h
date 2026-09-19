@@ -113,10 +113,10 @@ public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
 		if(Active)
-			return ColorRGBA(0.30f, 0.89f, 0.97f, 0.35f);
+			return ColorRGBA(0.92f, 0.68f, 0.12f, 0.38f);
 		else if(Hovered)
-			return ColorRGBA(1.0f, 0.18f, 0.53f, 0.35f);
-		return ColorRGBA(0.06f, 0.09f, 0.16f, 0.92f);
+			return ColorRGBA(0.05f, 0.90f, 0.92f, 0.28f);
+		return ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
 	}
 };
 class CLightButtonColorFunction : public IButtonColorFunction
@@ -125,10 +125,10 @@ public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
 		if(Active)
-			return ColorRGBA(0.30f, 0.89f, 0.97f, 0.55f);
+			return ColorRGBA(0.92f, 0.68f, 0.12f, 0.55f);
 		else if(Hovered)
-			return ColorRGBA(1.0f, 0.18f, 0.53f, 0.55f);
-		return ColorRGBA(0.06f, 0.09f, 0.16f, 0.92f);
+			return ColorRGBA(0.05f, 0.90f, 0.92f, 0.45f);
+		return ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
 	}
 };
 class CScrollBarColorFunction : public IButtonColorFunction
@@ -137,10 +137,10 @@ public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
 		if(Active)
-			return ColorRGBA(0.30f, 0.89f, 0.97f, 1.0f);
+			return ColorRGBA(0.92f, 0.68f, 0.12f, 1.0f);
 		else if(Hovered)
-			return ColorRGBA(1.0f, 0.18f, 0.53f, 1.0f);
-		return ColorRGBA(0.30f, 0.89f, 0.97f, 0.75f);
+			return ColorRGBA(0.05f, 0.90f, 0.92f, 1.0f);
+		return ColorRGBA(0.05f, 0.90f, 0.92f, 0.75f);
 	}
 };
 

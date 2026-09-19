@@ -224,7 +224,7 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 		PreviewView.HSplitTop(MarginSmall, nullptr, &PreviewView);
 
 		// Use the rest of the view for preview
-		PreviewView.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_ALL, 4.0f);
+		PreviewView.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 0.92f), IGraphics::CORNER_ALL, 4.0f);
 		PreviewView.Margin(MarginSmall, &PreviewView);
 
 		ColorRGBA SystemColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageSystemColor));

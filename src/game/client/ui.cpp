@@ -1003,12 +1003,12 @@ bool CUi::DoEditBox(CLineInput *pLineInput, const CUIRect *pRect, float FontSize
 	if(Active)
 	{
 		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 2.0f};
-		Edge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.90f), Corners & IGraphics::CORNER_T, 2.0f);
+		Edge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.90f), Corners & IGraphics::CORNER_T, 2.0f);
 	}
 	else if(HotItem() == pLineInput)
 	{
 		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 1.5f};
-		Edge.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.70f), Corners & IGraphics::CORNER_T, 2.0f);
+		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.70f), Corners & IGraphics::CORNER_T, 2.0f);
 	}
 	ClipEnable(pRect);
 	Textbox.x -= ScrollOffset;
@@ -1040,7 +1040,7 @@ bool CUi::DoClearableEditBox(CLineInput *pLineInput, const CUIRect *pRect, float
 
 	bool ReturnValue = DoEditBox(pLineInput, &EditBox, FontSize, Corners & ~IGraphics::CORNER_R, vColorSplits);
 
-	ClearButton.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.90f * ButtonColorMul(pLineInput->GetClearButtonId())), Corners & ~IGraphics::CORNER_L, 4.0f);
+	ClearButton.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.90f * ButtonColorMul(pLineInput->GetClearButtonId())), Corners & ~IGraphics::CORNER_L, 4.0f);
 	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
 	DoLabel(&ClearButton, "×", ClearButton.h * CUi::ms_FontmodHeight * 0.8f, TEXTALIGN_MC);
 	TextRender()->SetRenderFlags(0);
@@ -1325,7 +1325,7 @@ SEditResult<int64_t> CUi::DoValueSelectorWithState(const void *pId, const CUIRec
 			else
 				str_format(aBuf, sizeof(aBuf), "%" PRId64, Current);
 		}
-		pRect->Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.92f), IGraphics::CORNER_ALL, 4.0f);
+		pRect->Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f), IGraphics::CORNER_ALL, 4.0f);
 		DoLabel(pRect, aBuf, 10.0f, TEXTALIGN_MC);
 	}
 
@@ -1415,7 +1415,7 @@ float CUi::DoScrollbarV(const void *pId, const CUIRect *pRect, float Current)
 	}
 
 	// render – cyberpunk rail
-	Rail.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.85f), IGraphics::CORNER_ALL, Rail.w / 2.0f);
+	Rail.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.85f), IGraphics::CORNER_ALL, Rail.w / 2.0f);
 	Handle.Draw(ms_ScrollBarColorFunction.GetColor(CheckActiveItem(pId), HotItem() == pId), IGraphics::CORNER_ALL, 4.0f);
 
 	return ReturnValue;
@@ -1517,7 +1517,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 	}
 	else
 	{
-		Rail.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.85f), IGraphics::CORNER_ALL, Rail.h / 2.0f);
+		Rail.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.85f), IGraphics::CORNER_ALL, Rail.h / 2.0f);
 		Handle.Draw(HandleColor, IGraphics::CORNER_ALL, 4.0f);
 	}
 
@@ -1589,11 +1589,11 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 {
 	const float Rounding = 4.0f;
-	ProgressBar.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.92f), IGraphics::CORNER_ALL, Rounding);
+	ProgressBar.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f), IGraphics::CORNER_ALL, Rounding);
 	CUIRect Edge = {ProgressBar.x, ProgressBar.y, ProgressBar.w, 1.5f};
-	Edge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.65f), IGraphics::CORNER_T, 2.0f);
+	Edge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.65f), IGraphics::CORNER_T, 2.0f);
 	ProgressBar.w = std::max(ProgressBar.w * Progress, 2 * Rounding);
-	ProgressBar.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.95f), IGraphics::CORNER_ALL, Rounding);
+	ProgressBar.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.95f), IGraphics::CORNER_ALL, Rounding);
 }
 
 void CCachedText::Update(ITextRender *pTextRender, const char *pText, float FontSize, float LineWidth, int CursorFlags)

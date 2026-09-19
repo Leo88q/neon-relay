@@ -137,12 +137,12 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	if(Ui()->HotItem() == pButtonContainer)
 	{
 		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 2.0f};
-		Edge.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.75f), IGraphics::CORNER_T, 2.0f);
+		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.75f), IGraphics::CORNER_T, 2.0f);
 	}
 	else if(Color.a > 0.8f && Color.r > 0.2f)
 	{
 		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 1.5f};
-		Edge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.65f), IGraphics::CORNER_T, 2.0f);
+		Edge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.65f), IGraphics::CORNER_T, 2.0f);
 	}
 
 	if(pImageName)
@@ -212,10 +212,10 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 		Rect.Draw(ColorMenuTab, Corners, Round);
 		// Active neon top line cyan
 		CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
-		Top.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 1.0f), IGraphics::CORNER_T, 2.0f);
+		Top.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 1.0f), IGraphics::CORNER_T, 2.0f);
 		// Magenta glow bottom
 		CUIRect Bottom = {Rect.x, Rect.y + Rect.h - 2.0f, Rect.w, 2.0f};
-		Bottom.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.55f), 0, 0);
+		Bottom.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.55f), 0, 0);
 	}
 	else
 	{
@@ -226,7 +226,7 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 				HoverColorMenuTab = *pHoverColor;
 			Rect.Draw(HoverColorMenuTab, Corners, Round);
 			CUIRect Top = {Rect.x, Rect.y, Rect.w, 2.0f};
-			Top.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.85f), IGraphics::CORNER_T, 2.0f);
+			Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.85f), IGraphics::CORNER_T, 2.0f);
 		}
 		else
 		{
@@ -236,7 +236,7 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 			Rect.Draw(ColorMenuTab, Corners, Round);
 			// Subtle grid line
 			CUIRect Line = {Rect.x, Rect.y + Rect.h - 1.0f, Rect.w, 1.0f};
-			Line.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.18f), 0, 0);
+			Line.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.18f), 0, 0);
 		}
 	}
 
@@ -274,9 +274,9 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 int CMenus::DoButton_GridHeader(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Align)
 {
 	if(Checked == 2)
-		pRect->Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.55f), IGraphics::CORNER_T, 4.0f);
+		pRect->Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.55f), IGraphics::CORNER_T, 4.0f);
 	else if(Checked)
-		pRect->Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_T, 4.0f);
+		pRect->Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_T, 4.0f);
 
 	CUIRect Temp;
 	pRect->VMargin(5.0f, &Temp);
@@ -309,7 +309,7 @@ int CMenus::DoButton_CheckBox_Common(const void *pId, const char *pText, const c
 	Label.VSplitLeft(5.0f, nullptr, &Label);
 
 	Box.Margin(2.0f, &Box);
-	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.92f * Ui()->ButtonColorMul(pId)), IGraphics::CORNER_ALL, 4.0f);
+	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f * Ui()->ButtonColorMul(pId)), IGraphics::CORNER_ALL, 4.0f);
 
 	const bool Checkable = *pBoxText == 'X';
 	if(Checkable)
@@ -527,7 +527,7 @@ void CMenus::RenderLoadingDirect(const char *pCaption, const char *pContent, std
 	Ui()->Screen()->Margin(160.0f, &Box);
 
 	Graphics()->TextureClear();
-	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
 	Box.Margin(20.0f, &Box);
 
 	CUIRect Label;
@@ -1895,7 +1895,7 @@ void CMenus::RenderPopupConnecting(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);
@@ -2026,7 +2026,7 @@ void CMenus::RenderPopupLoading(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);

@@ -84,12 +84,12 @@ CKeyBinder::CKeyReaderResult CKeyBinder::DoKeyReader(CButtonContainer *pReaderBu
 		GameClient()->m_Binds.GetKeyBindName(Result.m_Bind.m_Key, Result.m_Bind.m_ModifierMask, aBuf, sizeof(aBuf));
 	}
 
-	const ColorRGBA Color = m_pKeyReaderId == pReaderButton && m_TakeKey ? ColorRGBA(0.30f, 0.89f, 0.97f, 0.65f) : ColorRGBA(0.06f, 0.09f, 0.16f, 0.92f * Ui()->ButtonColorMul(pReaderButton));
+	const ColorRGBA Color = m_pKeyReaderId == pReaderButton && m_TakeKey ? ColorRGBA(0.05f, 0.90f, 0.92f, 0.65f) : ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f * Ui()->ButtonColorMul(pReaderButton));
 	KeyReaderButton.Draw(Color, IGraphics::CORNER_L, 4.0f);
 	if(Ui()->HotItem() == pReaderButton)
 	{
 		CUIRect Edge = {KeyReaderButton.x, KeyReaderButton.y, KeyReaderButton.w, 1.5f};
-		Edge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.85f), IGraphics::CORNER_T, 2.0f);
+		Edge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_T, 2.0f);
 	}
 	CUIRect Label;
 	KeyReaderButton.HMargin(1.0f, &Label);

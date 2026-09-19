@@ -1212,7 +1212,7 @@ void CMenus::RenderDemoBrowserList(CUIRect ListView, bool &WasListboxItemActivat
 	CUIRect Headers, ListBox;
 	ListView.HSplitTop(ms_ListheaderHeight, &Headers, &ListBox);
 	Headers.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_T, 5.0f);
-	ListBox.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_B, 4.0f);
+	ListBox.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 0.92f), IGraphics::CORNER_B, 4.0f);
 
 	for(auto &Col : s_aCols)
 	{
@@ -1366,7 +1366,7 @@ void CMenus::RenderDemoBrowserDetails(CUIRect DetailsView)
 {
 	CUIRect Contents, Header;
 	DetailsView.HSplitTop(ms_ListheaderHeight, &Header, &Contents);
-	Contents.Draw(ColorRGBA(0.05f, 0.08f, 0.14f, 0.92f), IGraphics::CORNER_B, 4.0f);
+	Contents.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 0.92f), IGraphics::CORNER_B, 4.0f);
 	Contents.Margin(5.0f, &Contents);
 
 	const float FontSize = 12.0f;
