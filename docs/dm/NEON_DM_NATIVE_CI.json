@@ -1,0 +1,52 @@
+{
+  "evidence_kind": "GitHub API completion receipt plus native test notice, not downloaded artifact contents",
+  "commit": "bb234ff2a7363adcb219addf580334864c05d60a",
+  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35446755994",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "name": "reward backend (node 22)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Linux server build and isolated boot",
+      "conclusion": "success"
+    },
+    {
+      "name": "match-event signer (C++ <-> node:crypto)",
+      "conclusion": "success"
+    },
+    {
+      "name": "C++ syntax probe",
+      "conclusion": "success"
+    },
+    {
+      "name": "anchor program offline checks (node 22)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Linux client build and desktop/portrait boot",
+      "conclusion": "success"
+    },
+    {
+      "name": "branding / assets / secrets / hygiene",
+      "conclusion": "success"
+    }
+  ],
+  "native_check_run_id": 105906901064,
+  "native_notice": "PASS: native gun and laser kills, frags, timed respawn, shared pickups, ammo and round restart; PASS: two native clients entered Chrome DM arena",
+  "battle_fixture_verified": true,
+  "two_client_arena_entry_verified": true,
+  "test_method": "Two actual connected native clients; compile-time input-only server driver; real server physics and combat",
+  "arena_sha256": "693d1d995efd21f9f9f8bbc9dc442ffd52c5c54a3d00eee23f3137d83ce02000",
+  "artifact_name": "native-client-preview",
+  "artifact_downloaded": false,
+  "artifact_download_error": "Azure blob transport EOF",
+  "screenshots_reviewed": false,
+  "manual_playthrough_verified": false,
+  "load_test_performed": false,
+  "verified_platform": "Linux CI / Xvfb",
+  "macos_verified": false,
+  "android_verified": false,
+  "production_ready": false
+}

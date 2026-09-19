@@ -757,17 +757,17 @@ docs/baseline/cmake-configure-upstream.log,148,historical-documentation,document
 docs/baseline/cmake-configure-upstream.log,152,historical-documentation,document that describes the upstream derivation,You must install SQLite3 to compile DDNet
 docs/dm/CHROME_DM_RU.md,14,historical-documentation,document that describes the upstream derivation,"проходима, что карта крупнейшая в Teeworlds вообще или что она выдержала"
 docs/dm/CHROME_DM_RU.md,28,historical-documentation,document that describes the upstream derivation,нашем DDNet-сервере. Legacy ninja не разрешает возвращать старого персонажа:
-docs/dm/CHROME_DM_RU.md,69,historical-documentation,document that describes the upstream derivation,SHA-256 локального dm7 совпал с файлом Teeworlds 0.6.5-release:
-docs/dm/CHROME_DM_RU.md,73,historical-documentation,document that describes the upstream derivation,https://github.com/teeworlds/teeworlds/blob/344a58cd858669f2b742827024dff7fd25fccccf/data/maps/dm7.map
-docs/dm/CHROME_DM_RU.md,76,historical-documentation,document that describes the upstream derivation,https://github.com/teeworlds/teeworlds/blob/344a58cd858669f2b742827024dff7fd25fccccf/license.txt
-docs/dm/CHROME_DM_RU.md,81,historical-documentation,document that describes the upstream derivation,- исходник: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/dm7.map
-docs/dm/CHROME_DM_RU.md,82,historical-documentation,document that describes the upstream derivation,- лицензия в том же коммите: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/license.txt
-docs/dm/CHROME_DM_RU.md,86,historical-documentation,document that describes the upstream derivation,"**Атрибуция:** dm7, Teeworlds map contributors. Индивидуальный автор в"
-docs/dm/CHROME_DM_RU.md,107,historical-documentation,document that describes the upstream derivation,"отдачу, но не снимает здоровье; типы health/armor в DDRace имеют иные"
+docs/dm/CHROME_DM_RU.md,70,historical-documentation,document that describes the upstream derivation,SHA-256 локального dm7 совпал с файлом Teeworlds 0.6.5-release:
+docs/dm/CHROME_DM_RU.md,74,historical-documentation,document that describes the upstream derivation,https://github.com/teeworlds/teeworlds/blob/344a58cd858669f2b742827024dff7fd25fccccf/data/maps/dm7.map
+docs/dm/CHROME_DM_RU.md,77,historical-documentation,document that describes the upstream derivation,https://github.com/teeworlds/teeworlds/blob/344a58cd858669f2b742827024dff7fd25fccccf/license.txt
+docs/dm/CHROME_DM_RU.md,82,historical-documentation,document that describes the upstream derivation,- исходник: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/dm7.map
+docs/dm/CHROME_DM_RU.md,83,historical-documentation,document that describes the upstream derivation,- лицензия в том же коммите: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/license.txt
+docs/dm/CHROME_DM_RU.md,87,historical-documentation,document that describes the upstream derivation,"**Атрибуция:** dm7, Teeworlds map contributors. Индивидуальный автор в"
+docs/dm/CHROME_DM_RU.md,108,historical-documentation,document that describes the upstream derivation,"отдачу, но не снимает здоровье; типы health/armor в DDRace имеют иные"
 docs/dm/CHROME_STUDY.json,139,legal-attribution,upstream/third-party license notice (must stay),"""upstream_repository"": ""https://github.com/teeworlds/teeworlds-maps"","
 docs/dm/NEON_DM_RU.md,6,historical-documentation,document that describes the upstream derivation,`sv_gametype neon-dm`. Значение по умолчанию `ddnet` и выбор контроллера
-docs/dm/NEON_DM_RU.md,25,historical-documentation,document that describes the upstream derivation,- Дробовик выпускает пять снарядов. Обычный DDRace-дробовик остаётся лучом.
-docs/dm/NEON_DM_RU.md,55,historical-documentation,document that describes the upstream derivation,"после map settings, чтобы не унаследовать медленные DDRace-снаряды."
+docs/dm/NEON_DM_RU.md,27,historical-documentation,document that describes the upstream derivation,- Дробовик выпускает пять снарядов. Обычный DDRace-дробовик остаётся лучом.
+docs/dm/NEON_DM_RU.md,57,historical-documentation,document that describes the upstream derivation,"после map settings, чтобы не унаследовать медленные DDRace-снаряды."
 docs/reference_maps/README_RU.md,86,legal-attribution,upstream/third-party license notice (must stay),- Карты: https://github.com/ddnet/ddnet-maps/tree/19c834ae6506c15057f180500fc460b8c3f0448f
 docs/reference_maps/README_RU.md,88,legal-attribution,upstream/third-party license notice (must stay),- Обзорные изображения: https://github.com/Teero888/tw-thumbs/tree/79385b9fb9935ca7b18832214aa129138852dd37/ddnet
 docs/reference_maps/README_RU.md,98,legal-attribution,upstream/third-party license notice (must stay),"Четыре офлайн-теста загрузчика/изоляции, структурная проверка всех четырёх скачанных DATA v4 и полный `scripts/ci-local.sh` прошли. В `.commit_hashes.json` каталога превью зафиксирована та же ревизия ddnet-maps, что и в нашем каталоге: `19c"
