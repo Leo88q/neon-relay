@@ -19,9 +19,11 @@ ROOT=Path(__file__).resolve().parent.parent
 def main():
     binary=str(Path(sys.argv[1]).resolve(strict=True))
     out=Path(sys.argv[2]);out.mkdir(parents=True,exist_ok=True)
+    data=Path(binary).parent/'data'
+    assert (data/'maps/Neon Relay Warmup.map').is_file(),'Warmup missing from built data bundle'
     with tempfile.TemporaryDirectory(prefix='warmup-lobby-') as tmp:
         home=Path(tmp)
-        (home/'storage.cfg').write_text(f'add_path {home}\nadd_path {ROOT / "data"}\n')
+        (home/'storage.cfg').write_text(f'add_path {home}\nadd_path {data}\n')
         for filename in ('autoexec.cfg','autoexec_server.cfg'):
             (home/filename).write_text('# Isolated native lobby test\n')
         env={k:v for k,v in os.environ.items() if not k.startswith('NEONRELAY_')}
@@ -42,7 +44,8 @@ def main():
             with raw.open('w') as log:
                 proc=subprocess.Popen([binary,'gfx_fullscreen 0','gfx_vsync 0',
                     'gfx_screen_width 1280','gfx_screen_height 800','cl_menu_map ""',
-                    'cl_show_welcome 0','player_name LobbyProbe','stdout_output_level 1'],
+                    'cl_show_welcome 0','player_name LobbyProbe','stdout_output_level 1',
+                    'ui_mousesens 100'],
                     cwd=tmp,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
                 window=None
                 def window_ready():
@@ -52,6 +55,7 @@ def main():
                         window=result.stdout.splitlines()[-1]
                     return window is not None
                 wait(window_ready,40,'client window')
+                tool('xdotool','windowsize',window,'1280','800')
                 tool('xdotool','windowfocus','--sync',window)
                 time.sleep(3)
                 tool('xdotool','key','p');time.sleep(1)
@@ -61,7 +65,13 @@ def main():
                 # gap=12, card=164, padding=12, button=40.
                 button_y=round((10+44+24+42+44+12+164-12-20)*800/600)
                 def click():
-                    tool('xdotool','mousemove','--window',window,'640',str(button_y))
+                    # The game uses a virtual relative mouse, not the OS cursor.
+                    # Clamp that cursor to the top-left, then move in UI pixels.
+                    for _ in range(3):
+                        tool('xdotool','mousemove_relative','--','-1000','-1000')
+                        time.sleep(.1)
+                    tool('xdotool','mousemove_relative','--','640',str(button_y))
+                    time.sleep(.2)
                     tool('xdotool','click','1')
                 click();time.sleep(2)
                 assert 'verified course=warmup' not in text()
@@ -116,4 +126,9 @@ def main():
                 print(safe[-3500:])
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    try:main()
+    except Exception as error:
+        message=str(error).replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+        print('::error title=Warmup lobby test::'+message,flush=True)
+        raise

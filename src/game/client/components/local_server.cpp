@@ -135,6 +135,7 @@ bool CLocalServer::IsWarmupRunning()
 
 bool CLocalServer::StartWarmup()
 {
+	log_info("practice", "launch requested course=%s", WARMUP_COURSE_ID);
 	if(Client()->State() != IClient::STATE_OFFLINE || IsServerRunning())
 	{
 		Client()->AddWarning(SWarning(Localize("Disconnect and stop the existing local server before starting Warmup.")));
@@ -196,6 +197,7 @@ bool CLocalServer::StartWarmup()
 
 void CLocalServer::StopWarmup()
 {
+	log_info("practice", "stop requested course=%s", WARMUP_COURSE_ID);
 	if(Client()->State() != IClient::STATE_OFFLINE)
 	{
 		Client()->AddWarning(SWarning(Localize("Disconnect before stopping the practice server.")));

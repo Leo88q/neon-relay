@@ -53,6 +53,7 @@ class MenuContract(unittest.TestCase):
         digest=hashlib.sha256((ROOT/'data/maps/Neon Relay Warmup.map').read_bytes()).hexdigest()
         self.assertIn('"'+digest+'"',header)
         self.assertIn('WARMUP_COURSE_ID = "warmup"',header)
+        self.assertIn(r'maps/Neon\ Relay\ Warmup.map',self.text('CMakeLists.txt'))
         launch=self.text('src/game/client/components/local_server.cpp')
         for value in ['sv_register 0','bindaddr 127.0.0.1','sv_neonrelay_signing 0',
                       'sv_neonrelay_reward_per_match_micro 0','sv_use_sql 0',

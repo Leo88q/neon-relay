@@ -1687,6 +1687,7 @@ set(EXPECTED_DATA
   maps/LearnToPlay\ Sound\ Heights.map
   maps/Midnight\ Circuit.map
   maps/Neon\ Relay\ Basin.map
+  maps/Neon\ Relay\ Warmup.map
   maps/Vector\ Spire.map
   maps/license.txt
   menuimages/demos.png

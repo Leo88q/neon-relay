@@ -157,7 +157,7 @@ jobs:
           import os
           from pathlib import Path
           root = Path(os.environ["RUNNER_TEMP"])
-          logs = [root / "native-client.log"] + list((root / "client-preview").glob("*.log"))
+          logs = list((root / "client-preview").glob("*.log")) + [root / "native-client.log"]
           tail = "\n".join(p.read_text(errors="replace")[-2200:] for p in logs)[-3500:]
           print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
           PYLOG
