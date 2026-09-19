@@ -76,6 +76,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Neon DM compiled rules and opt-in contracts
+        run: python3 scripts/test_neon_dm.py
       - name: Original course native physics and negative controls
         run: python3 scripts/test_warmup_physics.py --sanitize
       - name: Codegen + translation-unit probe
@@ -146,6 +148,11 @@ jobs:
           sudo apt-get install -y cmake ninja-build pkg-config libcurl4-openssl-dev libssl-dev libsqlite3-dev zlib1g-dev libsdl2-dev libfreetype6-dev libogg-dev libopus-dev libopusfile-dev libpng-dev libwavpack-dev libglew-dev libnotify-dev xvfb xauth xdotool imagemagick
           rustup toolchain install 1.89.0 --profile minimal
           rustup default 1.89.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install development map fixture tools
+        run: python -m pip install -r scripts/requirements-map-tools.txt
       - name: Compile and render native client
         env:
           CARGO_BUILD_JOBS: 2

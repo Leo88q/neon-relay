@@ -44,6 +44,7 @@ STANDALONE_RE = re.compile(
 
 # Directories/files that are not scanned at all.
 EXCLUDE_PATHS = (
+	".cache/",  # ignored development outputs, never packaged UI
 	".venv/",  # installed development dependencies, never shipped UI
 	"venv/",
 	".git/",
@@ -61,6 +62,7 @@ EXCLUDE_PATHS = (
 # Path based rules (checked first, most specific wins)
 # ---------------------------------------------------------------------------
 LEGAL_PATH_RES = [
+	re.compile(r"^docs/dm/(CHROME_STUDY\.json|UPSTREAM_MAP_LICENSE\.txt)$"),
 	# Explicit attribution/license review for optional, unshipped reference maps.
 	re.compile(r"^docs/reference_maps/(README_RU\.md|catalog\.json)$"),
 	re.compile(r"^license\.txt$"),
@@ -79,6 +81,7 @@ LEGAL_PATH_RES = [
 ]
 
 HISTORICAL_PATH_RES = [
+	re.compile(r"^docs/dm/(CHROME_DM_RU|NEON_DM_RU)\.md$"),
 	re.compile(r"^UPSTREAM_BASE\.md$"),
 	re.compile(r"^docs/UPSTREAM_AUDIT\.md$"),
 	re.compile(r"^docs/KNOWN_LIMITATIONS\.md$"),
@@ -112,6 +115,7 @@ HISTORICAL_PATH_RES = [
 ]
 
 TEST_PATH_RES = [
+	re.compile(r"^scripts/test_neon_dm\.py$"),
 	re.compile(r"^scripts/test_menu_contract\.py$"),
 	re.compile(r"^src/test/"),
 	re.compile(r"^src/rust-bridge/test/"),
@@ -291,6 +295,12 @@ CATEGORIES = ("legal-attribution", "historical-documentation", "test-fixture", "
 
 
 def classify(rel_path: str, line: str, spans: list[tuple[int, int, str]] | None = None) -> tuple[str, str]:
+	# Attribution on derived CC-BY-SA map metadata/inspection sheets must stay.
+	# Match only these fields, NOT arbitrary branding strings in the generators.
+	if rel_path == "scripts/build_chrome_dm.py" and re.search(r"^\s*(m\.info\.(author|credits)=|'upstream_repository':)", line):
+		return "legal-attribution", "derived map author, modification notice or pinned source"
+	if rel_path == "scripts/preview_chrome_dm.py" and ("'Основа: dm7 / " in line or "'Источник: teeworlds/teeworlds-maps @ " in line):
+		return "legal-attribution", "source attribution printed on development inspection sheet"
 	for res in LEGAL_PATH_RES:
 		if res.search(rel_path):
 			return "legal-attribution", "upstream/third-party license notice (must stay)"

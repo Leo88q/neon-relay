@@ -83,6 +83,7 @@ protected:
 
 public:
 	const char *m_pGameType;
+	virtual bool IsDeathmatch() const { return false; }
 
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController();

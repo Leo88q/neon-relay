@@ -41,6 +41,19 @@ with tempfile.TemporaryDirectory(prefix="neonrelay-boot-") as tmp:
         assert code == 0 and "server name is 'neonrelay-ci-boot'" in output, diagnostic
         assert 'failed to load map' not in output and 'invalid header' not in output, diagnostic
         print(f'PASS: native server loaded {name}')
+    # Experimental DM is not in default packaging/rotation. Supply its fixture
+    # explicitly and verify the linked executable selects the opt-in controller.
+    dm_map = 'Neon Relay Chrome DM Study'
+    shutil.copyfile(root / f'docs/dm/{dm_map}.map', data / f'maps/{dm_map}.map')
+    dm_args = [arg.replace('sv_map LearnToPlay', f'sv_map "{dm_map}"') for arg in args]
+    dm_args += ['sv_gametype neon-dm', 'sv_hit 1', 'sv_solo_server 0',
+                'sv_practice_by_default 0', 'sv_neonrelay_signing 0']
+    code, output, diagnostic = run(dm_args)
+    assert code == 0 and 'combat controller selected;' in output, diagnostic
+    assert 'No such command' not in output, diagnostic
+    code, output, diagnostic = run(dm_args + ['sv_solo_server 1'])
+    assert code != 0 and 'Neon DM requires' in output, diagnostic
+    print('PASS: linked Neon DM controller boot and incompatible solo-mode refusal (not a multiplayer test)')
     # Map load is mandatory before server/game initialization. Prove this gate
     # cannot pass merely because the process accepts CLI args and exits zero.
     code, output, diagnostic = run([arg.replace("sv_map LearnToPlay", "sv_map MissingCiMap") for arg in args])

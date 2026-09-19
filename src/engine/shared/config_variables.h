@@ -258,6 +258,8 @@ MACRO_CONFIG_INT(ClDummyHook, cl_dummy_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_I
 MACRO_CONFIG_INT(ClSkipStartMenu, cl_skip_start_menu, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Skip the start menu")
 
 // server
+MACRO_CONFIG_INT(SvNeonDmScoreLimit, sv_neon_dm_score_limit, 20, 0, 1000, CFGFLAG_SERVER, "Neon DM frag limit (0 disables)")
+MACRO_CONFIG_INT(SvNeonDmTimeLimit, sv_neon_dm_time_limit, 10, 0, 120, CFGFLAG_SERVER, "Neon DM time limit in minutes (0 disables)")
 MACRO_CONFIG_INT(SvWarmup, sv_warmup, 0, 0, 0, CFGFLAG_SERVER, "Number of seconds to do warmup before round starts")
 MACRO_CONFIG_STR(SvMotd, sv_motd, 900, "", CFGFLAG_SERVER, "Message of the day to display for the clients")
 MACRO_CONFIG_STR(SvGametype, sv_gametype, 32, "ddnet", CFGFLAG_SERVER, "Game type reported to the server browser. The value 'ddnet' is a protocol identifier kept for compatibility with existing clients and master servers")

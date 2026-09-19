@@ -20,6 +20,7 @@
 #include <game/mapitems.h>
 #include <game/server/gamecontext.h>
 #include <game/server/gamecontroller.h>
+#include <game/server/gamemodes/neon_dm_rules.h>
 #include <game/server/player.h>
 #include <game/server/score.h>
 #include <game/server/teams.h>
@@ -593,6 +594,20 @@ void CCharacter::FireWeapon()
 
 	case WEAPON_SHOTGUN:
 	{
+		if(GameServer()->m_pController->IsDeathmatch())
+		{
+			static constexpr float s_aSpread[] = {-0.185f, -0.070f, 0.0f, 0.070f, 0.185f};
+			const float Angle = std::atan2(Direction.y, Direction.x);
+			for(int i = 0; i < 5; ++i)
+			{
+				const float Speed = mix((float)GetTuning(m_TuneZone)->m_ShotgunSpeeddiff, 1.0f, 1.0f - std::abs(i - 2) / 2.0f);
+				const vec2 Dir = direction(Angle + s_aSpread[i]) * Speed;
+				new CProjectile(GameWorld(), WEAPON_SHOTGUN, m_pPlayer->GetCid(), ProjStartPos, Dir,
+					(int)(Server()->TickSpeed() * GetTuning(m_TuneZone)->m_ShotgunLifetime), false, false, -1, MouseTarget);
+			}
+			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, TeamMask());
+			break;
+		}
 		float LaserReach = GetTuning(m_TuneZone)->m_LaserReach;
 
 		new CLaser(&GameServer()->m_World, m_Pos, Direction, LaserReach, m_pPlayer->GetCid(), WEAPON_SHOTGUN);
@@ -647,6 +662,13 @@ void CCharacter::FireWeapon()
 	}
 
 	m_AttackTick = Server()->Tick();
+	if(GameServer()->m_pController->IsDeathmatch() && m_Core.m_ActiveWeapon >= 0)
+	{
+		auto &Weapon = m_Core.m_aWeapons[m_Core.m_ActiveWeapon];
+		if(Weapon.m_Ammo > 0)
+			--Weapon.m_Ammo;
+		Weapon.m_AmmoRegenStart = -1;
+	}
 
 	// -1 is no weapon, handled here so pain sound still plays when firing in freeze
 	if(!m_ReloadTimer && m_Core.m_ActiveWeapon != -1)
@@ -664,6 +686,23 @@ void CCharacter::HandleWeapons()
 	if(m_PainSoundTimer > 0)
 		m_PainSoundTimer--;
 
+	// Only the starter gun regenerates; other combat weapons need pickups.
+	if(GameServer()->m_pController->IsDeathmatch())
+	{
+		auto &Gun = m_Core.m_aWeapons[WEAPON_GUN];
+		if(m_Core.m_ActiveWeapon == WEAPON_GUN && m_ReloadTimer == 0 && Gun.m_Ammo < NeonDm::MAX_AMMO)
+		{
+			if(Gun.m_AmmoRegenStart < 0)
+				Gun.m_AmmoRegenStart = Server()->Tick();
+			if(Server()->Tick() - Gun.m_AmmoRegenStart >= Server()->TickSpeed() / 2)
+			{
+				++Gun.m_Ammo;
+				Gun.m_AmmoRegenStart = -1;
+			}
+		}
+		else
+			Gun.m_AmmoRegenStart = -1;
+	}
 	// check reload timer
 	if(m_ReloadTimer)
 	{
@@ -1017,10 +1056,17 @@ void CCharacter::StopRecording()
 
 void CCharacter::Die(int Killer, int Weapon, bool SendKillMsg)
 {
+	if(GameServer()->m_pController->IsDeathmatch() && !m_Alive)
+		return; // pending deletion plus disconnect must not score death twice
 	if(Killer != WEAPON_GAME && m_aSetSavePos[RESCUEMODE_AUTO])
 		GetPlayer()->m_LastDeath = m_aRescueTee[RESCUEMODE_AUTO];
 	StopRecording();
-	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
+	// Environmental damage can have no player owner. Never index the player
+	// array with WEAPON_WORLD/-1, and do not emit an invalid protocol client ID.
+	CPlayer *pKiller = Killer >= 0 && Killer < MAX_CLIENTS ? GameServer()->m_apPlayers[Killer] : nullptr;
+	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, pKiller, Weapon);
+	if(!pKiller)
+		Killer = m_pPlayer->GetCid();
 
 	log_info("game", "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
 		Killer, Server()->ClientName(Killer),
@@ -1050,6 +1096,23 @@ void CCharacter::Die(int Killer, int Weapon, bool SendKillMsg)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
+	if(GameServer()->m_pController->IsDeathmatch())
+	{
+		if(!m_Alive || GameServer()->m_pController->IsGamePaused())
+			return false;
+		m_Core.m_Vel = ClampVel(m_MoveRestrictions, m_Core.m_Vel + Force);
+		const auto Result = NeonDm::Damage(m_Health, m_Armor, Dmg, From == m_pPlayer->GetCid());
+		m_Health = Result.m_Health;
+		m_Armor = Result.m_Armor;
+		if(Result.m_Killed)
+		{
+			Die(From, Weapon);
+			return false;
+		}
+		if(Dmg > 0)
+			GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT, TeamMask());
+		return true;
+	}
 	if(Dmg)
 	{
 		SetEmote(EMOTE_PAIN, Server()->Tick() + 500 * Server()->TickSpeed() / 1000);
@@ -2185,6 +2248,8 @@ void CCharacter::SetTeams(CGameTeams *pTeams)
 
 bool CCharacter::TrySetRescue(int RescueMode)
 {
+	if(GameServer()->m_pController->IsDeathmatch())
+		return false;
 	bool Set = false;
 	if(g_Config.m_SvRescue || ((g_Config.m_SvTeam == SV_TEAM_FORCED_SOLO || Team() > TEAM_FLOCK) && Teams()->IsValidTeamNumber(Team())))
 	{
@@ -2538,6 +2603,8 @@ void CCharacter::DDRaceInit()
 
 bool CCharacter::Rescue()
 {
+	if(GameServer()->m_pController->IsDeathmatch())
+		return false; // saved race state must never restore combat health/ammo
 	if(m_aSetSavePos[GetPlayer()->m_RescueMode] && !m_Core.m_Super && !m_Core.m_Invincible)
 	{
 		if(m_LastRescue + (int64_t)g_Config.m_SvRescueDelay * Server()->TickSpeed() > Server()->Tick() && !Teams()->IsPractice(Team()))

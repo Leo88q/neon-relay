@@ -124,6 +124,7 @@ option(ANTIBOT "Enable support for a dynamic anticheat library (not provided, se
 option(HEADLESS_CLIENT "Build the client without graphics" OFF)
 option(CLIENT "Compile client" ON)
 option(SERVER "Compile server" ON)
+option(NEONRELAY_DM_PROBE "Build isolated DM server input probe (test only, never ship)" OFF)
 option(NEONRELAY_WARMUP_PROBE "Build isolated Warmup server input probe (test only, never ship)" OFF)
 option(TOOLS "Compile tools" ON)
 option(DOWNLOAD_GTEST "Download and compile GTest" ${AUTO_DEPENDENCIES_DEFAULT})
@@ -2799,6 +2800,9 @@ if(SERVER)
     gamemodes/ddnet.h
     gamemodes/mod.cpp
     gamemodes/mod.h
+    gamemodes/neon_dm.cpp
+    gamemodes/neon_dm.h
+    gamemodes/neon_dm_rules.h
     gameworld.cpp
     gameworld.h
     interactions.cpp
@@ -2872,6 +2876,10 @@ if(SERVER)
       PROPERTY OUTPUT_NAME ${SERVER_EXECUTABLE}
   )
   target_link_libraries(game-server-without-main ${LIBS_SERVER})
+  if(NEONRELAY_DM_PROBE)
+    target_compile_definitions(game-server-without-main PRIVATE NEONRELAY_DM_PROBE)
+    target_sources(game-server-without-main PRIVATE tests/neon_dm/server_probe.cpp)
+  endif()
   if(NEONRELAY_WARMUP_PROBE)
     target_compile_definitions(game-server-without-main PRIVATE NEONRELAY_WARMUP_PROBE)
     target_sources(game-server-without-main PRIVATE tests/warmup/server_probe.cpp)

@@ -155,7 +155,10 @@ void CProjectile::Tick()
 			}
 		}
 		else if(pTargetChr)
-			pTargetChr->TakeDamage(vec2(0, 0), 0, m_Owner, m_Type);
+		{
+			const bool Dm = GameServer()->m_pController->IsDeathmatch();
+			pTargetChr->TakeDamage(Dm ? m_Direction * 2.0f : vec2(0, 0), Dm ? 1 : 0, m_Owner, m_Type);
+		}
 
 		if(pOwnerChar && !GameLayerClipped(ColPos) &&
 			((m_Type == WEAPON_GRENADE && pOwnerChar->HasTelegunGrenade()) || (m_Type == WEAPON_GUN && pOwnerChar->HasTelegunGun())))

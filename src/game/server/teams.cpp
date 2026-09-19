@@ -452,6 +452,12 @@ bool CGameTeams::CanJoinTeam(int ClientId, int Team, char *pError, int ErrorSize
 
 bool CGameTeams::SetCharacterTeam(int ClientId, int Team, char *pError, int ErrorSize)
 {
+	if(GameServer()->m_pController->IsDeathmatch() && Team != TEAM_FLOCK)
+	{
+		if(pError && ErrorSize > 0)
+			str_copy(pError, "Race teams are unavailable in Neon DM", ErrorSize);
+		return false;
+	}
 	if(!CanJoinTeam(ClientId, Team, pError, ErrorSize))
 		return false;
 
@@ -461,6 +467,8 @@ bool CGameTeams::SetCharacterTeam(int ClientId, int Team, char *pError, int Erro
 
 void CGameTeams::SetForceCharacterTeam(int ClientId, int Team)
 {
+	if(GameServer()->m_pController->IsDeathmatch())
+		Team = TEAM_FLOCK;
 	m_aTeeStarted[ClientId] = false;
 	m_aTeeFinished[ClientId] = false;
 	int OldTeam = m_Core.Team(ClientId);

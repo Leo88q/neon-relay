@@ -5,6 +5,7 @@
 #include "entities/character.h"
 #include "gamemodes/ddnet.h"
 #include "gamemodes/mod.h"
+#include "gamemodes/neon_dm.h"
 #include "player.h"
 #include "score.h"
 #include "teeinfo.h"
@@ -46,6 +47,10 @@
 #include <game/version.h>
 
 #include <vector>
+
+#if defined(NEONRELAY_DM_PROBE)
+void NeonDmServerProbeTick(CGameContext *pGame);
+#endif
 
 #if defined(NEONRELAY_WARMUP_PROBE)
 void WarmupServerProbeTick(CGameContext *pGame);
@@ -1208,6 +1213,9 @@ void CGameContext::OnPreTickTeehistorian()
 
 void CGameContext::OnTick()
 {
+#if defined(NEONRELAY_DM_PROBE)
+	NeonDmServerProbeTick(this);
+#endif
 #if defined(NEONRELAY_WARMUP_PROBE)
 	WarmupServerProbeTick(this);
 #endif
@@ -4226,10 +4234,21 @@ void CGameContext::OnInit(const void *pPersistentData)
 		}
 	}
 
-	if(!str_comp(Config()->m_SvGametype, "mod"))
+	if(!str_comp(Config()->m_SvGametype, "neon-dm"))
+		m_pController = new CGameControllerNeonDm(this);
+	else if(!str_comp(Config()->m_SvGametype, "mod"))
 		m_pController = new CGameControllerMod(this);
 	else
 		m_pController = new CGameControllerDDNet(this);
+
+	if(m_pController->IsDeathmatch())
+	{
+		if(g_Config.m_SvSoloServer || g_Config.m_SvPracticeByDefault || g_Config.m_SvNeonrelaySigning || !g_Config.m_SvHit)
+			Server()->SetErrorShutdown("Neon DM requires sv_solo_server 0, sv_practice_by_default 0, sv_neonrelay_signing 0 and sv_hit 1");
+		for(int i = 0; i < TuneZone::NUM; ++i)
+			TuningList()[i] = CTuningParams::DEFAULT;
+		*GlobalTuning() = CTuningParams::DEFAULT;
+	}
 
 	for(const char *pReservedGameType : {"DM", "TDM", "CTF", "LMS", "LTS"})
 	{
@@ -5403,8 +5422,8 @@ void CGameContext::SendStartMessages(int ClientId)
 			Msg.m_GameFlags = m_pController->GameFlags();
 			Msg.m_MatchCurrent = 1;
 			Msg.m_MatchNum = 0;
-			Msg.m_ScoreLimit = 0;
-			Msg.m_TimeLimit = 0;
+			Msg.m_ScoreLimit = m_pController->IsDeathmatch() ? g_Config.m_SvNeonDmScoreLimit : 0;
+			Msg.m_TimeLimit = m_pController->IsDeathmatch() ? g_Config.m_SvNeonDmTimeLimit : 0;
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
 		}
 

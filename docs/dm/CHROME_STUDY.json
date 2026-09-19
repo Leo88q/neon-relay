@@ -1,0 +1,143 @@
+{
+  "status": "visual study; opt-in DM code exists; native multiplayer validation pending",
+  "source": {
+    "file": "dm7.map",
+    "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
+    "width": 146,
+    "height": 120,
+    "cells": 17520,
+    "entities": {
+      "spawn": 9,
+      "armor": 18,
+      "health": 26,
+      "shotgun": 4,
+      "grenade": 4,
+      "ninja": 1,
+      "laser": 2
+    },
+    "embedded_author": "",
+    "embedded_license": ""
+  },
+  "physics_preserved": true,
+  "map": "Neon Relay Chrome DM Study.map",
+  "output_sha256": "693d1d995efd21f9f9f8bbc9dc442ffd52c5c54a3d00eee23f3137d83ce02000",
+  "candidates": [
+    {
+      "file": "dm1.map",
+      "sha256": "0b0c481d77519c32fbe85624ef16ec0fa9991aec7367ad538bd280f28d8c26cf",
+      "width": 60,
+      "height": 50,
+      "cells": 3000,
+      "entities": {
+        "spawn": 8,
+        "armor": 9,
+        "health": 10,
+        "shotgun": 2,
+        "grenade": 2,
+        "ninja": 1,
+        "laser": 0
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm2.map",
+      "sha256": "9261778cfd1b452f3d77f72ca4c6463417c94ffeb0c3ab1a5d8798245cb38fab",
+      "width": 130,
+      "height": 90,
+      "cells": 11700,
+      "entities": {
+        "spawn": 7,
+        "armor": 12,
+        "health": 21,
+        "shotgun": 3,
+        "grenade": 4,
+        "ninja": 1,
+        "laser": 1
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm6.map",
+      "sha256": "0964bc24e7e6ce7d1bca5c062164a9baa3d37c834e0a8394f07b2ee37194f08b",
+      "width": 90,
+      "height": 78,
+      "cells": 7020,
+      "entities": {
+        "spawn": 9,
+        "armor": 14,
+        "health": 12,
+        "shotgun": 3,
+        "grenade": 3,
+        "ninja": 1,
+        "laser": 1
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm7.map",
+      "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
+      "width": 146,
+      "height": 120,
+      "cells": 17520,
+      "entities": {
+        "spawn": 9,
+        "armor": 18,
+        "health": 26,
+        "shotgun": 4,
+        "grenade": 4,
+        "ninja": 1,
+        "laser": 2
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm8.map",
+      "sha256": "574a864c74ab4a14df7f7823f2d352384ec6a6650f426c10b20cfdc0108cd1ed",
+      "width": 62,
+      "height": 50,
+      "cells": 3100,
+      "entities": {
+        "spawn": 4,
+        "armor": 10,
+        "health": 11,
+        "shotgun": 2,
+        "grenade": 3,
+        "ninja": 1,
+        "laser": 0
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm9.map",
+      "sha256": "ae16cad538f50b3174b72ceb2b9215b2855c5e31f184c8028e9627e77cade78d",
+      "width": 50,
+      "height": 45,
+      "cells": 2250,
+      "entities": {
+        "spawn": 4,
+        "armor": 8,
+        "health": 4,
+        "shotgun": 2,
+        "grenade": 2,
+        "ninja": 0,
+        "laser": 0
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    }
+  ],
+  "empty_tile_flags_normalized": 1,
+  "raw_game_bytes_identical": false,
+  "license": "CC-BY-SA 3.0",
+  "license_verified": true,
+  "upstream_revision": "64baa0e11c7f9a1390279394ca3536277afcd61b",
+  "upstream_repository": "https://github.com/teeworlds/teeworlds-maps",
+  "release_enabled": false,
+  "source_artwork_copied": false,
+  "realtime_shader_installed": false
+}
