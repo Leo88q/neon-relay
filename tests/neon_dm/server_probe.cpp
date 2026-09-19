@@ -29,10 +29,11 @@ bool Check(CGameContext *pGame, bool Condition, const char *pMessage)
 	return Condition;
 }
 
-void Input(CGameContext *pGame, int Id, int Direction, int Weapon, bool Shoot, vec2 Aim)
+void Input(CGameContext *pGame, int Id, int Direction, int Weapon, bool Shoot, vec2 Aim, bool Jump = false)
 {
 	CNetObj_PlayerInput In{};
 	In.m_Direction = Direction;
+	In.m_Jump = Jump ? 1 : 0;
 	In.m_TargetX = (int)Aim.x;
 	In.m_TargetY = (int)Aim.y;
 	if(!In.m_TargetX && !In.m_TargetY)
@@ -139,7 +140,8 @@ void NeonDmServerProbeTick(CGameContext *pGame)
 		break;
 	case 4:
 		if(!Check(pGame, pA && pB, "both actors on pickup route")) return;
-		Input(pGame, A, pA->m_Pos.x < 34.5f * 32 - 8 ? 1 : 0, WEAPON_HAMMER, false, vec2(0, -1));
+		Input(pGame, A, pA->m_Pos.x < 34.5f * 32 - 8 ? 1 : 0, WEAPON_HAMMER, false, vec2(0, -1),
+			pB->m_Pos.x > pA->m_Pos.x && pB->m_Pos.x - pA->m_Pos.x < 128);
 		if(pA->m_Pos.x >= 34.5f * 32 - 8)
 		{
 			if(!Check(pGame, pA->GetHealth() == 10 && pA->GetArmor() == 1 &&
