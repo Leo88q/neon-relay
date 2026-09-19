@@ -112,11 +112,12 @@ class CDarkButtonColorFunction : public IButtonColorFunction
 public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
+		// New design Form A – Void #060A1C, Deck #0C1334, Cyan #5FE3F5
 		if(Active)
-			return ColorRGBA(0.92f, 0.68f, 0.12f, 0.38f);
+			return ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.35f); // Cyan active
 		else if(Hovered)
-			return ColorRGBA(0.05f, 0.90f, 0.92f, 0.28f);
-		return ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
+			return ColorRGBA(0.0706f, 0.1059f, 0.2745f, 0.85f); // Deck2 hover
+		return ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.94f); // Deck
 	}
 };
 class CLightButtonColorFunction : public IButtonColorFunction
@@ -125,9 +126,9 @@ public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
 		if(Active)
-			return ColorRGBA(0.92f, 0.68f, 0.12f, 0.55f);
+			return ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.55f);
 		else if(Hovered)
-			return ColorRGBA(0.05f, 0.90f, 0.92f, 0.45f);
+			return ColorRGBA(0.0706f, 0.1059f, 0.2745f, 0.65f);
 		return ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
 	}
 };

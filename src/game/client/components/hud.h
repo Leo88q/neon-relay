@@ -176,6 +176,7 @@ private:
 	// YIELDBLOOM industrial HUD frames – live indicators in gunmetal frames
 	std::array<IGraphics::CTextureHandle, 16> m_aYieldBloomHud;
 	void RenderYieldBloomPanel(float x, float y, float w, float h, float Rounding = 6.0f);
+	void RenderFormAPanelHud(float x, float y, float w, float h, float Chamfer, ColorRGBA BorderColor, bool WithImpulse);
 	void RenderYieldBloomProgressBar(float x, float y, float w, float h, float Progress, ColorRGBA FillColor);
 };
 

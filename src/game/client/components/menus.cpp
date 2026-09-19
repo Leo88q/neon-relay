@@ -124,55 +124,94 @@ int CMenus::DoButton_Toggle(const void *pId, int Checked, const CUIRect *pRect, 
 int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, const unsigned Flags, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
 {
 	CUIRect Text = *pRect;
+	bool IsActive = Checked != 0;
+	bool IsHot = Ui()->HotItem() == pButtonContainer;
+	bool IsDisabled = (Flags & 0) == 0 ? false : false; // placeholder, real disabled via Color.a check
+	// Form A button – slanted 10-12px, Void/Deck palette
+	// Colors from spec: Void #060A1C bg, Cyan #5FE3F5 primary, Cyan dim #2A8797 border
+	float skew = 12.0f;
+	float x = pRect->x;
+	float y = pRect->y;
+	float w = pRect->w;
+	float h = pRect->h;
 
-	// YIELDBLOOM – force gunmetal industrial, ignore passed white/gray
-	if(Checked)
-		Color = ColorRGBA(0.92f, 0.68f, 0.12f, 0.92f);
-	else
+	// Pressed shift 1px
+	if(IsActive)
 	{
-		// keep hue if caller passed distinct color, but base is gunmetal
-		if(Color.r > 0.8f && Color.g > 0.8f && Color.b > 0.8f)
-			Color = ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f);
-		else if(Color.a < 0.6f)
-			Color = ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
+		x += 1.0f;
+		y += 1.0f;
 	}
-	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
 
-	// YIELDBLOOM industrial – gunmetal beveled, amber top, cyan bottom
-	float R = Rounding > 8.0f ? 8.0f : Rounding;
-	if(R < 3.0f) R = 5.0f;
-	// Outer dark border double
-	CUIRect Outer = {pRect->x - 1.5f, pRect->y - 1.5f, pRect->w + 3.0f, pRect->h + 3.0f};
-	Outer.Draw(ColorRGBA(0.05f, 0.06f, 0.07f, 1.0f), Corners, R+1.5f);
-	CUIRect Outer2 = {pRect->x - 0.5f, pRect->y - 0.5f, pRect->w + 1.0f, pRect->h + 1.0f};
-	Outer2.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 0.55f), Corners, R+0.5f);
-	pRect->Draw(Color, Corners, R);
-	// Top amber industrial edge + bottom cyan
-	if(Ui()->HotItem() == pButtonContainer || Checked)
+	// Determine colors
+	ColorRGBA BgColor = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f); // Deck #0C1334
+	ColorRGBA BorderColor = ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f); // Cyan dim
+	ColorRGBA TextColor = ColorRGBA(0.902f, 0.9647f, 1.0f, 1.0f); // Ink
+
+	if(Color.r > 0.9f && Color.g > 0.7f && Color.b < 0.5f)
 	{
-		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 3.5f};
-		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 1.0f), IGraphics::CORNER_T, 2.5f);
-		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 3.0f, pRect->w, 3.0f};
-		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.95f), IGraphics::CORNER_B, 1.5f);
+		// Gold Legendary button
+		BgColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f);
+		BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 1.0f);
+		TextColor = ColorRGBA(0.0235f, 0.0392f, 0.1098f, 1.0f);
 	}
-	else
+	else if(IsActive)
 	{
-		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 2.5f};
-		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.65f), IGraphics::CORNER_T, 2.0f);
-		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 2.0f, pRect->w, 2.0f};
-		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.55f), IGraphics::CORNER_B, 1.0f);
+		BgColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.95f); // Cyan active
+		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f);
+		TextColor = ColorRGBA(0.0235f, 0.0392f, 0.1098f, 1.0f);
 	}
-	// Rivets 4 corners
+	else if(IsHot)
 	{
-		float riv = 3.5f;
-		CUIRect R1 = {pRect->x + 4.0f, pRect->y + 4.0f, riv, riv};
-		CUIRect R2 = {pRect->x + pRect->w - 7.5f, pRect->y + 4.0f, riv, riv};
-		CUIRect R3 = {pRect->x + 4.0f, pRect->y + pRect->h - 7.5f, riv, riv};
-		CUIRect R4 = {pRect->x + pRect->w - 7.5f, pRect->y + pRect->h - 7.5f, riv, riv};
-		R1.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
-		R2.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
-		R3.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
-		R4.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
+		// Hover – blink 0.7s and lighting
+		float t = (time_get() / (float)time_freq());
+		float blink = 0.5f + 0.5f * std::sin(t * 2.0f * 3.14159f / 0.7f);
+		BgColor = ColorRGBA(0.047f + blink * 0.1f, 0.0745f + blink * 0.15f, 0.2039f + blink * 0.25f, 0.96f);
+		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f + blink * 0.15f);
+	}
+
+	// Draw slanted button as freeform – Form A skew
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, BgColor.a);
+	IGraphics::CFreeformItem FreeBtn(
+		x + skew, y,
+		x + w, y,
+		x + w - skew, y + h,
+		x, y + h);
+	Graphics()->QuadsDrawFreeform(&FreeBtn, 1);
+	Graphics()->QuadsEnd();
+
+	// Border 2px slanted
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a);
+	// Top edge
+	IGraphics::CQuadItem Top(x + skew, y, w - skew, 2.0f);
+	Graphics()->QuadsDrawTL(&Top, 1);
+	// Bottom edge
+	IGraphics::CQuadItem Bottom(x, y + h - 2.0f, w - skew, 2.0f);
+	Graphics()->QuadsDrawTL(&Bottom, 1);
+	// Left slanted edge
+	IGraphics::CFreeformItem LeftEdge(x + skew, y, x + skew, y + 2.0f, x, y + h, x, y + h - 2.0f);
+	Graphics()->QuadsDrawFreeform(&LeftEdge, 1);
+	// Right slanted edge
+	IGraphics::CFreeformItem RightEdge(x + w, y, x + w, y + 2.0f, x + w - skew, y + h, x + w - skew, y + h - 2.0f);
+	Graphics()->QuadsDrawFreeform(&RightEdge, 1);
+	Graphics()->QuadsEnd();
+
+	// Disabled hatching
+	if(Color.a < 0.5f)
+	{
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(0.047f, 0.0745f, 0.2039f, 0.55f);
+		for(int i = 0; i < (int)(w / 8.0f); ++i)
+		{
+			float hx = x + i * 12.0f;
+			IGraphics::CFreeformItem Hatch(hx, y, hx + 6.0f, y, hx + 6.0f - skew, y + h, hx - skew, y + h);
+			Graphics()->QuadsDrawFreeform(&Hatch, 1);
+		}
+		Graphics()->QuadsEnd();
 	}
 
 	if(pImageName)
@@ -195,7 +234,9 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	TextRender()->TextColor(TextColor);
 	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, Flags);
 }
@@ -208,66 +249,94 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 	if(pAnimator != nullptr)
 	{
 		auto Time = time_get_nanoseconds();
-
 		if(pAnimator->m_Time + 100ms < Time)
 		{
 			pAnimator->m_Value = pAnimator->m_Active ? 1 : 0;
 			pAnimator->m_Time = Time;
 		}
-
 		pAnimator->m_Active = Checked || MouseInside;
-
 		if(pAnimator->m_Active)
 			pAnimator->m_Value = std::clamp<float>(pAnimator->m_Value + (Time - pAnimator->m_Time).count() / (double)std::chrono::nanoseconds(100ms).count(), 0, 1);
 		else
 			pAnimator->m_Value = std::clamp<float>(pAnimator->m_Value - (Time - pAnimator->m_Time).count() / (double)std::chrono::nanoseconds(100ms).count(), 0, 1);
-
 		Rect.w += pAnimator->m_Value * pAnimator->m_WOffset;
 		Rect.h += pAnimator->m_Value * pAnimator->m_HOffset;
 		Rect.x += pAnimator->m_Value * pAnimator->m_XOffset;
 		Rect.y += pAnimator->m_Value * pAnimator->m_YOffset;
-
 		pAnimator->m_Time = Time;
 	}
 
-	// YIELDBLOOM tab – gunmetal with amber active top, cyan bottom glow, rivets
-	float Round = 6.0f;
+	// Form A tab – slanted, Void/Deck, active Gold/Cyan, with glow and impulse
+	float skew = 14.0f;
+	float x = Rect.x;
+	float y = Rect.y;
+	float w = Rect.w;
+	float h = Rect.h;
+
+	ColorRGBA BgColor = ms_ColorTabbarInactive;
+	ColorRGBA BorderColor = ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.65f);
 	if(Checked)
 	{
-		ColorRGBA ColorMenuTab = ms_ColorTabbarActive;
-		if(pActiveColor)
-			ColorMenuTab = *pActiveColor;
-		// outer border
-		CUIRect Out = {Rect.x - 1.0f, Rect.y - 1.0f, Rect.w + 2.0f, Rect.h + 2.0f};
-		Out.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), Corners, Round+1.0f);
-		Rect.Draw(ColorMenuTab, Corners, Round);
-		CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
-		Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 1.0f), IGraphics::CORNER_T, 2.0f);
-		CUIRect Bottom = {Rect.x, Rect.y + Rect.h - 2.5f, Rect.w, 2.5f};
-		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), 0, 0);
+		BgColor = ms_ColorTabbarActive;
+		BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 1.0f); // Gold
 	}
-	else
+	else if(MouseInside)
 	{
-		if(MouseInside)
-		{
-			ColorRGBA HoverColorMenuTab = ms_ColorTabbarHover;
-			if(pHoverColor)
-				HoverColorMenuTab = *pHoverColor;
-			CUIRect Out = {Rect.x - 1.0f, Rect.y - 1.0f, Rect.w + 2.0f, Rect.h + 2.0f};
-			Out.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), Corners, Round+1.0f);
-			Rect.Draw(HoverColorMenuTab, Corners, Round);
-			CUIRect Top = {Rect.x, Rect.y, Rect.w, 2.0f};
-			Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.85f), IGraphics::CORNER_T, 2.0f);
-		}
-		else
-		{
-			ColorRGBA ColorMenuTab = ms_ColorTabbarInactive;
-			if(pDefaultColor)
-				ColorMenuTab = *pDefaultColor;
-			Rect.Draw(ColorMenuTab, Corners, Round);
-			CUIRect Line = {Rect.x, Rect.y + Rect.h - 1.0f, Rect.w, 1.0f};
-			Line.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.18f), 0, 0);
-		}
+		BgColor = ms_ColorTabbarHover;
+		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.9f);
+	}
+
+	// Glow outside 10-12px 30% for active
+	if(Checked)
+	{
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, 0.25f);
+		IGraphics::CQuadItem Glow(x - 8, y - 6, w + 16, h + 12);
+		Graphics()->QuadsDrawTL(&Glow, 1);
+		Graphics()->QuadsEnd();
+	}
+
+	// Main slanted tab
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, BgColor.a);
+	IGraphics::CFreeformItem FreeTab(
+		x + skew, y,
+		x + w, y,
+		x + w - skew, y + h,
+		x, y + h);
+	Graphics()->QuadsDrawFreeform(&FreeTab, 1);
+	Graphics()->QuadsEnd();
+
+	// Border 2px
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a);
+	IGraphics::CQuadItem Top(x + skew, y, w - skew, 2.0f);
+	IGraphics::CQuadItem Bottom(x, y + h - 2.0f, w - skew, 2.0f);
+	Graphics()->QuadsDrawTL(&Top, 1);
+	Graphics()->QuadsDrawTL(&Bottom, 1);
+	Graphics()->QuadsEnd();
+
+	// Impulse for active tab – 5s circle
+	if(Checked)
+	{
+		float t = (time_get() / (float)time_freq());
+		float prog = std::fmod(t, 5.0f) / 5.0f;
+		float total = 2.0f * (w + h);
+		float pos = prog * total;
+		float ix = x, iy = y;
+		if(pos < w) { ix = x + pos; iy = y; }
+		else if(pos < w + h) { ix = x + w; iy = y + (pos - w); }
+		else if(pos < 2*w + h) { ix = x + w - (pos - w - h); iy = y + h; }
+		else { ix = x; iy = y + h - (pos - 2*w - h); }
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(0.3725f, 0.8902f, 0.9608f, 0.95f);
+		IGraphics::CQuadItem QuadImp(ix - 5, iy - 5, 10, 10);
+		Graphics()->QuadsDrawTL(&QuadImp, 1);
+		Graphics()->QuadsEnd();
 	}
 
 	if(pAnimator != nullptr)
@@ -277,7 +346,6 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 			Rect.x += Rect.w - pRect->w + Rect.x - pRect->x;
 			Rect.y += Rect.h - pRect->h + Rect.y - pRect->y;
 		}
-
 		if(!pAnimator->m_ScaleLabel)
 		{
 			Rect.w = pRect->w;
@@ -295,6 +363,7 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 	{
 		CUIRect Label;
 		Rect.HMargin(2.0f, &Label);
+		Label.x += skew * 0.5f;
 		Ui()->DoLabel(&Label, pText, Label.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
 	}
 
@@ -2315,51 +2384,190 @@ void CMenus::OnRender()
 
 void CMenus::UpdateColors()
 {
-	// YIELDBLOOM industrial – gunmetal base, amber active, cyan hover
-	ms_GuiColor = ColorRGBA(0.11f, 0.12f, 0.14f, 1.0f);
+	// New design from screenshots – Void, Deck, Cyan, Magenta, Violet, Gold, Ink
+	// Void #060A1C = 0.0235,0.0392,0.1098
+	// Deck #0C1334 = 0.047,0.0745,0.2039
+	// Deck2 #121B46 = 0.0706,0.1059,0.2745
+	// Cyan #5FE3F5 = 0.3725,0.8902,0.9608
+	// Cyan dim #2A8797 = 0.1647,0.5294,0.5922
+	// Magenta #EE4592 = 0.9333,0.2706,0.5725
+	// Violet #A077FF Rare, Gold #FFC857 Legendary
+	ms_GuiColor = ColorRGBA(0.0235f, 0.0392f, 0.1098f, 1.0f);
 
-	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
-	ms_ColorTabbarActiveOutgame = ColorRGBA(0.92f, 0.68f, 0.12f, 0.92f);
-	ms_ColorTabbarHoverOutgame = ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f);
+	// Tabs: inactive Deck with dim border, active Gold/Cyan, hover Cyan
+	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.94f);
+	ms_ColorTabbarActiveOutgame = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.96f); // Gold for active
+	ms_ColorTabbarHoverOutgame = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.92f); // Cyan
 
-	ms_ColorTabbarInactiveIngame = ColorRGBA(0.11f, 0.12f, 0.14f, 0.90f);
-	ms_ColorTabbarActiveIngame = ColorRGBA(0.92f, 0.68f, 0.12f, 0.90f);
-	ms_ColorTabbarHoverIngame = ColorRGBA(0.05f, 0.90f, 0.92f, 0.82f);
+	ms_ColorTabbarInactiveIngame = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.90f);
+	ms_ColorTabbarActiveIngame = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.90f);
+	ms_ColorTabbarHoverIngame = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.85f); // Violet
 }
 
 void CMenus::RenderYieldBloomFrame(CUIRect Rect, float Rounding, bool WithRivets)
 {
-	// Pure code YIELDBLOOM – no texture dependency, avoids white checkerboard
-	CUIRect Outer = {Rect.x - 1.5f, Rect.y - 1.5f, Rect.w + 3.0f, Rect.h + 3.0f};
-	Outer.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), IGraphics::CORNER_ALL, Rounding + 1.0f);
-	Rect.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, Rounding);
-	// double inner border
-	CUIRect InnerBorder = {Rect.x + 2.0f, Rect.y + 2.0f, Rect.w - 4.0f, Rect.h - 4.0f};
-	InnerBorder.Draw(ColorRGBA(0.16f, 0.17f, 0.18f, 0.35f), IGraphics::CORNER_ALL, Rounding - 1.0f);
-	// amber top
-	CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
-	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.95f), IGraphics::CORNER_T, Rounding * 0.5f);
-	// cyan bottom
-	CUIRect Bottom = {Rect.x, Rect.y + Rect.h - 2.5f, Rect.w, 2.5f};
-	Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_B, Rounding * 0.4f);
+	// Deprecated – now using Form A pure code, keep for compatibility – draw Form A panel
+	RenderFormAPanel(Rect, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+}
+
+void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, ColorRGBA BorderColor, bool WithGlow, bool WithImpulse, float ImpulseProgress, ColorRGBA ImpulseColor)
+{
+	// Form A – chamfered corners, 2px frame, glow outside 10-12px 30%
+	float x = Rect.x;
+	float y = Rect.y;
+	float w = Rect.w;
+	float h = Rect.h;
+	float c = Chamfer;
+
+	// Glow outside
+	if(WithGlow)
+	{
+		float glow = 10.0f;
+		float gx = x - glow;
+		float gy = y - glow;
+		float gw = w + glow * 2.0f;
+		float gh = h + glow * 2.0f;
+		// outer glow as chamfered rect with low alpha
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, 0.18f);
+		// Use DrawRect with larger rounding as approximation for glow
+		IGraphics::CQuadItem QuadGlow(gx, gy, gw, gh);
+		Graphics()->QuadsDrawTL(&QuadGlow, 1);
+		Graphics()->QuadsEnd();
+	}
+
+	// Main background – chamfered octagon via 3 freeform quads
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, BgColor.a);
+	// Top trapezoid
+	IGraphics::CFreeformItem FreeTop(
+		x + c, y,
+		x + w - c, y,
+		x + w, y + c,
+		x, y + c);
+	Graphics()->QuadsDrawFreeform(&FreeTop, 1);
+	// Middle rect
+	IGraphics::CQuadItem QuadMid(x, y + c, w, h - 2 * c);
+	Graphics()->QuadsDrawTL(&QuadMid, 1);
+	// Bottom trapezoid
+	IGraphics::CFreeformItem FreeBottom(
+		x, y + h - c,
+		x + w, y + h - c,
+		x + w - c, y + h,
+		x + c, y + h);
+	Graphics()->QuadsDrawFreeform(&FreeBottom, 1);
+	Graphics()->QuadsEnd();
+
+	// Inner gradient top – Deck2 #121B46
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.0706f, 0.1059f, 0.2745f, 0.55f);
+	IGraphics::CQuadItem QuadTopGrad(x + c, y, w - 2 * c, h * 0.35f);
+	Graphics()->QuadsDrawTL(&QuadTopGrad, 1);
+	Graphics()->QuadsEnd();
+
+	// Border – 2px chamfered frame
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a);
+	// Top edge
+	IGraphics::CQuadItem TopEdge(x + c, y, w - 2 * c, 2.0f);
+	Graphics()->QuadsDrawTL(&TopEdge, 1);
+	// Bottom edge
+	IGraphics::CQuadItem BottomEdge(x + c, y + h - 2.0f, w - 2 * c, 2.0f);
+	Graphics()->QuadsDrawTL(&BottomEdge, 1);
+	// Left edge
+	IGraphics::CQuadItem LeftEdge(x, y + c, 2.0f, h - 2 * c);
+	Graphics()->QuadsDrawTL(&LeftEdge, 1);
+	// Right edge
+	IGraphics::CQuadItem RightEdge(x + w - 2.0f, y + c, 2.0f, h - 2 * c);
+	Graphics()->QuadsDrawTL(&RightEdge, 1);
+	// Chamfer corners – small diagonal lines
+	IGraphics::CFreeformItem CornerTL(x, y + c, x + c, y, x + c, y + 2.0f, x + 2.0f, y + c);
+	IGraphics::CFreeformItem CornerTR(x + w - c, y, x + w, y + c, x + w - 2.0f, y + c, x + w - c, y + 2.0f);
+	IGraphics::CFreeformItem CornerBL(x, y + h - c, x + 2.0f, y + h - c, x + c, y + h - 2.0f, x + c, y + h);
+	IGraphics::CFreeformItem CornerBR(x + w - 2.0f, y + h - c, x + w, y + h - c, x + w - c, y + h, x + w - c, y + h - 2.0f);
+	Graphics()->QuadsDrawFreeform(&CornerTL, 1);
+	Graphics()->QuadsDrawFreeform(&CornerTR, 1);
+	Graphics()->QuadsDrawFreeform(&CornerBL, 1);
+	Graphics()->QuadsDrawFreeform(&CornerBR, 1);
+	Graphics()->QuadsEnd();
+
+	// Impulse – running light around border (5s circle, 6s Legendary gold)
+	if(WithImpulse)
+	{
+		float total = 2.0f * (w + h);
+		float pos = ImpulseProgress * total;
+		float ix = x, iy = y;
+		if(pos < w)
+		{
+			ix = x + pos;
+			iy = y;
+		}
+		else if(pos < w + h)
+		{
+			ix = x + w;
+			iy = y + (pos - w);
+		}
+		else if(pos < 2 * w + h)
+		{
+			ix = x + w - (pos - w - h);
+			iy = y + h;
+		}
+		else
+		{
+			ix = x;
+			iy = y + h - (pos - 2 * w - h);
+		}
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(ImpulseColor.r, ImpulseColor.g, ImpulseColor.b, 0.95f);
+		IGraphics::CQuadItem QuadImp(ix - 6.0f, iy - 6.0f, 12.0f, 12.0f);
+		Graphics()->QuadsDrawTL(&QuadImp, 1);
+		// glow around impulse
+		Graphics()->SetColor(ImpulseColor.r, ImpulseColor.g, ImpulseColor.b, 0.35f);
+		IGraphics::CQuadItem QuadImpGlow(ix - 14.0f, iy - 14.0f, 28.0f, 28.0f);
+		Graphics()->QuadsDrawTL(&QuadImpGlow, 1);
+		Graphics()->QuadsEnd();
+	}
+
+	// Corner brackets like in management panel – small L shapes magenta/cyan
 	if(WithRivets)
 	{
-		float riv = 4.0f;
-		CUIRect R1 = {Rect.x + 4.0f, Rect.y + 4.0f, riv, riv};
-		CUIRect R2 = {Rect.x + Rect.w - 8.0f, Rect.y + 4.0f, riv, riv};
-		CUIRect R3 = {Rect.x + 4.0f, Rect.y + Rect.h - 8.0f, riv, riv};
-		CUIRect R4 = {Rect.x + Rect.w - 8.0f, Rect.y + Rect.h - 8.0f, riv, riv};
-		R1.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
-		R2.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
-		R3.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
-		R4.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
-		// inner highlight dots
-		CUIRect R1h = {Rect.x + 5.0f, Rect.y + 5.0f, 1.5f, 1.5f};
-		R1h.Draw(ColorRGBA(0.32f, 0.33f, 0.34f, 1.0f), IGraphics::CORNER_ALL, 0.75f);
+		// Top-right pink bracket
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(0.9333f, 0.2706f, 0.5725f, 0.85f);
+		IGraphics::CQuadItem B1(x + w - 18.0f, y + 6.0f, 12.0f, 2.0f);
+		IGraphics::CQuadItem B2(x + w - 8.0f, y + 6.0f, 2.0f, 12.0f);
+		Graphics()->QuadsDrawTL(&B1, 1);
+		Graphics()->QuadsDrawTL(&B2, 1);
+		// Bottom-left
+		IGraphics::CQuadItem B3(x + 6.0f, y + h - 8.0f, 12.0f, 2.0f);
+		IGraphics::CQuadItem B4(x + 6.0f, y + h - 18.0f, 2.0f, 12.0f);
+		Graphics()->QuadsDrawTL(&B3, 1);
+		Graphics()->QuadsDrawTL(&B4, 1);
+		Graphics()->QuadsEnd();
 	}
-	// vent slats subtle
-	CUIRect Vent = {Rect.x + Rect.w * 0.12f, Rect.y + Rect.h - 6.0f, Rect.w * 0.76f, 1.0f};
-	Vent.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.12f), 0, 0);
+}
+
+void CMenus::RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor)
+{
+	Progress = std::clamp(Progress, 0.0f, 1.0f);
+	// Background Deck
+	RenderFormAPanel(Rect, 6.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.55f), false, false, 0.0f, ColorRGBA(0,0,0,0));
+	if(Progress > 0.0f)
+	{
+		CUIRect Fill = {Rect.x + 3.0f, Rect.y + 3.0f, (Rect.w - 6.0f) * Progress, Rect.h - 6.0f};
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(FillColor.r, FillColor.g, FillColor.b, FillColor.a);
+		IGraphics::CQuadItem QuadFill(Fill.x, Fill.y, Fill.w, Fill.h);
+		Graphics()->QuadsDrawTL(&QuadFill, 1);
+		Graphics()->QuadsEnd();
+	}
 }
 
 void CMenus::RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor)

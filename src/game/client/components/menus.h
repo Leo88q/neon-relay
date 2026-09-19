@@ -664,6 +664,7 @@ protected:
 public:
 	void RenderBackground();
 	void RenderYieldBloomFrame(CUIRect Rect, float Rounding = 6.0f, bool WithRivets = true);
+	void RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, ColorRGBA BorderColor, bool WithGlow, bool WithImpulse, float ImpulseProgress, ColorRGBA ImpulseColor);
 	void RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor);
 
 	CMenus();

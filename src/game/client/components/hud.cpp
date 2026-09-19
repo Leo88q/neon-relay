@@ -94,47 +94,119 @@ void CHud::OnReset()
 
 void CHud::RenderYieldBloomPanel(float x, float y, float w, float h, float Rounding)
 {
-	// YIELDBLOOM industrial panel – gunmetal #1C1E22, amber top 2px, cyan bottom 2.5px, rivets, double border
-	CUIRect Rect = {x, y, w, h};
-	CUIRect Outer = {x - 1.0f, y - 1.0f, w + 2.0f, h + 2.0f};
-	Outer.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), IGraphics::CORNER_ALL, Rounding + 1.0f);
-	Rect.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f), IGraphics::CORNER_ALL, Rounding);
-	CUIRect Top = {x, y, w, 2.5f};
-	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.85f), IGraphics::CORNER_T, 2.0f);
-	CUIRect Bottom = {x, y + h - 2.5f, w, 2.5f};
-	Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.75f), IGraphics::CORNER_B, 2.0f);
-	// rivets
-	float riv = 2.5f;
-	CUIRect R1 = {x + 3.0f, y + 3.0f, riv, riv};
-	CUIRect R2 = {x + w - 5.5f, y + 3.0f, riv, riv};
-	R1.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.0f);
-	R2.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.0f);
+	// New design Form A – Void #060A1C, Deck #0C1334, cyan dim border 2px, glow 10px 30%, holographic glass
+	float c = 8.0f;
+	if(Rounding > 0) c = Rounding;
+	// Glow outside
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.1647f, 0.5294f, 0.5922f, 0.18f);
+	IGraphics::CQuadItem Glow(x - 8, y - 8, w + 16, h + 16);
+	Graphics()->QuadsDrawTL(&Glow, 1);
+	Graphics()->QuadsEnd();
+
+	// Main background chamfered
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.047f, 0.0745f, 0.2039f, 0.92f); // Deck #0C1334
+	IGraphics::CFreeformItem FreeTop(x + c, y, x + w - c, y, x + w, y + c, x, y + c);
+	Graphics()->QuadsDrawFreeform(&FreeTop, 1);
+	IGraphics::CQuadItem Mid(x, y + c, w, h - 2 * c);
+	Graphics()->QuadsDrawTL(&Mid, 1);
+	IGraphics::CFreeformItem FreeBottom(x, y + h - c, x + w, y + h - c, x + w - c, y + h, x + c, y + h);
+	Graphics()->QuadsDrawFreeform(&FreeBottom, 1);
+	Graphics()->QuadsEnd();
+
+	// Top gradient Deck2 #121B46
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.0706f, 0.1059f, 0.2745f, 0.5f);
+	IGraphics::CQuadItem TopGrad(x + c, y, w - 2 * c, h * 0.4f);
+	Graphics()->QuadsDrawTL(&TopGrad, 1);
+	Graphics()->QuadsEnd();
+
+	// Border 2px cyan dim
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.1647f, 0.5294f, 0.5922f, 0.85f);
+	IGraphics::CQuadItem TopEdge(x + c, y, w - 2 * c, 2.0f);
+	IGraphics::CQuadItem BottomEdge(x + c, y + h - 2.0f, w - 2 * c, 2.0f);
+	IGraphics::CQuadItem LeftEdge(x, y + c, 2.0f, h - 2 * c);
+	IGraphics::CQuadItem RightEdge(x + w - 2.0f, y + c, 2.0f, h - 2 * c);
+	Graphics()->QuadsDrawTL(&TopEdge, 1);
+	Graphics()->QuadsDrawTL(&BottomEdge, 1);
+	Graphics()->QuadsDrawTL(&LeftEdge, 1);
+	Graphics()->QuadsDrawTL(&RightEdge, 1);
+	Graphics()->QuadsEnd();
+}
+
+void CHud::RenderFormAPanelHud(float x, float y, float w, float h, float Chamfer, ColorRGBA BorderColor, bool WithImpulse)
+{
+	float c = Chamfer;
+	// Glow
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, 0.18f);
+	IGraphics::CQuadItem Glow(x - 10, y - 10, w + 20, h + 20);
+	Graphics()->QuadsDrawTL(&Glow, 1);
+	Graphics()->QuadsEnd();
+
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.047f, 0.0745f, 0.2039f, 0.94f);
+	IGraphics::CFreeformItem FreeTop(x + c, y, x + w - c, y, x + w, y + c, x, y + c);
+	Graphics()->QuadsDrawFreeform(&FreeTop, 1);
+	IGraphics::CQuadItem Mid(x, y + c, w, h - 2 * c);
+	Graphics()->QuadsDrawTL(&Mid, 1);
+	IGraphics::CFreeformItem FreeBottom(x, y + h - c, x + w, y + h - c, x + w - c, y + h, x + c, y + h);
+	Graphics()->QuadsDrawFreeform(&FreeBottom, 1);
+	Graphics()->QuadsEnd();
+
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a);
+	IGraphics::CQuadItem TopEdge(x + c, y, w - 2 * c, 2.0f);
+	IGraphics::CQuadItem BottomEdge(x + c, y + h - 2.0f, w - 2 * c, 2.0f);
+	IGraphics::CQuadItem LeftEdge(x, y + c, 2.0f, h - 2 * c);
+	IGraphics::CQuadItem RightEdge(x + w - 2.0f, y + c, 2.0f, h - 2 * c);
+	Graphics()->QuadsDrawTL(&TopEdge, 1);
+	Graphics()->QuadsDrawTL(&BottomEdge, 1);
+	Graphics()->QuadsDrawTL(&LeftEdge, 1);
+	Graphics()->QuadsDrawTL(&RightEdge, 1);
+	Graphics()->QuadsEnd();
+
+	if(WithImpulse)
+	{
+		float t = (time_get() / (float)time_freq());
+		float prog = std::fmod(t, 5.0f) / 5.0f;
+		float total = 2.0f * (w + h);
+		float pos = prog * total;
+		float ix = x, iy = y;
+		if(pos < w) { ix = x + pos; iy = y; }
+		else if(pos < w + h) { ix = x + w; iy = y + (pos - w); }
+		else if(pos < 2 * w + h) { ix = x + w - (pos - w - h); iy = y + h; }
+		else { ix = x; iy = y + h - (pos - 2 * w - h); }
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, 0.95f);
+		IGraphics::CQuadItem QuadImp(ix - 5, iy - 5, 10, 10);
+		Graphics()->QuadsDrawTL(&QuadImp, 1);
+		Graphics()->QuadsEnd();
+	}
 }
 
 void CHud::RenderYieldBloomProgressBar(float x, float y, float w, float h, float Progress, ColorRGBA FillColor)
 {
 	Progress = std::clamp(Progress, 0.0f, 1.0f);
-	// background gunmetal
+	// background Deck
 	CUIRect Bg = {x, y, w, h};
-	Bg.Draw(ColorRGBA(0.08f, 0.09f, 0.10f, 0.95f), IGraphics::CORNER_ALL, 3.0f);
-	// fill live
+	Bg.Draw(ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), IGraphics::CORNER_ALL, 3.0f);
 	if(Progress > 0.0f)
 	{
 		CUIRect Fill = {x + 2.0f, y + 2.0f, (w - 4.0f) * Progress, h - 4.0f};
 		Fill.Draw(FillColor, IGraphics::CORNER_ALL, 2.0f);
-		// cyan glow on fill edge
 		CUIRect Edge = {Fill.x + Fill.w - 2.0f, Fill.y, 2.0f, Fill.h};
-		Edge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_R, 1.0f);
-	}
-	// frame overlay texture if available
-	if(m_aYieldBloomHud.size() > 2 && m_aYieldBloomHud[2].IsValid())
-	{
-		Graphics()->TextureSet(m_aYieldBloomHud[2]);
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.35f);
-		IGraphics::CQuadItem Quad(x, y, w, h);
-		Graphics()->QuadsDrawTL(&Quad, 1);
-		Graphics()->QuadsEnd();
+		Edge.Draw(ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f), IGraphics::CORNER_R, 1.0f);
 	}
 }
 
@@ -840,7 +912,7 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 				const int Max = g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000;
 				float NinjaProgress = std::clamp(pCharacter->m_AmmoCount - Client()->GameTick(g_Config.m_ClDummy), 0, Max) / (float)Max;
 				// YIELDBLOOM progress bar for ninja – live
-				RenderYieldBloomProgressBar(PanelX + 10 * 12 + 8, PanelY + 2, 8, 24, NinjaProgress, ColorRGBA(0.05f, 0.90f, 0.92f, 0.95f));
+				RenderYieldBloomProgressBar(PanelX + 10 * 12 + 8, PanelY + 2, 8, 24, NinjaProgress, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.95f));
 			}
 		}
 		else if(CurWeapon >= 0 && GameClient()->m_GameSkin.m_aSpriteWeaponProjectiles[CurWeapon].IsValid())
@@ -866,7 +938,7 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 		// health display – live bars with YIELDBLOOM colors
 		const int DisplayHealth = std::min(pCharacter->m_Health, 10);
 		// live health progress bar background
-		RenderYieldBloomProgressBar(PanelX + 8, PanelY + 6, 100, 8, DisplayHealth / 10.0f, ColorRGBA(0.92f, 0.68f, 0.12f, 0.95f));
+		RenderYieldBloomProgressBar(PanelX + 8, PanelY + 6, 100, 8, DisplayHealth / 10.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.95f));
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHealthFull);
 		Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_HealthOffset + QuadOffsetSixup, DisplayHealth);
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHealthEmpty);
@@ -874,7 +946,7 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 
 		// armor display – live
 		const int DisplayArmor = std::min(pCharacter->m_Armor, 10);
-		RenderYieldBloomProgressBar(PanelX + 8, PanelY + 20, 100, 8, DisplayArmor / 10.0f, ColorRGBA(0.05f, 0.90f, 0.92f, 0.90f));
+		RenderYieldBloomProgressBar(PanelX + 8, PanelY + 20, 100, 8, DisplayArmor / 10.0f, ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.90f));
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteArmorFull);
 		Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_ArmorOffset + QuadOffsetSixup, DisplayArmor);
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteArmorEmpty);

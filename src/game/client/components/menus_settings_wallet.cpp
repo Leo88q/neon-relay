@@ -49,7 +49,7 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 	};
 
 	MainView.HSplitTop(pInfo->connected ? 128.0f : 72.0f, &Panel, &MainView);
-	RenderYieldBloomFrame(Panel, 6.0f, true);
+	RenderFormAPanel(Panel, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
 	s_WalletScroll.AddRect(Panel);
 	Panel.Margin(16.0f, &Panel);
 	Panel.HSplitTop(28.0f, &Line, &Panel);
@@ -151,7 +151,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 	MainView.HSplitTop(Compact ? 196.0f : 164.0f, &Row, &MainView);
 	if(s_RaceScroll.AddRect(Row))
 	{
-		RenderYieldBloomFrame(Row, 6.0f, true);
+		RenderFormAPanel(Row, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
 		Row.Margin(12.0f, &Row);
 		CUIRect Name, Detail, Action;
 		Row.HSplitBottom(40.0f, &Row, &Action);
@@ -184,7 +184,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		const bool Visible = s_RaceScroll.AddRect(Row);
 		if(Visible)
 		{
-			RenderYieldBloomFrame(Row, 6.0f, true);
+			RenderFormAPanel(Row, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
 			Row.Margin(12.0f, &Row);
 			CUIRect Name, Players, Fee;
 			Row.HSplitTop(28.0f, &Name, &Row);
@@ -224,21 +224,55 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 		char aPath[128];
 		str_format(aPath, sizeof(aPath), "portraits/%s.png", POTATO_CATALOG[Index % 10].m_pSkin);
 		Portrait = Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
+		if(!Portrait.IsValid())
+		{
+			str_format(aPath, sizeof(aPath), "skins/%s.png", POTATO_CATALOG[Index % 10].m_pSkin);
+			Portrait = Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
+		}
 	}
 	if(!Portrait.IsValid()) return;
 
-	// YIELDBLOOM pure code frame – avoids broken generated PNG with white center
-	RenderYieldBloomFrame(Rect, 8.0f, true);
+	// New design Form A – Void #060A1C, Deck #0C1334, rarity border cyan/violet/gold, chamfer 12px
+	const auto &Entry = POTATO_CATALOG[Index % 10];
+	ColorRGBA BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.95f); // Cyan Common
+	int Diamonds = 1;
+	if(Entry.m_PriceSkr == 1000)
+	{
+		BorderColor = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.95f); // Violet Rare
+		Diamonds = 2;
+	}
+	else if(Entry.m_PriceSkr == 2000)
+	{
+		BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); // Gold Legendary
+		Diamonds = 3;
+	}
 
+	// Background Deck
+	CUIRect Bg = Rect;
+	Bg.Draw(ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), IGraphics::CORNER_ALL, 8.0f);
+
+	// Portrait inside
 	CUIRect Inner = Rect;
-	Inner.Margin(10.0f, &Inner);
-	const float Size = std::min(Inner.w, Inner.h);
+	Inner.Margin(8.0f, &Inner);
+	float Size = std::min(Inner.w, Inner.h * 0.85f);
 	Graphics()->TextureSet(Portrait);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-	IGraphics::CQuadItem Quad(Inner.x + (Inner.w - Size) / 2.0f, Inner.y + (Inner.h - Size) / 2.0f, Size, Size);
+	IGraphics::CQuadItem Quad(Inner.x + (Inner.w - Size) / 2.0f, Inner.y, Size, Size);
 	Graphics()->QuadsDrawTL(&Quad, 1);
 	Graphics()->QuadsEnd();
+
+	// Form A frame – chamfer 12px, 2px border with rarity color, glow outside 10px 30%
+	GameClient()->m_Menus.RenderFormAPanel(Rect, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.0f), BorderColor, true, false, 0.0f, BorderColor);
+
+	// Diamonds indicator bottom center
+	float dx = Rect.x + Rect.w / 2.0f - (Diamonds * 10.0f) / 2.0f;
+	float dy = Rect.y + Rect.h - 14.0f;
+	for(int d = 0; d < Diamonds; ++d)
+	{
+		CUIRect Diamond = {dx + d * 10.0f, dy, 6.0f, 6.0f};
+		Diamond.Draw(BorderColor, IGraphics::CORNER_ALL, 1.5f);
+	}
 }
 
 void CMenus::RenderCharacters(CUIRect MainView)
@@ -282,7 +316,12 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		MainView.VSplitLeft(MainView.w * 0.61f, &Grid, &Details);
 		Details.VSplitLeft(12.0f, nullptr, &Details);
 	}
-	RenderYieldBloomFrame(Details, 6.0f, true);
+	// Details panel – Form A window 16px chamfer, Deck #0C1334, cyan dim border, impulse 5s
+	{
+		float t = (time_get() / (float)time_freq());
+		float prog = std::fmod(t, 5.0f) / 5.0f;
+		RenderFormAPanel(Details, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, true, prog, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+	}
 	Details.Margin(12.0f, &Details);
 	static int s_Selected = 0;
 	static CButtonContainer s_aSelect[10], s_TryOn;
@@ -295,11 +334,24 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		if(i >= 10) break;
 		const auto &Entry = POTATO_CATALOG[i];
 		CUIRect Card = {Grid.x + (Slot % Columns) * Width, Grid.y + (Slot / Columns) * Height, Width - 5.0f, Height - 5.0f};
-		const ColorRGBA Tint = Entry.m_PriceSkr == 2000 ? ColorRGBA(0.18f, 0.14f, 0.05f, 0.96f) :
-			Entry.m_PriceSkr == 1000 ? ColorRGBA(0.10f, 0.07f, 0.18f, 0.96f) : ColorRGBA(0.05f, 0.09f, 0.16f, 0.96f);
-		if(DoButton_Menu(&s_aSelect[i], "", s_Selected == i, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, Tint))
+		// Card background Form A 12px, rarity border
+		ColorRGBA BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f);
+		ColorRGBA ImpulseColor = BorderColor;
+		float ImpulseDur = 5.0f;
+		if(Entry.m_PriceSkr == 1000) { BorderColor = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.9f); ImpulseColor = BorderColor; }
+		else if(Entry.m_PriceSkr == 2000) { BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); ImpulseColor = BorderColor; ImpulseDur = 6.0f; }
+
+		bool IsSelected = s_Selected == i;
+		// Draw card panel
+		{
+			float t = (time_get() / (float)time_freq());
+			float prog = std::fmod(t, ImpulseDur) / ImpulseDur;
+			RenderFormAPanel(Card, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), BorderColor, true, IsSelected, prog, ImpulseColor);
+		}
+		if(DoButton_Menu(&s_aSelect[i], "", IsSelected, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.0f)))
 		{ s_Selected = i; if(Compact) s_DetailOpen = true; }
 		CUIRect Portrait = Card;
+		Portrait.Margin(4.0f, &Portrait);
 		Portrait.h = Height * 0.57f;
 		RenderCharacterPortrait(Portrait, i);
 		Card.HSplitTop(Height * 0.57f, nullptr, &Card);
@@ -344,7 +396,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		str_copy(g_Config.m_ClPlayerSkin, Entry.m_pSkin);
 		g_Config.m_ClPlayerUseCustomColor = 0;
 		g_Config.m_ClVanillaSkinsOnly = 0;
-		m_NeedSendinfo = true; // catalog try-on always targets the main player, not the dummy
+		m_NeedSendinfo = true;
 	}
 }
 
@@ -359,7 +411,7 @@ void CMenus::RenderLeaders(CUIRect MainView)
 	static CButtonContainer s_Races;
 	if(DoButton_Menu(&s_Races, Localize("View races"), 0, &Footer))
 		SetMenuPage(PAGE_RACES);
-	RenderYieldBloomFrame(MainView, 6.0f, true);
+	{ float t=(time_get()/(float)time_freq()); float prog=std::fmod(t,5.0f)/5.0f; RenderFormAPanel(MainView, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, true, prog, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f)); }
 	MainView.Margin(16.0f, &MainView);
 	static CScrollRegion s_LeadersScroll;
 	CScrollRegionParams ScrollParams;
