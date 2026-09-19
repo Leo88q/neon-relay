@@ -66,21 +66,20 @@ def build(folder):
     q2=quad(sky2,-10,-15,540,210)
     q2.colors=[(220,230,255,220)]*4
 
-    # Meteors flying via code – quad layer with position envelopes
-    meteor_drift = env('Meteor','Position',[(0,(0,0,0)),(8000,(25,-12,0)),(16000,(50,-24,0))])
-    meteor_spin = env('Spin','Color',[(0,(1,1,1,0.9)),(4000,(1,1,1,0.6)),(8000,(1,1,1,0.9))])
+    # Meteors flying via code – larger, brighter, more visible
+    meteor_drift = env('Meteor','Position',[(0,(0,0,0)),(6000,(28,-14,0)),(12000,(56,-28,0))])
+    meteor_spin = env('Spin','Color',[(0,(1,1,1,1.0)),(3000,(1,1,1,0.85)),(6000,(1,1,1,1.0))])
     for lane in range(3):
-        g=m.groups.new(); g.name=f'Meteors{lane}'; g.parallax_x=30+lane*15; g.parallax_y=20+lane*10
+        g=m.groups.new(); g.name=f'Meteors{lane}'; g.parallax_x=35+lane*18; g.parallax_y=25+lane*12
         layer=g.layers.new_quads(); layer.name='Meteors'; layer.image=5
-        for i in range(12):
-            # random start positions across sky
-            x = -40 + i*18 + lane*7
-            y = -10 + (i*13)%40
-            q=quad(layer,x,y,3+lane*0.6,2+lane*0.4)
+        for i in range(14):
+            x = -50 + i*22 + lane*9
+            y = -15 + (i*17)%50
+            q=quad(layer,x,y,5+lane*1.2,3.5+lane*0.9)
             q.position_env=meteor_drift
-            q.position_env_offset=(i*1100+lane*2300)%16000
+            q.position_env_offset=(i*900+lane*1800)%12000
             q.color_env=meteor_spin
-            q.color_env_offset=(i*700)%8000
+            q.color_env_offset=(i*600)%6000
 
     # Atrium ribs – subtle
     bg=m.groups.new(); bg.name='Ribs'; bg.parallax_x=22; bg.parallax_y=22
@@ -110,15 +109,15 @@ def build(folder):
     l=g.layers.new_game(w,h); assign_tiles(l,game)
     fl=g.layers.new_physics('Front'); assign_tiles(fl,front)
 
-    # Visible freeze walls – tiles layer using freeze.png so freeze is seen
+    # Visible freeze walls – bright tiles using freeze.png
     freeze_vis=g.layers.new_tiles(w,h); freeze_vis.name='FreezeWalls'; freeze_vis.image=4
     fv=freeze_vis.tiles
     for y in range(h):
         for x in range(w):
             if front[y,x,0]==9:
-                fv[y,x,0]=1  # first tile in freeze atlas
+                fv[y,x,0]=0  # brightest tile
             elif front[y,x,0]==11:
-                fv[y,x,0]=2
+                fv[y,x,0]=1
     assign_tiles(freeze_vis,fv)
 
     terrain=g.layers.new_tiles(w,h); terrain.name='Chrome'; terrain.image=0

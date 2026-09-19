@@ -1,5 +1,5 @@
 {
-  "status": "v6 final bright cosmos visible, vertical hook walls for hooking, large meteors, 36 small jumps - fixes dark bg and hook",
+  "status": "v6 final bright cosmos visible, vertical hook walls, large meteors 5x3.5, bright freeze tile0, 36 small jumps - fixes dark bg and hook",
   "source": {
     "file": "dm7.map",
     "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
@@ -20,7 +20,7 @@
   },
   "physics_preserved": false,
   "map": "Neon Relay Chrome DM Study.map",
-  "output_sha256": "07cc04af309808c2050f5006e5ad8cbc4c63ed29223539301ccc4c57c168cc43",
+  "output_sha256": "7dde0e264d4280e742d23ff7582fddbd60148a0452f63d575e4540b801846965",
   "width": 520,
   "height": 180,
   "spawn_count": 42,
