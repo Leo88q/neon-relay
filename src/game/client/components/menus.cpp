@@ -125,39 +125,54 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 {
 	CUIRect Text = *pRect;
 
+	// YIELDBLOOM – force gunmetal industrial, ignore passed white/gray
 	if(Checked)
-		Color = ColorRGBA(0.32f, 0.28f, 0.12f, 0.85f);
+		Color = ColorRGBA(0.92f, 0.68f, 0.12f, 0.92f);
+	else
+	{
+		// keep hue if caller passed distinct color, but base is gunmetal
+		if(Color.r > 0.8f && Color.g > 0.8f && Color.b > 0.8f)
+			Color = ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f);
+		else if(Color.a < 0.6f)
+			Color = ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
+	}
 	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
 
 	// YIELDBLOOM industrial – gunmetal beveled, amber top, cyan bottom
 	float R = Rounding > 8.0f ? 8.0f : Rounding;
-	if(R < 3.0f) R = 4.0f;
-	// Outer dark border
-	CUIRect Outer = {pRect->x - 1.0f, pRect->y - 1.0f, pRect->w + 2.0f, pRect->h + 2.0f};
-	Outer.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), Corners, R+1.0f);
+	if(R < 3.0f) R = 5.0f;
+	// Outer dark border double
+	CUIRect Outer = {pRect->x - 1.5f, pRect->y - 1.5f, pRect->w + 3.0f, pRect->h + 3.0f};
+	Outer.Draw(ColorRGBA(0.05f, 0.06f, 0.07f, 1.0f), Corners, R+1.5f);
+	CUIRect Outer2 = {pRect->x - 0.5f, pRect->y - 0.5f, pRect->w + 1.0f, pRect->h + 1.0f};
+	Outer2.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 0.55f), Corners, R+0.5f);
 	pRect->Draw(Color, Corners, R);
-	// Top amber industrial edge
+	// Top amber industrial edge + bottom cyan
 	if(Ui()->HotItem() == pButtonContainer || Checked)
 	{
-		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 3.0f};
-		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.95f), IGraphics::CORNER_T, 2.0f);
-		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 2.5f, pRect->w, 2.5f};
-		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_B, 1.0f);
+		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 3.5f};
+		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 1.0f), IGraphics::CORNER_T, 2.5f);
+		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 3.0f, pRect->w, 3.0f};
+		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.95f), IGraphics::CORNER_B, 1.5f);
 	}
 	else
 	{
-		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 2.0f};
-		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.45f), IGraphics::CORNER_T, 2.0f);
-		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 1.5f, pRect->w, 1.5f};
-		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.35f), IGraphics::CORNER_B, 1.0f);
+		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 2.5f};
+		Edge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.65f), IGraphics::CORNER_T, 2.0f);
+		CUIRect Bottom = {pRect->x, pRect->y + pRect->h - 2.0f, pRect->w, 2.0f};
+		Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.55f), IGraphics::CORNER_B, 1.0f);
 	}
-	// Rivets
+	// Rivets 4 corners
 	{
-		float riv = 3.0f;
-		CUIRect R1 = {pRect->x + 3.0f, pRect->y + 3.0f, riv, riv};
-		CUIRect R2 = {pRect->x + pRect->w - 6.0f, pRect->y + 3.0f, riv, riv};
-		R1.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
-		R2.Draw(ColorRGBA(0.18f, 0.19f, 0.20f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
+		float riv = 3.5f;
+		CUIRect R1 = {pRect->x + 4.0f, pRect->y + 4.0f, riv, riv};
+		CUIRect R2 = {pRect->x + pRect->w - 7.5f, pRect->y + 4.0f, riv, riv};
+		CUIRect R3 = {pRect->x + 4.0f, pRect->y + pRect->h - 7.5f, riv, riv};
+		CUIRect R4 = {pRect->x + pRect->w - 7.5f, pRect->y + pRect->h - 7.5f, riv, riv};
+		R1.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
+		R2.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
+		R3.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
+		R4.Draw(ColorRGBA(0.22f, 0.23f, 0.24f, 1.0f), IGraphics::CORNER_ALL, 1.75f);
 	}
 
 	if(pImageName)
