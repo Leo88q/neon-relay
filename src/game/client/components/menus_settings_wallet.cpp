@@ -10,6 +10,7 @@
 #include "menus.h"
 
 #include <base/color.h>
+#include <base/log.h>
 #include <algorithm>
 #include <game/client/animstate.h>
 #include <game/client/gameclient.h>
@@ -165,6 +166,8 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		Ui()->DoLabel(&Row, Localize("Original course. Local practice, no wallet or ranked prizes."), 14.0f, TEXTALIGN_TL, Props);
 		static CButtonContainer s_Warmup;
 		const bool Running = GameClient()->m_LocalServer.IsWarmupRunning();
+		if(g_Config.m_Debug && Ui()->MouseButtonClicked(0))
+			log_info("practice-ui", "click=(%.1f,%.1f) button=(%.1f,%.1f,%.1f,%.1f)", Ui()->MouseX(), Ui()->MouseY(), Action.x, Action.y, Action.w, Action.h);
 		if(DoButton_Menu(&s_Warmup, Running ? Localize("Stop practice server") : Localize("Start Warmup"), 0, &Action))
 		{
 			if(Running)

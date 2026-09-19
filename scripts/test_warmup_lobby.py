@@ -27,7 +27,7 @@ def main():
         for filename in ('autoexec.cfg','autoexec_server.cfg'):
             (home/filename).write_text('# Isolated native lobby test\n')
         env={k:v for k,v in os.environ.items() if not k.startswith('NEONRELAY_')}
-        env.update(HOME=tmp,XDG_CONFIG_HOME=tmp,XDG_DATA_HOME=tmp,LIBGL_ALWAYS_SOFTWARE='1')
+        env.update(HOME=tmp,XDG_CONFIG_HOME=tmp,XDG_DATA_HOME=tmp,LIBGL_ALWAYS_SOFTWARE='1',SDL_MOUSE_RELATIVE_MODE_WARP='1')
         raw=home/'combined.log'
         blocker=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
         blocker.bind(('127.0.0.1',8305));blocker.setblocking(False)
@@ -45,7 +45,7 @@ def main():
                 proc=subprocess.Popen([binary,'gfx_fullscreen 0','gfx_vsync 0',
                     'gfx_screen_width 1280','gfx_screen_height 800','cl_menu_map ""',
                     'cl_show_welcome 0','player_name LobbyProbe','stdout_output_level 1',
-                    'ui_mousesens 100'],
+                    'ui_mousesens 100','cl_skip_start_menu 1','debug 1','snd_enable 0'],
                     cwd=tmp,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
                 window=None
                 def window_ready():
@@ -58,7 +58,6 @@ def main():
                 tool('xdotool','windowsize',window,'1280','800')
                 tool('xdotool','windowfocus','--sync',window)
                 time.sleep(3)
-                tool('xdotool','key','p');time.sleep(1)
                 tool('import','-window',window,str(out/'warmup-lobby-card.png'))
                 # Real UI units: screen.h=600, outer margin=10, tab bar=44,
                 # desktop content margin=24, title=42, currency tabs=44,
@@ -67,13 +66,20 @@ def main():
                 def click():
                     # The game uses a virtual relative mouse, not the OS cursor.
                     # Clamp that cursor to the top-left, then move in UI pixels.
-                    for _ in range(3):
-                        tool('xdotool','mousemove_relative','--','-1000','-1000')
+                    for _ in range(5):
+                        tool('xdotool','mousemove_relative','--','-300','-300')
                         time.sleep(.1)
-                    tool('xdotool','mousemove_relative','--','640',str(button_y))
+                    dx,dy=640,button_y
+                    while dx or dy:
+                        sx,sy=min(dx,80),min(dy,80)
+                        tool('xdotool','mousemove_relative','--',str(sx),str(sy))
+                        dx-=sx;dy-=sy
+                        time.sleep(.1)
                     time.sleep(.2)
                     tool('xdotool','click','1')
-                click();time.sleep(2)
+                click()
+                wait(lambda:'launch requested course=warmup' in text(),5,'card click reaches launch handler')
+                time.sleep(1)
                 assert 'verified course=warmup' not in text()
                 children=Path(f'/proc/{proc.pid}/task/{proc.pid}/children').read_text().strip()
                 assert not children,'occupied port must not spawn a child server'
