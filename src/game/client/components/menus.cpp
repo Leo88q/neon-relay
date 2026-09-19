@@ -126,7 +126,7 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	CUIRect Text = *pRect;
 	bool IsActive = Checked != 0;
 	bool IsHot = Ui()->HotItem() == pButtonContainer;
-	bool IsDisabled = (Flags & 0) == 0 ? false : false; // placeholder, real disabled via Color.a check
+	// IsDisabled handled via Color.a < 0.5f for hatching
 	// Form A button – slanted 10-12px, Void/Deck palette
 	// Colors from spec: Void #060A1C bg, Cyan #5FE3F5 primary, Cyan dim #2A8797 border
 	float skew = 12.0f;
@@ -2533,8 +2533,8 @@ void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, Co
 		Graphics()->QuadsEnd();
 	}
 
-	// Corner brackets like in management panel – small L shapes magenta/cyan
-	if(WithRivets)
+	// Corner brackets like in management panel – small L shapes magenta/cyan – only when WithGlow (active panel)
+	if(WithGlow && WithImpulse)
 	{
 		// Top-right pink bracket
 		Graphics()->TextureClear();
@@ -2570,18 +2570,7 @@ void CMenus::RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA
 	}
 }
 
-void CMenus::RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor)
-{
-	Progress = std::clamp(Progress, 0.0f, 1.0f);
-	Rect.Draw(ColorRGBA(0.08f, 0.09f, 0.10f, 0.96f), IGraphics::CORNER_ALL, 4.0f);
-	if(Progress > 0.0f)
-	{
-		CUIRect Fill = {Rect.x + 2.0f, Rect.y + 2.0f, (Rect.w - 4.0f) * Progress, Rect.h - 4.0f};
-		Fill.Draw(FillColor, IGraphics::CORNER_ALL, 3.0f);
-	}
-	CUIRect Top = {Rect.x, Rect.y, Rect.w, 1.5f};
-	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.45f), IGraphics::CORNER_T, 2.0f);
-}
+
 
 void CMenus::RenderBackground()
 {
