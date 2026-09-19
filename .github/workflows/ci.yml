@@ -43,6 +43,7 @@ jobs:
           python3 scripts/test_map_format.py
           python3 scripts/test_reference_maps.py
           python3 scripts/test_twmap_pipeline.py
+          python3 scripts/test_warmup.py
       - name: Secret scan (self-test first, so a broken scanner cannot pass)
         run: |
           python3 scripts/check_secrets.py --self-test

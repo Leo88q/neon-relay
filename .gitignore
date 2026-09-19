@@ -167,3 +167,7 @@ tags
 # locally built Android artifacts (produced by scripts/android/cmake_android.sh)
 android/app/src/main/jniLibs/
 android/app/src/main/assets/
+
+# Pinned Python map/asset tooling is installed locally, never shipped.
+.venv/
+venv/

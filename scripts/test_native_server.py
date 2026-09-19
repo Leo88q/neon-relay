@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory(prefix="neonrelay-boot-") as tmp:
     assert "Found 1 maps for maplist" in output, diagnostic
     assert "No such command" not in output, diagnostic
     # Exercise every generated race map with the actual engine reader/game init.
-    names = ['Neon Relay Basin', 'Chromatic Canyon', 'Vector Spire', 'Midnight Circuit', 'Aurora Ascent', 'LearnToPlay Sound', 'LearnToPlay Sound Heights']
+    names = ['Neon Relay Warmup', 'Neon Relay Basin', 'Chromatic Canyon', 'Vector Spire', 'Midnight Circuit', 'Aurora Ascent', 'LearnToPlay Sound', 'LearnToPlay Sound Heights']
     for name in names:
         shutil.copyfile(root / f'data/maps/{name}.map', data / f'maps/{name}.map')
         code, output, diagnostic = run([arg.replace('sv_map LearnToPlay', f'sv_map "{name}"') for arg in args])

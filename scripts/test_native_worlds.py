@@ -5,7 +5,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 client,server=map(lambda p: str(Path(p).resolve()),sys.argv[1:3])
 out=Path(sys.argv[3]);out.mkdir(parents=True,exist_ok=True)
-names=['Neon Relay Basin','Chromatic Canyon','Vector Spire','Midnight Circuit','Aurora Ascent', 'LearnToPlay Sound', 'LearnToPlay Sound Heights']
+names=['Neon Relay Basin','Chromatic Canyon','Vector Spire','Midnight Circuit','Aurora Ascent', 'LearnToPlay Sound', 'LearnToPlay Sound Heights', 'Neon Relay Warmup']
 for index,name in enumerate(names):
  with tempfile.TemporaryDirectory(prefix='neonrelay-world-') as tmp:
   home=Path(tmp)
@@ -35,7 +35,7 @@ for index,name in enumerate(names):
     window=result.stdout.splitlines()[-1]
     time.sleep(2)
     subprocess.run(['import','-window',window,str(out/f'world-{index}.png')],check=True,timeout=10)
-    if name.startswith('LearnToPlay Sound'):
+    if name.startswith('LearnToPlay Sound') or name == 'Neon Relay Warmup':
      # Two in-game phases plus the normal capture. Keep full native frames.
      for phase in range(2):
       time.sleep(.24)
@@ -49,7 +49,8 @@ for index,name in enumerate(names):
       subprocess.run(['xdotool','key','Return'],check=True);time.sleep(.25)
       subprocess.run(['xdotool','key','F1'],check=True);time.sleep(.4)
      console('team -1')
-     for label,x,y in [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22),('terrace',345,21),('boiling-oil',368,22)]:
+     views = ([('ascent',22,32),('jumps',54,30),('hook-beam',87,26),('boiling-oil',82,40),('finish',160,30)] if name == 'Neon Relay Warmup' else [('freeze-stop',188,29),('stop-floor',395,100),('rotated-stop',550,32),('teleport',355,25),('race-gate',351,22),('terrace',345,21),('boiling-oil',368,22)])
+     for label,x,y in views:
       console(f'set_view {x} {y}')
       time.sleep(.5)
       subprocess.run(['import','-window',window,str(out/f'learn-{index}-{label}.png')],check=True,timeout=10)
