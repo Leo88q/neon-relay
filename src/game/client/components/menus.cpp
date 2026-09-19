@@ -968,7 +968,8 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	const char *pButtonText = "";
 	bool TopAlign = false;
 
-	ColorRGBA BgColor = ColorRGBA(0.065f, 0.09f, 0.15f, 1.0f);
+	// Dark neon panel – deep space with cyan tint
+	ColorRGBA BgColor = ColorRGBA(0.04f, 0.06f, 0.11f, 1.0f);
 	if(m_Popup == POPUP_MESSAGE || m_Popup == POPUP_CONFIRM)
 	{
 		pTitle = m_aPopupTitle;
@@ -1050,7 +1051,7 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	}
 	else if(m_Popup == POPUP_WARNING)
 	{
-		BgColor = ColorRGBA(0.23f, 0.075f, 0.10f, 1.0f);
+		BgColor = ColorRGBA(0.08f, 0.06f, 0.12f, 1.0f);
 		pTitle = m_aMessageTopic;
 		pExtraText = m_aMessageBody;
 		pButtonText = m_aMessageButton;
@@ -1071,7 +1072,7 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	}
 
 	// Dim the page, then render a readable opaque dialog.
-	Screen.Draw(ColorRGBA(0.008f, 0.015f, 0.035f, 0.72f), 0, 0.0f);
+	Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.07f, 0.82f), 0, 0.0f);
 	Box.Draw(BgColor, IGraphics::CORNER_ALL, 15.0f);
 
 	// Title
@@ -2217,37 +2218,35 @@ void CMenus::OnRender()
 
 void CMenus::UpdateColors()
 {
-	ms_GuiColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_UiColor, true));
+	// Top designer: dark pixel neon base, cyan active, magenta hover accent
+	ms_GuiColor = ColorRGBA(0.05f, 0.08f, 0.14f, 1.0f);
 
-	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
-	ms_ColorTabbarActiveOutgame = ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f);
-	ms_ColorTabbarHoverOutgame = ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f);
+	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.05f, 0.08f, 0.14f, 0.78f);
+	ms_ColorTabbarActiveOutgame = ColorRGBA(0.08f, 0.38f, 0.48f, 0.92f);
+	ms_ColorTabbarHoverOutgame = ColorRGBA(0.10f, 0.48f, 0.60f, 0.90f);
 
-	const float ColorIngameScaleI = 0.5f;
-	const float ColorIngameScaleA = 0.2f;
+	const float ColorIngameScaleI = 0.6f;
+	const float ColorIngameScaleA = 0.35f;
 
 	ms_ColorTabbarInactiveIngame = ColorRGBA(
-		ms_GuiColor.r * ColorIngameScaleI,
-		ms_GuiColor.g * ColorIngameScaleI,
-		ms_GuiColor.b * ColorIngameScaleI,
-		ms_GuiColor.a * 0.8f);
+		0.04f, 0.07f, 0.12f, 0.82f);
 
 	ms_ColorTabbarActiveIngame = ColorRGBA(
-		ms_GuiColor.r * ColorIngameScaleA,
-		ms_GuiColor.g * ColorIngameScaleA,
-		ms_GuiColor.b * ColorIngameScaleA,
-		ms_GuiColor.a);
+		0.08f, 0.36f, 0.46f, 0.92f);
 
-	ms_ColorTabbarHoverIngame = ColorRGBA(1.0f, 1.0f, 1.0f, 0.75f);
+	ms_ColorTabbarHoverIngame = ColorRGBA(0.12f, 0.50f, 0.62f, 0.88f);
 }
 
 void CMenus::RenderBackground()
 {
 	Ui()->MapScreen();
 	const CUIRect Screen = *Ui()->Screen();
-	Screen.Draw(ColorRGBA(0.025f, 0.035f, 0.065f, 1.0f), 0, 0);
+	// Deep space dark with subtle cyan ambient – top designer
+	Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.07f, 1.0f), 0, 0);
 	CUIRect Ambient = {Screen.x, Screen.y, Screen.w * 0.58f, Screen.h};
-	Ambient.Draw(ColorRGBA(0.035f, 0.065f, 0.105f, 1.0f), 0, 0);
+	Ambient.Draw(ColorRGBA(0.03f, 0.06f, 0.12f, 1.0f), 0, 0);
+	CUIRect Accent = {Screen.x + Screen.w * 0.58f, Screen.y, Screen.w * 0.02f, Screen.h};
+	Accent.Draw(ColorRGBA(0.08f, 0.38f, 0.48f, 0.18f), 0, 0);
 }
 
 int CMenus::DoButton_CheckBox_Tristate(const void *pId, const char *pText, TRISTATE Checked, const CUIRect *pRect)

@@ -1,5 +1,5 @@
 {
-  "status": "expanded atrium v3 520x180 with freeze, obstacles, all 6 weapons and photo background",
+  "status": "v5 dark pixel neon, space photo, visible freeze walls, meteors code, many small jumps 520x180",
   "source": {
     "file": "dm7.map",
     "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
@@ -20,7 +20,7 @@
   },
   "physics_preserved": false,
   "map": "Neon Relay Chrome DM Study.map",
-  "output_sha256": "0dd6948a7f9531a68797d5225d0c91f751a95a610260237fbcc1e0384cf30f77",
+  "output_sha256": "fcfa486ad7569039280f4ca5478895d4378d0bd7289c6a661bd8012a62cb8c92",
   "width": 520,
   "height": 180,
   "spawn_count": 42,
@@ -183,7 +183,11 @@
       137
     ]
   ],
-  "front_freeze_tiles": 904,
+  "small_jumps_added": 36,
+  "front_freeze_tiles": 976,
+  "visible_freeze_layer": "FreezeWalls using freeze.png 256x256 cyan ice",
+  "meteors": "3 groups parallax 30+15*lane, 12 quads each, position envelope 0:(0,0,0) 8000:(25,-12,0) 16000:(50,-24,0) + Spin color",
+  "space_background": "photo space_bg.jpg AI deep cosmos blended 45% with (6,8,18) + fbm veil + 600 stars + vignette 35% + bloom 18%, Cosmos group 220x180 drift",
   "candidates": [
     {
       "file": "dm1.map",
@@ -304,5 +308,5 @@
   "source_artwork_copied": false,
   "realtime_shader_installed": false,
   "photo_background": true,
-  "photo_source": ".cache/chrome-dm/photo_bg.jpg (AI original)"
+  "photo_source": ".cache/chrome-dm/space_bg.jpg AI deep space cyan/magenta nebula blended with dark base"
 }

@@ -1,4 +1,4 @@
-"""Dark pixel neon materials with photo background plus code effects."""
+"""Dark pixel neon materials with space background and meteors."""
 import math
 import random
 from pathlib import Path
@@ -24,45 +24,36 @@ def textures(folder):
     folder = Path(folder)
     rng = random.Random(1337)
 
-    # Dark pixel neon chrome – 8x8 tiles, each 64x64, dark base with pixel noise and cyan top
+    # Dark pixel neon chrome
     atlas = Image.new('RGBA', (1024,1024), (0,0,0,0))
     for yy in range(8):
         for xx in range(8):
             idx = 1+yy*8+xx
-            # Dark base varies slightly with depth
             base_lum = 14 + yy*3
             tile = Image.new('RGBA', (64,64), (base_lum-2, base_lum, base_lum+8, 255))
             d = ImageDraw.Draw(tile)
-            # Subtle pixel grid – 8px blocks
             for py in range(0,64,8):
                 for px in range(0,64,8):
                     if rng.random() < 0.12:
                         col = (18, 28, 52, 255) if rng.random()<0.6 else (22, 34, 62, 255)
                         d.rectangle((px,py,px+6,py+6), fill=col)
-            # Pixel sparkles – cyan/magenta single pixels
             for _ in range(18):
                 px = rng.randint(2,61); py = rng.randint(4,61)
                 if rng.random() < 0.5:
                     d.point((px,py), fill=(77,227,247,180))
                 else:
                     d.point((px,py), fill=(255,46,136,140))
-            # Darker bottom shade for depth
             shade = int(6 + yy*2.2)
             d.rectangle((0,64-shade,63,63), fill=(4,6,16,200))
-            # Top cyan neon edge – stronger for top tiles (yy==0)
             if yy==0 or rng.random()<0.35:
                 d.line((0,0,63,0), fill=(77,227,247,255), width=3)
                 d.line((0,1,63,1), fill=(140,245,255,180), width=1)
-                d.line((0,2,63,2), fill=(40,120,160,90), width=1)
-            # Side pixel bevel – dark
             d.line((0,0,0,63), fill=(10,16,32,255), width=2)
             d.line((63,0,63,63), fill=(10,16,32,255), width=2)
-
             atlas.paste(tile, ((idx%16)*64,(idx//16)*64))
-
     atlas.save(folder/'chrome.png')
 
-    # Bevels – dark with cyan inner highlight
+    # Bevels – dark with cyan
     edges = Image.new('RGBA', (1024,1024), (0,0,0,0))
     for mask in range(1,16):
         tile = Image.new('RGBA', (64,64), (0,0,0,0)); d = ImageDraw.Draw(tile)
@@ -77,66 +68,90 @@ def textures(folder):
         edges.paste(tile, ((mask%16)*64,(mask//16)*64))
     edges.save(folder/'bevels.png')
 
-    # Photo background – now darkened for neon dark theme
-    photo_path = ROOT / '.cache/chrome-dm/photo_bg.jpg'
-    if not photo_path.exists():
-        photo = Image.new('RGB', (1600,960), (10,12,24))
+    # Freeze visible texture – cyan pixel freeze wall
+    freeze_atlas = Image.new('RGBA', (256,256), (0,0,0,0))
+    for yy in range(4):
+        for xx in range(4):
+            tile = Image.new('RGBA', (64,64), (8,18,36,255))
+            d = ImageDraw.Draw(tile)
+            # ice crystal pattern
+            d.rectangle((0,0,63,63), outline=(77,200,230,180), width=2)
+            for i in range(0,64,16):
+                d.line((i,0,i,63), fill=(30,60,110,90), width=1)
+                d.line((0,i,63,i), fill=(30,60,110,90), width=1)
+            # cyan center glow
+            d.ellipse((20,20,44,44), fill=(77,227,247,40), outline=(120,240,255,120), width=2)
+            freeze_atlas.paste(tile, (xx*64, yy*64))
+    freeze_atlas.save(folder/'freeze.png')
+
+    # Space background – photo + code effects
+    space_path = ROOT / '.cache/chrome-dm/space_bg.jpg'
+    if not space_path.exists():
+        photo = Image.new('RGB', (1600,960), (6,8,18))
     else:
-        photo = Image.open(photo_path).convert('RGB').resize((1600,960), Image.Resampling.LANCZOS)
-        # Darken photo for dark theme
-        dark = Image.new('RGB', photo.size, (8,10,22))
-        photo = Image.blend(photo, dark, 0.62)
-        # Add slight blue tint
+        photo = Image.open(space_path).convert('RGB').resize((1600,960), Image.Resampling.LANCZOS)
+        # Darken and add neon tint
+        dark = Image.new('RGB', photo.size, (6,8,18))
+        photo = Image.blend(photo, dark, 0.45)
         arr = np.array(photo).astype(float)
-        arr[:,:,0] *= 0.75
-        arr[:,:,1] *= 0.85
-        arr[:,:,2] *= 1.05
+        arr[:,:,0] *= 0.8
+        arr[:,:,1] *= 0.9
+        arr[:,:,2] *= 1.15
         photo = Image.fromarray(np.clip(arr,0,255).astype('uint8'))
 
-    yy, xx = np.mgrid[0:960, 0:1600]; px = xx/440; py = yy/440
-    qx = fbm(px, py); qy = fbm(px+5.2, py+1.3)
-    f = fbm(px+2.5*qx, py+2.5*qy)
+    yy, xx = np.mgrid[0:960, 0:1600]; px = xx/380; py = yy/380
+    qx = fbm(px, py); qy = fbm(px+4.2, py+1.1)
+    f = fbm(px+2.2*qx, py+2.2*qy)
 
-    # Dark neon veil – less pastel, more indigo/cyan
-    pal = .5+.5*np.cos(2*math.pi*(f[:,:,None]*1.1+qx[:,:,None]*.4+np.array([0.55,0.65,0.85])))
-    veil = pal*.22 + np.array([.12,.18,.32])*.78
-    veil *= (.82+.18*f)[:,:,None]
-    ribbon = np.exp(-((np.mod(f*4.5,1)-.5)/.06)**2)
-    veil = veil*(1-ribbon[:,:,None]*.18)+ribbon[:,:,None]*np.array([0.3,0.9,1.0])*0.22
+    # Dark nebula veil
+    pal = .5+.5*np.cos(2*math.pi*(f[:,:,None]*1.0+qx[:,:,None]*.35+np.array([0.55,0.65,0.9])))
+    veil = pal*.25 + np.array([.08,.12,.28])*.75
+    veil *= (.78+.22*f)[:,:,None]
+    ribbon = np.exp(-((np.mod(f*4,1)-.5)/.07)**2)
+    veil = veil*(1-ribbon[:,:,None]*.2)+ribbon[:,:,None]*np.array([0.2,0.7,1.0])*0.25
     veil_img = Image.fromarray(np.clip(veil*255,0,255).astype('uint8'))
 
-    # Neon light ribbons – cyan/magenta on dark
-    light = Image.new('RGBA', (1600,960), (0,0,0,0))
-    ld = ImageDraw.Draw(light)
-    for k in range(7):
-        pts = []
-        for x in range(0,1600,8):
-            y = 100 + k*130 + 50*math.sin(x/200 + k*1.1) + 25*math.sin(x/80)
-            pts.append((x,y))
-        col = (77,227,247,28) if k%2==0 else (255,46,136,22)
-        ld.line(pts, fill=col, width=7)
-        ld.line(pts, fill=(200,240,255,70) if k%2==0 else (255,180,210,50), width=2)
+    # Starfield overlay
+    stars = Image.new('RGBA', (1600,960), (0,0,0,0))
+    sd = ImageDraw.Draw(stars)
+    for _ in range(600):
+        x = rng.randint(0,1599); y = rng.randint(0,959)
+        b = rng.randint(120,255)
+        sd.point((x,y), fill=(b,b,b+10, rng.randint(80,200)))
+        if rng.random()<0.08:
+            sd.ellipse((x-1,y-1,x+1,y+1), fill=(b,b,255,60))
 
     base = np.array(photo).astype(float)
     veil_arr = np.array(veil_img).astype(float)
-    blended = base*0.78 + veil_arr*0.45
+    blended = base*0.75 + veil_arr*0.55
     vy, vx = np.mgrid[0:960,0:1600]
-    vign = 1 - 0.32*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
+    vign = 1 - 0.35*np.sqrt(((vx-800)/800)**2 + ((vy-480)/480)**2)
     blended = blended * vign[:,:,None]
     result = Image.fromarray(np.clip(blended,0,255).astype('uint8')).convert('RGBA')
-    result.alpha_composite(light)
-    bloom = result.filter(ImageFilter.GaussianBlur(1.4))
-    result = Image.blend(result, bloom, 0.22)
-    # Add subtle pixel dither for pixel neon feel
-    dither = Image.new('RGBA', result.size, (0,0,0,0))
-    dd = ImageDraw.Draw(dither)
-    for _ in range(800):
-        x = rng.randint(0,1599); y = rng.randint(0,959)
-        dd.point((x,y), fill=(77,227,247,60))
-    result.alpha_composite(dither)
+    result.alpha_composite(stars)
+    bloom = result.filter(ImageFilter.GaussianBlur(1.2))
+    result = Image.blend(result, bloom, 0.18)
     result.save(folder/'pastel.png')
 
-    # Film torus – keep but darker
+    # Meteors – small pixel meteors with trail
+    meteor_atlas = Image.new('RGBA', (256,256), (0,0,0,0))
+    for i in range(4):
+        x = (i%2)*128; y = (i//2)*128
+        tile = Image.new('RGBA', (128,128), (0,0,0,0))
+        d = ImageDraw.Draw(tile)
+        # meteor body – dark rock with cyan glow
+        d.ellipse((30,40,90,80), fill=(40,30,28,255), outline=(80,60,50,200), width=2)
+        d.ellipse((35,45,85,75), fill=(60,50,45,255))
+        # glow trail
+        for t in range(5):
+            alpha = int(120*(1-t/5))
+            d.ellipse((10+t*4,45+t*2,30+t*4,65+t*2), fill=(77,227,247,alpha))
+        # pixel sparkle
+        d.point((70,50), fill=(255,200,100,200))
+        meteor_atlas.paste(tile, (x,y))
+    meteor_atlas.save(folder/'meteor.png')
+
+    # Ring (kept for parallax bubbles)
     yy, xx = np.mgrid[0:128,0:128]; dx=(xx-64)/64; dy=(yy-64)/64; r=np.sqrt(dx*dx+dy*dy)
     a=np.arctan2(dy,dx); profile=np.clip(1-np.abs(r-.78)/.07,0,1)
     spec=np.clip(.55+.45*np.cos(a+2.2),0,1)
@@ -144,3 +159,11 @@ def textures(folder):
     c*= (.35+.65*profile*spec)[:,:,None]
     rgba=np.dstack((np.clip(c*255,0,255),np.clip(profile*160,0,160))).astype('uint8')
     Image.fromarray(rgba).save(folder/'ring.png')
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--output', default='.cache/chrome-dm')
+    args = parser.parse_args()
+    textures(Path(args.output))
+    print(f"Generated textures in {args.output}")
