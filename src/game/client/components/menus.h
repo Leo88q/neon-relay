@@ -663,6 +663,8 @@ protected:
 
 public:
 	void RenderBackground();
+	void RenderYieldBloomFrame(CUIRect Rect, float Rounding = 6.0f, bool WithRivets = true);
+	void RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor);
 
 	CMenus();
 	int Sizeof() const override { return sizeof(*this); }

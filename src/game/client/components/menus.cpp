@@ -2312,6 +2312,54 @@ void CMenus::UpdateColors()
 	ms_ColorTabbarHoverIngame = ColorRGBA(0.05f, 0.90f, 0.92f, 0.82f);
 }
 
+void CMenus::RenderYieldBloomFrame(CUIRect Rect, float Rounding, bool WithRivets)
+{
+	// Pure code YIELDBLOOM – no texture dependency, avoids white checkerboard
+	CUIRect Outer = {Rect.x - 1.5f, Rect.y - 1.5f, Rect.w + 3.0f, Rect.h + 3.0f};
+	Outer.Draw(ColorRGBA(0.06f, 0.07f, 0.08f, 1.0f), IGraphics::CORNER_ALL, Rounding + 1.0f);
+	Rect.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, Rounding);
+	// double inner border
+	CUIRect InnerBorder = {Rect.x + 2.0f, Rect.y + 2.0f, Rect.w - 4.0f, Rect.h - 4.0f};
+	InnerBorder.Draw(ColorRGBA(0.16f, 0.17f, 0.18f, 0.35f), IGraphics::CORNER_ALL, Rounding - 1.0f);
+	// amber top
+	CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
+	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.95f), IGraphics::CORNER_T, Rounding * 0.5f);
+	// cyan bottom
+	CUIRect Bottom = {Rect.x, Rect.y + Rect.h - 2.5f, Rect.w, 2.5f};
+	Bottom.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_B, Rounding * 0.4f);
+	if(WithRivets)
+	{
+		float riv = 4.0f;
+		CUIRect R1 = {Rect.x + 4.0f, Rect.y + 4.0f, riv, riv};
+		CUIRect R2 = {Rect.x + Rect.w - 8.0f, Rect.y + 4.0f, riv, riv};
+		CUIRect R3 = {Rect.x + 4.0f, Rect.y + Rect.h - 8.0f, riv, riv};
+		CUIRect R4 = {Rect.x + Rect.w - 8.0f, Rect.y + Rect.h - 8.0f, riv, riv};
+		R1.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
+		R2.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
+		R3.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
+		R4.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 2.0f);
+		// inner highlight dots
+		CUIRect R1h = {Rect.x + 5.0f, Rect.y + 5.0f, 1.5f, 1.5f};
+		R1h.Draw(ColorRGBA(0.32f, 0.33f, 0.34f, 1.0f), IGraphics::CORNER_ALL, 0.75f);
+	}
+	// vent slats subtle
+	CUIRect Vent = {Rect.x + Rect.w * 0.12f, Rect.y + Rect.h - 6.0f, Rect.w * 0.76f, 1.0f};
+	Vent.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.12f), 0, 0);
+}
+
+void CMenus::RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor)
+{
+	Progress = std::clamp(Progress, 0.0f, 1.0f);
+	Rect.Draw(ColorRGBA(0.08f, 0.09f, 0.10f, 0.96f), IGraphics::CORNER_ALL, 4.0f);
+	if(Progress > 0.0f)
+	{
+		CUIRect Fill = {Rect.x + 2.0f, Rect.y + 2.0f, (Rect.w - 4.0f) * Progress, Rect.h - 4.0f};
+		Fill.Draw(FillColor, IGraphics::CORNER_ALL, 3.0f);
+	}
+	CUIRect Top = {Rect.x, Rect.y, Rect.w, 1.5f};
+	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.45f), IGraphics::CORNER_T, 2.0f);
+}
+
 void CMenus::RenderBackground()
 {
 	Ui()->MapScreen();

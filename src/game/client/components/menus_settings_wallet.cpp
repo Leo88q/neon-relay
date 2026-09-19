@@ -49,11 +49,7 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 	};
 
 	MainView.HSplitTop(pInfo->connected ? 128.0f : 72.0f, &Panel, &MainView);
-	Panel.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
-	CUIRect WalletEdge = {Panel.x, Panel.y, Panel.w, 2.5f};
-	WalletEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_T, 4.0f);
-	CUIRect WalletEdgeL = {Panel.x, Panel.y, 2.5f, Panel.h};
-	WalletEdgeL.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.55f), IGraphics::CORNER_L, 4.0f);
+	RenderYieldBloomFrame(Panel, 6.0f, true);
 	s_WalletScroll.AddRect(Panel);
 	Panel.Margin(16.0f, &Panel);
 	Panel.HSplitTop(28.0f, &Line, &Panel);
@@ -155,9 +151,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 	MainView.HSplitTop(Compact ? 196.0f : 164.0f, &Row, &MainView);
 	if(s_RaceScroll.AddRect(Row))
 	{
-		Row.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
-		CUIRect RaceEdge = {Row.x, Row.y, Row.w, 3.0f};
-		RaceEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.90f), IGraphics::CORNER_T, 4.0f);
+		RenderYieldBloomFrame(Row, 6.0f, true);
 		Row.Margin(12.0f, &Row);
 		CUIRect Name, Detail, Action;
 		Row.HSplitBottom(40.0f, &Row, &Action);
@@ -190,9 +184,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		const bool Visible = s_RaceScroll.AddRect(Row);
 		if(Visible)
 		{
-			Row.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 0.94f), IGraphics::CORNER_ALL, 6.0f);
-			CUIRect FeeEdge = {Row.x, Row.y, 2.0f, Row.h};
-			FeeEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.35f), IGraphics::CORNER_L, 3.0f);
+			RenderYieldBloomFrame(Row, 6.0f, true);
 			Row.Margin(12.0f, &Row);
 			CUIRect Name, Players, Fee;
 			Row.HSplitTop(28.0f, &Name, &Row);
@@ -229,56 +221,24 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 	auto &Portrait = m_aCharacterPortraits[Index];
 	if(!Portrait.IsValid())
 	{
-		// Load original potato portrait – keep original naming, do not regenerate characters
 		char aPath[128];
 		str_format(aPath, sizeof(aPath), "portraits/%s.png", POTATO_CATALOG[Index % 10].m_pSkin);
 		Portrait = Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
 	}
 	if(!Portrait.IsValid()) return;
 
-	// YIELDBLOOM industrial frame around existing character – gunmetal background + portrait + frame overlay
-	// Background gunmetal
-	Rect.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 8.0f);
-	// Amber top, cyan bottom (industrial signature)
-	CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
-	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.90f), IGraphics::CORNER_T, 4.0f);
-	CUIRect Bot = {Rect.x, Rect.y + Rect.h - 2.5f, Rect.w, 2.5f};
-	Bot.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_B, 2.0f);
+	// YIELDBLOOM pure code frame – avoids broken generated PNG with white center
+	RenderYieldBloomFrame(Rect, 8.0f, true);
 
 	CUIRect Inner = Rect;
-	Inner.Margin(6.0f, &Inner);
+	Inner.Margin(10.0f, &Inner);
 	const float Size = std::min(Inner.w, Inner.h);
-	// Draw original character portrait centered
 	Graphics()->TextureSet(Portrait);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 	IGraphics::CQuadItem Quad(Inner.x + (Inner.w - Size) / 2.0f, Inner.y + (Inner.h - Size) / 2.0f, Size, Size);
 	Graphics()->QuadsDrawTL(&Quad, 1);
 	Graphics()->QuadsEnd();
-
-	// Overlay YIELDBLOOM frame texture if loaded (index 4 = character_card_frame.png)
-	if(m_aYieldBloomFrames.size() > 4 && m_aYieldBloomFrames[4].IsValid())
-	{
-		Graphics()->TextureSet(m_aYieldBloomFrames[4]);
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-		IGraphics::CQuadItem FrameQuad(Rect.x, Rect.y, Rect.w, Rect.h);
-		Graphics()->QuadsDrawTL(&FrameQuad, 1);
-		Graphics()->QuadsEnd();
-	}
-	else
-	{
-		// Fallback rivets if texture missing
-		float riv = 3.0f;
-		CUIRect R1 = {Rect.x + 4.0f, Rect.y + 4.0f, riv, riv};
-		CUIRect R2 = {Rect.x + Rect.w - 7.0f, Rect.y + 4.0f, riv, riv};
-		CUIRect R3 = {Rect.x + 4.0f, Rect.y + Rect.h - 7.0f, riv, riv};
-		CUIRect R4 = {Rect.x + Rect.w - 7.0f, Rect.y + Rect.h - 7.0f, riv, riv};
-		R1.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
-		R2.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
-		R3.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
-		R4.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
-	}
 }
 
 void CMenus::RenderCharacters(CUIRect MainView)
@@ -322,9 +282,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		MainView.VSplitLeft(MainView.w * 0.61f, &Grid, &Details);
 		Details.VSplitLeft(12.0f, nullptr, &Details);
 	}
-	Details.Draw(ColorRGBA(0.09f, 0.10f, 0.12f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
-	CUIRect DetEdge = {Details.x, Details.y, Details.w, 2.0f};
-	DetEdge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.65f), IGraphics::CORNER_T, 3.0f);
+	RenderYieldBloomFrame(Details, 6.0f, true);
 	Details.Margin(12.0f, &Details);
 	static int s_Selected = 0;
 	static CButtonContainer s_aSelect[10], s_TryOn;
@@ -401,9 +359,7 @@ void CMenus::RenderLeaders(CUIRect MainView)
 	static CButtonContainer s_Races;
 	if(DoButton_Menu(&s_Races, Localize("View races"), 0, &Footer))
 		SetMenuPage(PAGE_RACES);
-	MainView.Draw(ColorRGBA(0.05f, 0.07f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
-	CUIRect LeadEdge = {MainView.x, MainView.y, MainView.w, 3.0f};
-	LeadEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.75f), IGraphics::CORNER_T, 4.0f);
+	RenderYieldBloomFrame(MainView, 6.0f, true);
 	MainView.Margin(16.0f, &MainView);
 	static CScrollRegion s_LeadersScroll;
 	CScrollRegionParams ScrollParams;
