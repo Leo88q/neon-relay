@@ -8,6 +8,7 @@ python3 scripts/test_map_format.py
 python3 scripts/test_reference_maps.py
 python3 scripts/test_twmap_pipeline.py
 python3 scripts/test_warmup.py
+python3 scripts/test_warmup_server_contract.py
 python3 scripts/test_potato_assets.py
 python3 scripts/build_neon_ui_art.py --check
 ./scripts/check_assets.sh --licenses

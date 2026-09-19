@@ -47,6 +47,10 @@
 
 #include <vector>
 
+#if defined(NEONRELAY_WARMUP_PROBE)
+void WarmupServerProbeTick(CGameContext *pGame);
+#endif
+
 // Not thread-safe!
 class CClientChatLogger : public ILogger
 {
@@ -1204,6 +1208,9 @@ void CGameContext::OnPreTickTeehistorian()
 
 void CGameContext::OnTick()
 {
+#if defined(NEONRELAY_WARMUP_PROBE)
+	WarmupServerProbeTick(this);
+#endif
 	if(m_TeeHistorianActive)
 	{
 		int Error = aio_error(m_pTeeHistorianFile);

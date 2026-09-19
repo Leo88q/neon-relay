@@ -124,6 +124,7 @@ option(ANTIBOT "Enable support for a dynamic anticheat library (not provided, se
 option(HEADLESS_CLIENT "Build the client without graphics" OFF)
 option(CLIENT "Compile client" ON)
 option(SERVER "Compile server" ON)
+option(NEONRELAY_WARMUP_PROBE "Build isolated Warmup server input probe (test only, never ship)" OFF)
 option(TOOLS "Compile tools" ON)
 option(DOWNLOAD_GTEST "Download and compile GTest" ${AUTO_DEPENDENCIES_DEFAULT})
 option(STEAM "Build the Steam release version" OFF)
@@ -2869,6 +2870,10 @@ if(SERVER)
       PROPERTY OUTPUT_NAME ${SERVER_EXECUTABLE}
   )
   target_link_libraries(game-server-without-main ${LIBS_SERVER})
+  if(NEONRELAY_WARMUP_PROBE)
+    target_compile_definitions(game-server-without-main PRIVATE NEONRELAY_WARMUP_PROBE)
+    target_sources(game-server-without-main PRIVATE tests/warmup/server_probe.cpp)
+  endif()
   list(APPEND TARGETS_OWN game-server-without-main)
   list(APPEND TARGETS_LINK game-server-without-main)
 
