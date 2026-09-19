@@ -26,6 +26,7 @@
 #include <game/client/ui.h>
 #include <game/voting.h>
 
+#include <array>
 #include <chrono>
 #include <optional>
 #include <vector>
@@ -657,6 +658,7 @@ protected:
 
 	IGraphics::CTextureHandle m_TextureBlob;
 	IGraphics::CTextureHandle m_aCharacterPortraits[10];
+	std::array<IGraphics::CTextureHandle, 8> m_aBgTextures;
 
 public:
 	void RenderBackground();

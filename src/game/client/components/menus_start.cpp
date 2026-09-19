@@ -45,12 +45,17 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		Content.VSplitLeft(Content.w*0.55f, &Hero, &Menu);
 		Menu.VSplitLeft(20.0f, nullptr, &Menu);
 	}
-	// Dark pixel neon panel – deep space base with subtle cyan edge
-	Hero.Draw(ColorRGBA(0.03f, 0.05f, 0.10f, 1.0f), IGraphics::CORNER_ALL, 18.0f);
-	// Inner neon border
+	// Cyberpunk panel – sharp angles, pixel grid, bright neon
+	Hero.Draw(ColorRGBA(0.04f, 0.06f, 0.12f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	// Inner neon border cyan
 	CUIRect Border = Hero;
-	Border.Margin(1.5f, &Border);
-	Border.Draw(ColorRGBA(0.08f, 0.38f, 0.48f, 0.18f), IGraphics::CORNER_ALL, 16.0f);
+	Border.Margin(2.0f, &Border);
+	Border.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f), IGraphics::CORNER_ALL, 4.0f);
+	// Cyan edge top
+	CUIRect TopEdge = {Hero.x, Hero.y, Hero.w, 3.0f};
+	TopEdge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.95f), IGraphics::CORNER_T, 4.0f);
+	CUIRect LeftEdge = {Hero.x, Hero.y, 3.0f, Hero.h};
+	LeftEdge.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.65f), IGraphics::CORNER_L, 4.0f);
 	CUIRect Art = Hero;
 	Art.Margin(8.0f, &Art);
 	if(!Compact)
@@ -71,9 +76,9 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		CUIRect Button;
 		Menu.HSplitTop(ButtonHeight, &Button, &Menu);
 		Menu.HSplitTop(8.0f, nullptr, &Menu);
-		// Top designer: primary cyan, secondary dark with pixel neon hover
-		const ColorRGBA Color = i == 0 ? ColorRGBA(0.08f, 0.42f, 0.48f, 1.0f) : ColorRGBA(0.05f, 0.08f, 0.14f, 1.0f);
-		if(GameClient()->m_Menus.DoButton_Menu(&s_aButtons[i], apLabels[i], 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 12.0f, 0.0f, Color) || CheckHotKey(aKeys[i]) || (i == 0 && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
+		// Cyberpunk: primary cyan bright #4de3f7, secondary dark with magenta hover
+		const ColorRGBA Color = i == 0 ? ColorRGBA(0.30f, 0.89f, 0.97f, 1.0f) : ColorRGBA(0.06f, 0.09f, 0.16f, 0.94f);
+		if(GameClient()->m_Menus.DoButton_Menu(&s_aButtons[i], apLabels[i], 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, Color) || CheckHotKey(aKeys[i]) || (i == 0 && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 			NewPage = aPages[i];
 	}
 	const bool Escape = Ui()->ConsumeHotkey(CUi::HOTKEY_ESCAPE);

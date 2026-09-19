@@ -129,7 +129,21 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
 	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
 
-	pRect->Draw(Color, Corners, Rounding);
+	// Cyberpunk – sharp 4-6px, use provided rounding but clamp to 6
+	float R = Rounding > 6.0f ? 6.0f : Rounding;
+	if(R < 2.0f) R = 4.0f;
+	pRect->Draw(Color, Corners, R);
+	// Neon edge for active/hover
+	if(Ui()->HotItem() == pButtonContainer)
+	{
+		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 2.0f};
+		Edge.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.75f), IGraphics::CORNER_T, 2.0f);
+	}
+	else if(Color.a > 0.8f && Color.r > 0.2f)
+	{
+		CUIRect Edge = {pRect->x, pRect->y, pRect->w, 1.5f};
+		Edge.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.65f), IGraphics::CORNER_T, 2.0f);
+	}
 
 	if(pImageName)
 	{
@@ -188,13 +202,20 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 		pAnimator->m_Time = Time;
 	}
 
+	// Cyberpunk tab rendering – sharp 4-6px, pixel grid, neon border
+	float Round = 4.0f;
 	if(Checked)
 	{
 		ColorRGBA ColorMenuTab = ms_ColorTabbarActive;
 		if(pActiveColor)
 			ColorMenuTab = *pActiveColor;
-
-		Rect.Draw(ColorMenuTab, Corners, EdgeRounding);
+		Rect.Draw(ColorMenuTab, Corners, Round);
+		// Active neon top line cyan
+		CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
+		Top.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 1.0f), IGraphics::CORNER_T, 2.0f);
+		// Magenta glow bottom
+		CUIRect Bottom = {Rect.x, Rect.y + Rect.h - 2.0f, Rect.w, 2.0f};
+		Bottom.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.55f), 0, 0);
 	}
 	else
 	{
@@ -203,16 +224,19 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 			ColorRGBA HoverColorMenuTab = ms_ColorTabbarHover;
 			if(pHoverColor)
 				HoverColorMenuTab = *pHoverColor;
-
-			Rect.Draw(HoverColorMenuTab, Corners, EdgeRounding);
+			Rect.Draw(HoverColorMenuTab, Corners, Round);
+			CUIRect Top = {Rect.x, Rect.y, Rect.w, 2.0f};
+			Top.Draw(ColorRGBA(1.0f, 0.18f, 0.53f, 0.85f), IGraphics::CORNER_T, 2.0f);
 		}
 		else
 		{
 			ColorRGBA ColorMenuTab = ms_ColorTabbarInactive;
 			if(pDefaultColor)
 				ColorMenuTab = *pDefaultColor;
-
-			Rect.Draw(ColorMenuTab, Corners, EdgeRounding);
+			Rect.Draw(ColorMenuTab, Corners, Round);
+			// Subtle grid line
+			CUIRect Line = {Rect.x, Rect.y + Rect.h - 1.0f, Rect.w, 1.0f};
+			Line.Draw(ColorRGBA(0.30f, 0.89f, 0.97f, 0.18f), 0, 0);
 		}
 	}
 
@@ -638,6 +662,17 @@ void CMenus::OnInit()
 	Console()->Chain("demo_speed", ConchainDemoSpeed, this);
 
 	m_TextureBlob = Graphics()->LoadTexture("blob.png", IStorage::TYPE_ALL);
+
+	// Cyberpunk background photos – 8 varied space images
+	const char *apBgNames[] = {"ui/backgrounds/start_cyan_grid.png", "ui/backgrounds/play_races_blue.png", "ui/backgrounds/characters_magenta.png", "ui/backgrounds/wallet_gold.png", "ui/backgrounds/leaders_blue.png", "ui/backgrounds/settings_grid.png", "ui/backgrounds/browser_nodes.png", "ui/backgrounds/ingame_combat.png"};
+	for(size_t i = 0; i < m_aBgTextures.size(); ++i)
+	{
+		CImageInfo Info;
+		if(Graphics()->LoadPng(Info, apBgNames[i], IStorage::TYPE_ALL))
+		{
+			m_aBgTextures[i] = Graphics()->LoadTextureRaw(Info, 0, apBgNames[i]);
+		}
+	}
 
 	// setup load amount
 	m_LoadingState.m_Current = 0;
@@ -2091,6 +2126,7 @@ void CMenus::SetActive(bool Active)
 void CMenus::OnShutdown()
 {
 	for(auto &Texture : m_aCharacterPortraits) Graphics()->UnloadTexture(&Texture);
+	for(auto &Texture : m_aBgTextures) Graphics()->UnloadTexture(&Texture);
 	m_CommunityIcons.Shutdown();
 }
 
@@ -2218,35 +2254,81 @@ void CMenus::OnRender()
 
 void CMenus::UpdateColors()
 {
-	// Top designer: dark pixel neon base, cyan active, magenta hover accent
-	ms_GuiColor = ColorRGBA(0.05f, 0.08f, 0.14f, 1.0f);
+	// Cyberpunk – sharp, bright neon, pixel grid
+	ms_GuiColor = ColorRGBA(0.06f, 0.08f, 0.16f, 1.0f);
 
-	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.05f, 0.08f, 0.14f, 0.78f);
-	ms_ColorTabbarActiveOutgame = ColorRGBA(0.08f, 0.38f, 0.48f, 0.92f);
-	ms_ColorTabbarHoverOutgame = ColorRGBA(0.10f, 0.48f, 0.60f, 0.90f);
+	// Outgame – cyberpunk tabs: inactive dark with grid, active cyan with magenta edge, hover magenta
+	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.06f, 0.08f, 0.15f, 0.82f);
+	ms_ColorTabbarActiveOutgame = ColorRGBA(0.08f, 0.42f, 0.52f, 0.96f);
+	ms_ColorTabbarHoverOutgame = ColorRGBA(0.52f, 0.12f, 0.38f, 0.92f);
 
-	const float ColorIngameScaleI = 0.6f;
-	const float ColorIngameScaleA = 0.35f;
-
-	ms_ColorTabbarInactiveIngame = ColorRGBA(
-		0.04f, 0.07f, 0.12f, 0.82f);
-
-	ms_ColorTabbarActiveIngame = ColorRGBA(
-		0.08f, 0.36f, 0.46f, 0.92f);
-
-	ms_ColorTabbarHoverIngame = ColorRGBA(0.12f, 0.50f, 0.62f, 0.88f);
+	ms_ColorTabbarInactiveIngame = ColorRGBA(0.05f, 0.07f, 0.13f, 0.86f);
+	ms_ColorTabbarActiveIngame = ColorRGBA(0.08f, 0.40f, 0.50f, 0.96f);
+	ms_ColorTabbarHoverIngame = ColorRGBA(0.48f, 0.14f, 0.42f, 0.92f);
 }
 
 void CMenus::RenderBackground()
 {
 	Ui()->MapScreen();
 	const CUIRect Screen = *Ui()->Screen();
-	// Deep space dark with subtle cyan ambient – top designer
-	Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.07f, 1.0f), 0, 0);
-	CUIRect Ambient = {Screen.x, Screen.y, Screen.w * 0.58f, Screen.h};
-	Ambient.Draw(ColorRGBA(0.03f, 0.06f, 0.12f, 1.0f), 0, 0);
-	CUIRect Accent = {Screen.x + Screen.w * 0.58f, Screen.y, Screen.w * 0.02f, Screen.h};
-	Accent.Draw(ColorRGBA(0.08f, 0.38f, 0.48f, 0.18f), 0, 0);
+	// Cyberpunk base – deep dark with cyan grid
+	Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.08f, 1.0f), 0, 0);
+
+	// Photo background per page – try to load texture, fallback to color
+	// Determine background type
+	int BgIndex = 0;
+	if(m_ShowStart)
+		BgIndex = 0; // start_cyan_grid
+	else
+	{
+		switch(m_MenuPage)
+		{
+		case PAGE_RACES: BgIndex = 1; break; // play_races_blue
+		case PAGE_CHARACTERS: BgIndex = 2; break; // characters_magenta
+		case PAGE_WALLET: BgIndex = 3; break; // wallet_gold
+		case PAGE_LEADERS: BgIndex = 4; break; // leaders_blue
+		case PAGE_SETTINGS: BgIndex = 5; break; // settings_grid
+		default:
+			if(m_MenuPage >= PAGE_INTERNET && m_MenuPage <= PAGE_FAVORITE_COMMUNITY_5)
+				BgIndex = 6; // browser_nodes
+			else
+				BgIndex = 0;
+			break;
+		}
+		if(Client()->State() == IClient::STATE_ONLINE)
+			BgIndex = 7; // ingame_combat
+	}
+
+	// Try to draw photo background if loaded
+	if(BgIndex >= 0 && BgIndex < (int)m_aBgTextures.size() && m_aBgTextures[BgIndex].IsValid())
+	{
+		Graphics()->TextureSet(m_aBgTextures[BgIndex]);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.55f);
+		IGraphics::CQuadItem Quad(Screen.x, Screen.y, Screen.w, Screen.h);
+		Graphics()->QuadsDrawTL(&Quad, 1);
+		Graphics()->QuadsEnd();
+		// Darken overlay for readability
+		Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.08f, 0.58f), 0, 0);
+	}
+
+	// Cyberpunk grid overlay
+	CUIRect Grid = {Screen.x, Screen.y, Screen.w, Screen.h * 0.02f};
+	for(int i = 0; i < 40; ++i)
+	{
+		float y = Screen.y + i * Screen.h / 40.0f;
+		CUIRect Line = {Screen.x, y, Screen.w, 1.0f};
+		Line.Draw(ColorRGBA(0.08f, 0.38f, 0.48f, 0.06f), 0, 0);
+	}
+	// Vertical accent lines
+	CUIRect VAccent = {Screen.x + Screen.w * 0.58f, Screen.y, 2.0f, Screen.h};
+	VAccent.Draw(ColorRGBA(0.08f, 0.42f, 0.52f, 0.22f), 0, 0);
+	CUIRect VAccent2 = {Screen.x + Screen.w * 0.60f, Screen.y, 1.0f, Screen.h};
+	VAccent2.Draw(ColorRGBA(0.52f, 0.12f, 0.38f, 0.14f), 0, 0);
+
+	// Top scanline
+	CUIRect TopLine = {Screen.x, Screen.y, Screen.w, 2.0f};
+	TopLine.Draw(ColorRGBA(0.08f, 0.42f, 0.52f, 0.85f), 0, 0);
 }
 
 int CMenus::DoButton_CheckBox_Tristate(const void *pId, const char *pText, TRISTATE Checked, const CUIRect *pRect)
