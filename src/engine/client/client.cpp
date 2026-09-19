@@ -696,19 +696,21 @@ void CClient::Connect(const char *pAddress, const char *pPassword)
 	m_ConnectionId = RandomUuid();
 	ServerInfoRequest();
 
-	if(m_SendPassword)
-	{
-		str_copy(m_aPassword, g_Config.m_Password);
-		m_SendPassword = false;
-	}
-	else if(!pPassword)
-	{
-		m_aPassword[0] = 0;
-	}
-	else
+	// An explicit password (e.g. a newly launched private server) must win
+	// over credentials cached for a previous connection to the same address.
+	if(pPassword)
 	{
 		str_copy(m_aPassword, pPassword);
 	}
+	else if(m_SendPassword)
+	{
+		str_copy(m_aPassword, g_Config.m_Password);
+	}
+	else
+	{
+		m_aPassword[0] = 0;
+	}
+	m_SendPassword = false;
 
 	m_CanReceiveServerCapabilities = true;
 

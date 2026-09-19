@@ -54,6 +54,11 @@ class MenuContract(unittest.TestCase):
         self.assertIn('"'+digest+'"',header)
         self.assertIn('WARMUP_COURSE_ID = "warmup"',header)
         self.assertIn(r'maps/Neon\ Relay\ Warmup.map',self.text('CMakeLists.txt'))
+        client=self.text('src/engine/client/client.cpp')
+        connect=client[client.index('void CClient::Connect('):]
+        credentials=connect[connect.index('if(pPassword)'):connect.index('m_CanReceiveServerCapabilities = true;')]
+        self.assertLess(credentials.index('str_copy(m_aPassword, pPassword)'),credentials.index('else if(m_SendPassword)'))
+        self.assertIn('m_SendPassword = false;',credentials)
         executables=self.text('src/engine/client/updater.h')
         cmake=self.text('CMakeLists.txt')
         for symbol,filename in [('CLIENT','neonrelay'),('SERVER','neonrelay-server')]:
