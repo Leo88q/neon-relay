@@ -1,53 +1,48 @@
 {
-  "evidence_kind": "GitHub API completion receipt plus native test notice",
-  "commit": "3ef5d67ac246dbe5a6050046b36e49b782d86a1f",
-  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35448937197",
+  "evidence_kind": "GitHub API receipt plus native notice",
+  "commit": "c0a1aa9cf8446af3885d565aaa29a25a9d192d76",
+  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35450488140",
   "conclusion": "success",
   "jobs": [
     {
-      "name": "branding / assets / secrets / hygiene",
+      "name": "branding",
       "conclusion": "success"
     },
     {
-      "name": "reward backend (node 22)",
+      "name": "reward",
       "conclusion": "success"
     },
     {
-      "name": "Linux server build and isolated boot",
+      "name": "server",
       "conclusion": "success"
     },
     {
-      "name": "match-event signer",
+      "name": "signer",
       "conclusion": "success"
     },
     {
-      "name": "anchor program offline checks",
+      "name": "anchor",
       "conclusion": "success"
     },
     {
-      "name": "C++ syntax probe",
+      "name": "cpp-syntax",
       "conclusion": "success"
     },
     {
-      "name": "Linux client build and desktop/portrait boot",
+      "name": "client",
       "conclusion": "success"
     }
   ],
-  "native_check_run_id": 105912608395,
+  "native_check_run_id": 105916665347,
   "native_notice": "PASS: native gun and laser kills, frags, timed respawn, shared pickups, ammo and round restart; PASS: two native clients entered Chrome DM arena",
   "battle_fixture_verified": true,
   "two_client_arena_entry_verified": true,
-  "arena_sha256": "292c5f9d12b4141572574adc12e94266f88c3fdf1bedddaac27f2e7ec4c8a07a",
-  "arena_size": "274x120",
-  "spawn_count": 19,
-  "pickups_original": true,
-  "chrome_v2": true,
-  "artifact_name": "native-client-preview",
-  "screenshots_reviewed": false,
-  "manual_playthrough_verified": false,
-  "load_test_performed": false,
-  "verified_platform": "Linux CI / Xvfb",
-  "macos_verified": false,
-  "android_verified": false,
-  "production_ready": false
+  "arena_sha256": "37527dcf9d7a6d546fdae29ca104a845764fdfec06ee1c370156ee2eca4c429a",
+  "arena_size": "520x180",
+  "spawn_count": 43,
+  "freeze_tiles": true,
+  "all_weapons_scattered": true,
+  "photo_background": true,
+  "hud_fixed": true,
+  "verified_platform": "Linux CI / Xvfb"
 }
