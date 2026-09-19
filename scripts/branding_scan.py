@@ -44,6 +44,8 @@ STANDALONE_RE = re.compile(
 
 # Directories/files that are not scanned at all.
 EXCLUDE_PATHS = (
+	".venv/",  # installed development dependencies, never shipped UI
+	"venv/",
 	".git/",
 	"node_modules/",
 	"build/",

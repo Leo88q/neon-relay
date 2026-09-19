@@ -688,6 +688,8 @@ docs/THIRD_PARTY_NOTICES.md,146,legal-attribution,upstream/third-party license n
 docs/THIRD_PARTY_NOTICES.md,150,legal-attribution,upstream/third-party license notice (must stay),"DDNet, DDRaceNetwork and Teeworlds are the marks of the upstream projects. They appear in"
 docs/THREAT_MODEL.md,6,historical-documentation,document that describes the upstream derivation,map exploits) is upstream DDNet's anti-cheat domain and is only covered where
 docs/THREAT_MODEL.md,104,historical-documentation,document that describes the upstream derivation,* Upstream DDNet gameplay anti-cheat robustness.
+docs/TWMAP_PIPELINE_RU.md,19,code/api-identifier,brand appears only inside code identifiers,m = twmap.Map.empty('DDNet06')
+docs/TWMAP_PIPELINE_RU.md,85,code/api-identifier,brand appears only inside code identifiers,оригинальных карт проверена возможность начать с пустого `DDNet06`; миграция
 docs/UPSTREAM_AUDIT.md,1,historical-documentation,document that describes the upstream derivation,# Upstream audit — DDNet → Neon Relay
 docs/UPSTREAM_AUDIT.md,7,historical-documentation,document that describes the upstream derivation,| Upstream | https://github.com/ddnet/ddnet |
 docs/UPSTREAM_AUDIT.md,10,historical-documentation,document that describes the upstream derivation,| Tracked files | 1852 + 1 submodule gitlink (`ddnet-libs` @ `c0e6703`) |
@@ -753,6 +755,7 @@ docs/baseline/cmake-configure-upstream.log,148,historical-documentation,document
 docs/baseline/cmake-configure-upstream.log,152,historical-documentation,document that describes the upstream derivation,You must install SQLite3 to compile DDNet
 docs/reference_maps/README_RU.md,86,legal-attribution,upstream/third-party license notice (must stay),- Карты: https://github.com/ddnet/ddnet-maps/tree/19c834ae6506c15057f180500fc460b8c3f0448f
 docs/reference_maps/README_RU.md,88,legal-attribution,upstream/third-party license notice (must stay),- Обзорные изображения: https://github.com/Teero888/tw-thumbs/tree/79385b9fb9935ca7b18832214aa129138852dd37/ddnet
+docs/reference_maps/README_RU.md,98,legal-attribution,upstream/third-party license notice (must stay),"Четыре офлайн-теста загрузчика/изоляции, структурная проверка всех четырёх скачанных DATA v4 и полный `scripts/ci-local.sh` прошли. В `.commit_hashes.json` каталога превью зафиксирована та же ревизия ddnet-maps, что и в нашем каталоге: `19c"
 docs/upstream/README.upstream.md,1,historical-documentation,document that describes the upstream derivation,[![DDraceNetwork](https://ddnet.org/ddnet-small.png)](https://ddnet.org)
 docs/upstream/README.upstream.md,3,historical-documentation,document that describes the upstream derivation,[![Build status](https://github.com/ddnet/ddnet/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/ddnet/ddnet/actions/workflows/build.yml?branch=master)
 docs/upstream/README.upstream.md,4,historical-documentation,document that describes the upstream derivation,[![Code coverage](https://codecov.io/gh/ddnet/ddnet/branch/master/graph/badge.svg)](https://codecov.io/gh/ddnet/ddnet/branch/master)
@@ -922,6 +925,7 @@ scripts/parse_crashlog_drmingw.py,109,code/api-identifier,identifier kept for pr
 scripts/test_menu_contract.py,121,test-fixture,test data or test assertion,"for name in ['ddnet', 'ddrace', 'f-ddrace', 'fng', 'race', 'vanilla', 'blockworlds']:"
 scripts/try_reference_maps.py,34,code/api-identifier,identifier kept for protocol/build compatibility (https://raw\.githubusercontent\.com/ddnet/ddnet-),"url = 'https://raw.githubusercontent.com/ddnet/ddnet-maps/' + row['revision'] + '/' + urllib.parse.quote(row['source_path'], safe='/')"
 scripts/try_reference_maps.py,42,code/api-identifier,identifier kept for protocol/build compatibility (https://raw\.githubusercontent\.com/ddnet/ddnet-),"endpoint = 'repos/ddnet/ddnet-maps/contents/' + urllib.parse.quote(row['source_path'], safe='/') + '?ref=' + row['revision']"
+scripts/twmap_pipeline.py,89,code/api-identifier,brand appears only inside code identifiers,m = twmap.Map.empty('DDNet06')
 src/README.md,3,legal-attribution,upstream/third-party license notice (must stay),This is the main page of the documentation of the [DDNet source code](https://github.com/ddnet/ddnet).
 src/README.md,16,legal-attribution,upstream/third-party license notice (must stay),"- @ref mastersrv ""mastersrv"": The mastersrv maintains a list of all registered DDNet (and Teeworlds) servers."
 src/README.md,27,legal-attribution,upstream/third-party license notice (must stay),The documentation is updated regularly and available at https://codedoc.ddnet.org/
