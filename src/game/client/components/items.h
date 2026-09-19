@@ -5,6 +5,8 @@
 
 #include <base/color.h>
 
+#include <engine/graphics.h>
+
 #include <generated/protocol.h>
 
 #include <game/client/component.h>
@@ -27,6 +29,7 @@ public:
 	int Sizeof() const override { return sizeof(*this); }
 	void OnRender() override;
 	void OnInit() override;
+	void OnShutdown() override;
 
 	void ReconstructSmokeTrail(const CProjectileData *pCurrent, int DestroyTick);
 	void RenderLaser(vec2 From, vec2 Pos, ColorRGBA OuterColor, ColorRGBA InnerColor, float TicksBody, float TicksHead, int Type) const;
@@ -34,6 +37,9 @@ public:
 private:
 	int m_BlueFlagOffset;
 	int m_RedFlagOffset;
+	IGraphics::CTextureHandle m_DmHealthTexture;
+	IGraphics::CTextureHandle m_DmArmorTexture;
+	int m_DmPickupOffset;
 	int m_PickupHealthOffset;
 	int m_PickupArmorOffset;
 	int m_PickupFreezeOffset;

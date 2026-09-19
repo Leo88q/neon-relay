@@ -19,22 +19,22 @@ CMakeLists.txt,1213,code/api-identifier,identifier kept for protocol/build compa
 CMakeLists.txt,1615,code/api-identifier,identifier kept for protocol/build compatibility ((game_entities|mapres|assets|skins7?|maps7?|them),game_entities/entities_clear/ddnet.png
 CMakeLists.txt,1616,code/api-identifier,identifier kept for protocol/build compatibility ((game_entities|mapres|assets|skins7?|maps7?|them),game_entities/entities_clear/ddrace.png
 CMakeLists.txt,1617,code/api-identifier,identifier kept for protocol/build compatibility ((game_entities|mapres|assets|skins7?|maps7?|them),game_entities/entities_clear/f-ddrace.png
-CMakeLists.txt,2429,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),components/menus_settings_ddnet.cpp
-CMakeLists.txt,2769,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
-CMakeLists.txt,2770,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
-CMakeLists.txt,2799,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
-CMakeLists.txt,2800,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
-CMakeLists.txt,3246,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
-CMakeLists.txt,3385,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
-CMakeLists.txt,3642,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3644,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3645,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3646,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3647,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3648,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3649,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3650,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
-CMakeLists.txt,3651,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,2431,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),components/menus_settings_ddnet.cpp
+CMakeLists.txt,2771,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracechat.cpp
+CMakeLists.txt,2772,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),ddracecommands.cpp
+CMakeLists.txt,2801,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.cpp
+CMakeLists.txt,2802,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),gamemodes/ddnet.h
+CMakeLists.txt,3248,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNET_TEST_[A-Z_]+),"COMMAND ${CMAKE_COMMAND} -E env ""DDNET_TEST_LIBRARIES=${RUST_TEST_LIBS}"" ${CARGO_TEST}"
+CMakeLists.txt,3387,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),ddnet-libs/
+CMakeLists.txt,3644,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND /bin/cp -a ${PROJECT_SOURCE_DIR}/ddnet-libs/sdl/${LIB_DIR}/SDL2.framework ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3646,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/discord/${LIB_DIR}/discord_game_sdk.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3647,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavcodec.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3648,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavformat.61.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3649,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libavutil.59.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3650,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswresample.5.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3651,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/ffmpeg/${LIB_DIR}/libswscale.8.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3652,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/freetype/${LIB_DIR}/libfreetype.6.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
+CMakeLists.txt,3653,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/ddnet-libs/png/${LIB_DIR}/libpng16.16.dylib ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Frameworks/
 Cargo.lock,120,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-base"""
 Cargo.lock,124,legal-attribution,upstream/third-party license notice (must stay),"""ddnet-test"","
 Cargo.lock,129,legal-attribution,upstream/third-party license notice (must stay),"name = ""ddnet-engine"""
@@ -755,19 +755,13 @@ docs/baseline/cmake-configure-upstream.log,123,historical-documentation,document
 docs/baseline/cmake-configure-upstream.log,144,historical-documentation,document that describes the upstream derivation,You must install Curl to compile DDNet
 docs/baseline/cmake-configure-upstream.log,148,historical-documentation,document that describes the upstream derivation,You must install Rust and Cargo to compile DDNet
 docs/baseline/cmake-configure-upstream.log,152,historical-documentation,document that describes the upstream derivation,You must install SQLite3 to compile DDNet
-docs/dm/CHROME_DM_RU.md,14,historical-documentation,document that describes the upstream derivation,"проходима, что карта крупнейшая в Teeworlds вообще или что она выдержала"
-docs/dm/CHROME_DM_RU.md,28,historical-documentation,document that describes the upstream derivation,нашем DDNet-сервере. Legacy ninja не разрешает возвращать старого персонажа:
-docs/dm/CHROME_DM_RU.md,70,historical-documentation,document that describes the upstream derivation,SHA-256 локального dm7 совпал с файлом Teeworlds 0.6.5-release:
-docs/dm/CHROME_DM_RU.md,74,historical-documentation,document that describes the upstream derivation,https://github.com/teeworlds/teeworlds/blob/344a58cd858669f2b742827024dff7fd25fccccf/data/maps/dm7.map
-docs/dm/CHROME_DM_RU.md,77,historical-documentation,document that describes the upstream derivation,https://github.com/teeworlds/teeworlds/blob/344a58cd858669f2b742827024dff7fd25fccccf/license.txt
-docs/dm/CHROME_DM_RU.md,82,historical-documentation,document that describes the upstream derivation,- исходник: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/dm7.map
-docs/dm/CHROME_DM_RU.md,83,historical-documentation,document that describes the upstream derivation,- лицензия в том же коммите: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/license.txt
-docs/dm/CHROME_DM_RU.md,87,historical-documentation,document that describes the upstream derivation,"**Атрибуция:** dm7, Teeworlds map contributors. Индивидуальный автор в"
-docs/dm/CHROME_DM_RU.md,108,historical-documentation,document that describes the upstream derivation,"отдачу, но не снимает здоровье; типы health/armor в DDRace имеют иные"
-docs/dm/CHROME_STUDY.json,139,legal-attribution,upstream/third-party license notice (must stay),"""upstream_repository"": ""https://github.com/teeworlds/teeworlds-maps"","
+docs/dm/CHROME_DM_RU.md,61,historical-documentation,document that describes the upstream derivation,- исходник: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/dm7.map
+docs/dm/CHROME_DM_RU.md,62,historical-documentation,document that describes the upstream derivation,- лицензия: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/license.txt
+docs/dm/CHROME_DM_RU.md,65,historical-documentation,document that describes the upstream derivation,"**Атрибуция:** dm7, Teeworlds map contributors. Геометрия оригинала сохранена кроме двух стыков. Neon Relay: новый атриум, предметы, хромовые материалы, фон, 2026. Адаптированная карта — **CC-BY-SA 3.0**."
+docs/dm/CHROME_STUDY.json,201,legal-attribution,upstream/third-party license notice (must stay),"""upstream_repository"": ""https://github.com/teeworlds/teeworlds-maps"","
 docs/dm/NEON_DM_RU.md,6,historical-documentation,document that describes the upstream derivation,`sv_gametype neon-dm`. Значение по умолчанию `ddnet` и выбор контроллера
-docs/dm/NEON_DM_RU.md,27,historical-documentation,document that describes the upstream derivation,- Дробовик выпускает пять снарядов. Обычный DDRace-дробовик остаётся лучом.
-docs/dm/NEON_DM_RU.md,57,historical-documentation,document that describes the upstream derivation,"после map settings, чтобы не унаследовать медленные DDRace-снаряды."
+docs/dm/NEON_DM_RU.md,26,historical-documentation,document that describes the upstream derivation,- Дробовик выпускает пять снарядов. Обычный DDRace-дробовик остаётся лучом.
+docs/dm/NEON_DM_RU.md,56,historical-documentation,document that describes the upstream derivation,"после map settings, чтобы не унаследовать медленные DDRace-снаряды."
 docs/reference_maps/README_RU.md,86,legal-attribution,upstream/third-party license notice (must stay),- Карты: https://github.com/ddnet/ddnet-maps/tree/19c834ae6506c15057f180500fc460b8c3f0448f
 docs/reference_maps/README_RU.md,88,legal-attribution,upstream/third-party license notice (must stay),- Обзорные изображения: https://github.com/Teero888/tw-thumbs/tree/79385b9fb9935ca7b18832214aa129138852dd37/ddnet
 docs/reference_maps/README_RU.md,98,legal-attribution,upstream/third-party license notice (must stay),"Четыре офлайн-теста загрузчика/изоляции, структурная проверка всех четырёх скачанных DATA v4 и полный `scripts/ci-local.sh` прошли. В `.commit_hashes.json` каталога превью зафиксирована та же ревизия ddnet-maps, что и в нашем каталоге: `19c"
@@ -845,10 +839,9 @@ other/icons/license.txt,10,legal-attribution,upstream/third-party license notice
 other/neonrelay.desktop,12,comment,"source comment, not shown to users",# Neon Relay is a standalone derivative of the upstream DDNet project.
 scripts/android/cmake_android.sh,271,comment,"source comment, not shown to users",# rebrand (upstream: org/ddnet/client)
 scripts/android/cmake_android.sh,273,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),cp -R ../ddnet-libs/sdl/java/org src/main/java/
-scripts/build_chrome_dm.py,76,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
-scripts/build_chrome_dm.py,77,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
-scripts/build_chrome_dm.py,79,legal-attribution,"derived map author, modification notice or pinned source","m.info.credits='Modified dm7, Teeworlds 0.6.5; geometry unchanged; new code-built visuals'"
-scripts/build_chrome_dm.py,136,legal-attribution,"derived map author, modification notice or pinned source","'upstream_repository':'https://github.com/teeworlds/teeworlds-maps',"
+scripts/build_chrome_dm.py,44,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
+scripts/build_chrome_dm.py,45,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
+scripts/build_chrome_dm.py,126,legal-attribution,"derived map author, modification notice or pinned source","'upstream_repository':'https://github.com/teeworlds/teeworlds-maps',"
 scripts/build_neon_mapres.py,41,code/api-identifier,identifier kept for protocol/build compatibility ((ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|r),"""desert_main.png"", ""ddnet_tiles.png"", ""round_tiles.png"", ""snow.png"","
 scripts/build_neon_skins_all.py,505,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",The 128x128 sheet is the standard DDNet 0.7 eye layout: each cell is a
 scripts/build_warmup.py,41,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
@@ -884,10 +877,10 @@ scripts/gen_asset_manifest.py,39,historical-documentation,document that describe
 scripts/gen_asset_manifest.py,86,historical-documentation,document that describes the upstream derivation,"""grass_main is redrawn from the original Teeworlds grass_main mapres (Apache-2.0)"","
 scripts/gen_asset_manifest.py,190,historical-documentation,document that describes the upstream derivation,"unnamed = ""DDNet contributors (no individual author named upstream)"""
 scripts/gen_asset_manifest.py,191,historical-documentation,document that describes the upstream derivation,"unnamed_cc = ""Copyright DDNet contributors (no individual author named upstream)"""
-scripts/gen_asset_manifest.py,284,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
-scripts/gen_asset_manifest.py,288,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
-scripts/gen_asset_manifest.py,350,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""Teeworlds 0.7 contributors"", ""no per-file license upstream"","
-scripts/gen_asset_manifest.py,352,historical-documentation,document that describes the upstream derivation,"""Teeworlds 0.7 skin system; upstream names neither author nor license here"","
+scripts/gen_asset_manifest.py,289,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
+scripts/gen_asset_manifest.py,293,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
+scripts/gen_asset_manifest.py,355,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""Teeworlds 0.7 contributors"", ""no per-file license upstream"","
+scripts/gen_asset_manifest.py,357,historical-documentation,document that describes the upstream derivation,"""Teeworlds 0.7 skin system; upstream names neither author nor license here"","
 scripts/git_revision.py,6,code/api-identifier,brand appears only inside code identifiers,"git_hash = os.environ.get(""DDNET_GIT_SHORTREV_HASH"")"
 scripts/import_file_score.py,72,code/api-identifier,brand appears only inside code identifiers,"""DDNet7 BOOL DEFAULT FALSE"""
 scripts/import_file_score.py,76,code/api-identifier,brand appears only inside code identifiers,"""INSERT INTO record_race (Map, Name, Time, Server, "" + """".join(f""cp{i + 1}, "" for i in range(25)) + ""GameId, DDNet7) "" + f""VALUES ({','.join('?' * 31)})"","
@@ -942,8 +935,8 @@ scripts/move_sqlite.py,73,code/api-identifier,identifier kept for protocol/build
 scripts/parse_crashlog_drmingw.py,25,code/api-identifier,identifier kept for protocol/build compatibility (CRASH_FILENAME_PATTERN),"CRASH_FILENAME_PATTERN = re.compile(r""(neonrelay|neonrelay-server|DDNet|DDNet-Server)(_([0-9\.\-]+))?_((win32|win64)(-steam)?)(_([a-zA-Z0-9]+))?_crash_log_([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2})_([0-9]+)_([0-9A-Fa-f]*)"")"
 scripts/parse_crashlog_drmingw.py,104,code/api-identifier,"identifier kept for protocol/build compatibility (^\s*if parsed_filename\.executable not in \[""neo)","if parsed_filename.executable not in [""neonrelay"", ""neonrelay-server"", ""DDNet"", ""DDNet-Server""]:"
 scripts/parse_crashlog_drmingw.py,109,code/api-identifier,identifier kept for protocol/build compatibility (^\s*(//|\*|#|;|--).*\bhttps?://[a-z0-9.\-]*ddnet),# TODO: Could implement search for correct folder. And parse HTML of https://ddnet.org/downloads/symbols/ to find correct symbols...
-scripts/preview_chrome_dm.py,51,legal-attribution,source attribution printed on development inspection sheet,"d.text((26,894),'Основа: dm7 / Teeworlds map contributors / CC-BY-SA 3.0',font=font,fill='#e1d8ff')"
-scripts/preview_chrome_dm.py,55,legal-attribution,source attribution printed on development inspection sheet,"d.text((26,1050),'Источник: teeworlds/teeworlds-maps @ 64baa0e / dm7.map',font=small,fill='#8e9bb9')"
+scripts/preview_chrome_dm.py,53,legal-attribution,source attribution printed on development inspection sheet,"d.text((26,894),'Основа: dm7 / Teeworlds map contributors / CC-BY-SA 3.0 + оригинальный атриум Neon Relay',font=font,fill='#e1d8ff')"
+scripts/preview_chrome_dm.py,57,legal-attribution,source attribution printed on development inspection sheet,"d.text((26,1050),'Источник: teeworlds/teeworlds-maps @ 64baa0e / dm7.map + atrium v2',font=small,fill='#8e9bb9')"
 scripts/run_neon_dm_local.py,25,code/api-identifier,identifier kept for protocol/build compatibility (\b(sv|cl|br|ui|gfx|snd|ed)_[a-z0-9_]*ddrace[a-z0),"'sv_ddrace_tune_reset 0', 'sv_solo_server 0', 'sv_team 0',"
 scripts/test_menu_contract.py,158,test-fixture,test data or test assertion,"for name in ['ddnet', 'ddrace', 'f-ddrace', 'fng', 'race', 'vanilla', 'blockworlds']:"
 scripts/test_neon_dm.py,34,test-fixture,test data or test assertion,"self.assertEqual(classify(path,""m.info.author='Teeworlds / Neon Relay'"")[0],'legal-attribution')"
@@ -1578,12 +1571,12 @@ src/game/client/components/important_alert.h,2,code/api-identifier,identifier ke
 src/game/client/components/infomessages.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/infomessages.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/items.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/items.cpp,516,code/api-identifier,brand appears only inside code identifiers,if(pPickup->InDDNetTile())
-src/game/client/components/items.cpp,535,code/api-identifier,brand appears only inside code identifiers,if(Item.m_Type == NETOBJTYPE_PROJECTILE || Item.m_Type == NETOBJTYPE_DDRACEPROJECTILE || Item.m_Type == NETOBJTYPE_DDNETPROJECTILE)
-src/game/client/components/items.cpp,547,comment,brand appears only in a source comment,if(pProj->m_LastRenderTick <= 0 && (pProj->m_Type != WEAPON_SHOTGUN || (!pProj->m_Freeze && !pProj->m_Explosive)) // skip ddrace shotgun bullets
-src/game/client/components/items.cpp,561,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_PICKUP || Item.m_Type == NETOBJTYPE_DDNETPICKUP)
-src/game/client/components/items.cpp,573,code/api-identifier,brand appears only inside code identifiers,if(pPickup && pPickup->InDDNetTile())
-src/game/client/components/items.cpp,580,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_LASER || Item.m_Type == NETOBJTYPE_DDNETLASER)
+src/game/client/components/items.cpp,527,code/api-identifier,brand appears only inside code identifiers,if(pPickup->InDDNetTile())
+src/game/client/components/items.cpp,546,code/api-identifier,brand appears only inside code identifiers,if(Item.m_Type == NETOBJTYPE_PROJECTILE || Item.m_Type == NETOBJTYPE_DDRACEPROJECTILE || Item.m_Type == NETOBJTYPE_DDNETPROJECTILE)
+src/game/client/components/items.cpp,558,comment,brand appears only in a source comment,if(pProj->m_LastRenderTick <= 0 && (pProj->m_Type != WEAPON_SHOTGUN || (!pProj->m_Freeze && !pProj->m_Explosive)) // skip ddrace shotgun bullets
+src/game/client/components/items.cpp,572,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_PICKUP || Item.m_Type == NETOBJTYPE_DDNETPICKUP)
+src/game/client/components/items.cpp,584,code/api-identifier,brand appears only inside code identifiers,if(pPickup && pPickup->InDDNetTile())
+src/game/client/components/items.cpp,591,code/api-identifier,brand appears only inside code identifiers,else if(Item.m_Type == NETOBJTYPE_LASER || Item.m_Type == NETOBJTYPE_DDNETLASER)
 src/game/client/components/items.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/key_binder.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/key_binder.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"

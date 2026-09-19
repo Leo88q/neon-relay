@@ -1,5 +1,5 @@
 {
-  "status": "visual study; opt-in DM code exists; native multiplayer validation pending",
+  "status": "expanded atrium v2; native validation must match this map hash",
   "source": {
     "file": "dm7.map",
     "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
@@ -18,9 +18,71 @@
     "embedded_author": "",
     "embedded_license": ""
   },
-  "physics_preserved": true,
+  "physics_preserved": false,
   "map": "Neon Relay Chrome DM Study.map",
-  "output_sha256": "693d1d995efd21f9f9f8bbc9dc442ffd52c5c54a3d00eee23f3137d83ce02000",
+  "output_sha256": "292c5f9d12b4141572574adc12e94266f88c3fdf1bedddaac27f2e7ec4c8a07a",
+  "width": 274,
+  "height": 120,
+  "spawn_count": 19,
+  "original_open_cells": 6432,
+  "open_cells": 15355,
+  "old_region_preserved_except_junctions": true,
+  "junctions": [
+    [
+      128,
+      34,
+      158,
+      42
+    ],
+    [
+      124,
+      69,
+      158,
+      78
+    ]
+  ],
+  "added_spawns": [
+    [
+      170,
+      35
+    ],
+    [
+      224,
+      35
+    ],
+    [
+      177,
+      55
+    ],
+    [
+      242,
+      55
+    ],
+    [
+      169,
+      75
+    ],
+    [
+      214,
+      75
+    ],
+    [
+      258,
+      75
+    ],
+    [
+      159,
+      95
+    ],
+    [
+      200,
+      95
+    ],
+    [
+      260,
+      95
+    ]
+  ],
   "candidates": [
     {
       "file": "dm1.map",

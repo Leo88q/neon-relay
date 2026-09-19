@@ -15,6 +15,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 import twmap
 from twmap_pipeline import assign_tiles, physics_snapshot, require_version
+from chrome_dm_geometry import extend, change_mask, JUNCTIONS, NEW_SPAWNS
+from chrome_dm_materials import textures
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'data/maps/dm7.map'
@@ -31,55 +33,21 @@ def audit(path):
             'embedded_author':m.info.author, 'embedded_license':m.info.license}
 
 
-def textures(folder):
-    # User's chrome ramp, not recolored upstream artwork. Each tile mask marks
-    # only real exposed collision edges; highlights never move those edges.
-    stops = np.array([0,.08,.22,.34,.40,.46,.60,.80,1])
-    colors = np.array([[255,255,255],[223,233,255],[143,163,216],[42,50,102],
-                       [14,18,48],[85,104,168],[199,211,245],[255,255,255],[127,139,189]])
-    y,x = np.mgrid[0:64,0:64]
-    atlas = Image.new('RGBA',(1024,1024))
-    # Use a ramp across the depth of each solid column, NOT a full chrome
-    # stripe repeated in every 32px cell (which produces distracting moire).
-    for band in range(15):
-        ramp = np.stack([np.interp((band+y/63)/15,stops,colors[:,c]) for c in range(3)],axis=-1)
-        tint=np.array([.96,.97,1.0])
-        rgb=np.clip(ramp*tint,0,255).astype(np.uint8)
-        for mask in range(16):
-            tile=Image.fromarray(rgb).convert('RGBA');d=ImageDraw.Draw(tile)
-            for bit,line in [(1,(0,0,63,0)),(2,(63,0,63,63)),(4,(0,63,63,63)),(8,(0,0,0,63))]:
-                if mask&bit:
-                    d.line(line,fill=(24,26,62,255),width=5)
-                    if bit==1:d.line((0,2,63,2),fill=(255,255,255,255),width=2)
-            idx=1+band*16+mask;atlas.paste(tile,((idx%16)*64,(idx//16)*64))
-    atlas.save(folder/'chrome.png')
-    # Procedural pastel field. This is a static texture + native envelopes,
-    # NOT a claim that the supplied real-time domain-warp shader is installed.
-    yy,xx=np.mgrid[0:512,0:768];p=xx/180;q=yy/180
-    f=np.sin(p+np.sin(q*1.4))*.35+np.cos(q+np.sin(p*.8))*.3
-    col=.5+.5*np.cos(2*math.pi*(f[:,:,None]*.65+np.array([0,.33,.67])))
-    col=col*.40+np.array([.86,.9,1])*.60
-    Image.fromarray((col*255).astype(np.uint8)).save(folder/'pastel.png')
-    ring=Image.new('RGBA',(128,128));d=ImageDraw.Draw(ring)
-    d.ellipse((7,7,121,121),fill=(255,255,255,15),outline=(255,255,255,150),width=3)
-    d.arc((22,22,106,106),205,280,fill=(255,255,255,210),width=3)
-    ring.save(folder/'ring.png')
-
-
 def build(folder):
     require_version();folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
     assert hashlib.sha256(SOURCE.read_bytes()).hexdigest()==SOURCE_SHA, 'Source map changed'
     source=twmap.Map(str(SOURCE));before=physics_snapshot(source)
     assert all(before[k] is None for k in ('front','tele','speedup','switch','tune'))
-    game=source.game_layer().tiles;h,w,_=game.shape
+    original=source.game_layer().tiles
+    game=extend(original);h,w,_=game.shape
     textures(folder)
     m=twmap.Map.empty('DDNet06')
     m.info.author='Teeworlds / Neon Relay'
-    m.info.version='chrome-study-1'
-    m.info.credits='Modified dm7, Teeworlds 0.6.5; geometry unchanged; new code-built visuals'
+    m.info.version='chrome-atrium-2'
+    m.info.credits='Modified dm7; new connected atrium and chrome visuals by Neon Relay'
     m.info.license='CC-BY-SA 3.0'
     m.info.settings=list(source.info.settings)
-    for name in ('chrome','pastel','ring'):m.images.new_from_file(str(folder/(name+'.png')))
+    for name in ('chrome','pastel','ring','bevels'):m.images.new_from_file(str(folder/(name+'.png')))
 
     def env(name,kind,frames):
         idx=len(m.envelopes);e=m.envelopes.new(kind);e.name=name;e.synchronized=True
@@ -91,31 +59,47 @@ def build(folder):
 
     bg=m.groups.new();bg.name='Pearl sky';bg.parallax_x=0;bg.parallax_y=0
     sky=bg.layers.new_quads();sky.name='Pastel';sky.image=1
-    quad(sky,-100,-70,200,140)
+    q=quad(sky,-100,-70,200,140)
+    q.position_env=env('Sky drift','Position',[(0,(0,0,0)),(12000,(.5,-.3,0)),(24000,(0,0,0))])
     drift=env('Float','Position',[(0,(0,0,0)),(4000,(0,.4,0)),(8000,(0,0,0))])
+    bg=m.groups.new();bg.name='Atrium ribs';bg.parallax_x=22;bg.parallax_y=22
+    ribs=bg.layers.new_quads();ribs.name='Ribs'
+    for k in range(12):
+        cx=k*14-30
+        for i in range(28):
+            a0=math.pi*i/28;a1=math.pi*(i+1)/28
+            x0=cx+7*math.cos(a0);y0=21-12*math.sin(a0)
+            x1=cx+7*math.cos(a1);y1=21-12*math.sin(a1)
+            q=quad(ribs,x0,y0,.1,.1)
+            q.corners=[(x0,y0),(x1,y1),(x0+.13,y0+.12),(x1+.13,y1+.12)]
+            q.colors=[(94,118,176,28)]*4
+        for x0 in (cx-7,cx+7):
+            q=quad(ribs,x0,21,.12,35);q.colors=[(94,118,176,25)]*4
     for lane in range(3):
         g=m.groups.new();g.name='Rings '+str(lane);g.parallax_x=8+lane*6;g.parallax_y=8+lane*6
         layer=g.layers.new_quads();layer.name='Rings';layer.image=2
-        for i in range(14):
-            q=quad(layer,i*6-25,((i*7+lane*11)%31)-10,1.5+lane*.4,1.5+lane*.4)
+        for i in range(16):
+            q=quad(layer,i*8-25,((i*7+lane*11)%31)-10,1.5+lane*.4,1.5+lane*.4)
             q.position_env=drift;q.position_env_offset=(i*517+lane*997)%8000
     g=m.groups.new_physics();g.name='Game'
     l=g.layers.new_game(w,h);assign_tiles(l,game)
     terrain=g.layers.new_tiles(w,h);terrain.name='Chrome';terrain.image=0
-    a=terrain.tiles
+    edges=g.layers.new_tiles(w,h);edges.name='Edge bevels';edges.image=3
+    a=terrain.tiles;b=edges.tiles
     def solid(x,y):return 0<=x<w and 0<=y<h and game[y,x,0] in (1,3)
+    glints=[]
     for y in range(h):
         for x in range(w):
             if solid(x,y):
                 mask=sum(bit for dx,dy,bit in [(0,-1,1),(1,0,2),(0,1,4),(-1,0,8)] if not solid(x+dx,y+dy))
-                top=y
-                while solid(x,top-1):top-=1
-                bottom=y
-                while solid(x,bottom+1):bottom+=1
-                band=min(14,int(15*(y-top+.5)/(bottom-top+1)))
-                a[y,x,0]=1+16*band+mask
-    assign_tiles(terrain,a)
-    terrain.color_env=env('Pearl tint','Color',[(0,(1,.94,1,1)),(5000,(.86,1,1,1)),(10000,(1,.94,1,1))])
+                a[y,x,0]=1+(y%8)*8+x%8;b[y,x,0]=mask
+                if mask&1 and x%7==0 and 2<y<h-2:glints.append((x,y))
+    assign_tiles(terrain,a);assign_tiles(edges,b)
+    terrain.color_env=env('Pearl tint','Color',[(0,(1,.96,1,1)),(7000,(.90,1,1,1)),(14000,(1,.96,1,1))])
+    shine=g.layers.new_quads();shine.name='Edge sheen'
+    sheen=env('Sheen','Color',[(0,(1,1,1,.12)),(1800,(.8,1,1,.55)),(4200,(1,1,1,.12))])
+    for x,y in glints:
+        q=quad(shine,x+.12,y+.11,.72,.045);q.color_env=sheen;q.color_env_offset=(x*131+y*97)%4200
     path=folder/'Neon Relay Chrome DM Study.map';m.save(str(path))
     reopened=twmap.Map(str(path));after=physics_snapshot(reopened)
     actual=reopened.game_layer().tiles
@@ -123,12 +107,18 @@ def build(folder):
     occupied=game[:,:,0]!=0
     assert np.array_equal(actual[:,:,1][occupied],game[:,:,1][occupied]), 'Nonempty tile flags changed'
     assert all(after[k]==before[k] for k in before if k!='game'), 'Special layers/settings changed'
+    preserved=~change_mask()
+    assert np.array_equal(actual[:,:146,0][preserved],original[:,:,0][preserved])
     # twmap normalizes flags on empty tiles. dm7 has one irrelevant HFLIP on
     # empty cell (50,42); disclose this instead of claiming byte identity.
     empty_flag_changes=int(np.count_nonzero(actual[:,:,1][~occupied]!=game[:,:,1][~occupied]))
-    report={'status':'visual study; opt-in DM code exists; native multiplayer validation pending',
-            'source':audit(SOURCE),'physics_preserved':True,'map':path.name,
+    report={'status':'expanded atrium v2; native validation must match this map hash',
+            'source':audit(SOURCE),'physics_preserved':False,'map':path.name,
             'output_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
+            'width':w,'height':h,'spawn_count':int(np.count_nonzero(game[:,:,0]==192)),
+            'original_open_cells':int(np.count_nonzero(~np.isin(original[:,:,0],[1,3]))),
+            'open_cells':int(np.count_nonzero(~np.isin(game[:,:,0],[1,3]))),
+            'old_region_preserved_except_junctions':True,'junctions':JUNCTIONS,'added_spawns':NEW_SPAWNS,
             'candidates':[audit(p) for p in sorted((ROOT/'data/maps').glob('dm*.map'))],
             'empty_tile_flags_normalized':empty_flag_changes,'raw_game_bytes_identical':bool(np.array_equal(actual,game)),
             'license':'CC-BY-SA 3.0','license_verified':True,

@@ -1618,6 +1618,8 @@ set(EXPECTED_DATA
   game_entities/entities_clear/fng.png
   game_entities/entities_clear/race.png
   game_entities/entities_clear/vanilla.png
+  game_entities/neon_dm_armor.png
+  game_entities/neon_dm_health.png
   game_entities/speed_arrow.png
   game_entities/speed_arrow_array.png
   gui_buttons.png
