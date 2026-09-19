@@ -226,45 +226,59 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 {
 	if(Index < 0 || Index >= (int)m_aCharacterPortraits.size()) return;
-	auto &Texture = m_aCharacterPortraits[Index];
-	if(!Texture.IsValid())
+	auto &Portrait = m_aCharacterPortraits[Index];
+	if(!Portrait.IsValid())
 	{
-		// fallback to yieldbloom if not loaded
-		if(Index < (int)m_aYieldBloomFrames.size() && m_aYieldBloomFrames[Index+21].IsValid())
-			Texture = m_aYieldBloomFrames[Index+21];
-		else
-		{
-			char aPath[128];
-			str_format(aPath, sizeof(aPath), "portraits/%s.png", POTATO_CATALOG[Index % 10].m_pSkin);
-			Texture = Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
-		}
+		// Load original potato portrait – keep original naming, do not regenerate characters
+		char aPath[128];
+		str_format(aPath, sizeof(aPath), "portraits/%s.png", POTATO_CATALOG[Index % 10].m_pSkin);
+		Portrait = Graphics()->LoadTexture(aPath, IStorage::TYPE_ALL);
 	}
-	if(!Texture.IsValid()) return;
-	// YIELDBLOOM frame – gunmetal bg + amber top + cyan bottom + rivets
+	if(!Portrait.IsValid()) return;
+
+	// YIELDBLOOM industrial frame around existing character – gunmetal background + portrait + frame overlay
+	// Background gunmetal
 	Rect.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 8.0f);
+	// Amber top, cyan bottom (industrial signature)
 	CUIRect Top = {Rect.x, Rect.y, Rect.w, 3.0f};
-	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.85f), IGraphics::CORNER_T, 4.0f);
+	Top.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.90f), IGraphics::CORNER_T, 4.0f);
 	CUIRect Bot = {Rect.x, Rect.y + Rect.h - 2.5f, Rect.w, 2.5f};
 	Bot.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_B, 2.0f);
+
 	CUIRect Inner = Rect;
 	Inner.Margin(6.0f, &Inner);
 	const float Size = std::min(Inner.w, Inner.h);
-	Graphics()->TextureSet(Texture);
+	// Draw original character portrait centered
+	Graphics()->TextureSet(Portrait);
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1, 1, 1, 1);
-	IGraphics::CQuadItem Quad(Inner.x + (Inner.w-Size)/2, Inner.y + (Inner.h-Size)/2, Size, Size);
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+	IGraphics::CQuadItem Quad(Inner.x + (Inner.w - Size) / 2.0f, Inner.y + (Inner.h - Size) / 2.0f, Size, Size);
 	Graphics()->QuadsDrawTL(&Quad, 1);
 	Graphics()->QuadsEnd();
-	// rivets
-	float riv=3.0f;
-	CUIRect R1 = {Rect.x+4, Rect.y+4, riv, riv};
-	CUIRect R2 = {Rect.x+Rect.w-7, Rect.y+4, riv, riv};
-	CUIRect R3 = {Rect.x+4, Rect.y+Rect.h-7, riv, riv};
-	CUIRect R4 = {Rect.x+Rect.w-7, Rect.y+Rect.h-7, riv, riv};
-	R1.Draw(ColorRGBA(0.20f,0.21f,0.22f,1.0f), IGraphics::CORNER_ALL, 1.5f);
-	R2.Draw(ColorRGBA(0.20f,0.21f,0.22f,1.0f), IGraphics::CORNER_ALL, 1.5f);
-	R3.Draw(ColorRGBA(0.20f,0.21f,0.22f,1.0f), IGraphics::CORNER_ALL, 1.5f);
-	R4.Draw(ColorRGBA(0.20f,0.21f,0.22f,1.0f), IGraphics::CORNER_ALL, 1.5f);
+
+	// Overlay YIELDBLOOM frame texture if loaded (index 4 = character_card_frame.png)
+	if(m_aYieldBloomFrames.size() > 4 && m_aYieldBloomFrames[4].IsValid())
+	{
+		Graphics()->TextureSet(m_aYieldBloomFrames[4]);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		IGraphics::CQuadItem FrameQuad(Rect.x, Rect.y, Rect.w, Rect.h);
+		Graphics()->QuadsDrawTL(&FrameQuad, 1);
+		Graphics()->QuadsEnd();
+	}
+	else
+	{
+		// Fallback rivets if texture missing
+		float riv = 3.0f;
+		CUIRect R1 = {Rect.x + 4.0f, Rect.y + 4.0f, riv, riv};
+		CUIRect R2 = {Rect.x + Rect.w - 7.0f, Rect.y + 4.0f, riv, riv};
+		CUIRect R3 = {Rect.x + 4.0f, Rect.y + Rect.h - 7.0f, riv, riv};
+		CUIRect R4 = {Rect.x + Rect.w - 7.0f, Rect.y + Rect.h - 7.0f, riv, riv};
+		R1.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
+		R2.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
+		R3.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
+		R4.Draw(ColorRGBA(0.20f, 0.21f, 0.22f, 1.0f), IGraphics::CORNER_ALL, 1.5f);
+	}
 }
 
 void CMenus::RenderCharacters(CUIRect MainView)

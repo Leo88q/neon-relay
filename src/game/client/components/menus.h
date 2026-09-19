@@ -657,7 +657,7 @@ protected:
 	void UpdateColors();
 
 	IGraphics::CTextureHandle m_TextureBlob;
-	IGraphics::CTextureHandle m_aCharacterPortraits[16];
+	IGraphics::CTextureHandle m_aCharacterPortraits[10];
 	std::array<IGraphics::CTextureHandle, 8> m_aBgTextures;
 	std::array<IGraphics::CTextureHandle, 32> m_aYieldBloomFrames;
 

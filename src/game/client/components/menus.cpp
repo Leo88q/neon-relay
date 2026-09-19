@@ -688,16 +688,14 @@ void CMenus::OnInit()
 			m_aBgTextures[i] = Graphics()->LoadTextureRaw(Info, 0, apBgNames[i]);
 		}
 	}
-	// YIELDBLOOM industrial frames – 29 assets
+	// YIELDBLOOM industrial frames – 23 assets (no characters, only frames)
 	const char *apYieldNames[] = {
 		"ui/yieldbloom/frame_main_panel.png", "ui/yieldbloom/frame_small_card.png", "ui/yieldbloom/button_primary.png", "ui/yieldbloom/button_tab.png",
 		"ui/yieldbloom/character_card_frame.png", "ui/yieldbloom/top_header_bar.png", "ui/yieldbloom/left_menu_panel.png", "ui/yieldbloom/right_info_panel.png",
 		"ui/yieldbloom/bottom_action_bar.png", "ui/yieldbloom/rack_unit.png", "ui/yieldbloom/input_field.png", "ui/yieldbloom/window_large.png",
 		"ui/yieldbloom/connector_cyan.png", "ui/yieldbloom/chat_panel.png", "ui/yieldbloom/panel_races.png", "ui/yieldbloom/panel_wallet.png",
 		"ui/yieldbloom/panel_leaders.png", "ui/yieldbloom/panel_settings_block.png", "ui/yieldbloom/frame_transition.png", "ui/yieldbloom/button_small.png",
-		"ui/yieldbloom/progress_bar.png", "ui/yieldbloom/potato_card_cool_guy_1.png", "ui/yieldbloom/potato_card_legend_guy.png", "ui/yieldbloom/potato_card_cool_girl_1.png",
-		"ui/yieldbloom/potato_card_girl_2.png", "ui/yieldbloom/potato_card_girl_3.png", "ui/yieldbloom/potato_card_guy_2.png", "ui/yieldbloom/potato_card_guy_3.png",
-		"ui/yieldbloom/potato_card_legend_girl.png"};
+		"ui/yieldbloom/progress_bar.png", "ui/yieldbloom/panel_tab_bar.png", "ui/yieldbloom/panel_notification.png"};
 	for(size_t i = 0; i < std::size(apYieldNames) && i < m_aYieldBloomFrames.size(); ++i)
 	{
 		CImageInfo Info;
@@ -706,11 +704,12 @@ void CMenus::OnInit()
 			m_aYieldBloomFrames[i] = Graphics()->LoadTextureRaw(Info, 0, apYieldNames[i]);
 		}
 	}
-	// Character portraits from YIELDBLOOM potato cards
+	// Character portraits – original potato skins, NOT regenerated, keep original names
 	const char *apPortraitNames[] = {
-		"ui/yieldbloom/potato_card_cool_guy_1.png", "ui/yieldbloom/potato_card_legend_guy.png", "ui/yieldbloom/potato_card_cool_girl_1.png",
-		"ui/yieldbloom/potato_card_girl_2.png", "ui/yieldbloom/potato_card_girl_3.png", "ui/yieldbloom/potato_card_guy_2.png",
-		"ui/yieldbloom/potato_card_guy_3.png", "ui/yieldbloom/potato_card_legend_girl.png"};
+		"portraits/potato_cool_guy_1.png", "portraits/potato_cool_girl_1.png", "portraits/potato_guy_2.png",
+		"portraits/potato_girl_2.png", "portraits/potato_guy_3.png", "portraits/potato_guy_4.png",
+		"portraits/potato_girl_3.png", "portraits/potato_girl_4.png", "portraits/potato_legend_guy.png",
+		"portraits/potato_legend_girl.png"};
 	for(size_t i = 0; i < std::size(apPortraitNames) && i < std::size(m_aCharacterPortraits); ++i)
 	{
 		CImageInfo Info;
