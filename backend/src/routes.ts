@@ -11,6 +11,12 @@
  * Reward routes (/v1/rewards/…) arrive in stage 7 and are intentionally absent:
  * an unknown path is a 404, never a silent stub.
  */
+import { raceLobby, parseRaceCurrency, RACE_TIERS } from "./race_catalog.ts";
+import { readMarketV2, readTicketV2, V2AccountError } from "./economy_v2_rpc.ts";
+import { issueSealedPairing } from "./game_pairing_seal.ts";
+import { GamePairing } from "./game_pairing.ts";
+import { GameIdentity } from "./game_identity.ts";
+import { EconomyV2Store } from "./economy_v2_store.ts";
 import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
@@ -123,6 +129,46 @@ export function buildRouter(deps: {
     return { unlinked: true, wallet_binding_id: binding.id };
   });
 
+  const pairing = new GamePairing(db, config);
+  router.add("POST", "/v2/game/pair", (ctx) => {
+    guard(ctx, "game-pairing");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return pairing.issue(auth, str(body["connection_nonce"], "connection_nonce", 64), body["consent"]);
+  });
+  router.add("POST", "/v2/game/pair-sealed", (ctx) => {
+    guard(ctx, "game-pairing");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return issueSealedPairing(config, pairing, auth, str(body["offer"], "offer", 2048),
+      str(body["signature"], "signature", 86), body["consent"]);
+  });
+  // Server-authenticated via Ed25519 proof, NOT a wallet bearer session.
+  router.add("POST", "/v2/game/redeem", (ctx) => {
+    guard(ctx, "game-pairing-redeem");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return pairing.redeem(str(body["pairing_token"], "pairing_token", 43),
+      str(body["connection_nonce"], "connection_nonce", 64), str(body["signature"], "signature", 86));
+  });
+
+  const identity = new GameIdentity(db, config);
+  router.add("POST", "/v2/identity/challenge", (ctx) => {
+    guard(ctx, "game-identity");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return identity.issue(auth, str(body["player_id"], "player_id", 128));
+  });
+  router.add("POST", "/v2/identity/verify", (ctx) => {
+    guard(ctx, "game-identity");
+    const auth = requireSession(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    return identity.verify(auth, str(body["nonce"], "nonce", 43), str(body["signature"], "signature", 86));
+  });
+  router.add("GET", "/v2/identity", (ctx) => {
+    guard(ctx, "game-identity-status");
+    return identity.status(requireSession(ctx));
+  });
+
   // ------------------------------------------------------------ rewards (stage 7)
 
   router.add("POST", "/v1/rewards/events", (ctx) => {
@@ -203,6 +249,70 @@ export function buildRouter(deps: {
   router.add("GET", "/v1/rewards/intents", (ctx) => {
     const { binding } = requireSession(ctx);
     return { intents: rewards.intentsFor(binding) };
+  });
+
+  // Read-only v2 catalog: no legacy ticket or transfer is reused for POTATO.
+  router.add("GET", "/v2/economy/lobby", (ctx) => {
+    guard(ctx, "lobby");
+    const values = ctx.url.searchParams.getAll("currency");
+    if (values.length > 1) throw new HttpError(400, "bad-currency", "supply currency once");
+    try {
+      return raceLobby(config, values.length ? parseRaceCurrency(values[0]!) : undefined);
+    } catch {
+      throw new HttpError(400, "bad-currency", "currency must be SKR or POTATO");
+    }
+  });
+
+  const v2Store = new EconomyV2Store(db);
+  const configuredV2Market = (ctx: RequestContext) => {
+    const values = ctx.url.searchParams.getAll("currency");
+    if (values.length !== 1 || !["SKR", "POTATO"].includes(values[0]!)) {
+      throw new HttpError(400, "bad-currency", "supply exactly one currency: SKR or POTATO");
+    }
+    const mintText = values[0] === "SKR" ? config.skrMint : config.potatoMint;
+    if (!mintText || !config.economyProgramId) throw new HttpError(503, "economy-not-configured", "operator mint and program configuration required");
+    const decode = (value: string) => {
+      try {
+        if (value.length < 32 || value.length > 44) throw new Error();
+        const key = base58Decode(value);
+        if (key.length !== 32 || key.every((byte) => byte === 0) || base58Encode(key) !== value) throw new Error();
+        return key;
+      } catch { throw new HttpError(503, "economy-not-configured", "invalid operator public key configuration"); }
+    };
+    return { mint: decode(mintText), program: decode(config.economyProgramId) };
+  };
+  const v2Read = async <T>(work: () => Promise<T>): Promise<T> => {
+    try { return await work(); }
+    catch (error) {
+      if (error instanceof V2AccountError) throw new HttpError(503, "market-invalid", error.message);
+      throw new HttpError(502, "economy-rpc-unavailable", "could not verify market accounts");
+    }
+  };
+  router.add("GET", "/v2/economy/market", async (ctx) => {
+    guard(ctx, "economy-v2-read");
+    requireSession(ctx);
+    const { program, mint } = configuredV2Market(ctx);
+    return v2Read(() => readMarketV2(rpc, program, mint));
+  });
+  router.add("GET", "/v2/economy/ticket", async (ctx) => {
+    guard(ctx, "economy-v2-read");
+    const { binding } = requireSession(ctx);
+    const { program, mint } = configuredV2Market(ctx);
+    if (!binding.player_id) throw new HttpError(403, "player-link-required", "link a player before inspecting an entry intent");
+    const keys = ctx.url.searchParams.getAll("idempotency_key");
+    const key = keys.length === 1 ? str(keys[0], "idempotency_key", 128) : null;
+    if (!key || /[\u0000-\u001f\u007f]/.test(key)) throw new HttpError(400, "bad-request", "invalid idempotency_key");
+    const intent = v2Store.getIntent(mint, binding.player_id, key);
+    if (!intent) throw new HttpError(404, "intent-not-found", "no entry intent for this player and mint");
+    const wallet = Buffer.from(binding.public_key, "base64url");
+    if (intent.wallet !== wallet.toString("hex")) throw new HttpError(403, "intent-wallet-mismatch", "intent belongs to a different wallet");
+    const tier = RACE_TIERS.findIndex((row) => row.id === intent.tier);
+    if (tier < 0 || tier > 3) throw new HttpError(503, "unsupported-entry-tier", "no verified paid tier for this intent");
+    const result = await v2Read(() => readTicketV2(rpc, program, mint, {
+      wallet, reference: Buffer.from(intent.reference, "hex"), kind: intent.kind, tier,
+      amountBase: BigInt(intent.amount_base),
+    }));
+    return { ...result, admissionEnabled: false };
   });
 
   // Surface auth failures with stable codes instead of 500s.

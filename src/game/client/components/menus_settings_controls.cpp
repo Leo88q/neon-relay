@@ -93,7 +93,6 @@ void CMenusSettingsControls::OnInterfacesInit(CGameClient *pClient)
 		{EBindOptionGroup::DUMMY, Localizable("Toggle dummy"), "toggle cl_dummy 0 1"},
 		{EBindOptionGroup::DUMMY, Localizable("Dummy copy"), "toggle cl_dummy_copy_moves 0 1"},
 		{EBindOptionGroup::DUMMY, Localizable("Hammerfly dummy"), "toggle cl_dummy_hammer 0 1"},
-		{EBindOptionGroup::MISCELLANEOUS, Localizable("Emoticon"), "+emote"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Spectator mode"), "+spectate"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Spectate next"), "spectate_next"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Spectate previous"), "spectate_previous"},
@@ -381,7 +380,12 @@ void CMenusSettingsControls::RenderSettingsBlock(float Height, CUIRect *pParentR
 	pParentRect->HSplitTop(MARGIN, nullptr, pParentRect);
 	if(m_SettingsScrollRegion.AddRect(SettingsBlock) || m_SearchMatchReveal)
 	{
-		SettingsBlock.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, pExpandButton == nullptr || Ui()->HotItem() != pExpandButton ? 0.25f : 0.3f), IGraphics::CORNER_ALL, 10.0f);
+		// Cyberpunk panel – dark with cyan edge, sharp 4-6px
+		SettingsBlock.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f), IGraphics::CORNER_ALL, 6.0f);
+		CUIRect CyberEdge = {SettingsBlock.x, SettingsBlock.y, SettingsBlock.w, 2.0f};
+		CyberEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.75f), IGraphics::CORNER_T, 4.0f);
+		CUIRect CyberEdgeLeft = {SettingsBlock.x, SettingsBlock.y, 2.0f, SettingsBlock.h};
+		CyberEdgeLeft.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.35f), IGraphics::CORNER_L, 4.0f);
 		SettingsBlock.Margin(MARGIN, &SettingsBlock);
 
 		if(pTitle != nullptr)
@@ -472,7 +476,9 @@ void CMenusSettingsControls::RenderSettingsBinds(EBindOptionGroup Group, CUIRect
 		{
 			continue;
 		}
-		KeyReaders.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.1f), IGraphics::CORNER_ALL, 5.0f);
+		KeyReaders.Draw(ColorRGBA(0.09f, 0.10f, 0.12f, 0.85f), IGraphics::CORNER_ALL, 4.0f);
+		CUIRect BindEdge = {KeyReaders.x, KeyReaders.y, KeyReaders.w, 1.5f};
+		BindEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.45f), IGraphics::CORNER_T, 2.0f);
 		KeyReaders.Margin(2.0f, &KeyReaders);
 
 		CUIRect Label, AddButton;
@@ -673,7 +679,7 @@ void CMenusSettingsControls::RenderSettingsJoystick(CUIRect View)
 		View.HSplitTop(BUTTON_SPACING, nullptr, &View);
 		if(m_SettingsScrollRegion.AddRect(View))
 		{
-			View.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.1f), IGraphics::CORNER_ALL, 5.0f);
+			View.Draw(ColorRGBA(0.09f, 0.10f, 0.12f, 0.85f), IGraphics::CORNER_ALL, 4.0f);
 			RenderJoystickAxisPicker(View);
 		}
 	}
@@ -714,7 +720,7 @@ void CMenusSettingsControls::RenderJoystickAxisPicker(CUIRect View)
 		{
 			continue;
 		}
-		Row.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.1f), IGraphics::CORNER_ALL, 5.0f);
+		Row.Draw(ColorRGBA(0.05f, 0.07f, 0.14f, 0.88f), IGraphics::CORNER_ALL, 4.0f);
 		Row.VSplitLeft(AxisWidth, &Axis, &Row);
 		Row.VSplitLeft(SpacingV, nullptr, &Row);
 		Row.VSplitLeft(StatusWidth, &Status, &Row);

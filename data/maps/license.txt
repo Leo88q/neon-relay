@@ -17,3 +17,27 @@ CC-BY-SA license
 Tutorial:
 Copyright unique2 & Alisa
 CC-BY-SA license
+
+LearnToPlay Sound:
+Derived from LearnToPlay by Tridemy & Cøke.
+Original gameplay, embedded tutorial instructions and author attribution retained.
+Neon Relay visual adaptation: code-built LED surfaces, peaks and wave animation (2026).
+CC-BY-SA 3.0; https://creativecommons.org/licenses/by-sa/3.0/
+Source: https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/data/maps/LearnToPlay.map
+This is a modified version, not an original map by Neon Relay.
+Distribution approval remains pending the embedded-asset attribution review.
+
+LearnToPlay Sound Heights:
+Derived from LearnToPlay by Tridemy & Cøke; same visual adaptation as LearnToPlay Sound.
+Additional gameplay modification: 12 solid tiles forming a pre-start terrace at x342..347, y20..22.
+Tutorial instructions and author attribution retained. Source map not modified.
+CC-BY-SA 3.0; https://creativecommons.org/licenses/by-sa/3.0/
+Source: https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/data/maps/LearnToPlay.map
+Distribution approval remains pending the embedded-asset attribution review.
+
+Neon Relay Warmup:
+Copyright (c) 2026 The Neon Relay Authors.
+Zlib license (see the project's Zlib license text).
+Original authored geometry: scripts/build_warmup.py; no third-party source map used.
+Embedded original Neon Relay artwork: neonrelay_learn terrain, symbols, atmosphere and oil.
+Artwork generators: scripts/learn_visibility.py and scripts/learn_oil.py.

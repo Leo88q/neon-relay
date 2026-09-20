@@ -57,6 +57,8 @@ public:
 	IHttpRequest(const char *pUrl);
 	virtual ~IHttpRequest();
 
+	// Credential-bearing native requests: HTTPS only, no redirects/debug logging.
+	void Sensitive() { m_Sensitive = true; m_LogProgress = HTTPLOG::NONE; }
 	void Timeout(CTimeout Timeout) { m_Timeout = Timeout; }
 	// Skip the download if the local file is newer or as new as the remote file.
 	void MaxResponseSize(int64_t MaxResponseSize) { m_MaxResponseSize = MaxResponseSize; }
@@ -152,6 +154,7 @@ protected:
 	bool m_SkipByFileTime = true;
 	IPRESOLVE m_IpResolve = IPRESOLVE::WHATEVER;
 	bool m_FailOnErrorStatus = true;
+	bool m_Sensitive = false;
 	bool m_ValidateBeforeOverwrite = false;
 	std::optional<SHA256_DIGEST> m_ExpectedSha256 = std::nullopt;
 	int64_t m_IfModifiedSince = -1;

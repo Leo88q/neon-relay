@@ -24,6 +24,8 @@ private:
 	int m_Type;
 	int m_Subtype;
 	int m_Flags;
+	int m_RespawnTick = -1;
+	void TickDeathmatch();
 
 	// DDRace
 

@@ -1,0 +1,90 @@
+name: Economy Rust and SBF tests
+on:
+  push:
+    branches: [main, "arena/**"]
+    paths:
+      - "onchain/**"
+      - ".github/workflows/economy-rust.yml"
+  pull_request:
+    paths:
+      - "onchain/**"
+      - ".github/workflows/economy-rust.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Compile Anchor constraints and run host plus native runtime tests
+        run: cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy
+      - name: Install pinned Agave SBF build toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 -o "$RUNNER_TEMP/agave.tar.bz2" \
+            https://github.com/anza-xyz/agave/releases/download/v3.1.8/solana-release-x86_64-unknown-linux-gnu.tar.bz2
+          echo "e951bb8127c57460bc3ebca1671952e9b164e249d713fcebe2c125f70b8791e8  $RUNNER_TEMP/agave.tar.bz2" | sha256sum --check
+          tar -xjf "$RUNNER_TEMP/agave.tar.bz2" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/solana-release/bin" >> "$GITHUB_PATH"
+      - name: Build economy SBF binary (no deployment)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo-build-sbf --version
+          cargo-build-sbf --manifest-path onchain/programs/neonrelay-economy/Cargo.toml \
+            --sbf-out-dir "$GITHUB_WORKSPACE/onchain/target/deploy"
+          sha256sum onchain/target/deploy/neonrelay_economy.so > onchain/target/deploy/economy-sbf.sha256
+      - name: Execute runtime scenarios with economy SBF (no native fallback)
+        env:
+          RUST_LOG: "error"
+          NEONRELAY_TEST_SBF: "1"
+          BPF_OUT_DIR: ${{ github.workspace }}/onchain/target/deploy
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy --test v2_runtime -- --test-threads=1 2>&1 | tee "$RUNNER_TEMP/economy-sbf-test.log"; then
+            python3 - <<'PYLOG'
+          import os
+          from pathlib import Path
+          text = Path(os.environ["RUNNER_TEMP"], "economy-sbf-test.log").read_text()
+          tail = "\n".join(text.splitlines()[-100:])[-3500:]
+          print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
+          PYLOG
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Isolated validator lifecycle and production backend RPC decoding
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! onchain/scripts/test_local_validator.sh 2>&1 | tee "$RUNNER_TEMP/economy-validator-test.log"; then
+            python3 - <<'PYLOG'
+          import os
+          from pathlib import Path
+          text = Path(os.environ["RUNNER_TEMP"], "economy-validator-test.log").read_text()
+          tail = "\n".join(text.splitlines()[-100:])[-3500:]
+          print("::error::" + tail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A"))
+          PYLOG
+            exit 1
+          fi
+      - name: Save SBF binary and hash (never keypair files)
+        uses: actions/upload-artifact@v4
+        with:
+          name: economy-sbf
+          path: |
+            onchain/target/deploy/neonrelay_economy.so
+            onchain/target/deploy/economy-sbf.sha256
+          if-no-files-found: error
+      - name: Save resolved dependency lock for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: economy-cargo-lock
+          path: onchain/Cargo.lock
+          if-no-files-found: ignore

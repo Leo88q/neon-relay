@@ -29,7 +29,6 @@
 #include <engine/config.h>
 #include <engine/console.h>
 #include <engine/discord.h>
-#include <engine/editor.h>
 #include <engine/engine.h>
 #include <engine/external/json-parser/json.h>
 #include <engine/favorites.h>
@@ -697,19 +696,21 @@ void CClient::Connect(const char *pAddress, const char *pPassword)
 	m_ConnectionId = RandomUuid();
 	ServerInfoRequest();
 
-	if(m_SendPassword)
-	{
-		str_copy(m_aPassword, g_Config.m_Password);
-		m_SendPassword = false;
-	}
-	else if(!pPassword)
-	{
-		m_aPassword[0] = 0;
-	}
-	else
+	// An explicit password (e.g. a newly launched private server) must win
+	// over credentials cached for a previous connection to the same address.
+	if(pPassword)
 	{
 		str_copy(m_aPassword, pPassword);
 	}
+	else if(m_SendPassword)
+	{
+		str_copy(m_aPassword, g_Config.m_Password);
+	}
+	else
+	{
+		m_aPassword[0] = 0;
+	}
+	m_SendPassword = false;
 
 	m_CanReceiveServerCapabilities = true;
 
@@ -1213,14 +1214,7 @@ const char *CClient::ErrorString() const
 
 void CClient::Render()
 {
-	if(m_EditorActive)
-	{
-		m_pEditor->OnRender();
-	}
-	else
-	{
-		GameClient()->OnRender();
-	}
+	GameClient()->OnRender();
 
 	RenderDebug();
 	RenderGraphs();
@@ -2827,11 +2821,8 @@ void CClient::Update()
 {
 	PumpNetwork();
 
-	// update editor/gameclient, before input snapping
-	if(m_EditorActive)
-		m_pEditor->OnUpdate();
-	else
-		GameClient()->OnUpdate();
+	// Update the game client before input snapping.
+	GameClient()->OnUpdate();
 
 	if(State() == IClient::STATE_DEMOPLAYBACK)
 	{
@@ -3146,7 +3137,6 @@ void CClient::InitInterfaces()
 {
 	// fetch interfaces
 	m_pEngine = Kernel()->RequestInterface<IEngine>();
-	m_pEditor = Kernel()->RequestInterface<IEditor>();
 	m_pFavorites = Kernel()->RequestInterface<IFavorites>();
 	m_pSound = Kernel()->RequestInterface<IEngineSound>();
 	m_pGameClient = Kernel()->RequestInterface<IGameClient>();
@@ -3269,9 +3259,6 @@ void CClient::Run()
 	// init the input
 	Input()->Init();
 
-	// init the editor
-	m_pEditor->Init();
-
 	m_ServerBrowser.OnInit();
 	// loads the existing ddnet info file if it exists
 	LoadDDNetInfo();
@@ -3300,9 +3287,6 @@ void CClient::Run()
 	//
 	m_FpsGraph.Init(0.0f, 120.0f);
 
-	// never start with the editor
-	g_Config.m_ClEditor = 0;
-
 	// process pending commands
 	m_pConsole->StoreCommands(false);
 
@@ -3323,7 +3307,6 @@ void CClient::Run()
 	}
 
 	bool LastD = false;
-	bool LastE = false;
 	bool LastG = false;
 
 	int64_t NextUpdateTime = time_get();
@@ -3350,17 +3333,6 @@ void CClient::Run()
 			m_aCmdPlayDemo[0] = 0;
 		}
 
-		// handle pending map edits
-		if(m_aCmdEditMap[0])
-		{
-			int Result = m_pEditor->HandleMapDrop(m_aCmdEditMap, IStorage::TYPE_ALL_OR_ABSOLUTE);
-			if(Result)
-				g_Config.m_ClEditor = true;
-			else
-				log_error("editor", "editing passed map file '%s' failed", m_aCmdEditMap);
-			m_aCmdEditMap[0] = 0;
-		}
-
 		// update input
 		if(Input()->Update())
 		{
@@ -3377,8 +3349,7 @@ void CClient::Run()
 				HandleConnectLink(aFile);
 			else if(str_endswith(aFile, ".demo"))
 				HandleDemoPath(aFile);
-			else if(str_endswith(aFile, ".map"))
-				HandleMapPath(aFile);
+
 		}
 
 #if defined(CONF_AUTOUPDATE)
@@ -3394,32 +3365,11 @@ void CClient::Run()
 		if(CtrlShiftKey(KEY_G, LastG))
 			g_Config.m_DbgGraphs ^= 1;
 
-		if(CtrlShiftKey(KEY_E, LastE))
-		{
-			if(g_Config.m_ClEditor)
-				m_pEditor->OnClose();
-			g_Config.m_ClEditor = g_Config.m_ClEditor ^ 1;
-		}
-
 		bool Inactive = false;
 		int64_t WakeTime = std::numeric_limits<int64_t>::max();
 
 		// render
 		{
-			if(g_Config.m_ClEditor)
-			{
-				if(!m_EditorActive)
-				{
-					Input()->MouseModeRelative();
-					GameClient()->OnActivateEditor();
-					m_pEditor->OnActivate();
-					m_EditorActive = true;
-				}
-			}
-			else if(m_EditorActive)
-			{
-				m_EditorActive = false;
-			}
 
 			Update();
 			int64_t Now = time_get();
@@ -3550,7 +3500,6 @@ void CClient::Run()
 
 	GameClient()->RenderShutdownMessage();
 	GameClient()->OnShutdown();
-	delete m_pEditor;
 
 	// close sockets
 	for(unsigned int i = 0; i < std::size(m_aNetClient); i++)
@@ -4530,7 +4479,6 @@ void CClient::OnWindowResize()
 {
 	TextRender()->OnPreWindowResize();
 	GameClient()->OnWindowResize();
-	m_pEditor->OnWindowResize();
 	TextRender()->OnWindowResize();
 }
 
@@ -4743,11 +4691,6 @@ void CClient::HandleDemoPath(const char *pPath)
 	str_copy(m_aCmdPlayDemo, pPath);
 }
 
-void CClient::HandleMapPath(const char *pPath)
-{
-	str_copy(m_aCmdEditMap, pPath);
-}
-
 static bool UnknownArgumentCallback(const char *pCommand, void *pUser)
 {
 	CClient *pClient = static_cast<CClient *>(pUser);
@@ -4761,11 +4704,7 @@ static bool UnknownArgumentCallback(const char *pCommand, void *pUser)
 		pClient->HandleDemoPath(pCommand);
 		return true;
 	}
-	else if(str_endswith(pCommand, ".map"))
-	{
-		pClient->HandleMapPath(pCommand);
-		return true;
-	}
+
 	return false;
 }
 
@@ -5135,7 +5074,6 @@ int main(int argc, const char **argv)
 	INotifications *pNotifications = CreateNotifications();
 	pKernel->RegisterInterface(pNotifications);
 
-	pKernel->RegisterInterface(CreateEditor(), false);
 	pKernel->RegisterInterface(CreateFavorites().release());
 	pKernel->RegisterInterface(CreateGameClient());
 

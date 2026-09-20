@@ -138,6 +138,23 @@ def deadtee(d, img, box):
 		fill=lerp3(MAGENTA, NIGHT0, 0.3) + (230,), width=3 * SS)
 
 
+def build_strong_weak():
+	sw = new_canvas(192, 64)
+	d = ImageDraw.Draw(sw)
+	c = 64 * SS
+	hook_strong(d, sw, (0, 0, c, c))
+	hook_weak(d, sw, (c, 0, c * 2, c))
+	hook_icon(d, sw, (c * 2, 0, c * 3, c))
+	return sw.resize((192, 64), Image.LANCZOS)
+
+
+def build_deadtee():
+	dt = new_canvas(64, 64)
+	d = ImageDraw.Draw(dt)
+	deadtee(d, dt, (0, 0, 64 * SS, 64 * SS))
+	return dt.resize((64, 64), Image.LANCZOS)
+
+
 def main():
 	extras = new_canvas(512, 512)
 	d = ImageDraw.Draw(extras)
@@ -148,18 +165,8 @@ def main():
 	hectagon(d, extras, (cell * 6, 0, cell * 8, cell * 2))
 	extras.resize((512, 512), Image.LANCZOS).save(ROOT / "data" / "extras.png")
 
-	sw = new_canvas(192, 64)
-	d = ImageDraw.Draw(sw)
-	c = 64 * SS
-	hook_strong(d, sw, (0, 0, c, c))
-	hook_weak(d, sw, (c, 0, c * 2, c))
-	hook_icon(d, sw, (c * 2, 0, c * 3, c))
-	sw.resize((192, 64), Image.LANCZOS).save(ROOT / "data" / "strong_weak.png")
-
-	dt = new_canvas(64, 64)
-	d = ImageDraw.Draw(dt)
-	deadtee(d, dt, (0, 0, 64 * SS, 64 * SS))
-	dt.resize((64, 64), Image.LANCZOS).save(ROOT / "data" / "deadtee.png")
+	build_strong_weak().save(ROOT / "data" / "strong_weak.png")
+	build_deadtee().save(ROOT / "data" / "deadtee.png")
 	gui_buttons()
 	print("wrote extras.png, strong_weak.png, deadtee.png, gui_buttons.png")
 	return 0

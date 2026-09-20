@@ -246,6 +246,8 @@ void CPlayer::Tick()
 	{
 		int EarliestRespawnTick = m_PreviousDieTick + Server()->TickSpeed() * 3;
 		int RespawnTick = std::max(m_DieTick, EarliestRespawnTick) + 2;
+		if(GameServer()->m_pController->IsDeathmatch())
+			RespawnTick = m_DieTick + Server()->TickSpeed() / 2;
 		if(!m_pCharacter && RespawnTick <= Server()->Tick())
 			m_Spawning = true;
 
@@ -815,6 +817,8 @@ bool CPlayer::SetTimerType(int TimerType)
 
 void CPlayer::TryRespawn()
 {
+	if(GameServer()->m_pController->IsDeathmatch() && Server()->Tick() < m_DieTick + Server()->TickSpeed() / 2)
+		return; // firing or /kill must not bypass the combat respawn delay
 	vec2 SpawnPos;
 
 	if(!GameServer()->m_pController->CanSpawn(m_Team, &SpawnPos, m_ClientId))
@@ -910,6 +914,11 @@ void CPlayer::ProcessPause()
 
 int CPlayer::Pause(int State, bool Force)
 {
+	if(GameServer()->m_pController->IsDeathmatch() && State != PAUSE_NONE)
+	{
+		GameServer()->SendChatTarget(m_ClientId, "Use spectators instead of race pause in Neon DM");
+		return m_Paused;
+	}
 	if(State < PAUSE_NONE || State > PAUSE_SPEC) // Invalid pause state passed
 		return 0;
 
@@ -1062,7 +1071,8 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			if(Result.m_Data.m_Info.m_Time.has_value())
 			{
 				GameServer()->Score()->PlayerData(m_ClientId)->Set(Result.m_Data.m_Info.m_Time.value(), Result.m_Data.m_Info.m_aTimeCp);
-				Server()->SetClientScore(m_ClientId, Result.m_Data.m_Info.m_Time.value());
+				if(!GameServer()->m_pController->IsDeathmatch())
+					Server()->SetClientScore(m_ClientId, Result.m_Data.m_Info.m_Time.value());
 				// update map best time if player's time is better
 				if(!GameServer()->m_pController->m_CurrentRecord.has_value() ||
 					Result.m_Data.m_Info.m_Time.value() < GameServer()->m_pController->m_CurrentRecord.value())

@@ -1,0 +1,27 @@
+{
+  "map": "data/maps/Neon Relay Warmup.map",
+  "sha256": "0b58fb09ec260e679e138ed65ed41121941ec923cc909b5a4a458bc9e9c0a3b8",
+  "method": "Unmodified CCharacterCore, CCollision, CLayers and CTeamsCore; raw-record IMap adapter",
+  "compiler": "g++ (Debian 12.2.0-14+deb12u1) 12.2.0",
+  "sanitizers": true,
+  "native_core": {
+    "route_ticks": 1031,
+    "ground_jumps": 9,
+    "hook_attachments": 10,
+    "checkpoint_columns": 3,
+    "start_tile_reached": true,
+    "finish_tile_reached": true,
+    "fall_trigger_cases": 6,
+    "stable_exit_cases": 3,
+    "beginner_approach_ticks": 324,
+    "solo_overlap_verified": true,
+    "no_hook_rejection_verified": true
+  },
+  "negative_controls_rejected": [
+    "--no-hook",
+    "--no-finish"
+  ],
+  "server_race_completion_verified": false,
+  "server_checkpoint_relocation_verified": false,
+  "manual_client_playthrough_verified": false
+}

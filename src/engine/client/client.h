@@ -15,7 +15,6 @@
 #include <engine/client/ghost.h>
 #include <engine/client/serverbrowser.h>
 #include <engine/client/updater.h>
-#include <engine/editor.h>
 #include <engine/graphics.h>
 #include <engine/http.h>
 #include <engine/shared/config.h>
@@ -63,7 +62,6 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	CConfig *m_pConfig = nullptr;
 	IConsole *m_pConsole = nullptr;
 	IDiscord *m_pDiscord = nullptr;
-	IEditor *m_pEditor = nullptr;
 	IEngine *m_pEngine = nullptr;
 	IFavorites *m_pFavorites = nullptr;
 	IGameClient *m_pGameClient = nullptr;
@@ -109,7 +107,6 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	bool m_AutoScreenshotRecycle = false;
 	bool m_AutoStatScreenshotRecycle = false;
 	bool m_AutoCSVRecycle = false;
-	bool m_EditorActive = false;
 
 	int m_aAckGameTick[NUM_DUMMIES] = {-1, -1};
 	int m_aCurrentRecvTick[NUM_DUMMIES] = {0, 0};
@@ -137,7 +134,6 @@ class CClient : public IClient, public CDemoPlayer::IListener
 
 	char m_aCmdConnect[256] = "";
 	char m_aCmdPlayDemo[IO_MAX_PATH_LENGTH] = "";
-	char m_aCmdEditMap[IO_MAX_PATH_LENGTH] = "";
 
 	// map download
 	char m_aMapDownloadUrl[256] = "";
@@ -502,7 +498,6 @@ public:
 	void HandleConnectAddress(const NETADDR *pAddr);
 	void HandleConnectLink(const char *pLink);
 	void HandleDemoPath(const char *pPath);
-	void HandleMapPath(const char *pPath);
 
 	virtual void InitChecksum();
 	virtual int HandleChecksum(int Conn, CUuid Uuid, CUnpacker *pUnpacker);
@@ -527,8 +522,6 @@ public:
 	void DemoSliceEnd() override;
 	void DemoSlice(const char *pDstPath, CLIENTFUNC_FILTER pfnFilter, void *pUser) override;
 	virtual void SaveReplay(int Length, const char *pFilename = "");
-
-	bool EditorHasUnsavedData() const override { return m_pEditor->HasUnsavedData(); }
 
 	IFriends *Foes() override { return &m_Foes; }
 

@@ -110,7 +110,6 @@ public:
 			"demos/auto/server",
 			"demos/replays",
 			"editor",
-			"editor/automap",
 			"ghosts",
 			"teehistorian"};
 

@@ -1,0 +1,49 @@
+{
+  "evidence_kind": "GitHub CI completion receipt; runtime artifact could not be downloaded",
+  "commit": "810991864a0d042f7ca35410f0cdc396b280a913",
+  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35437619097",
+  "conclusion": "success",
+  "map": "data/maps/Neon Relay Warmup.map",
+  "map_sha256": "0b58fb09ec260e679e138ed65ed41121941ec923cc909b5a4a458bc9e9c0a3b8",
+  "jobs": [
+    {
+      "name": "reward backend (node 22)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Linux client build and desktop/portrait boot",
+      "conclusion": "success"
+    },
+    {
+      "name": "match-event signer (C++ <-> node:crypto)",
+      "conclusion": "success"
+    },
+    {
+      "name": "anchor program offline checks (node 22)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Linux server build and isolated boot",
+      "conclusion": "success"
+    },
+    {
+      "name": "C++ syntax probe",
+      "conclusion": "success"
+    },
+    {
+      "name": "branding / assets / secrets / hygiene",
+      "conclusion": "success"
+    }
+  ],
+  "passed_server_assertions": [
+    "two STARTED/FINISHED cycles",
+    "fresh timer after normal respawn",
+    "six actual checkpoint returns with preserved timer and cleared speed",
+    "two positive SQLite race rows for WarmupProbe on Neon Relay Warmup",
+    "map solo tuning enabled; cheats disabled"
+  ],
+  "runtime_report_artifact": "native-client-preview/warmup-server-proof.json",
+  "runtime_artifact_downloaded": false,
+  "sqlite_times_seconds": null,
+  "manual_client_playthrough_verified": false
+}

@@ -1,0 +1,11 @@
+{
+  "evidence_kind": "GitHub API receipt",
+  "commit": "ddc02a79b4401dae059fff13e1b844effb6d61c2",
+  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35452362895",
+  "conclusion": "success",
+  "native_notice": "PASS: native gun and laser kills, frags, timed respawn, shared pickups, ammo and round restart; PASS: two native clients entered Chrome DM arena",
+  "arena_sha256": "0dd6948a7f9531a68797d5225d0c91f751a95a610260237fbcc1e0384cf30f77",
+  "arena_size": "520x180 dark pixel neon",
+  "texture": "dark pixel neon",
+  "photo_background_dark": true
+}

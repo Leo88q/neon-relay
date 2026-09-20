@@ -40,7 +40,6 @@
 #include "components/damageind.h"
 #include "components/debughud.h"
 #include "components/effects.h"
-#include "components/emoticon.h"
 #include "components/flow.h"
 #include "components/freezebars.h"
 #include "components/ghost.h"
@@ -174,7 +173,6 @@ public:
 	CScoreboard m_Scoreboard;
 	CStatboard m_Statboard;
 	CSounds m_Sounds;
-	CEmoticon m_Emoticon;
 	CDamageInd m_DamageInd;
 	CTouchControls m_TouchControls;
 	CVoting m_Voting;
@@ -219,7 +217,6 @@ private:
 	class IDemoPlayer *m_pDemoPlayer;
 	class IFavorites *m_pFavorites;
 	class IServerBrowser *m_pServerBrowser;
-	class IEditor *m_pEditor;
 	class IFriends *m_pFriends;
 	class IFriends *m_pFoes;
 	class IDiscord *m_pDiscord;
@@ -235,9 +232,6 @@ private:
 
 	void ProcessEvents();
 	void UpdatePositions();
-
-	int m_EditorMovementDelay = 5;
-	void UpdateEditorIngameMoved();
 
 	int m_PredictedTick;
 	int m_aLastNewPredictedTick[NUM_DUMMIES];
@@ -302,7 +296,6 @@ public:
 	CCollision *Collision() { return &m_Collision; }
 	const CCollision *Collision() const { return &m_Collision; }
 	const CRaceHelper *RaceHelper() const { return &m_RaceHelper; }
-	class IEditor *Editor() { return m_pEditor; }
 	class IFriends *Friends() { return m_pFriends; }
 	class IFriends *Foes() { return m_pFoes; }
 #if defined(CONF_AUTOUPDATE)
@@ -628,7 +621,6 @@ public:
 	void InvalidateSnapshot() override;
 	void OnNewSnapshot(bool DummySwapped) override;
 	void OnPredict() override;
-	void OnActivateEditor() override;
 	void OnDummySwap() override;
 	int OnSnapInput(int *pData, bool Dummy, bool Force) override;
 	void OnShutdown() override;

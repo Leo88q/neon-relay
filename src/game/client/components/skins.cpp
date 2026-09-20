@@ -3,6 +3,8 @@
 
 #include "skins.h"
 
+#include <game/client/potato_catalog.h>
+
 #include <base/dbg.h>
 #include <base/log.h>
 #include <base/math.h>
@@ -52,7 +54,7 @@ CSkins::CSkinContainer::CSkinContainer(CSkins *pSkins, const char *pName, EType 
 	str_copy(m_aName, pName);
 	m_Vanilla = IsVanillaSkin(m_aName);
 	m_Special = IsSpecialSkin(m_aName);
-	m_AlwaysLoaded = m_Vanilla; // Vanilla skins are loaded immediately and not unloaded
+	m_AlwaysLoaded = IsPotatoCatalogSkin(m_aName); // Vanilla skins are loaded immediately and not unloaded
 }
 
 CSkins::CSkinContainer::~CSkinContainer()
@@ -497,6 +499,8 @@ void CSkins::OnConsoleInit()
 
 void CSkins::OnInit()
 {
+	if(!IsPotatoCatalogSkin(g_Config.m_ClPlayerSkin)) str_copy(g_Config.m_ClPlayerSkin, "potato_cool_guy_1");
+	if(!IsPotatoCatalogSkin(g_Config.m_ClDummySkin)) str_copy(g_Config.m_ClDummySkin, "potato_cool_guy_1");
 	RefreshEventSkins();
 
 	// load skins
@@ -699,13 +703,12 @@ void CSkins::Refresh(TSkinLoadedCallback &&SkinLoadedCallback)
 	m_Skins.clear();
 	m_SkinsUsageList.clear();
 
-	LoadSkinDirect("default");
-	SkinLoadedCallback();
+	for(const auto &Entry : POTATO_CATALOG)
+	{
+		LoadSkinDirect(Entry.m_pSkin);
+		SkinLoadedCallback();
+	}
 
-	CSkinScanUser SkinScanUser;
-	SkinScanUser.m_pThis = this;
-	SkinScanUser.m_SkinLoadedCallback = SkinLoadedCallback;
-	Storage()->ListDirectory(IStorage::TYPE_ALL, "skins", SkinScan, &SkinScanUser);
 }
 
 CSkins::CSkinLoadingStats CSkins::LoadingStats() const
@@ -757,7 +760,7 @@ CSkins::CSkinList &CSkins::SkinList()
 	m_SkinList.m_vSkins.reserve(m_Skins.size());
 	for(const auto &[_, pSkinContainer] : m_Skins)
 	{
-		if(pSkinContainer->IsSpecial())
+		if(!IsPotatoCatalogSkin(pSkinContainer->Name()) || pSkinContainer->IsSpecial())
 		{
 			continue;
 		}
@@ -802,7 +805,7 @@ const CSkin *CSkins::Find(const char *pName)
 	const auto *pSkin = FindOrNullptr(pName);
 	if(pSkin == nullptr)
 	{
-		pSkin = FindOrNullptr("default");
+		pSkin = FindOrNullptr("potato_cool_guy_1");
 	}
 	if(pSkin == nullptr)
 	{
@@ -813,36 +816,15 @@ const CSkin *CSkins::Find(const char *pName)
 
 const CSkins::CSkinContainer *CSkins::FindContainerOrNullptr(const char *pName)
 {
-	const char *pSkinPrefix = SkinPrefix();
-	if(pSkinPrefix[0] != '\0')
-	{
-		char aNameWithPrefix[2 * MAX_SKIN_LENGTH + 2]; // Larger than skin name length to allow IsValidName to check if it's too long
-		str_format(aNameWithPrefix, sizeof(aNameWithPrefix), "%s_%s", pSkinPrefix, pName);
-		// If we find something, use it, otherwise fall back to normal skins.
-		const CSkinContainer *pSkinContainer = FindContainerImpl(aNameWithPrefix);
-		if(pSkinContainer != nullptr && pSkinContainer->State() == CSkinContainer::EState::LOADED)
-		{
-			return pSkinContainer;
-		}
-	}
-	return FindContainerImpl(pName);
+	return FindContainerImpl(IsPotatoCatalogSkin(pName) ? pName : "potato_cool_guy_1");
 }
 
 const CSkins::CSkinContainer *CSkins::FindContainerImpl(const char *pName)
 {
-	if(!CSkin::IsValidName(pName))
-	{
-		return nullptr;
-	}
-
+	if(!IsPotatoCatalogSkin(pName)) pName = "potato_cool_guy_1";
 	auto ExistingSkin = m_Skins.find(pName);
-	if(ExistingSkin == m_Skins.end())
-	{
-		CSkinContainer SkinContainer(this, pName, CSkinContainer::EType::DOWNLOAD, IStorage::TYPE_SAVE);
-		auto &&pSkinContainer = std::make_unique<CSkinContainer>(std::move(SkinContainer));
-		pSkinContainer->SetState(pSkinContainer->DetermineInitialState());
-		ExistingSkin = m_Skins.insert({pSkinContainer->Name(), std::move(pSkinContainer)}).first;
-	}
+	if(ExistingSkin == m_Skins.end()) return nullptr;
+
 	ExistingSkin->second->RequestLoad();
 	return ExistingSkin->second.get();
 }

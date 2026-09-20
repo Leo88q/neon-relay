@@ -353,7 +353,6 @@ public:
 	};
 	virtual EInfoState InfoState() const = 0;
 	virtual void RequestDDNetInfo() = 0;
-	virtual bool EditorHasUnsavedData() const = 0;
 
 	virtual void GenerateTimeoutSeed() = 0;
 
@@ -419,7 +418,6 @@ public:
 	virtual void OnConnected() = 0;
 	virtual void OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dummy) = 0;
 	virtual void OnPredict() = 0;
-	virtual void OnActivateEditor() = 0;
 	virtual void OnWindowResize() = 0;
 
 	virtual int OnSnapInput(int *pData, bool Dummy, bool Force) = 0;

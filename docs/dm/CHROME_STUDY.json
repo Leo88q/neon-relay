@@ -1,0 +1,312 @@
+{
+  "status": "v6 final bright cosmos visible, vertical hook walls, large meteors 5x3.5, bright freeze tile0, 36 small jumps - fixes dark bg and hook",
+  "source": {
+    "file": "dm7.map",
+    "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
+    "width": 146,
+    "height": 120,
+    "cells": 17520,
+    "entities": {
+      "spawn": 9,
+      "armor": 18,
+      "health": 26,
+      "shotgun": 4,
+      "grenade": 4,
+      "ninja": 1,
+      "laser": 2
+    },
+    "embedded_author": "",
+    "embedded_license": ""
+  },
+  "physics_preserved": false,
+  "map": "Neon Relay Chrome DM Study.map",
+  "output_sha256": "7dde0e264d4280e742d23ff7582fddbd60148a0452f63d575e4540b801846965",
+  "width": 520,
+  "height": 180,
+  "spawn_count": 42,
+  "original_open_cells": 6432,
+  "open_cells": 57868,
+  "old_region_preserved_except_junctions": true,
+  "junctions": [
+    [
+      128,
+      34,
+      158,
+      42
+    ],
+    [
+      124,
+      69,
+      158,
+      78
+    ],
+    [
+      132,
+      105,
+      162,
+      115
+    ]
+  ],
+  "added_spawns_v2": [
+    [
+      170,
+      35
+    ],
+    [
+      224,
+      35
+    ],
+    [
+      177,
+      55
+    ],
+    [
+      242,
+      55
+    ],
+    [
+      169,
+      75
+    ],
+    [
+      214,
+      75
+    ],
+    [
+      258,
+      75
+    ],
+    [
+      159,
+      95
+    ],
+    [
+      200,
+      95
+    ],
+    [
+      260,
+      95
+    ]
+  ],
+  "added_spawns_v3": [
+    [
+      295,
+      27
+    ],
+    [
+      360,
+      27
+    ],
+    [
+      410,
+      27
+    ],
+    [
+      300,
+      47
+    ],
+    [
+      375,
+      47
+    ],
+    [
+      425,
+      47
+    ],
+    [
+      290,
+      67
+    ],
+    [
+      355,
+      67
+    ],
+    [
+      445,
+      67
+    ],
+    [
+      315,
+      107
+    ],
+    [
+      375,
+      107
+    ],
+    [
+      430,
+      107
+    ],
+    [
+      325,
+      127
+    ],
+    [
+      385,
+      127
+    ],
+    [
+      455,
+      127
+    ],
+    [
+      175,
+      117
+    ],
+    [
+      235,
+      117
+    ],
+    [
+      285,
+      117
+    ],
+    [
+      345,
+      147
+    ],
+    [
+      415,
+      147
+    ],
+    [
+      465,
+      17
+    ],
+    [
+      465,
+      77
+    ],
+    [
+      465,
+      137
+    ]
+  ],
+  "small_jumps_added": 36,
+  "front_freeze_tiles": 976,
+  "visible_freeze_layer": "FreezeWalls using freeze.png 256x256 cyan ice",
+  "meteors": "3 groups parallax 30+15*lane, 12 quads each, position envelope 0:(0,0,0) 8000:(25,-12,0) 16000:(50,-24,0) + Spin color",
+  "space_background": "photo space_bg.jpg AI deep cosmos blended 45% with (6,8,18) + fbm veil + 600 stars + vignette 35% + bloom 18%, Cosmos group 220x180 drift",
+  "candidates": [
+    {
+      "file": "dm1.map",
+      "sha256": "0b0c481d77519c32fbe85624ef16ec0fa9991aec7367ad538bd280f28d8c26cf",
+      "width": 60,
+      "height": 50,
+      "cells": 3000,
+      "entities": {
+        "spawn": 8,
+        "armor": 9,
+        "health": 10,
+        "shotgun": 2,
+        "grenade": 2,
+        "ninja": 1,
+        "laser": 0
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm2.map",
+      "sha256": "9261778cfd1b452f3d77f72ca4c6463417c94ffeb0c3ab1a5d8798245cb38fab",
+      "width": 130,
+      "height": 90,
+      "cells": 11700,
+      "entities": {
+        "spawn": 7,
+        "armor": 12,
+        "health": 21,
+        "shotgun": 3,
+        "grenade": 4,
+        "ninja": 1,
+        "laser": 1
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm6.map",
+      "sha256": "0964bc24e7e6ce7d1bca5c062164a9baa3d37c834e0a8394f07b2ee37194f08b",
+      "width": 90,
+      "height": 78,
+      "cells": 7020,
+      "entities": {
+        "spawn": 9,
+        "armor": 14,
+        "health": 12,
+        "shotgun": 3,
+        "grenade": 3,
+        "ninja": 1,
+        "laser": 1
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm7.map",
+      "sha256": "5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f",
+      "width": 146,
+      "height": 120,
+      "cells": 17520,
+      "entities": {
+        "spawn": 9,
+        "armor": 18,
+        "health": 26,
+        "shotgun": 4,
+        "grenade": 4,
+        "ninja": 1,
+        "laser": 2
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm8.map",
+      "sha256": "574a864c74ab4a14df7f7823f2d352384ec6a6650f426c10b20cfdc0108cd1ed",
+      "width": 62,
+      "height": 50,
+      "cells": 3100,
+      "entities": {
+        "spawn": 4,
+        "armor": 10,
+        "health": 11,
+        "shotgun": 2,
+        "grenade": 3,
+        "ninja": 1,
+        "laser": 0
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    },
+    {
+      "file": "dm9.map",
+      "sha256": "ae16cad538f50b3174b72ceb2b9215b2855c5e31f184c8028e9627e77cade78d",
+      "width": 50,
+      "height": 45,
+      "cells": 2250,
+      "entities": {
+        "spawn": 4,
+        "armor": 8,
+        "health": 4,
+        "shotgun": 2,
+        "grenade": 2,
+        "ninja": 0,
+        "laser": 0
+      },
+      "embedded_author": "",
+      "embedded_license": ""
+    }
+  ],
+  "empty_tile_flags_normalized": 1,
+  "raw_game_bytes_identical": false,
+  "license": "CC-BY-SA 3.0",
+  "license_verified": true,
+  "upstream_revision": "64baa0e11c7f9a1390279394ca3536277afcd61b",
+  "upstream_repository": "https://github.com/teeworlds/teeworlds-maps",
+  "release_enabled": false,
+  "source_artwork_copied": false,
+  "realtime_shader_installed": false,
+  "photo_background": true,
+  "photo_source": ".cache/chrome-dm/space_bg.jpg AI deep space cyan/magenta nebula blended with dark base"
+}

@@ -32,7 +32,7 @@ FLUSH PRIVILEGES;
 	Whether to enable the autoupdater. Packagers may want to disable this for their packages. Default value is ON for Windows and Linux.
 
 * **-DCLIENT=[ON|OFF]** <br>
-	Whether to enable client compilation. If set to OFF, DDNet will not depend on Curl, Freetype, Ogg, Opus, Opusfile, and SDL2. Default value is ON.
+	Whether to enable client compilation. If set to OFF, the client-only Freetype, Ogg, Opus, Opusfile, and SDL2 dependencies are not required. The native server still uses Curl. Default value is ON.
 
 * **-DVIDEORECORDER=[ON|OFF]** <br>
 	Whether to add video recording support using FFmpeg to the client. Default value is ON.
@@ -105,3 +105,34 @@ Detailed instructions can be found in [`docs/BUILDING-android.md`](/docs/BUILDIN
 ## Cross-compiling on Linux to WebAssembly via Emscripten
 
 Detailed instructions can be found in [`docs/BUILDING-emscripten.md`](/docs/BUILDING-emscripten.md).
+
+## Verified Linux server-only build and boot (BL-16 part 21)
+
+The CI job **Linux server build and isolated boot** builds the real `game-server`
+CMake target (including Rust bridge, game context, identity/pairing modules,
+OpenSSL and curl) and boots the resulting `neonrelay-server`. This is separate
+from the dependency-light translation-unit syntax checks.
+
+On Ubuntu 24.04, install the toolchain and dependencies:
+
+```sh
+sudo apt-get install cmake ninja-build pkg-config libcurl4-openssl-dev libssl-dev libsqlite3-dev zlib1g-dev
+rustup toolchain install 1.89.0 --profile minimal
+rustup run 1.89.0 ./scripts/test_native_server.sh
+```
+
+The script uses a temporary build directory, compiles only the server in Release
+mode with two build jobs, runs the boot checks and deletes all generated output.
+It does not produce a release archive. Python 3, a C/C++ compiler and `rustup`
+are required. Initial Cargo dependency downloads require network access.
+
+Boot checks use an isolated `storage.cfg`, one copied map, temporary SQLite and
+home directories, loopback binding, no master registration, no inherited
+`NEONRELAY_*` configuration and shutdown when empty. A missing-map negative
+control must fail. Credentials generated during startup are filtered from
+failure diagnostics. No public server or production keys are used.
+
+Verified source: `1f5de78`, CI run
+https://github.com/Leo88q/neon-relay/actions/runs/35350154080 .
+This establishes Linux server linking and basic initialization/shutdown, **not**
+client rendering, multiplayer gameplay, live wallet login or paid admission.

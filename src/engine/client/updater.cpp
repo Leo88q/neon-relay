@@ -482,7 +482,7 @@ void CUpdater::CommitUpdate()
 
 	if(!Success)
 		SetCurrentState(IUpdater::FAIL);
-	else if(m_pClient->State() == IClient::STATE_ONLINE || m_pClient->EditorHasUnsavedData())
+	else if(m_pClient->State() == IClient::STATE_ONLINE)
 		SetCurrentState(IUpdater::NEED_RESTART);
 	else
 	{

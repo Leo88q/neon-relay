@@ -14,7 +14,6 @@
 #include "components/damageind.h"
 #include "components/debughud.h"
 #include "components/effects.h"
-#include "components/emoticon.h"
 #include "components/freezebars.h"
 #include "components/ghost.h"
 #include "components/hud.h"
@@ -56,7 +55,6 @@
 #include <engine/client/enums.h>
 #include <engine/demo.h>
 #include <engine/discord.h>
-#include <engine/editor.h>
 #include <engine/engine.h>
 #include <engine/favorites.h>
 #include <engine/friends.h>
@@ -108,7 +106,6 @@ void CGameClient::OnConsoleInit()
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	m_pDemoPlayer = Kernel()->RequestInterface<IDemoPlayer>();
 	m_pServerBrowser = Kernel()->RequestInterface<IServerBrowser>();
-	m_pEditor = Kernel()->RequestInterface<IEditor>();
 	m_pFavorites = Kernel()->RequestInterface<IFavorites>();
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	m_pFoes = Client()->Foes();
@@ -151,7 +148,6 @@ void CGameClient::OnConsoleInit()
 					      &m_DamageInd,
 					      &m_Hud,
 					      &m_Spectator,
-					      &m_Emoticon,
 					      &m_InfoMessages,
 					      &m_Chat,
 					      &m_Broadcast,
@@ -175,7 +171,6 @@ void CGameClient::OnConsoleInit()
 						  &m_Scoreboard,
 						  &m_Motd, // for pressing esc to remove it
 						  &m_Spectator,
-						  &m_Emoticon,
 						  &m_ImportantAlert,
 						  &m_Menus,
 						  &m_Controls,
@@ -576,6 +571,8 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 
 void CGameClient::OnConnected()
 {
+	if(!m_LocalServer.ValidateWarmupConnection())
+		return;
 	const char *pConnectCaption = DemoPlayer()->IsPlaying() ? Localize("Preparing demo playback") : Localize("Connected");
 	const char *pLoadMapContent = Localize("Initializing map logic");
 	// render loading before skip is calculated
@@ -616,8 +613,6 @@ void CGameClient::OnConnected()
 void CGameClient::OnReset()
 {
 	InvalidateSnapshot();
-
-	m_EditorMovementDelay = 5;
 
 	m_PredictedTick = -1;
 	std::fill(std::begin(m_aLastNewPredictedTick), std::end(m_aLastNewPredictedTick), -1);
@@ -717,9 +712,6 @@ void CGameClient::OnReset()
 
 	for(auto &pComponent : m_vpAll)
 		pComponent->OnReset();
-
-	Editor()->ResetMentions();
-	Editor()->ResetIngameMoved();
 
 	Collision()->Unload();
 	Layers()->Unload();
@@ -1301,6 +1293,8 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 
 void CGameClient::OnStateChange(int NewState, int OldState)
 {
+	if(NewState == IClient::STATE_OFFLINE)
+		m_LocalServer.CancelWarmupConnection();
 	// reset everything when not already connected (to keep gathered stuff)
 	if(NewState < IClient::STATE_ONLINE)
 		OnReset();
@@ -1324,7 +1318,7 @@ void CGameClient::OnEnterGame()
 
 void CGameClient::OnGameOver()
 {
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && g_Config.m_ClEditor == 0)
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		Client()->AutoScreenshot_Start();
 }
 
@@ -2432,7 +2426,6 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 		pComponent->OnNewSnapshot();
 
 	// notify editor when local character moved
-	UpdateEditorIngameMoved();
 
 	// detect air jump for other players
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -2550,23 +2543,6 @@ std::function<bool(int, int, int, int)> CGameClient::GetScoreComparator(bool Tim
 		return TimeSeconds1 < TimeSeconds2;
 	};
 	return CompareTimeMillis;
-}
-
-void CGameClient::UpdateEditorIngameMoved()
-{
-	const bool LocalCharacterMoved = m_Snap.m_pLocalCharacter && m_Snap.m_pLocalPrevCharacter && (m_Snap.m_pLocalCharacter->m_X != m_Snap.m_pLocalPrevCharacter->m_X || m_Snap.m_pLocalCharacter->m_Y != m_Snap.m_pLocalPrevCharacter->m_Y);
-	if(!g_Config.m_ClEditor)
-	{
-		m_EditorMovementDelay = 5;
-	}
-	else if(m_EditorMovementDelay > 0 && !LocalCharacterMoved)
-	{
-		--m_EditorMovementDelay;
-	}
-	if(m_EditorMovementDelay == 0 && LocalCharacterMoved)
-	{
-		Editor()->OnIngameMoved();
-	}
 }
 
 void CGameClient::ApplyPreInputs(int Tick, bool Direct, CGameWorld &GameWorld)
@@ -2883,11 +2859,6 @@ void CGameClient::OnPredict()
 
 	if(m_NewPredictedTick)
 		m_Ghost.OnNewPredictedSnapshot();
-}
-
-void CGameClient::OnActivateEditor()
-{
-	OnRelease();
 }
 
 CGameClient::CClientStats::CClientStats()
@@ -4555,39 +4526,8 @@ void CGameClient::RefreshSkin(const std::shared_ptr<CManagedTeeRenderInfo> &pMan
 	CTeeRenderInfo &TeeInfo = pManagedTeeRenderInfo->TeeRenderInfo();
 	const CSkinDescriptor &SkinDescriptor = pManagedTeeRenderInfo->SkinDescriptor();
 
-	if(SkinDescriptor.m_Flags & CSkinDescriptor::FLAG_SIX)
-	{
-		TeeInfo.Apply(m_Skins.Find(SkinDescriptor.m_aSkinName));
-	}
-
-	if(SkinDescriptor.m_Flags & CSkinDescriptor::FLAG_SEVEN)
-	{
-		for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
-		{
-			for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
-			{
-				m_Skins7.FindSkinPart(Part, SkinDescriptor.m_aSixup[Dummy].m_aaSkinPartNames[Part], true)->ApplyTo(TeeInfo.m_aSixup[Dummy]);
-
-				if(SkinDescriptor.m_aSixup[Dummy].m_XmasHat)
-				{
-					TeeInfo.m_aSixup[Dummy].m_HatTexture = m_Skins7.XmasHatTexture();
-				}
-				else
-				{
-					TeeInfo.m_aSixup[Dummy].m_HatTexture.Invalidate();
-				}
-
-				if(SkinDescriptor.m_aSixup[Dummy].m_BotDecoration)
-				{
-					TeeInfo.m_aSixup[Dummy].m_BotTexture = m_Skins7.BotDecorationTexture();
-				}
-				else
-				{
-					TeeInfo.m_aSixup[Dummy].m_BotTexture.Invalidate();
-				}
-			}
-		}
-	}
+	TeeInfo.Apply(m_Skins.Find(SkinDescriptor.m_aSkinName));
+	for(auto &Sixup : TeeInfo.m_aSixup) Sixup.Reset();
 
 	if(SkinDescriptor.m_Flags != 0 && pManagedTeeRenderInfo->m_RefreshCallback)
 	{

@@ -12,7 +12,6 @@
 
 #include <game/client/animstate.h>
 #include <game/client/components/console.h>
-#include <game/client/components/emoticon.h>
 #include <game/client/components/skins.h>
 #include <game/client/components/tooltips.h>
 #include <game/client/gameclient.h>
@@ -290,38 +289,6 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 	{
 		*pUseCustomColor = *pUseCustomColor ? 0 : 1;
 		SetNeedSendInfo();
-	}
-
-	// Default eyes
-	{
-		CTeeRenderInfo EyeSkinInfo = OwnSkinInfo;
-		EyeSkinInfo.m_Size = EyeButtonSize;
-		vec2 OffsetToMid;
-		CRenderTools::GetRenderTeeOffsetToRenderedTee(CAnimState::GetIdle(), &EyeSkinInfo, OffsetToMid);
-
-		CUIRect EyesRow;
-		Eyes.HSplitTop(EyeButtonSize, &EyesRow, &Eyes);
-		static CButtonContainer s_aEyeButtons[NUM_EMOTES];
-		for(int CurrentEyeEmote = 0; CurrentEyeEmote < NUM_EMOTES; CurrentEyeEmote++)
-		{
-			EyesRow.VSplitLeft(EyeButtonSize, &Button, &EyesRow);
-			EyesRow.VSplitLeft(5.0f, nullptr, &EyesRow);
-			if(!RenderEyesBelow && (CurrentEyeEmote + 1) % 3 == 0)
-			{
-				Eyes.HSplitTop(5.0f, nullptr, &Eyes);
-				Eyes.HSplitTop(EyeButtonSize, &EyesRow, &Eyes);
-			}
-
-			const ColorRGBA EyeButtonColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f + (*pEmote == CurrentEyeEmote ? 0.25f : 0.0f));
-			if(DoButton_Menu(&s_aEyeButtons[CurrentEyeEmote], "", 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, EyeButtonColor))
-			{
-				*pEmote = CurrentEyeEmote;
-				if((int)m_Dummy == g_Config.m_ClDummy)
-					GameClient()->m_Emoticon.EyeEmote(CurrentEyeEmote);
-			}
-			GameClient()->m_Tooltips.DoToolTip(&s_aEyeButtons[CurrentEyeEmote], &Button, Localize("Choose default eyes when joining a server"));
-			RenderTools()->RenderTee(CAnimState::GetIdle(), &EyeSkinInfo, CurrentEyeEmote, vec2(1.0f, 0.0f), vec2(Button.x + Button.w / 2.0f, Button.y + Button.h / 2.0f + OffsetToMid.y));
-		}
 	}
 
 	// Custom color pickers

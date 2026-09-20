@@ -73,9 +73,11 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 
 	CUIRect Headers;
 	View.HSplitTop(ms_ListheaderHeight, &Headers, &View);
-	Headers.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_T, 5.0f);
+	Headers.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_T, 4.0f);
+	CUIRect HeadEdge = {Headers.x, Headers.y, Headers.w, 2.0f};
+	HeadEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_T, 2.0f);
 	Headers.VSplitRight(s_ListBox.ScrollbarWidthMax(), &Headers, nullptr);
-	View.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_NONE, 0.0f);
+	View.Draw(ColorRGBA(0.09f, 0.10f, 0.12f, 0.88f), IGraphics::CORNER_NONE, 0.0f);
 
 	struct SColumn
 	{
@@ -496,7 +498,7 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 		const float RefreshBarAlpha = std::min(LoadingProgressionTimeDiff, 0.8f);
 		RefreshBar.h = 2.0f;
 		RefreshBar.w *= ServerBrowser()->LoadingProgression() / 100.0f;
-		RefreshBar.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, RefreshBarAlpha), IGraphics::CORNER_NONE, 0.0f);
+		RefreshBar.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, RefreshBarAlpha), IGraphics::CORNER_NONE, 0.0f);
 	}
 
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
@@ -643,7 +645,7 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 
 			SMenuButtonProperties Props;
 			Props.m_UseIconFont = true;
-			Props.m_Color = ColorRGBA(0.5f, 1.0f, 0.5f, 0.5f);
+			Props.m_Color = ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f);
 
 			static CButtonContainer s_ConnectButton;
 			if(Ui()->DoButton_Menu(m_ConnectButton, &s_ConnectButton, ConnectLabelFunc, &ButtonConnect, Props) || WasListboxItemActivated || (!Ui()->IsPopupOpen() && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
@@ -783,8 +785,8 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	// countries and types filters
 	if(ServerBrowser()->CommunityCache().CountriesTypesFilterAvailable())
 	{
-		const ColorRGBA ColorActive = ColorRGBA(0.0f, 0.0f, 0.0f, 0.3f);
-		const ColorRGBA ColorInactive = ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f);
+		const ColorRGBA ColorActive = ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f);
+		const ColorRGBA ColorInactive = ColorRGBA(0.09f, 0.10f, 0.12f, 0.75f);
 
 		CUIRect TabContents, CountriesTab, TypesTab;
 		View.HSplitTop(6.0f, nullptr, &View);
@@ -973,7 +975,7 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 		}
 
 		if(Ui()->HotItem() == pItemId && !ScrollRegion.Animating())
-			Item.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.33f), IGraphics::CORNER_ALL, 2.0f);
+			Item.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.22f), IGraphics::CORNER_ALL, 4.0f);
 		RenderItem(ItemIndex, Item, pItemId, Active);
 	}
 
@@ -984,9 +986,11 @@ void CMenus::RenderServerbrowserCommunitiesFilter(CUIRect View)
 {
 	CUIRect Tab;
 	View.HSplitTop(19.0f, &Tab, &View);
-	Tab.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.3f), IGraphics::CORNER_T, 4.0f);
+	Tab.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_T, 4.0f);
+	CUIRect TabEdge = {Tab.x, Tab.y, Tab.w, 2.0f};
+	TabEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.75f), IGraphics::CORNER_T, 2.0f);
 	Ui()->DoLabel(&Tab, Localize("Communities"), 12.0f, TEXTALIGN_MC);
-	View.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_B, 4.0f);
+	View.Draw(ColorRGBA(0.09f, 0.10f, 0.12f, 0.88f), IGraphics::CORNER_B, 4.0f);
 
 	const int MaxEntries = ServerBrowser()->Communities().size();
 	if(MaxEntries == 0)
@@ -1487,7 +1491,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 		CUIRect Header, GroupIcon, GroupLabel;
 		List.HSplitTop(ms_ListheaderHeight, &Header, &List);
 		s_ScrollRegion.AddRect(Header);
-		Header.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, Ui()->HotItem() == &s_aListExtended[FriendType] ? 0.4f : 0.25f), IGraphics::CORNER_ALL, 5.0f);
+		Header.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, Ui()->HotItem() == &s_aListExtended[FriendType] ? 0.92f : 0.85f), IGraphics::CORNER_ALL, 4.0f);
 		Header.VSplitLeft(Header.h, &GroupIcon, &GroupLabel);
 		GroupIcon.Margin(2.0f, &GroupIcon);
 		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
@@ -1795,7 +1799,9 @@ void CMenus::RenderServerbrowserTabBar(CUIRect TabBar)
 
 void CMenus::RenderServerbrowserToolBox(CUIRect ToolBox)
 {
-	ToolBox.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.3f), IGraphics::CORNER_B, 4.0f);
+	ToolBox.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 0.94f), IGraphics::CORNER_B, 4.0f);
+	CUIRect ToolEdge = {ToolBox.x, ToolBox.y, ToolBox.w, 2.5f};
+	ToolEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.70f), IGraphics::CORNER_T, 2.0f);
 
 	switch(g_Config.m_UiToolboxPage)
 	{

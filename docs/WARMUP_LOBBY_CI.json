@@ -1,0 +1,48 @@
+{
+  "evidence_kind": "GitHub API completion receipt and native test annotation; not a screenshot review",
+  "commit": "dec3ebeca93bb0f983940a86881d7609692737ce",
+  "run_url": "https://github.com/Leo88q/neon-relay/actions/runs/35441196634",
+  "conclusion": "success",
+  "map": "data/maps/Neon Relay Warmup.map",
+  "map_sha256": "0b58fb09ec260e679e138ed65ed41121941ec923cc909b5a4a458bc9e9c0a3b8",
+  "jobs": [
+    {
+      "name": "Linux client build and desktop/portrait boot",
+      "conclusion": "success"
+    },
+    {
+      "name": "anchor program offline checks (node 22)",
+      "conclusion": "success"
+    },
+    {
+      "name": "match-event signer (C++ <-> node:crypto)",
+      "conclusion": "success"
+    },
+    {
+      "name": "Linux server build and isolated boot",
+      "conclusion": "success"
+    },
+    {
+      "name": "reward backend (node 22)",
+      "conclusion": "success"
+    },
+    {
+      "name": "branding / assets / secrets / hygiene",
+      "conclusion": "success"
+    },
+    {
+      "name": "C++ syntax probe",
+      "conclusion": "success"
+    }
+  ],
+  "native_check_run_id": 105892158215,
+  "native_lobby_notice": "PASS: native card click, busy-port refusal, verified map join, stop, relaunch, child cleanup",
+  "artifact_name": "native-client-preview",
+  "artifact_downloaded": false,
+  "artifact_download_error": "Azure blob transport EOF",
+  "screenshots_reviewed": false,
+  "manually_played": false,
+  "verified_platform": "Linux CI / Xvfb",
+  "macos_verified": false,
+  "android_verified": false
+}

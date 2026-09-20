@@ -97,7 +97,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	{
 		pHit->Unfreeze();
 	}
-	pHit->TakeDamage(vec2(0, 0), 0, m_Owner, m_Type);
+	pHit->TakeDamage(vec2(0, 0), GameServer()->m_pController->IsDeathmatch() ? (int)TuningList()[m_TuneZone].m_LaserDamage : 0, m_Owner, m_Type);
 	return true;
 }
 

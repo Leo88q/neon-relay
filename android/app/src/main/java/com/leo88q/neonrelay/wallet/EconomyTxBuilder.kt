@@ -39,6 +39,7 @@ object EconomyTxBuilder {
     private const val ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
     fun base58Encode(bytes: ByteArray): String {
+        if (bytes.isEmpty()) return ""
         var n = BigInteger(1, bytes)
         val sb = StringBuilder()
         val fiftyEight = BigInteger.valueOf(58)
@@ -51,7 +52,7 @@ object EconomyTxBuilder {
             if (b.toInt() != 0) break
             sb.append('1')
         }
-        return if (sb.isEmpty()) "1" else sb.toString()
+        return sb.reverse().toString()
     }
 
     fun base58Decode(s: String): ByteArray {
@@ -114,9 +115,11 @@ object EconomyTxBuilder {
     }
 
     fun findProgramAddress(seeds: List<ByteArray>, programId: ByteArray): Pair<ByteArray, Int> {
+        require(programId.size == 32) { "program id must be 32 bytes" }
+        require(seeds.size <= 15 && seeds.all { it.size <= 32 }) { "invalid PDA seeds" }
         for (bump in 255 downTo 0) {
             val parts = seeds + byteArrayOf(bump.toByte()) + programId + PDA_MARKER
-            val candidate = sha256(*parts)
+            val candidate = sha256(*parts.toTypedArray())
             if (!isOnCurveEncoded(candidate)) return candidate to bump
         }
         error("no valid PDA bump found")
@@ -143,8 +146,10 @@ object EconomyTxBuilder {
         findProgramAddress(listOf(wallet, TOKEN_PROGRAM_ID, mint), ASSOCIATED_TOKEN_PROGRAM_ID).first
 
     /** entryReference: SHA256(kind u8 || epoch u64le || extra u64le || wallet32). */
-    fun entryReference(kind: Int, epoch: Long, wallet: ByteArray, extra: Long = 0L): ByteArray =
-        sha256(byteArrayOf(kind.toByte()) + ByteBufferLe.u64(epoch) + ByteBufferLe.u64(extra) + wallet)
+    fun entryReference(kind: Int, epoch: Long, wallet: ByteArray, extra: Long = 0L): ByteArray {
+        require(kind in 0..1 && epoch >= 0 && extra >= 0 && wallet.size == 32) { "invalid entry reference inputs" }
+        return sha256(byteArrayOf(kind.toByte()) + ByteBufferLe.u64(epoch) + ByteBufferLe.u64(extra) + wallet)
+    }
 
     // ---------------------------------------------------------------- config
 
@@ -159,7 +164,9 @@ object EconomyTxBuilder {
     )
 
     fun parseConfig(data: ByteArray): EconomyConfig {
-        require(data.size >= 8 + 128 + 2 + 16 + 2) { "economy config account too short" }
+        require(data.size == 8 + 128 + 2 + 16 + 2) { "economy config account too short" }
+        require(data.copyOfRange(0, 8).contentEquals(sha256("account:EconomyConfig".toByteArray()).copyOfRange(0, 8))) { "wrong config discriminator" }
+        require(data[8 + 146].toInt() in 0..1) { "invalid paused flag" }
         val mint = data.copyOfRange(8 + 32, 8 + 64)
         val treasury = data.copyOfRange(8 + 64, 8 + 96)
         val vault = data.copyOfRange(8 + 96, 8 + 128)
@@ -168,6 +175,7 @@ object EconomyTxBuilder {
         val feeTournament = ByteBufferLe.u64At(data, 8 + 138)
         val paused = data[8 + 146].toInt() != 0
         require(rake in 0..2000) { "implausible rake in config account" }
+        require(feeMatch > 0 && feeTournament > 0) { "unsupported or invalid fees" }
         return EconomyConfig(mint, treasury, vault, feeMatch, feeTournament, paused)
     }
 
@@ -183,41 +191,47 @@ object EconomyTxBuilder {
         ixAccountIndexes: IntArray,
         blockhash: ByteArray,
     ): ByteArray {
-        // legacy message: header(3) + compact accounts + blockhash + compact ix
-        val keys = mutableListOf<AccountMeta>()
-        fun indexOf(meta: AccountMeta): Int {
-            val existing = keys.indexOfFirst { it.key.contentEquals(meta.key) }
-            if (existing >= 0) return existing
-            keys.add(meta)
-            return keys.size - 1
+        require(payer.size == 32 && programId.size == 32 && blockhash.size == 32) { "keys and blockhash must be 32 bytes" }
+        require(metas.all { it.key.size == 32 }) { "account key must be 32 bytes" }
+        require(ixAccountIndexes.all { it in metas.indices }) { "invalid instruction account index" }
+        require(!payer.contentEquals(programId)) { "payer cannot be the program" }
+        val keys = mutableListOf(AccountMeta(payer, true, true))
+        fun include(meta: AccountMeta) {
+            val i = keys.indexOfFirst { it.key.contentEquals(meta.key) }
+            if (i < 0) keys.add(meta) else {
+                val old = keys[i]
+                keys[i] = AccountMeta(old.key, old.signer || meta.signer, old.writable || meta.writable)
+            }
         }
         val indexes = ixAccountIndexes.map { metas[it] }
-        indexes.forEach { indexOf(it) }
-        // payer first, then writable signers, then readonly signers, then writables, then readonly
-        keys.sortWith(
-            compareByDescending<AccountMeta> { it.signer }
-                .thenByDescending { it.writable }
-        )
-        if (keys.none { it.key.contentEquals(payer) }) {
-            keys.add(0, AccountMeta(payer, true, true))
-        }
-        val signerCount = keys.count { it.signer }
-        val readonlySigners = keys.count { it.signer && !it.writable }
-        val readonlyNonSigners = keys.count { !it.signer && !it.writable }
+        indexes.forEach { include(it) }
+        require(keys.none { it.key.contentEquals(programId) }) { "program cannot alias an instruction account" }
+        include(AccountMeta(programId, false, false))
+        keys.sortWith(compareByDescending<AccountMeta> { it.key.contentEquals(payer) }
+            .thenByDescending { it.signer }.thenByDescending { it.writable })
+        require(keys.size <= 256) { "too many message accounts" }
         val out = java.io.ByteArrayOutputStream()
-        out.write(byteArrayOf(signerCount.toByte(), readonlySigners.toByte(), readonlyNonSigners.toByte()))
+        out.write(byteArrayOf(keys.count { it.signer }.toByte(),
+            keys.count { it.signer && !it.writable }.toByte(),
+            keys.count { !it.signer && !it.writable }.toByte()))
         writeCompact(out, keys.size)
         keys.forEach { out.write(it.key) }
         out.write(blockhash)
-        writeCompact(out, 1) // one instruction
-        val programIndex = keys.indexOfFirst { it.key.contentEquals(programId) }
-            .let { if (it >= 0) it else { keys.add(AccountMeta(programId, false, false)); keys.size - 1 } }
-        val resolved = indexes.map { meta -> keys.indexOfFirst { it.key.contentEquals(meta.key) }.toByte() }
-        writeCompact(out, resolved.size)
-        resolved.forEach { out.write(it.toInt()) }
+        writeCompact(out, 1)
+        out.write(keys.indexOfFirst { it.key.contentEquals(programId) })
+        writeCompact(out, indexes.size)
+        indexes.forEach { meta -> out.write(keys.indexOfFirst { it.key.contentEquals(meta.key) }) }
         writeCompact(out, data.size)
         out.write(data)
         return out.toByteArray()
+    }
+
+    /** Wire transaction envelope for one fee-payer signature (filled by wallet). */
+    fun unsignedTransaction(message: ByteArray): ByteArray {
+        require(message.size >= 3 && message[0].toInt() == 1) { "expected one signer" }
+        val transaction = byteArrayOf(1) + ByteArray(64) + message
+        require(transaction.size <= 1232) { "transaction exceeds Solana packet limit" }
+        return transaction
     }
 
     private fun writeCompact(out: java.io.ByteArrayOutputStream, value: Int) {
@@ -232,10 +246,14 @@ object EconomyTxBuilder {
         }
     }
 
-    fun payEntryData(reference: ByteArray, kind: Int): ByteArray =
-        hexToBytes(PAY_ENTRY_DISCRIMINATOR) + reference + byteArrayOf(kind.toByte())
+    fun payEntryData(reference: ByteArray, kind: Int): ByteArray {
+        require(reference.size == 32 && kind in 0..1) { "invalid entry reference or kind" }
+        return hexToBytes(PAY_ENTRY_DISCRIMINATOR) + reference + byteArrayOf(kind.toByte())
+    }
 
     fun claimPrizeData(epoch: Long, amount: Long, leafIndex: Int, proof: List<ByteArray>): ByteArray {
+        require(epoch >= 0 && amount > 0 && leafIndex >= 0) { "invalid claim integers" }
+        require(proof.size <= 32 && proof.all { it.size == 32 }) { "invalid proof" }
         var out = hexToBytes(CLAIM_PRIZE_DISCRIMINATOR) + ByteBufferLe.u64(epoch) + ByteBufferLe.u64(amount) +
             ByteBufferLe.u32(leafIndex) + ByteBufferLe.u32(proof.size)
         proof.forEach { out = out + it }
@@ -293,8 +311,10 @@ object EconomyTxBuilder {
         )
     }
 
-    fun hexToBytes(hex: String): ByteArray =
-        hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+    fun hexToBytes(hex: String): ByteArray {
+        require(hex.length % 2 == 0 && hex.all { it in "0123456789abcdefABCDEF" }) { "invalid hex" }
+        return hex.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+    }
 }
 
 /** Little-endian integer helpers (Borsh). */

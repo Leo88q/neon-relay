@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
-  base58Decode, base58Encode, closeEpochPrizes, entryReference, findProgramAddress,
+  TICKET_DISCRIMINATOR, base58Decode, base58Encode, closeEpochPrizes, entryReference, findProgramAddress,
   isOnCurveEncoded, parseTicketData, proofForWallet, ticketAddress, ticketStatus,
 } from "../src/economy.ts";
 import { buildTree, leafHash, verifyProofIndexed } from "../src/merkle.ts";
@@ -62,6 +62,7 @@ test("entry references are stable and injective across kind/epoch/extra/wallet",
 
 test("ticket borsh parsing reads kind/amount/paidAt after the discriminator", () => {
   const data = Buffer.alloc(8 + 32 + 32 + 1 + 8 + 8 + 1);
+  TICKET_DISCRIMINATOR.copy(data);
   data.writeUInt8(1, 8 + 64); // kind = tournament
   data.writeBigUInt64LE(1234567n, 8 + 65);
   data.writeBigInt64LE(1700000000n, 8 + 73);
@@ -75,13 +76,17 @@ test("ticketStatus reads the on-chain ticket through the injected RPC", async ()
   const ref = entryReference(0, 1, w);
   const addr = base58Encode(ticketAddress(ref, w, base58Decode(ECONOMY_PROGRAM_ID)));
   const account = Buffer.alloc(8 + 32 + 32 + 1 + 8 + 8 + 1);
+  TICKET_DISCRIMINATOR.copy(account);
+  w.copy(account, 8);
+  ref.copy(account, 40);
+  account[89] = findProgramAddress([Buffer.from("neonrelay_entry"), ref, w], base58Decode(ECONOMY_PROGRAM_ID)).bump;
   account.writeUInt8(0, 8 + 64);
   account.writeBigUInt64LE(5000000n, 8 + 65);
   account.writeBigInt64LE(1700000123n, 8 + 73);
   const calls: string[] = [];
   const rpc = async (method: string, params: unknown[]) => {
     calls.push(`${method}:${(params[0] as string) === addr ? "own" : "other"}`);
-    return method === "getAccountInfo" ? { value: { data: [account.toString("base64"), "base64"] } } : {};
+    return method === "getAccountInfo" ? { value: { owner: ECONOMY_PROGRAM_ID, executable: false, data: [account.toString("base64"), "base64"] } } : {};
   };
   const status = await ticketStatus(rpc, ECONOMY_PROGRAM_ID, ref, w);
   assert.deepEqual(status, { ticketed: true, kind: 0, amountMicro: 5000000, paidAt: 1700000123 });

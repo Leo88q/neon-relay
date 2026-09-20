@@ -5,6 +5,7 @@
 #include <engine/demo.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
+#include <engine/storage.h>
 
 #include <generated/client_data.h>
 #include <generated/protocol.h>
@@ -170,6 +171,16 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 	else
 	{
 		return;
+	}
+	// Combat health and armor are supplies, never character portraits. Keep
+	// freeze/weapon-removal artwork and behavior untouched on race servers.
+	if(GameClient()->m_GameInfo.m_PredictVanilla && !GameClient()->m_GameInfo.m_Race)
+	{
+		if(pCurrent->m_Type == POWERUP_HEALTH || pCurrent->m_Type == POWERUP_ARMOR)
+		{
+			QuadOffset = m_DmPickupOffset;
+			Graphics()->TextureSet(pCurrent->m_Type == POWERUP_HEALTH ? m_DmHealthTexture : m_DmArmorTexture);
+		}
 	}
 	Graphics()->QuadsSetRotation(0);
 	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
@@ -643,12 +654,22 @@ void CItems::OnRender()
 	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
 }
 
+void CItems::OnShutdown()
+{
+	Graphics()->UnloadTexture(&m_DmHealthTexture);
+	Graphics()->UnloadTexture(&m_DmArmorTexture);
+}
+
 void CItems::OnInit()
 {
+	m_DmHealthTexture = Graphics()->LoadTexture("game_entities/neon_dm_health.png", IStorage::TYPE_ALL);
+	m_DmArmorTexture = Graphics()->LoadTexture("game_entities/neon_dm_armor.png", IStorage::TYPE_ALL);
 	Graphics()->QuadsSetRotation(0);
 	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
 
 	m_ItemsQuadContainerIndex = Graphics()->CreateQuadContainer(false);
+	Graphics()->QuadsSetSubset(0, 0, 1, 1);
+	m_DmPickupOffset = Graphics()->QuadContainerAddSprite(m_ItemsQuadContainerIndex, 42.f, 42.f);
 
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
 	m_RedFlagOffset = Graphics()->QuadContainerAddSprite(m_ItemsQuadContainerIndex, -21.f, -42.f, 42.f, 84.f);

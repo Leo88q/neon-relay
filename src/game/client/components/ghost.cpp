@@ -356,20 +356,6 @@ void CGhost::OnRender()
 		Player.m_AttackTick += Client()->GameTick(g_Config.m_ClDummy) - GhostTick;
 
 		const CTeeRenderInfo *pRenderInfo = &Ghost.m_pManagedTeeRenderInfo->TeeRenderInfo();
-		CTeeRenderInfo GhostNinjaRenderInfo;
-		if(Player.m_Weapon == WEAPON_NINJA && g_Config.m_ClShowNinja)
-		{
-			// change the skin for the ghost to the ninja
-			GhostNinjaRenderInfo = Ghost.m_pManagedTeeRenderInfo->TeeRenderInfo();
-			GhostNinjaRenderInfo.ApplySkin(GameClient()->m_Players.NinjaTeeRenderInfo()->TeeRenderInfo());
-			GhostNinjaRenderInfo.m_CustomColoredSkin = GameClient()->IsTeamPlay();
-			if(!GhostNinjaRenderInfo.m_CustomColoredSkin)
-			{
-				GhostNinjaRenderInfo.m_ColorBody = ColorRGBA(1, 1, 1);
-				GhostNinjaRenderInfo.m_ColorFeet = ColorRGBA(1, 1, 1);
-			}
-			pRenderInfo = &GhostNinjaRenderInfo;
-		}
 
 		GameClient()->m_Players.RenderHook(ScreenRect, &Prev, &Player, pRenderInfo, -2, IntraTick);
 		GameClient()->m_Players.RenderPlayer(ScreenRect, &Prev, &Player, pRenderInfo, -2, IntraTick);

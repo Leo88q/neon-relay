@@ -20,6 +20,8 @@
 #include <game/mapbugs.h>
 #include <game/voting.h>
 
+#include <neonrelay/game_connection.h>
+
 #include <map>
 #include <memory>
 #include <optional>
@@ -220,6 +222,11 @@ public:
 
 	void Clear();
 
+private:
+	// Never persisted across map reset/reconnect; callbacks must use weak handles.
+	std::shared_ptr<neonrelay::GameConnectionIdentity> m_aGameIdentities[MAX_CLIENTS];
+
+public:
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
 	// keep last input to always apply when none is sent

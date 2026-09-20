@@ -255,6 +255,7 @@ public:
 	int GetActiveWeapon() const { return m_Core.m_ActiveWeapon; }
 	void SetActiveWeapon(int ActiveWeap) { m_Core.m_ActiveWeapon = ActiveWeap; }
 	void SetLastAction(int LastAction) { m_LastAction = LastAction; }
+	int GetHealth() const { return m_Health; }
 	int GetArmor() const { return m_Armor; }
 	void SetArmor(int Armor) { m_Armor = Armor; }
 	CCharacterCore GetCore() { return m_Core; }

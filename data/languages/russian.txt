@@ -2671,3 +2671,88 @@ Always predict frozen players
 
 No country flags match your filter criteria
 == 
+
+Characters
+== Персонажи
+
+Wallet
+== Кошелёк
+
+Leaders
+== Лидеры
+
+Races
+== Забеги
+
+Preview only. Paid entry is not available yet.
+== Предпросмотр. Платный вход пока недоступен.
+
+Players: %s
+== Игроков: %s
+
+Legendary holders only
+== Только владельцы Legendary
+
+Prize pool: 90% players / 10% developer
+== Призовой фонд: 90% игрокам / 10% разработчику
+
+Top 10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%
+== Топ-10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%
+
+Practice - server browser
+== Тренировка — список серверов
+
+Catalog preview. NFT purchases and equipping are not available yet.
+== Каталог. Покупка NFT и выбор для игры пока недоступны.
+
+Rankings are unavailable until the race service is connected.
+== Рейтинг недоступен до подключения сервиса забегов.
+
+Payments, prize claims and NFT purchases are unavailable in this build.
+== В этой сборке недоступны платежи, получение призов и покупка NFT.
+
+Service configuration present. Transactions remain disabled.
+== Настройки сервиса заданы. Транзакции остаются отключёнными.
+
+Transaction service is not configured.
+== Сервис транзакций не настроен.
+
+View races
+== Смотреть забеги
+
+No verified results yet
+== Подтверждённых результатов пока нет
+
+Only verified race results will appear here. Practice does not award ranked prizes.
+== Здесь появятся только проверенные результаты забегов. Тренировка не приносит рейтинговых призов.
+
+[Original course]
+Warmup
+== Разогрев
+
+Beginner / Solo / Free
+== Новичок / Соло / Бесплатно
+
+Original course. Local practice, no wallet or ranked prizes.
+== Своя трасса. Локальная тренировка без кошелька и рейтинговых призов.
+
+Start Warmup
+== Начать «Разогрев»
+
+Stop practice server
+== Остановить тренировочный сервер
+
+Disconnect and stop the existing local server before starting Warmup.
+== Перед запуском «Разогрева» отключитесь и остановите уже запущенный локальный сервер.
+
+Warmup map is missing or outdated. Update the game data.
+== Карта «Разогрев» отсутствует или устарела. Обновите данные игры.
+
+Warmup port 8305 is busy. Stop that server or use the server browser.
+== Порт 8305 занят. Остановите тот сервер или воспользуйтесь списком серверов.
+
+Disconnect before stopping the practice server.
+== Перед остановкой тренировочного сервера отключитесь от игры.
+
+Practice connection rejected: the expected Warmup map was not loaded.
+== Подключение отклонено: ожидаемая карта «Разогрев» не загрузилась.

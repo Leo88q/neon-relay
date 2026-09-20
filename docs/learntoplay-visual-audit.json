@@ -1,0 +1,284 @@
+{
+  "game": {
+    "1": {
+      "count": 1512,
+      "visual": "opaque-terrain"
+    },
+    "3": {
+      "count": 6732,
+      "visual": "opaque-terrain"
+    },
+    "9": {
+      "count": 4584,
+      "visual": "boundary-and-symbol"
+    },
+    "11": {
+      "count": 205,
+      "visual": "boundary-and-symbol"
+    },
+    "21": {
+      "count": 10,
+      "visual": "symbol"
+    },
+    "33": {
+      "count": 8,
+      "visual": "symbol"
+    },
+    "34": {
+      "count": 10,
+      "visual": "symbol"
+    },
+    "60": {
+      "count": 8,
+      "visual": "boundary-and-symbol"
+    },
+    "90": {
+      "count": 27,
+      "visual": "symbol"
+    },
+    "106": {
+      "count": 27,
+      "visual": "symbol"
+    },
+    "190": {
+      "count": 17,
+      "visual": "render-metadata-no-marker"
+    },
+    "191": {
+      "count": 17,
+      "visual": "render-metadata-no-marker"
+    },
+    "192": {
+      "count": 9,
+      "visual": "runtime-entity"
+    },
+    "197": {
+      "count": 56,
+      "visual": "runtime-entity"
+    },
+    "199": {
+      "count": 2,
+      "visual": "runtime-entity"
+    },
+    "200": {
+      "count": 1,
+      "visual": "runtime-entity"
+    },
+    "201": {
+      "count": 2,
+      "visual": "runtime-entity"
+    },
+    "202": {
+      "count": 3,
+      "visual": "runtime-entity"
+    },
+    "225": {
+      "count": 9,
+      "visual": "runtime-entity"
+    }
+  },
+  "front": {
+    "5": {
+      "count": 916,
+      "visual": "boundary-and-symbol"
+    },
+    "11": {
+      "count": 3,
+      "visual": "boundary-and-symbol"
+    },
+    "12": {
+      "count": 10,
+      "visual": "boundary-and-symbol"
+    },
+    "13": {
+      "count": 11,
+      "visual": "boundary-and-symbol"
+    },
+    "17": {
+      "count": 33,
+      "visual": "symbol"
+    },
+    "18": {
+      "count": 37,
+      "visual": "symbol"
+    },
+    "21": {
+      "count": 10,
+      "visual": "symbol"
+    },
+    "22": {
+      "count": 20,
+      "visual": "symbol"
+    },
+    "35": {
+      "count": 8,
+      "visual": "symbol"
+    },
+    "36": {
+      "count": 6,
+      "visual": "symbol"
+    },
+    "37": {
+      "count": 13,
+      "visual": "symbol"
+    },
+    "38": {
+      "count": 17,
+      "visual": "symbol"
+    },
+    "39": {
+      "count": 1,
+      "visual": "symbol"
+    },
+    "40": {
+      "count": 8,
+      "visual": "symbol"
+    },
+    "41": {
+      "count": 3,
+      "visual": "symbol"
+    },
+    "42": {
+      "count": 9,
+      "visual": "symbol"
+    },
+    "43": {
+      "count": 6,
+      "visual": "symbol"
+    },
+    "44": {
+      "count": 5,
+      "visual": "symbol"
+    },
+    "45": {
+      "count": 8,
+      "visual": "symbol"
+    },
+    "46": {
+      "count": 5,
+      "visual": "symbol"
+    },
+    "47": {
+      "count": 13,
+      "visual": "symbol"
+    },
+    "48": {
+      "count": 13,
+      "visual": "symbol"
+    },
+    "49": {
+      "count": 12,
+      "visual": "symbol"
+    },
+    "50": {
+      "count": 8,
+      "visual": "symbol"
+    },
+    "51": {
+      "count": 4,
+      "visual": "symbol"
+    },
+    "52": {
+      "count": 9,
+      "visual": "symbol"
+    },
+    "53": {
+      "count": 7,
+      "visual": "symbol"
+    },
+    "54": {
+      "count": 5,
+      "visual": "symbol"
+    },
+    "55": {
+      "count": 9,
+      "visual": "symbol"
+    },
+    "56": {
+      "count": 9,
+      "visual": "symbol"
+    },
+    "57": {
+      "count": 5,
+      "visual": "symbol"
+    },
+    "58": {
+      "count": 10,
+      "visual": "symbol"
+    },
+    "59": {
+      "count": 13,
+      "visual": "symbol"
+    },
+    "60": {
+      "count": 56,
+      "visual": "boundary-and-symbol"
+    },
+    "89": {
+      "count": 35,
+      "visual": "symbol"
+    },
+    "105": {
+      "count": 37,
+      "visual": "symbol"
+    }
+  },
+  "tele": {
+    "26": {
+      "count": 2,
+      "visual": "boundary-and-symbol"
+    },
+    "27": {
+      "count": 2,
+      "visual": "boundary-and-symbol"
+    },
+    "29": {
+      "count": 249,
+      "visual": "boundary-and-symbol"
+    },
+    "30": {
+      "count": 58,
+      "visual": "boundary-and-symbol"
+    },
+    "63": {
+      "count": 1932,
+      "visual": "boundary-and-symbol"
+    }
+  },
+  "speed": {
+    "28": {
+      "count": 56,
+      "visual": "boundary-and-symbol"
+    }
+  },
+  "switch": {
+    "23": {
+      "count": 9,
+      "visual": "boundary-and-symbol"
+    },
+    "24": {
+      "count": 7,
+      "visual": "boundary-and-symbol"
+    },
+    "25": {
+      "count": 2,
+      "visual": "boundary-and-symbol"
+    },
+    "210": {
+      "count": 8,
+      "visual": "boundary-and-symbol"
+    },
+    "211": {
+      "count": 4,
+      "visual": "boundary-and-symbol"
+    },
+    "212": {
+      "count": 2,
+      "visual": "boundary-and-symbol"
+    },
+    "240": {
+      "count": 14,
+      "visual": "boundary-and-symbol"
+    }
+  }
+}

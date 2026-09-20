@@ -10,8 +10,10 @@
 #include <memory>
 #include <string>
 
-#define CLIENT_EXEC "DDNet"
-#define SERVER_EXEC "DDNet-Server"
+// Shared by storage and local-server launch, even with AUTOUPDATE disabled.
+// Keep these names aligned with the default CMake executable names.
+#define CLIENT_EXEC "neonrelay"
+#define SERVER_EXEC "neonrelay-server"
 
 #if defined(CONF_FAMILY_WINDOWS)
 #define PLAT_EXT ".exe"

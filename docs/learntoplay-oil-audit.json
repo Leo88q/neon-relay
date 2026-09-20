@@ -1,0 +1,8 @@
+{
+  "cells": 1371,
+  "surface_cells": 791,
+  "quads": 11984,
+  "frames": 16,
+  "period_ms": 1280,
+  "semantics": "Existing freeze / evil-return fall hazards; no new burn damage. Safe thaw and narrow ice columns excluded."
+}

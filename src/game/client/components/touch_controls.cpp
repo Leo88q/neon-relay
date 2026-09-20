@@ -19,7 +19,6 @@
 #include <game/client/components/chat.h>
 #include <game/client/components/console.h>
 #include <game/client/components/controls.h>
-#include <game/client/components/emoticon.h>
 #include <game/client/components/menus.h>
 #include <game/client/components/spectator.h>
 #include <game/client/components/voting.h>
@@ -494,19 +493,6 @@ void CTouchControls::CExtraMenuTouchButtonBehavior::WriteToConfiguration(CJsonWr
 	pWriter->WriteIntValue(m_Number + 1);
 }
 
-// Emoticon button: keeps the emoticon HUD open, next touch in emoticon HUD will close it again.
-CTouchControls::CButtonLabel CTouchControls::CEmoticonTouchButtonBehavior::GetLabel() const
-{
-	return {CButtonLabel::EType::LOCALIZED, Localizable("Emoticon")};
-}
-
-void CTouchControls::CEmoticonTouchButtonBehavior::OnDeactivate(bool ByFinger)
-{
-	if(!ByFinger)
-		return;
-	m_pTouchControls->Console()->ExecuteLineStroked(1, "+emote", IConsole::CLIENT_ID_UNSPECIFIED);
-}
-
 // Spectate button: keeps the spectate menu open, next touch in spectate menu will close it again.
 CTouchControls::CButtonLabel CTouchControls::CSpectateTouchButtonBehavior::GetLabel() const
 {
@@ -803,7 +789,6 @@ bool CTouchControls::OnTouchState(std::vector<IInput::CTouchFingerState> &vTouch
 	if(GameClient()->m_Chat.IsActive() ||
 		GameClient()->m_GameConsole.IsActive() ||
 		GameClient()->m_Menus.IsActive() ||
-		GameClient()->m_Emoticon.IsActive() ||
 		GameClient()->m_Spectator.IsActive() ||
 		m_PreviewAllButtons)
 	{
@@ -826,7 +811,6 @@ void CTouchControls::OnRender()
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 	if(GameClient()->m_Chat.IsActive() ||
-		GameClient()->m_Emoticon.IsActive() ||
 		GameClient()->m_Spectator.IsActive())
 	{
 		return;
@@ -1572,7 +1556,6 @@ std::unique_ptr<CTouchControls::CPredefinedTouchButtonBehavior> CTouchControls::
 	static const CBehaviorFactory BEHAVIOR_FACTORIES[] = {
 		{CIngameMenuTouchButtonBehavior::BEHAVIOR_ID, [](const json_value *pBehavior) { return std::make_unique<CIngameMenuTouchButtonBehavior>(); }},
 		{CExtraMenuTouchButtonBehavior::BEHAVIOR_ID, [&](const json_value *pBehavior) { return ParseExtraMenuBehavior(pBehavior); }},
-		{CEmoticonTouchButtonBehavior::BEHAVIOR_ID, [](const json_value *pBehavior) { return std::make_unique<CEmoticonTouchButtonBehavior>(); }},
 		{CSpectateTouchButtonBehavior::BEHAVIOR_ID, [](const json_value *pBehavior) { return std::make_unique<CSpectateTouchButtonBehavior>(); }},
 		{CSwapActionTouchButtonBehavior::BEHAVIOR_ID, [](const json_value *pBehavior) { return std::make_unique<CSwapActionTouchButtonBehavior>(); }},
 		{CUseActionTouchButtonBehavior::BEHAVIOR_ID, [](const json_value *pBehavior) { return std::make_unique<CUseActionTouchButtonBehavior>(); }},

@@ -26,7 +26,7 @@ void CMenus::RenderLanguageSettings(CUIRect MainView)
 
 	RenderLanguageSelection(List);
 
-	CreditsScroll.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), IGraphics::CORNER_ALL, 5.0f);
+	CreditsScroll.Draw(ColorRGBA(0.05f, 0.07f, 0.14f, 0.92f), IGraphics::CORNER_ALL, 4.0f);
 
 	static CScrollRegion s_CreditsScrollRegion;
 	CScrollRegionParams ScrollParams;

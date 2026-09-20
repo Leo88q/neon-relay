@@ -224,7 +224,7 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 		PreviewView.HSplitTop(MarginSmall, nullptr, &PreviewView);
 
 		// Use the rest of the view for preview
-		PreviewView.Draw(ColorRGBA(1, 1, 1, 0.1f), IGraphics::CORNER_ALL, 5.0f);
+		PreviewView.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 0.92f), IGraphics::CORNER_ALL, 4.0f);
 		PreviewView.Margin(MarginSmall, &PreviewView);
 
 		ColorRGBA SystemColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageSystemColor));
@@ -960,10 +960,7 @@ void CMenus::DoLaserPreview(const CUIRect *pRect, const ColorHSLA LaserOutlineCo
 	case LASERTYPE_FREEZE:
 	{
 		CTeeRenderInfo TeeRenderInfo;
-		if(g_Config.m_ClShowNinja)
-			TeeRenderInfo.Apply(GameClient()->m_Skins.Find("x_ninja"));
-		else
-			TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClPlayerSkin));
+		TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClPlayerSkin));
 		TeeRenderInfo.m_TeeRenderFlags = TEE_EFFECT_FROZEN;
 		TeeRenderInfo.m_Size = 64.0f;
 		TeeRenderInfo.m_ColorBody = ColorRGBA(1, 1, 1);

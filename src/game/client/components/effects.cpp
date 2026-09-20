@@ -131,14 +131,14 @@ void CEffects::SmokeTrail(vec2 Pos, vec2 Vel, float Alpha, float TimePassed)
 
 	CParticle p;
 	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SMOKE;
+	p.m_Spr = SPRITE_PART_SPLAT01 + (rand() % 3);
 	p.m_Pos = Pos;
 	p.m_Vel = Vel + random_direction() * 50.0f;
 	p.m_LifeSpan = random_float(0.5f, 1.0f);
 	p.m_StartSize = random_float(12.0f, 20.0f);
 	p.m_EndSize = 0.0f;
 	p.m_Friction = 0.7f;
-	p.m_Gravity = random_float(-500.0f);
+	p.m_Gravity = 250.0f;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
 	GameClient()->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p, TimePassed);
@@ -373,19 +373,21 @@ void CEffects::Explosion(vec2 Pos, float Alpha)
 		}
 	}
 
-	// add the smoke
+	// Cosmetic potato fragments; projectile collision and damage stay unchanged.
 	for(int i = 0; i < 24; i++)
 	{
 		p.SetDefault();
-		p.m_Spr = SPRITE_PART_SMOKE;
+		p.m_Spr = SPRITE_PART_SPLAT01 + (rand() % 3);
 		p.m_Pos = Pos;
 		p.m_Vel = random_direction() * (random_float(1.0f, 1.2f) * 1000.0f);
 		p.m_LifeSpan = random_float(0.5f, 0.9f);
-		p.m_StartSize = random_float(32.0f, 40.0f);
+		p.m_StartSize = random_float(14.0f, 22.0f);
 		p.m_EndSize = 0.0f;
-		p.m_Gravity = random_float(-800.0f);
+		p.m_Gravity = 700.0f;
+		p.m_Rot = random_angle();
+		p.m_Rotspeed = random_float(-6.0f, 6.0f);
 		p.m_Friction = 0.4f;
-		p.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f).Multiply(random_float(0.5f, 0.75f)).WithAlpha(Alpha);
+		p.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f).Multiply(random_float(0.8f, 1.0f)).WithAlpha(Alpha);
 		p.m_StartAlpha = p.m_Color.a;
 		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}

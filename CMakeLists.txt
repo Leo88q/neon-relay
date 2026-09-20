@@ -124,6 +124,8 @@ option(ANTIBOT "Enable support for a dynamic anticheat library (not provided, se
 option(HEADLESS_CLIENT "Build the client without graphics" OFF)
 option(CLIENT "Compile client" ON)
 option(SERVER "Compile server" ON)
+option(NEONRELAY_DM_PROBE "Build isolated DM server input probe (test only, never ship)" OFF)
+option(NEONRELAY_WARMUP_PROBE "Build isolated Warmup server input probe (test only, never ship)" OFF)
 option(TOOLS "Compile tools" ON)
 option(DOWNLOAD_GTEST "Download and compile GTest" ${AUTO_DEPENDENCIES_DEFAULT})
 option(STEAM "Build the Steam release version" OFF)
@@ -1601,47 +1603,6 @@ set(EXPECTED_DATA
   countryflags/index.txt
   deadtee.png
   debug_font.png
-  editor/audio_source.png
-  editor/automap/basic_freeze.rules
-  editor/automap/ddmax_freeze.rules
-  editor/automap/ddnet_grass.rules
-  editor/automap/ddnet_tiles.rules
-  editor/automap/ddnet_walls.rules
-  editor/automap/desert_main.rules
-  editor/automap/fadeout.rules
-  editor/automap/generic_clear.rules
-  editor/automap/generic_unhookable.rules
-  editor/automap/generic_unhookable_0.7.rules
-  editor/automap/grass_main.rules
-  editor/automap/jungle_main.rules
-  editor/automap/jungle_midground.rules
-  editor/automap/round_tiles.rules
-  editor/automap/water.rules
-  editor/automap/winter_main.rules
-  editor/checker.png
-  editor/cursor.png
-  editor/cursor_resize.png
-  editor/cursor_text.png
-  editor/entities/DDNet.png
-  editor/entities/F-DDrace.png
-  editor/entities/FNG.png
-  editor/entities/Race.png
-  editor/entities/Vanilla.png
-  editor/entities/blockworlds.png
-  editor/entities_clear/blockworlds.png
-  editor/entities_clear/ddnet.png
-  editor/entities_clear/ddrace.png
-  editor/entities_clear/f-ddrace.png
-  editor/entities_clear/fng.png
-  editor/entities_clear/race.png
-  editor/entities_clear/vanilla.png
-  editor/front.png
-  editor/speed_arrow.png
-  editor/speed_arrow_array.png
-  editor/speedup.png
-  editor/switch.png
-  editor/tele.png
-  editor/tune.png
   emoticons.png
   extras.png
   fonts/DejaVuSans.ttf
@@ -1650,6 +1611,17 @@ set(EXPECTED_DATA
   fonts/SourceHanSans.ttc
   fonts/index.json
   game.png
+  game_entities/entities_clear/blockworlds.png
+  game_entities/entities_clear/ddnet.png
+  game_entities/entities_clear/ddrace.png
+  game_entities/entities_clear/f-ddrace.png
+  game_entities/entities_clear/fng.png
+  game_entities/entities_clear/race.png
+  game_entities/entities_clear/vanilla.png
+  game_entities/neon_dm_armor.png
+  game_entities/neon_dm_health.png
+  game_entities/speed_arrow.png
+  game_entities/speed_arrow_array.png
   gui_buttons.png
   gui_cursor.png
   gui_icons.png
@@ -1696,21 +1668,46 @@ set(EXPECTED_DATA
   languages/traditional_chinese.txt
   languages/turkish.txt
   languages/ukrainian.txt
+  mapres/neonrelay_chrome_mid.png
+  mapres/neonrelay_chrome_sky.png
+  mapres/neonrelay_chrome_tiles.png
+  mapres/neonrelay_circuit_mid.png
+  mapres/neonrelay_circuit_sky.png
+  mapres/neonrelay_circuit_tiles.png
+  mapres/neonrelay_folds_mid.png
+  mapres/neonrelay_folds_sky.png
+  mapres/neonrelay_folds_tiles.png
+  mapres/neonrelay_pulse.png
   mapres/neonrelay_scenery.png
   mapres/neonrelay_sky.png
+  mapres/neonrelay_sound_mid.png
+  mapres/neonrelay_sound_sky.png
+  mapres/neonrelay_sound_tiles.png
   mapres/neonrelay_tiles.png
   maps/Aurora\ Ascent.map
   maps/Chromatic\ Canyon.map
+  maps/LearnToPlay\ Sound.map
+  maps/LearnToPlay\ Sound\ Heights.map
   maps/Midnight\ Circuit.map
   maps/Neon\ Relay\ Basin.map
+  maps/Neon\ Relay\ Warmup.map
   maps/Vector\ Spire.map
   maps/license.txt
   menuimages/demos.png
-  menuimages/editor.png
   menuimages/local_server.png
   menuimages/play_game.png
   menuimages/settings.png
   particles.png
+  portraits/potato_cool_girl_1.png
+  portraits/potato_cool_guy_1.png
+  portraits/potato_girl_2.png
+  portraits/potato_girl_3.png
+  portraits/potato_girl_4.png
+  portraits/potato_guy_2.png
+  portraits/potato_guy_3.png
+  portraits/potato_guy_4.png
+  portraits/potato_legend_girl.png
+  portraits/potato_legend_guy.png
   race_flag.png
   shader/pipeline.frag
   shader/pipeline.vert
@@ -1744,236 +1741,19 @@ set(EXPECTED_DATA
   shader/vulkan/tile.vert
   shader/vulkan/tile_border.frag
   shader/vulkan/tile_border.vert
-  skins/PaladiN.png
-  skins/antiantey.png
-  skins/beast.png
-  skins/blacktee.png
-  skins/bluekitty.png
-  skins/bluestripe.png
-  skins/bomb.png
-  skins/brownbear.png
-  skins/cammo.png
-  skins/cammostripes.png
-  skins/chinese_by_whis.png
-  skins/coala.png
-  skins/coala_bluekitty.png
-  skins/coala_bluestripe.png
-  skins/coala_cammo.png
-  skins/coala_cammostripes.png
-  skins/coala_default.png
-  skins/coala_limekitty.png
-  skins/coala_pinky.png
-  skins/coala_redbopp.png
-  skins/coala_redstripe.png
-  skins/coala_saddo.png
-  skins/coala_toptri.png
-  skins/coala_twinbop.png
-  skins/coala_twintri.png
-  skins/coala_warpaint.png
-  skins/coala_x_ninja.png
-  skins/default.png
-  skins/demonlimekitty.png
-  skins/dino.png
-  skins/dragon.png
-  skins/evil.png
-  skins/evilwolfe.png
-  skins/ghost.png
-  skins/ghostjtj.png
-  skins/giraffe.png
-  skins/greensward.png
-  skins/greyfox.png
-  skins/greyfox_2.png
-  skins/hammie-chew.png
-  skins/hammie-whis.png
-  skins/jeet.png
-  skins/kintaro_2.png
-  skins/kitty_bluestripe.png
-  skins/kitty_brownbear.png
-  skins/kitty_cammo.png
-  skins/kitty_cammostripes.png
-  skins/kitty_coala.png
-  skins/kitty_default.png
-  skins/kitty_pinky.png
-  skins/kitty_redbopp.png
-  skins/kitty_redstripe.png
-  skins/kitty_saddo.png
-  skins/kitty_toptri.png
-  skins/kitty_twinbop.png
-  skins/kitty_twintri.png
-  skins/kitty_warpaint.png
-  skins/kitty_x_ninja.png
   skins/license.txt
-  skins/limekitty.png
-  skins/mermydon-coala.png
-  skins/mermydon.png
-  skins/mouse.png
-  skins/musmann.png
-  skins/nanami.png
-  skins/nanas.png
-  skins/nersif.png
-  skins/oldman.png
-  skins/oldschool.png
-  skins/penguin.png
-  skins/pinky.png
-  skins/random.png
-  skins/redbopp.png
-  skins/redstripe.png
-  skins/saddo.png
-  skins/santa_bluekitty.png
-  skins/santa_bluestripe.png
-  skins/santa_brownbear.png
-  skins/santa_cammo.png
-  skins/santa_cammostripes.png
-  skins/santa_coala.png
-  skins/santa_default.png
-  skins/santa_limekitty.png
-  skins/santa_pinky.png
-  skins/santa_redbopp.png
-  skins/santa_redstripe.png
-  skins/santa_saddo.png
-  skins/santa_toptri.png
-  skins/santa_twinbop.png
-  skins/santa_twintri.png
-  skins/santa_warpaint.png
-  skins/teerasta.png
-  skins/toptri.png
-  skins/twinbop.png
-  skins/twintri.png
-  skins/veteran.png
-  skins/voodoo_tee.png
-  skins/warpaint.png
-  skins/wartee.png
-  skins/whis.png
-  skins/x_ninja.png
-  skins/x_spec.png
-  skins7/beaver.json
-  skins7/bluekitty.json
-  skins7/bluestripe.json
-  skins7/body/bat.png
-  skins7/body/bear.png
-  skins7/body/beaver.png
-  skins7/body/dog.png
-  skins7/body/force.png
-  skins7/body/fox.png
-  skins7/body/greensward.png
-  skins7/body/hippo.png
-  skins7/body/kitty.png
-  skins7/body/koala.png
-  skins7/body/monkey.png
-  skins7/body/mouse.png
-  skins7/body/piglet.png
-  skins7/body/raccoon.png
-  skins7/body/spiky.png
-  skins7/body/standard.png
-  skins7/body/x_ninja.png
-  skins7/bot.png
-  skins7/brownbear.json
-  skins7/bumbler.json
-  skins7/cammo.json
-  skins7/cammostripes.json
-  skins7/cavebat.json
-  skins7/decoration/hair.png
-  skins7/decoration/twinbopp.png
-  skins7/decoration/twinmello.png
-  skins7/decoration/twinpen.png
-  skins7/decoration/unibop.png
-  skins7/decoration/unimelo.png
-  skins7/decoration/unipento.png
-  skins7/default.json
-  skins7/eyes/colorable.png
-  skins7/eyes/negative.png
-  skins7/eyes/standard.png
-  skins7/eyes/standardreal.png
-  skins7/eyes/x_ninja.png
-  skins7/feet/standard.png
-  skins7/force.json
-  skins7/fox.json
-  skins7/greensward.json
-  skins7/greycoon.json
-  skins7/greyfox.json
-  skins7/hands/standard.png
-  skins7/hippo.json
-  skins7/koala.json
-  skins7/limedog.json
-  skins7/limekitty.json
-  skins7/marking/bear.png
-  skins7/marking/belly1.png
-  skins7/marking/belly2.png
-  skins7/marking/blush.png
-  skins7/marking/bug.png
-  skins7/marking/cammo1.png
-  skins7/marking/cammo2.png
-  skins7/marking/cammostripes.png
-  skins7/marking/coonfluff.png
-  skins7/marking/donny.png
-  skins7/marking/downdony.png
-  skins7/marking/duodonny.png
-  skins7/marking/fox.png
-  skins7/marking/hipbel.png
-  skins7/marking/lowcross.png
-  skins7/marking/lowpaint.png
-  skins7/marking/marksman.png
-  skins7/marking/mice.png
-  skins7/marking/mixture1.png
-  skins7/marking/mixture2.png
-  skins7/marking/monkey.png
-  skins7/marking/panda1.png
-  skins7/marking/panda2.png
-  skins7/marking/purelove.png
-  skins7/marking/saddo.png
-  skins7/marking/setisu.png
-  skins7/marking/sidemarks.png
-  skins7/marking/singu.png
-  skins7/marking/stripe.png
-  skins7/marking/striped.png
-  skins7/marking/stripes.png
-  skins7/marking/stripes2.png
-  skins7/marking/thunder.png
-  skins7/marking/tiger1.png
-  skins7/marking/tiger2.png
-  skins7/marking/toptri.png
-  skins7/marking/triangular.png
-  skins7/marking/tricircular.png
-  skins7/marking/tripledon.png
-  skins7/marking/tritri.png
-  skins7/marking/twinbelly.png
-  skins7/marking/twincross.png
-  skins7/marking/twintri.png
-  skins7/marking/uppy.png
-  skins7/marking/warpaint.png
-  skins7/marking/warstripes.png
-  skins7/marking/whisker.png
-  skins7/marking/wildpaint.png
-  skins7/marking/wildpatch.png
-  skins7/marking/yinyang.png
-  skins7/monkey.json
-  skins7/paintgre.json
-  skins7/pandabear.json
-  skins7/panther.json
-  skins7/pento.json
-  skins7/piggy.json
-  skins7/pinky.json
-  skins7/raccoon.json
-  skins7/redbopp.json
-  skins7/redstripe.json
-  skins7/saddo.json
-  skins7/setisu.json
-  skins7/snowti.json
-  skins7/spiky.json
-  skins7/swardy.json
-  skins7/tiger.json
-  skins7/tooxy.json
-  skins7/toptri.json
-  skins7/twinbop.json
-  skins7/twintri.json
-  skins7/warmouse.json
-  skins7/warpaint.json
-  skins7/x_ninja.json
-  skins7/xmas_hat.png
+  skins/potato_catalog.json
+  skins/potato_cool_girl_1.png
+  skins/potato_cool_guy_1.png
+  skins/potato_girl_2.png
+  skins/potato_girl_3.png
+  skins/potato_girl_4.png
+  skins/potato_guy_2.png
+  skins/potato_guy_3.png
+  skins/potato_guy_4.png
+  skins/potato_legend_girl.png
+  skins/potato_legend_guy.png
   strong_weak.png
-  themes/nightdrive.png
-  themes/nightdrive_day.map
-  themes/nightdrive_night.map
   themes/autumn.png
   themes/autumn_day.map
   themes/autumn_night.map
@@ -1985,6 +1765,9 @@ set(EXPECTED_DATA
   themes/jungle_night.map
   themes/newyear.map
   themes/newyear.png
+  themes/nightdrive.png
+  themes/nightdrive_day.map
+  themes/nightdrive_night.map
   themes/none.png
   themes/rand.png
   themes/winter.png
@@ -2232,7 +2015,6 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   console.h
   demo.h
   discord.h
-  editor.h
   engine.h
   favorites.h
   font_icons.h
@@ -2605,8 +2387,6 @@ if(CLIENT)
     components/debughud.h
     components/effects.cpp
     components/effects.h
-    components/emoticon.cpp
-    components/emoticon.h
     components/envelope_state.cpp
     components/envelope_state.h
     components/flow.cpp
@@ -2696,6 +2476,7 @@ if(CLIENT)
     multiview.cpp
     pickup_data.cpp
     pickup_data.h
+    practice_course.h
     prediction/entities/character.cpp
     prediction/entities/character.h
     prediction/entities/door.cpp
@@ -2736,98 +2517,7 @@ if(CLIENT)
     ui_scrollregion.h
     # tidy-alphabetical-end
   )
-  set_src(GAME_EDITOR GLOB_RECURSE src/game/editor
-    # tidy-alphabetical-start
-    auto_map.cpp
-    auto_map.h
-    component.cpp
-    component.h
-    editor.cpp
-    editor.h
-    editor_action.h
-    editor_actions.cpp
-    editor_actions.h
-    editor_history.cpp
-    editor_history.h
-    editor_object.cpp
-    editor_object.h
-    editor_props.cpp
-    editor_server_settings.cpp
-    editor_server_settings.h
-    editor_trackers.cpp
-    editor_trackers.h
-    editor_ui.cpp
-    editor_ui.h
-    enums.h
-    envelope_editor.cpp
-    envelope_editor.h
-    explanations.cpp
-    explanations.h
-    file_browser.cpp
-    file_browser.h
-    font_typer.cpp
-    font_typer.h
-    layer_selector.cpp
-    layer_selector.h
-    map_grid.cpp
-    map_grid.h
-    map_object.cpp
-    map_object.h
-    map_view.cpp
-    map_view.h
-    mapitems.h
-    mapitems/envelope.cpp
-    mapitems/envelope.h
-    mapitems/envelope_evaluator.cpp
-    mapitems/envelope_evaluator.h
-    mapitems/image.cpp
-    mapitems/image.h
-    mapitems/layer.cpp
-    mapitems/layer.h
-    mapitems/layer_front.cpp
-    mapitems/layer_front.h
-    mapitems/layer_game.cpp
-    mapitems/layer_game.h
-    mapitems/layer_group.cpp
-    mapitems/layer_group.h
-    mapitems/layer_quads.cpp
-    mapitems/layer_quads.h
-    mapitems/layer_sounds.cpp
-    mapitems/layer_sounds.h
-    mapitems/layer_speedup.cpp
-    mapitems/layer_speedup.h
-    mapitems/layer_switch.cpp
-    mapitems/layer_switch.h
-    mapitems/layer_tele.cpp
-    mapitems/layer_tele.h
-    mapitems/layer_tiles.cpp
-    mapitems/layer_tiles.h
-    mapitems/layer_tune.cpp
-    mapitems/layer_tune.h
-    mapitems/map.cpp
-    mapitems/map.h
-    mapitems/map_io.cpp
-    mapitems/sound.cpp
-    mapitems/sound.h
-    popups.cpp
-    prompt.cpp
-    prompt.h
-    proof_mode.cpp
-    proof_mode.h
-    quad_art.cpp
-    quad_art.h
-    quad_knife.cpp
-    quad_knife.h
-    quick_action.h
-    quick_actions.cpp
-    quick_actions.h
-    references.cpp
-    references.h
-    smooth_value.cpp
-    smooth_value.h
-    tile_art.cpp
-    # tidy-alphabetical-end
-  )
+
   set_src(GAME_MAP GLOB_RECURSE src/game/map
     # tidy-alphabetical-start
     envelope_extrema.cpp
@@ -2862,7 +2552,7 @@ if(TARGET_OS STREQUAL "android")
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/neonrelay)
 endif()
 
-  set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_EDITOR} ${GAME_MAP} ${GAME_GENERATED_CLIENT})
+  set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_MAP} ${GAME_GENERATED_CLIENT})
 
   set(DEPS_CLIENT ${DEPS} ${GLEW_DEP})
 
@@ -3112,6 +2802,9 @@ if(SERVER)
     gamemodes/ddnet.h
     gamemodes/mod.cpp
     gamemodes/mod.h
+    gamemodes/neon_dm.cpp
+    gamemodes/neon_dm.h
+    gamemodes/neon_dm_rules.h
     gameworld.cpp
     gameworld.h
     interactions.cpp
@@ -3144,7 +2837,7 @@ if(SERVER)
     src/generated/wordlist.h
     # tidy-alphabetical-end
   )
-  list(APPEND GAME_SERVER src/neonrelay/match_signer.cpp)
+  list(APPEND GAME_SERVER src/neonrelay/game_identity.cpp src/neonrelay/game_pairing_http.cpp src/neonrelay/game_pairing_protocol.cpp src/neonrelay/game_pairing_seal.cpp src/neonrelay/match_signer.cpp)
   set(SERVER_SRC ${ENGINE_SERVER_WITHOUT_MAIN} ${GAME_SERVER} ${GAME_GENERATED_SERVER} $<TARGET_OBJECTS:neonrelay-ed25519>)
   if(TARGET_OS STREQUAL "windows")
     set(VERSION_EXECUTABLE "${SERVER_EXECUTABLE}")
@@ -3185,6 +2878,14 @@ if(SERVER)
       PROPERTY OUTPUT_NAME ${SERVER_EXECUTABLE}
   )
   target_link_libraries(game-server-without-main ${LIBS_SERVER})
+  if(NEONRELAY_DM_PROBE)
+    target_compile_definitions(game-server-without-main PRIVATE NEONRELAY_DM_PROBE)
+    target_sources(game-server-without-main PRIVATE tests/neon_dm/server_probe.cpp)
+  endif()
+  if(NEONRELAY_WARMUP_PROBE)
+    target_compile_definitions(game-server-without-main PRIVATE NEONRELAY_WARMUP_PROBE)
+    target_sources(game-server-without-main PRIVATE tests/warmup/server_probe.cpp)
+  endif()
   list(APPEND TARGETS_OWN game-server-without-main)
   list(APPEND TARGETS_LINK game-server-without-main)
 
@@ -3411,7 +3112,6 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     csv_test.cpp
     datafile_test.cpp
     dbg_test.cpp
-    editor_test.cpp
     fs_test.cpp
     gameworld_test.cpp
     git_revision_test.cpp

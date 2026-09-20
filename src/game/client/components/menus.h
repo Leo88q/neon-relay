@@ -26,6 +26,7 @@
 #include <game/client/ui.h>
 #include <game/voting.h>
 
+#include <array>
 #include <chrono>
 #include <optional>
 #include <vector>
@@ -576,6 +577,9 @@ protected:
 	// found in menus_settings_credits.cpp
 	void RenderSettingsCredits(CUIRect MainView);
 	void RenderSettingsWallet(CUIRect MainView);
+	void RenderRaceLobby(CUIRect MainView);
+	void RenderCharacters(CUIRect MainView);
+	void RenderLeaders(CUIRect MainView);
 
 	// found in menus_settings_ddnet.cpp
 	void RenderSettingsDDNet(CUIRect MainView);
@@ -653,9 +657,15 @@ protected:
 	void UpdateColors();
 
 	IGraphics::CTextureHandle m_TextureBlob;
+	IGraphics::CTextureHandle m_aCharacterPortraits[10];
+	std::array<IGraphics::CTextureHandle, 8> m_aBgTextures;
+	std::array<IGraphics::CTextureHandle, 32> m_aYieldBloomFrames;
 
 public:
 	void RenderBackground();
+	void RenderYieldBloomFrame(CUIRect Rect, float Rounding = 6.0f, bool WithRivets = true);
+	void RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, ColorRGBA BorderColor, bool WithGlow, bool WithImpulse, float ImpulseProgress, ColorRGBA ImpulseColor);
+	void RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor);
 
 	CMenus();
 	int Sizeof() const override { return sizeof(*this); }
@@ -670,6 +680,7 @@ public:
 	void SetActive(bool Active);
 
 	void OnInterfacesInit(CGameClient *pClient) override;
+	void RenderCharacterPortrait(CUIRect Rect, int Index);
 	void OnInit() override;
 
 	void OnStateChange(int NewState, int OldState) override;
@@ -699,6 +710,10 @@ public:
 		PAGE_NETWORK,
 		PAGE_GHOST,
 
+		PAGE_RACES,
+		PAGE_CHARACTERS,
+		PAGE_WALLET,
+		PAGE_LEADERS,
 		PAGE_LENGTH,
 	};
 

@@ -317,7 +317,7 @@ void IHttpRequest::OnCompletionInternal(EHttpState State)
 		m_ActualSha256 = sha256_finish(&m_ActualSha256Ctx);
 		if(m_ExpectedSha256.has_value() && m_ActualSha256.value() != m_ExpectedSha256.value())
 		{
-			if(g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::FAILURE)
+			if(!m_Sensitive && (g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::FAILURE))
 			{
 				char aActualSha256[SHA256_MAXSTRSIZE];
 				sha256_str(m_ActualSha256.value(), aActualSha256, sizeof(aActualSha256));

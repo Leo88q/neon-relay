@@ -7,9 +7,9 @@ Implements the datafile v4 layout used by src/engine/shared/datafile.cpp:
           num_raw_data, item_size, data_size
   then:   CDatafileItemType[num_item_types]      (type, start_id, count)
           int item_offsets[num_items]            (bytes from item start)
-          int data_offsets[num_raw_data + 1]     (bytes from data start)
+          int data_offsets[num_raw_data]     (bytes from data start)
           int data_sizes[num_raw_data]           (uncompressed sizes)
-          item region (item_size bytes): per item int typeAndId + payload
+          item region (item_size bytes): per item int typeAndId + int payload_size + payload
           data region: zlib-compressed raw blocks, concatenated
 
 Item structs follow src/game/mapitems.h field order. Little-endian on disk.
@@ -22,10 +22,11 @@ import zlib
 TILE = 4  # sizeof(CTile)
 
 
-def pack_name(name):
-	b = name.encode("utf-8")[:12]
-	b = b + b"\0" * (12 - len(b))
-	return [int.fromstring if False else struct.unpack("<i", b[i:i + 4])[0] for i in (0, 4, 8)]
+def pack_name(name, num_ints=3):
+	b = name.encode("utf-8")[:num_ints*4-1].ljust(num_ints*4, b"\0")
+	b = bytes((v + 128) % 256 for v in b)
+	b = b[:-1] + b"\0"
+	return [struct.unpack(">i", b[i:i + 4])[0] for i in range(0,num_ints*4,4)]
 
 
 class Raw:
@@ -88,7 +89,7 @@ class MapWriter:
 		offsets = []
 		for t, i, payload in flat:
 			offsets.append(len(item_bytes))
-			item_bytes += struct.pack("<i", (t << 16) | i)
+			item_bytes += struct.pack("<Ii", (t << 16) | i, len(payload) * 4)
 			item_bytes += struct.pack("<%di" % len(payload), *payload)
 		item_size = len(item_bytes)
 
@@ -100,12 +101,14 @@ class MapWriter:
 		data_sizes = [len(r) for r in self.raws]
 
 		types = []
+		start = 0
 		for t in sorted(self.items):
-			types.append((t, 0, len(self.items[t])))
+			types.append((t, start, len(self.items[t])))
+			start += len(self.items[t])
 		ntypes = len(types)
 		nitems = len(flat)
 		nraw = len(self.raws)
-		swaplen = ntypes * 12 + nitems * 4 + (nraw + 1) * 4 + nraw * 4 + item_size
+		swaplen = 36 - 16 + ntypes * 12 + nitems * 4 + nraw * 8 + item_size
 		size = swaplen + len(data_blob)
 
 		out = bytearray()
@@ -116,7 +119,7 @@ class MapWriter:
 			out += struct.pack("<iii", t, s, c)
 		for o in offsets:
 			out += struct.pack("<i", o)
-		for o in data_offsets:
+		for o in data_offsets[:-1]:
 			out += struct.pack("<i", o)
 		for s in data_sizes:
 			out += struct.pack("<i", s)
@@ -130,7 +133,7 @@ class MapWriter:
 def quad_rect(x0, y0, x1, y1, rgba=(255, 255, 255, 255)):
 	"""One CQuad covering the rect (map pixels), texcoords 0..1, 22.10 fixed."""
 	f = 1024
-	pts = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+	pts = [(x0, y0), (x1, y0), (x0, y1), (x1, y1)]
 	cx = sum(p[0] for p in pts) // 4
 	cy = sum(p[1] for p in pts) // 4
 	out = []
@@ -138,7 +141,7 @@ def quad_rect(x0, y0, x1, y1, rgba=(255, 255, 255, 255)):
 		out += [x * f, y * f]
 	for _ in range(4):
 		out += list(rgba)
-	tex = [(0, 0), (1, 0), (1, 1), (0, 1)]
+	tex = [(0, 0), (1, 0), (0, 1), (1, 1)]
 	for u, v in tex:
 		out += [u * f, v * f]
 	out += [-1, 0, -1, 0]

@@ -8,6 +8,8 @@
 
 #include <game/mapitems.h>
 #include <game/server/gamecontext.h>
+#include <game/server/gamecontroller.h>
+#include <game/server/gamemodes/neon_dm_rules.h>
 #include <game/server/player.h>
 #include <game/teamscore.h>
 
@@ -32,8 +34,54 @@ void CPickup::Reset()
 	m_MarkedForDestroy = true;
 }
 
+void CPickup::TickDeathmatch()
+{
+	if(m_RespawnTick > Server()->Tick())
+		return;
+	m_RespawnTick = -1;
+	CEntity *apEnts[MAX_CLIENTS];
+	const int Num = GameWorld()->FindEntities(m_Pos, GetProximityRadius() + ms_CollisionExtraSize, apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+	for(int i = 0; i < Num; ++i)
+	{
+		auto *pChr = static_cast<CCharacter *>(apEnts[i]);
+		if(!pChr->IsAlive())
+			continue;
+		bool Taken = false;
+		int Sound = SOUND_PICKUP_HEALTH;
+		if(m_Type == POWERUP_HEALTH)
+			Taken = pChr->IncreaseHealth(1);
+		else if(m_Type == POWERUP_ARMOR)
+		{
+			Taken = pChr->IncreaseArmor(1);
+			Sound = SOUND_PICKUP_ARMOR;
+		}
+		else if(m_Type == POWERUP_WEAPON && m_Subtype >= WEAPON_SHOTGUN && m_Subtype <= WEAPON_LASER)
+		{
+			if(!pChr->GetWeaponGot(m_Subtype) || pChr->GetWeaponAmmo(m_Subtype) < NeonDm::MAX_AMMO)
+			{
+				pChr->GiveWeapon(m_Subtype);
+				pChr->SetWeaponAmmo(m_Subtype, NeonDm::MAX_AMMO);
+				GameServer()->SendWeaponPickup(pChr->GetPlayer()->GetCid(), m_Subtype);
+				Sound = m_Subtype == WEAPON_GRENADE ? SOUND_PICKUP_GRENADE : SOUND_PICKUP_SHOTGUN;
+				Taken = true;
+			}
+		}
+		if(Taken)
+		{
+			GameServer()->CreateSound(m_Pos, Sound);
+			m_RespawnTick = Server()->Tick() + NeonDm::PICKUP_RESPAWN_SECONDS * Server()->TickSpeed();
+			break; // one shared pickup, not one copy per racing team
+		}
+	}
+}
+
 void CPickup::Tick()
 {
+	if(GameServer()->m_pController->IsDeathmatch())
+	{
+		TickDeathmatch();
+		return;
+	}
 	Move();
 
 	// Check if a player intersected us
@@ -163,10 +211,14 @@ void CPickup::Tick()
 
 void CPickup::TickPaused()
 {
+	if(GameServer()->m_pController->IsDeathmatch() && m_RespawnTick >= 0)
+		++m_RespawnTick;
 }
 
 void CPickup::Snap(int SnappingClient)
 {
+	if(GameServer()->m_pController->IsDeathmatch() && m_RespawnTick > Server()->Tick())
+		return;
 	if(NetworkClipped(SnappingClient) || !GetId().has_value())
 		return;
 

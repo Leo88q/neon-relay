@@ -286,7 +286,7 @@ bool IGameController::OnEntity(int Index, int x, int y, int Layer, int Flags, bo
 	else if(Index == ENTITY_ARMOR_LASER)
 		Type = POWERUP_ARMOR_LASER;
 	else if(Index == ENTITY_HEALTH_1)
-		Type = POWERUP_FREEZE;
+		Type = IsDeathmatch() ? POWERUP_HEALTH : POWERUP_FREEZE;
 	else if(Index == ENTITY_WEAPON_SHOTGUN)
 	{
 		Type = POWERUP_WEAPON;
@@ -590,6 +590,11 @@ void IGameController::Snap(int SnappingClient)
 	GameInfo.m_RoundStartTick = m_RoundStartTick;
 	GameInfo.m_WarmupTimer = m_Warmup;
 
+	if(IsDeathmatch())
+	{
+		GameInfo.m_ScoreLimit = Config()->m_SvNeonDmScoreLimit;
+		GameInfo.m_TimeLimit = Config()->m_SvNeonDmTimeLimit;
+	}
 	GameInfo.m_RoundNum = 0;
 	GameInfo.m_RoundCurrent = m_RoundCount + 1;
 
@@ -637,6 +642,12 @@ void IGameController::Snap(int SnappingClient)
 	GameInfoEx.m_Flags2 = GAMEINFOFLAG2_HUD_DDRACE |
 			      GAMEINFOFLAG2_DDRACE_TEAM |
 			      GAMEINFOFLAG2_PREDICT_EVENTS;
+	if(IsDeathmatch())
+	{
+		GameInfoEx.m_Flags = GAMEINFOFLAG_GAMETYPE_VANILLA | GAMEINFOFLAG_PREDICT_VANILLA |
+			GAMEINFOFLAG_ENTITIES_VANILLA | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_ALLOW_ZOOM;
+		GameInfoEx.m_Flags2 = GAMEINFOFLAG2_HUD_HEALTH_ARMOR | GAMEINFOFLAG2_HUD_AMMO | GAMEINFOFLAG2_PREDICT_EVENTS;
+	}
 	if(g_Config.m_SvNoWeakHook)
 		GameInfoEx.m_Flags2 |= GAMEINFOFLAG2_NO_WEAK_HOOK;
 	if(g_Config.m_SvOldLaser)
@@ -661,14 +672,17 @@ void IGameController::Snap(int SnappingClient)
 		GameData.m_GameStateEndTick = 0;
 		Server()->SnapNewItem(0, GameData);
 
-		protocol7::CNetObj_GameDataRace RaceData = {};
-		CFinishTime MapTime = SnapMapBestTime(SnappingClient);
-		int BestTime = MapTime.m_Seconds > 0 ? MapTime.m_Seconds * 1000 + MapTime.m_Milliseconds : -1;
+		if(!IsDeathmatch())
+		{
+			protocol7::CNetObj_GameDataRace RaceData = {};
+			CFinishTime MapTime = SnapMapBestTime(SnappingClient);
+			int BestTime = MapTime.m_Seconds > 0 ? MapTime.m_Seconds * 1000 + MapTime.m_Milliseconds : -1;
 
-		RaceData.m_BestTime = BestTime;
-		RaceData.m_Precision = 2;
-		RaceData.m_RaceFlags = protocol7::RACEFLAG_KEEP_WANTED_WEAPON;
-		Server()->SnapNewItem(0, RaceData);
+			RaceData.m_BestTime = BestTime;
+			RaceData.m_Precision = 2;
+			RaceData.m_RaceFlags = protocol7::RACEFLAG_KEEP_WANTED_WEAPON;
+			Server()->SnapNewItem(0, RaceData);
+		}
 	}
 
 	GameServer()->SnapSwitchers(SnappingClient);
@@ -743,6 +757,8 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, int Team, bool DoChatMsg)
 
 	pPlayer->SetTeam(Team);
 	int ClientId = pPlayer->GetCid();
+	if(IsDeathmatch() && Team == TEAM_SPECTATORS)
+		GameServer()->m_World.RemoveEntitiesFromPlayer(ClientId);
 
 	char aBuf[128];
 	if(DoChatMsg)

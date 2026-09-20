@@ -1,0 +1,287 @@
+{
+  "twmap_version": "0.6.6",
+  "package_license": "AGPL-3.0-only",
+  "scope": "I/O proof only; no production maps overwritten; not a route-completion test",
+  "maps": [
+    {
+      "source": "LearnToPlay.map",
+      "source_sha256": "2bc2c1e68b6ec616bb01500f49c4aec5ea093b4113728df595b34e969efb954b",
+      "physics_api_equal": true,
+      "physics_raw_equal": true,
+      "byte_identical": false,
+      "extension_item_counts": {
+        "65534": {
+          "before": 22,
+          "after": 22
+        },
+        "65535": {
+          "before": 1,
+          "after": 1
+        }
+      },
+      "physics": {
+        "settings": [
+          "switch_open 8"
+        ],
+        "game": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "70f7b39faa91e1fd2bd2ddac7816a5d3b976698da826736871df983427d28d08"
+        },
+        "front": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "d8176fa24f11841367ca6e3d67710ec237369a850a46e617e96d52eb14536eee"
+        },
+        "tele": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "5244c635f166f209afe46d387359e72ff9a59836bd608d6f9eecb560769c4111"
+        },
+        "speedup": {
+          "shape": [
+            200,
+            622,
+            4
+          ],
+          "dtype": "int16",
+          "sha256": "8d3060543487379e6c5b97c38e025f03035535bf8cba1517a213f84606bbb83e"
+        },
+        "switch": {
+          "shape": [
+            200,
+            622,
+            4
+          ],
+          "dtype": "uint8",
+          "sha256": "81cc1dbd70d4aec24c76e0fa285a1fbfc4a32178cdbe66f745330bf814f8f516"
+        },
+        "tune": null
+      },
+      "visual_equivalence_verified": false,
+      "native_roundtrip_boot_verified": false
+    },
+    {
+      "source": "LearnToPlay Sound.map",
+      "source_sha256": "b18e9457ec00b0a8349e792da0539d6e505a79b0d258bfddf88fa18385ba2b1b",
+      "physics_api_equal": true,
+      "physics_raw_equal": true,
+      "byte_identical": false,
+      "extension_item_counts": {
+        "65534": {
+          "before": 22,
+          "after": 11
+        },
+        "65535": {
+          "before": 1,
+          "after": 1
+        }
+      },
+      "physics": {
+        "settings": [
+          "switch_open 8"
+        ],
+        "game": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "70f7b39faa91e1fd2bd2ddac7816a5d3b976698da826736871df983427d28d08"
+        },
+        "front": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "d8176fa24f11841367ca6e3d67710ec237369a850a46e617e96d52eb14536eee"
+        },
+        "tele": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "5244c635f166f209afe46d387359e72ff9a59836bd608d6f9eecb560769c4111"
+        },
+        "speedup": {
+          "shape": [
+            200,
+            622,
+            4
+          ],
+          "dtype": "int16",
+          "sha256": "8d3060543487379e6c5b97c38e025f03035535bf8cba1517a213f84606bbb83e"
+        },
+        "switch": {
+          "shape": [
+            200,
+            622,
+            4
+          ],
+          "dtype": "uint8",
+          "sha256": "81cc1dbd70d4aec24c76e0fa285a1fbfc4a32178cdbe66f745330bf814f8f516"
+        },
+        "tune": null
+      },
+      "visual_equivalence_verified": false,
+      "native_roundtrip_boot_verified": false
+    },
+    {
+      "source": "LearnToPlay Sound Heights.map",
+      "source_sha256": "4a073387b04ff4f421536fabac7f01cc535803e78905efc038123e7d4b3019c8",
+      "physics_api_equal": true,
+      "physics_raw_equal": true,
+      "byte_identical": false,
+      "extension_item_counts": {
+        "65534": {
+          "before": 22,
+          "after": 11
+        },
+        "65535": {
+          "before": 1,
+          "after": 1
+        }
+      },
+      "physics": {
+        "settings": [
+          "switch_open 8"
+        ],
+        "game": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "2aa25168b9c4e36879c0332bfb560a3cddf41f78648e18a348a3590c054d4ded"
+        },
+        "front": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "d8176fa24f11841367ca6e3d67710ec237369a850a46e617e96d52eb14536eee"
+        },
+        "tele": {
+          "shape": [
+            200,
+            622,
+            2
+          ],
+          "dtype": "uint8",
+          "sha256": "5244c635f166f209afe46d387359e72ff9a59836bd608d6f9eecb560769c4111"
+        },
+        "speedup": {
+          "shape": [
+            200,
+            622,
+            4
+          ],
+          "dtype": "int16",
+          "sha256": "8d3060543487379e6c5b97c38e025f03035535bf8cba1517a213f84606bbb83e"
+        },
+        "switch": {
+          "shape": [
+            200,
+            622,
+            4
+          ],
+          "dtype": "uint8",
+          "sha256": "81cc1dbd70d4aec24c76e0fa285a1fbfc4a32178cdbe66f745330bf814f8f516"
+        },
+        "tune": null
+      },
+      "visual_equivalence_verified": false,
+      "native_roundtrip_boot_verified": false
+    }
+  ],
+  "original_fixture": {
+    "source": "calibration.map",
+    "source_sha256": "6f47d283987853fb3aef35e96d7a4abebc79d0909fdeadb9720f9186601f9006",
+    "physics_api_equal": true,
+    "physics_raw_equal": true,
+    "byte_identical": true,
+    "extension_item_counts": {},
+    "physics": {
+      "settings": [
+        "switch_open 1",
+        "tune_zone 1 gravity 0.4"
+      ],
+      "game": {
+        "shape": [
+          16,
+          32,
+          2
+        ],
+        "dtype": "uint8",
+        "sha256": "c4e01573cddc25c55900495dfa5a4d73a23dedfa41c50db9a4be7c7e984f56e1"
+      },
+      "front": {
+        "shape": [
+          16,
+          32,
+          2
+        ],
+        "dtype": "uint8",
+        "sha256": "f6bb6d32e6d4ea12f744adf077ba7d58ad0a5bc9604cb1eee92be88a75d4af81"
+      },
+      "tele": {
+        "shape": [
+          16,
+          32,
+          2
+        ],
+        "dtype": "uint8",
+        "sha256": "0cdf1a86fd8f724cad31493bd61602abaa3ab4150fd03bc18e8d78bc284416e3"
+      },
+      "speedup": {
+        "shape": [
+          16,
+          32,
+          4
+        ],
+        "dtype": "int16",
+        "sha256": "aca4231374109488099f8329d21581ad6acd9781da8e24926f77849698e57ade"
+      },
+      "switch": {
+        "shape": [
+          16,
+          32,
+          4
+        ],
+        "dtype": "uint8",
+        "sha256": "908fb7a9f3ef2cdded0e55f0c89a7e80b00583261e2088c97600158c0ceb2bc7"
+      },
+      "tune": {
+        "shape": [
+          16,
+          32,
+          2
+        ],
+        "dtype": "uint8",
+        "sha256": "3297da19d81b4743505d3883c2fef83345cc98812af8a480ce5e8722b8db5c46"
+      }
+    },
+    "visual_equivalence_verified": false,
+    "native_roundtrip_boot_verified": false
+  }
+}

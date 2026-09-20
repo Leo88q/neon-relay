@@ -53,7 +53,8 @@ EM_JS(void, FormatTimestampJsImpl, (char *pBuf, size_t Size, time_t Timestamp), 
 
 bool CHttpRequestEmscripten::ConfigureAndRun()
 {
-	if(!BeforeInit())
+	// Browser fetch cannot enforce this native no-redirect credential policy.
+	if(m_Sensitive || !BeforeInit())
 	{
 		return false;
 	}
@@ -218,14 +219,14 @@ void CHttpRequestEmscripten::OnCompletionInternal(EHttpState State, const char *
 
 	if(State == EHttpState::DONE)
 	{
-		if(g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::ALL)
+		if(!m_Sensitive && (g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::ALL))
 		{
 			log_info("http", "task done: %s", m_aUrl);
 		}
 	}
 	else
 	{
-		if(g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::FAILURE)
+		if(!m_Sensitive && (g_Config.m_DbgHttp || m_LogProgress >= HTTPLOG::FAILURE))
 		{
 			const char *pError =
 				pErrorDetail != nullptr                                  ? pErrorDetail :
@@ -398,7 +399,7 @@ void CHttpEmscripten::RunLoop()
 		while(!PendingRequests.empty())
 		{
 			auto &pRequest = PendingRequests.front();
-			if(g_Config.m_DbgHttp)
+			if(g_Config.m_DbgHttp && !pRequest->m_Sensitive)
 			{
 				log_debug("http", "task: %s %s", CHttpRequestEmscripten::GetRequestType(pRequest->m_Type), pRequest->m_aUrl);
 			}

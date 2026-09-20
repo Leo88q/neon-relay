@@ -186,3 +186,27 @@ echo
 echo "## cross-verify with node:crypto (same Ed25519 as the reward backend)"
 NEONRELAY_TEST_SEED_HEX="$SEED_HEX" node "$BUILD_DIR/verify.mjs" "$BUILD_DIR/signed.jsonl" "$PUBKEY_B64URL" \
 	|| exit 1
+
+# Guarded game identity adapter: native C++ -> actual backend HTTP verification.
+"$CXX" -std=c++20 -O2 -Wall -Wextra -Isrc -Isrc/engine/external \
+  src/neonrelay/game_identity.cpp src/neonrelay/game_identity_test.cpp \
+  "$BUILD_DIR/match_signer.o" "$BUILD_DIR/ed25519.o" -o "$BUILD_DIR/game_identity_test" \
+  || fail "game identity adapter did not compile"
+"$CC" -std=c11 -O2 -Isrc/engine/external/json-parser -c src/engine/external/json-parser/json.c -o "$BUILD_DIR/json.o" || fail "JSON parser did not compile"
+"$CXX" -std=c++20 -O2 -Wall -Wextra -Isrc -Isrc/engine/external \
+  src/neonrelay/game_identity.cpp src/neonrelay/game_pairing_protocol.cpp src/neonrelay/game_pairing_protocol_test.cpp \
+  src/base/hash_libtomcrypt.cpp "$BUILD_DIR/json.o" "$BUILD_DIR/match_signer.o" "$BUILD_DIR/ed25519.o" \
+  -o "$BUILD_DIR/game_pairing_protocol_test" || fail "pairing protocol did not compile"
+export NEONRELAY_PAIRING_PROTOCOL_TEST_BIN="$BUILD_DIR/game_pairing_protocol_test"
+"$CXX" -std=c++20 -fsyntax-only -Isrc -Isrc/engine/external src/neonrelay/game_pairing_http.cpp || fail "pairing transport syntax"
+NEONRELAY_IDENTITY_TEST_BIN="$BUILD_DIR/game_identity_test" \
+NEONRELAY_IDENTITY_TEST_SEED_FILE="$SEED_FILE" \
+NEONRELAY_IDENTITY_TEST_PUBLIC_KEY="$PUBKEY_B64URL" \
+node --experimental-strip-types scripts/test_game_identity_signer.ts || fail "identity adapter parity failed"
+
+"$CXX" -std=c++20 -O2 -Wall -Wextra -Isrc -Isrc/engine/external \
+  src/neonrelay/game_identity.cpp src/neonrelay/game_pairing_seal.cpp src/neonrelay/game_connection_test.cpp \
+  "$BUILD_DIR/match_signer.o" "$BUILD_DIR/ed25519.o" -o "$BUILD_DIR/game_connection_test" \
+  || fail "game connection lifecycle did not compile"
+"$BUILD_DIR/game_connection_test" || fail "game connection lifecycle failed"
+echo "PASS: connection identity lifecycle, reconnect, expiry and stale callbacks"

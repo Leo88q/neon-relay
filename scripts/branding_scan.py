@@ -44,6 +44,9 @@ STANDALONE_RE = re.compile(
 
 # Directories/files that are not scanned at all.
 EXCLUDE_PATHS = (
+	".cache/",  # ignored development outputs, never packaged UI
+	".venv/",  # installed development dependencies, never shipped UI
+	"venv/",
 	".git/",
 	"node_modules/",
 	"build/",
@@ -59,6 +62,9 @@ EXCLUDE_PATHS = (
 # Path based rules (checked first, most specific wins)
 # ---------------------------------------------------------------------------
 LEGAL_PATH_RES = [
+	re.compile(r"^docs/dm/(CHROME_STUDY\.json|UPSTREAM_MAP_LICENSE\.txt)$"),
+	# Explicit attribution/license review for optional, unshipped reference maps.
+	re.compile(r"^docs/reference_maps/(README_RU\.md|catalog\.json)$"),
 	re.compile(r"^license\.txt$"),
 	re.compile(r"^\.mailmap$"),
 	re.compile(r"^licenses/"),
@@ -75,6 +81,7 @@ LEGAL_PATH_RES = [
 ]
 
 HISTORICAL_PATH_RES = [
+	re.compile(r"^docs/dm/(CHROME_DM_RU|NEON_DM_RU)\.md$"),
 	re.compile(r"^UPSTREAM_BASE\.md$"),
 	re.compile(r"^docs/UPSTREAM_AUDIT\.md$"),
 	re.compile(r"^docs/KNOWN_LIMITATIONS\.md$"),
@@ -93,7 +100,7 @@ HISTORICAL_PATH_RES = [
 	# the credits screen keeps upstream attribution on purpose (allowed by the
 	# rebranding policy: legal/credits documentation may name the upstream project)
 	re.compile(r"^src/game/client/components/menus_settings_credits\.cpp$"),
-	# entities image names shipped in data/editor/entities
+	# gameplay overlay names shipped in data/game_entities/entities_clear
 	re.compile(r"^src/game/client/components/mapimages\.h$"),
 	re.compile(r"^docs/THREAT_MODEL\.md$"),
 	re.compile(r"^docs/RELEASE_CHECKLIST\.md$"),
@@ -108,6 +115,8 @@ HISTORICAL_PATH_RES = [
 ]
 
 TEST_PATH_RES = [
+	re.compile(r"^scripts/test_neon_dm\.py$"),
+	re.compile(r"^scripts/test_menu_contract\.py$"),
 	re.compile(r"^src/test/"),
 	re.compile(r"^src/rust-bridge/test/"),
 	re.compile(r"^scripts/integration_test\.py$"),
@@ -138,6 +147,8 @@ CODE_PATH_RES = [
 # Line based rules: code / API identifiers that must not be renamed
 # ---------------------------------------------------------------------------
 CODE_IDENTIFIER_RES = [
+	# Pinned public asset-download endpoints are identifiers, not UI branding.
+	re.compile(r"https://raw\.githubusercontent\.com/ddnet/ddnet-maps/|repos/ddnet/ddnet-maps/contents/"),
 	# the crash-log tool still accepts the upstream executable names so that crash
 	# logs produced by an older DDNet installation stay diagnosable
 	re.compile(r'^\s*if parsed_filename\.executable not in \["neonrelay"'),
@@ -177,7 +188,7 @@ CODE_IDENTIFIER_RES = [
 	re.compile(r"ddnet-libs"),
 	# data asset file names referenced by maps, the editor and the asset index
 	re.compile(r"(ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|rules|map|json|ogg|wv|ttf|otf|ttc)", re.IGNORECASE),
-	re.compile(r"(editor|mapres|assets|skins7?|maps7?|themes|audio)/[A-Za-z0-9_\-./]*(ddnet|ddrace|teeworlds)", re.IGNORECASE),
+	re.compile(r"(game_entities|mapres|assets|skins7?|maps7?|themes|audio)/[A-Za-z0-9_\-./]*(ddnet|ddrace|teeworlds)", re.IGNORECASE),
 	re.compile(r"\b(F-DDRace|DDNet)\.png\b"),
 	# source file names of upstream modules
 	re.compile(r"(ddracechat|ddracecommands|menus_settings_ddnet|gamemodes/ddnet)\.(cpp|h)"),
@@ -284,6 +295,12 @@ CATEGORIES = ("legal-attribution", "historical-documentation", "test-fixture", "
 
 
 def classify(rel_path: str, line: str, spans: list[tuple[int, int, str]] | None = None) -> tuple[str, str]:
+	# Attribution on derived CC-BY-SA map metadata/inspection sheets must stay.
+	# Match only these fields, NOT arbitrary branding strings in the generators.
+	if rel_path == "scripts/build_chrome_dm.py" and re.search(r"^\s*(m\.info\.(author|credits)=|'upstream_repository':)", line):
+		return "legal-attribution", "derived map author, modification notice or pinned source"
+	if rel_path == "scripts/preview_chrome_dm.py" and ("'Основа: dm7 / " in line or "'Источник: teeworlds/teeworlds-maps @ " in line):
+		return "legal-attribution", "source attribution printed on development inspection sheet"
 	for res in LEGAL_PATH_RES:
 		if res.search(rel_path):
 			return "legal-attribution", "upstream/third-party license notice (must stay)"

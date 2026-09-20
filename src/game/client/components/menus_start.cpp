@@ -16,6 +16,7 @@
 #include <game/client/ui.h>
 #include <game/localization.h>
 #include <game/version.h>
+#include <algorithm>
 
 #if defined(CONF_PLATFORM_ANDROID)
 #include <android/android_main.h>
@@ -23,128 +24,61 @@
 
 void CMenusStart::RenderStartMenu(CUIRect MainView)
 {
-	GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_START);
-
-	// render logo
-	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_BANNER].m_Id);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(1, 1, 1, 1);
-	IGraphics::CQuadItem QuadItem(MainView.w / 2 - 170, 60, 360, 103);
-	Graphics()->QuadsDrawTL(&QuadItem, 1);
-	Graphics()->QuadsEnd();
-
-	const float Rounding = 10.0f;
-	const float VMargin = MainView.w / 2 - 190.0f;
-
-	CUIRect Button;
+	const float VMargin = std::max(16.0f, MainView.w * 0.04f);
+	const bool Russian = str_find(g_Config.m_ClLanguagefile, "russian") != nullptr;
+	CUIRect Content, Header, Hero, Menu;
+	MainView.Margin(VMargin, &Content);
+	Content.HSplitTop(64.0f, &Header, &Content);
+	Ui()->DoLabel(&Header, "NEON RELAY", 34.0f, TEXTALIGN_ML);
+	Content.HSplitBottom(34.0f, &Content, nullptr);
+	bool Compact = MainView.w < 760.0f;
+#if defined(CONF_PLATFORM_ANDROID)
+	Compact = true;
+#endif
+	if(Compact)
+	{
+		Content.HSplitTop(std::min(136.0f, Content.h*0.30f), &Hero, &Menu);
+		Menu.HSplitTop(12.0f, nullptr, &Menu);
+	}
+	else
+	{
+		Content.VSplitLeft(Content.w*0.55f, &Hero, &Menu);
+		Menu.VSplitLeft(20.0f, nullptr, &Menu);
+	}
+	// Form A CLEAN – no covering over main character, only border, portrait 100% bright
+	GameClient()->m_Menus.RenderFormAPanel(Hero, 16.0f, ColorRGBA(0,0,0,0), ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+	CUIRect Art = Hero;
+	Art.Margin(8.0f, &Art);
+	if(!Compact)
+	{
+		CUIRect Caption;
+		Art.HSplitBottom(52.0f, &Art, &Caption);
+		Ui()->DoLabel(&Caption, Russian ? "Твой маршрут. Твой стиль." : "Your route. Your style.", 20.0f, TEXTALIGN_MC);
+	}
+	GameClient()->m_Menus.RenderCharacterPortrait(Art, 0);
+	const char *apLabels[] = {Localize("Play", "Start menu"), Localize("Characters"), Localize("Wallet"), Localize("Leaders"), Localize("Settings")};
+	const int aPages[] = {CMenus::PAGE_RACES, CMenus::PAGE_CHARACTERS, CMenus::PAGE_WALLET, CMenus::PAGE_LEADERS, CMenus::PAGE_SETTINGS};
+	const int aKeys[] = {KEY_P, KEY_C, KEY_W, KEY_L, KEY_S};
+	static CButtonContainer s_aButtons[5];
 	int NewPage = -1;
-
-	CUIRect ExtMenu;
-	MainView.VSplitLeft(30.0f, nullptr, &ExtMenu);
-	ExtMenu.VSplitLeft(100.0f, &ExtMenu, nullptr);
-
-	ExtMenu.HSplitBottom(20.0f, &ExtMenu, &Button);
-	static CButtonContainer s_DiscordButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_DiscordButton, Localize("Community"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	const float ButtonHeight = std::min(62.0f, (Menu.h-32.0f)/5.0f);
+	for(int i = 0; i < 5; ++i)
 	{
-		Client()->ViewLink(Localize("https://github.com/Leo88q/neon-relay"));
+		CUIRect Button;
+		Menu.HSplitTop(ButtonHeight, &Button, &Menu);
+		Menu.HSplitTop(8.0f, nullptr, &Menu);
+		// Cyberpunk: primary cyan bright #4de3f7, secondary dark with magenta hover
+		const ColorRGBA Color = i == 0 ? ColorRGBA(0.05f, 0.90f, 0.92f, 1.0f) : ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
+		if(GameClient()->m_Menus.DoButton_Menu(&s_aButtons[i], apLabels[i], 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, Color) || CheckHotKey(aKeys[i]) || (i == 0 && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
+			NewPage = aPages[i];
 	}
-
-	ExtMenu.HSplitBottom(5.0f, &ExtMenu, nullptr); // little space
-	ExtMenu.HSplitBottom(20.0f, &ExtMenu, &Button);
-	static CButtonContainer s_LearnButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_LearnButton, Localize("Learn"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	const bool Escape = Ui()->ConsumeHotkey(CUi::HOTKEY_ESCAPE);
+	if(Escape || CheckHotKey(KEY_Q))
 	{
-		Client()->ViewLink(Localize("https://github.com/Leo88q/neon-relay/tree/main/docs"));
-	}
-
-	ExtMenu.HSplitBottom(5.0f, &ExtMenu, nullptr); // little space
-	ExtMenu.HSplitBottom(20.0f, &ExtMenu, &Button);
-	static CButtonContainer s_TutorialButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_TutorialButton, Localize("Tutorial"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
-	{
-		GameClient()->m_Menus.JoinTutorial();
-	}
-
-	ExtMenu.HSplitBottom(5.0f, &ExtMenu, nullptr); // little space
-	ExtMenu.HSplitBottom(20.0f, &ExtMenu, &Button);
-	static CButtonContainer s_WebsiteButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_WebsiteButton, Localize("Website"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
-	{
-		Client()->ViewLink("https://github.com/Leo88q/neon-relay");
-	}
-
-	ExtMenu.HSplitBottom(5.0f, &ExtMenu, nullptr); // little space
-	ExtMenu.HSplitBottom(20.0f, &ExtMenu, &Button);
-	static CButtonContainer s_NewsButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_NewsButton, Localize("News"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, g_Config.m_UiUnreadNews ? ColorRGBA(0.0f, 1.0f, 0.0f, 0.25f) : ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || CheckHotKey(KEY_N))
-		NewPage = CMenus::PAGE_NEWS;
-
-	CUIRect Menu;
-	MainView.VMargin(VMargin, &Menu);
-	Menu.HSplitBottom(25.0f, &Menu, nullptr);
-
-	Menu.HSplitBottom(40.0f, &Menu, &Button);
-	static CButtonContainer s_QuitButton;
-	bool UsedEscape = false;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_QuitButton, Localize("Quit"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, Rounding, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || (UsedEscape = Ui()->ConsumeHotkey(CUi::HOTKEY_ESCAPE)) || CheckHotKey(KEY_Q))
-	{
-		if(UsedEscape || GameClient()->Editor()->HasUnsavedData() || (GameClient()->CurrentRaceTime() / 60 >= g_Config.m_ClConfirmQuitTime && g_Config.m_ClConfirmQuitTime >= 0))
-		{
+		if(Escape || (g_Config.m_ClConfirmQuitTime >= 0 && GameClient()->CurrentRaceTime() / 60 >= g_Config.m_ClConfirmQuitTime))
 			GameClient()->m_Menus.ShowQuitPopup();
-		}
 		else
-		{
 			Client()->Quit();
-		}
-	}
-
-	Menu.HSplitBottom(100.0f, &Menu, nullptr);
-	Menu.HSplitBottom(40.0f, &Menu, &Button);
-	static CButtonContainer s_SettingsButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_SettingsButton, Localize("Settings"), 0, &Button, BUTTONFLAG_LEFT, g_Config.m_ClShowStartMenuImages ? "settings" : nullptr, IGraphics::CORNER_ALL, Rounding, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || CheckHotKey(KEY_S))
-		NewPage = CMenus::PAGE_SETTINGS;
-
-	Menu.HSplitBottom(5.0f, &Menu, nullptr); // little space
-	Menu.HSplitBottom(40.0f, &Menu, &Button);
-	static CButtonContainer s_LocalServerButton;
-
-	const bool LocalServerRunning = GameClient()->m_LocalServer.IsServerRunning();
-	if(GameClient()->m_Menus.DoButton_Menu(&s_LocalServerButton, LocalServerRunning ? Localize("Stop server") : Localize("Run server"), 0, &Button, BUTTONFLAG_LEFT, g_Config.m_ClShowStartMenuImages ? "local_server" : nullptr, IGraphics::CORNER_ALL, Rounding, 0.5f, LocalServerRunning ? ColorRGBA(0.0f, 1.0f, 0.0f, 0.25f) : ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || (CheckHotKey(KEY_R) && Input()->KeyPress(KEY_R)))
-	{
-		if(LocalServerRunning)
-		{
-			GameClient()->m_LocalServer.KillServer();
-		}
-		else
-		{
-			GameClient()->m_LocalServer.RunServer({});
-		}
-	}
-
-	Menu.HSplitBottom(5.0f, &Menu, nullptr); // little space
-	Menu.HSplitBottom(40.0f, &Menu, &Button);
-	static CButtonContainer s_MapEditorButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_MapEditorButton, Localize("Editor"), 0, &Button, BUTTONFLAG_LEFT, g_Config.m_ClShowStartMenuImages ? "editor" : nullptr, IGraphics::CORNER_ALL, Rounding, 0.5f, GameClient()->Editor()->HasUnsavedData() ? ColorRGBA(0.0f, 1.0f, 0.0f, 0.25f) : ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || CheckHotKey(KEY_E))
-	{
-		g_Config.m_ClEditor = 1;
-		Input()->MouseModeRelative();
-	}
-
-	Menu.HSplitBottom(5.0f, &Menu, nullptr); // little space
-	Menu.HSplitBottom(40.0f, &Menu, &Button);
-	static CButtonContainer s_DemoButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_DemoButton, Localize("Demos"), 0, &Button, BUTTONFLAG_LEFT, g_Config.m_ClShowStartMenuImages ? "demos" : nullptr, IGraphics::CORNER_ALL, Rounding, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || CheckHotKey(KEY_D))
-	{
-		NewPage = CMenus::PAGE_DEMOS;
-	}
-
-	Menu.HSplitBottom(5.0f, &Menu, nullptr); // little space
-	Menu.HSplitBottom(40.0f, &Menu, &Button);
-	static CButtonContainer s_PlayButton;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_PlayButton, Localize("Play", "Start menu"), 0, &Button, BUTTONFLAG_LEFT, g_Config.m_ClShowStartMenuImages ? "play_game" : nullptr, IGraphics::CORNER_ALL, Rounding, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER) || CheckHotKey(KEY_P))
-	{
-		NewPage = g_Config.m_UiPage >= CMenus::PAGE_INTERNET && g_Config.m_UiPage <= CMenus::PAGE_FAVORITE_COMMUNITY_5 ? g_Config.m_UiPage : CMenus::PAGE_INTERNET;
 	}
 
 	// render version
@@ -155,16 +89,6 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	CurVersion.HSplitTop(5.0f, nullptr, &CurVersion);
 	ConsoleButton.VSplitRight(40.0f, nullptr, &ConsoleButton);
 	Ui()->DoLabel(&CurVersion, GAME_RELEASE_VERSION, 14.0f, TEXTALIGN_MR);
-
-	static CButtonContainer s_ConsoleButton;
-	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
-	if(GameClient()->m_Menus.DoButton_Menu(&s_ConsoleButton, FontIcon::TERMINAL, 0, &ConsoleButton, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.1f)))
-	{
-		GameClient()->m_GameConsole.Toggle(CGameConsole::CONSOLETYPE_LOCAL);
-	}
-	TextRender()->SetRenderFlags(0);
-	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 
 	CUIRect VersionUpdate;
 	MainView.HSplitBottom(20.0f, nullptr, &VersionUpdate);

@@ -1,3 +1,5 @@
+import { base58Decode, base58Encode } from "./economy.ts";
+
 /**
  * Neon Relay reward backend — configuration.
  *
@@ -29,6 +31,8 @@ export interface Config {
    * be accepted on trust alone.
    */
   serverSigningPublicKey: string | null;
+  /** Separate server identity attestation key; absent disables verified player links. */
+  gameIdentityPublicKey: string | null;
   /** Bearer token for operator routes (epoch sealing). Absent = disabled. */
   adminToken: string | null;
   /** Epoch length; events are assigned to the epoch open at ingestion time. */
@@ -40,6 +44,7 @@ export interface Config {
   rpcUrl: string;
   economyProgramId: string | null;
   skrMint: string | null;
+  potatoMint: string | null;
 }
 
 const num = (value: string | undefined, fallback: number): number => {
@@ -51,7 +56,22 @@ const num = (value: string | undefined, fallback: number): number => {
   return parsed;
 };
 
+function mintAddress(value: string | undefined, name: string): string | null {
+  if (value === undefined || value === "") return null;
+  try {
+    if (value.length < 32 || value.length > 44) throw new Error();
+    const raw = base58Decode(value);
+    if (raw.length !== 32 || raw.every((byte) => byte === 0) || base58Encode(raw) !== value) throw new Error();
+  } catch {
+    throw new Error(`${name} must be a canonical nonzero 32-byte base58 public key`);
+  }
+  return value;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
+  const skrMint = mintAddress(env.NEONRELAY_SKR_MINT, "NEONRELAY_SKR_MINT");
+  const potatoMint = mintAddress(env.NEONRELAY_POTATO_MINT, "NEONRELAY_POTATO_MINT");
+  if (skrMint !== null && skrMint === potatoMint) throw new Error("SKR and POTATO must use distinct mints");
   return {
     port: num(env.PORT, 8787),
     dbPath: env.NEONRELAY_DB ?? "var/neonrelay.db",
@@ -60,6 +80,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     sessionTtlMs: num(env.NEONRELAY_SESSION_TTL_MS, 12 * 60 * 60 * 1000),
     version: env.npm_package_version ?? "0.1.0",
     serverSigningPublicKey: env.NEONRELAY_SERVER_SIGNING_PUBLIC_KEY ?? null,
+    gameIdentityPublicKey: env.NEONRELAY_GAME_IDENTITY_PUBLIC_KEY ?? null,
     adminToken: env.NEONRELAY_ADMIN_TOKEN ?? null,
     epochMs: num(env.NEONRELAY_EPOCH_MS, 7 * 24 * 60 * 60 * 1000),
     capPerMatchMicro: num(env.NEONRELAY_CAP_PER_MATCH_MICRO, 50_000_000),
@@ -70,6 +91,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     economyProgramId: env.NEONRELAY_ECONOMY_PROGRAM_ID ?? null,
     // Operator-set SKR mint (Solana Mobile Seeker token). Never hardcoded;
     // devnet runs use a labelled test mint (BL-16).
-    skrMint: env.NEONRELAY_SKR_MINT ?? null,
+    skrMint,
+    potatoMint,
   };
 }

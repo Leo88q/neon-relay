@@ -26,9 +26,15 @@ void CMenus::RenderSettings(CUIRect MainView)
 {
 	// render background
 	CUIRect Button, TabBar, RestartBar;
-	MainView.VSplitRight(120.0f, &MainView, &TabBar);
-	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
-	MainView.Margin(20.0f, &MainView);
+	const bool Compact = MainView.w < 620.0f;
+	if(Compact)
+		MainView.HSplitTop(104.0f, &TabBar, &MainView);
+	else
+		MainView.VSplitRight(152.0f, &MainView, &TabBar);
+	MainView.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	CUIRect MainEdge = {MainView.x, MainView.y, MainView.w, 3.0f};
+	MainEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_T, 4.0f);
+	MainView.Margin(Compact ? 12.0f : 20.0f, &MainView);
 
 	const bool NeedRestart = m_NeedRestartGraphics || m_NeedRestartSound || m_NeedRestartUpdate;
 	if(NeedRestart)
@@ -37,31 +43,47 @@ void CMenus::RenderSettings(CUIRect MainView)
 		MainView.HSplitBottom(10.0f, &MainView, nullptr);
 	}
 
-	TabBar.HSplitTop(50.0f, &Button, &TabBar);
-	Button.Draw(ms_ColorTabbarActive, IGraphics::CORNER_BR, 10.0f);
+	if(!Compact)
+		TabBar.HSplitTop(12.0f, nullptr, &TabBar);
 
-	const char *apTabs[SETTINGS_LENGTH] = {
-		Localize("Language"),
-		Localize("General"),
-		Localize("Player"),
-		Client()->IsSixup() ? "Tee 0.7" : Localize("Tee"),
-		Localize("Appearance"),
-		Localize("Controls"),
-		Localize("Graphics"),
-		Localize("Sound"),
-		Localize("Neon Relay"),
-		Localize("Assets"),
-		Localize("Wallet"),
-		Localize("Credits")};
-	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
-
-	for(int i = 0; i < SETTINGS_LENGTH; i++)
+	// Persisted legacy settings IDs are normalized to the slim settings surface.
+	const int aPages[] = {SETTINGS_LANGUAGE, SETTINGS_GRAPHICS, SETTINGS_SOUND, SETTINGS_CONTROLS};
+	const char *apTabs[] = {Localize("Language"), Localize("Graphics"), Localize("Sound"), Localize("Controls")};
+	bool Allowed = false;
+	for(int Page : aPages)
+		Allowed |= g_Config.m_UiSettingsPage == Page;
+	if(!Allowed && g_Config.m_UiSettingsPage != SETTINGS_CREDITS)
+		g_Config.m_UiSettingsPage = SETTINGS_LANGUAGE;
+	static CButtonContainer s_aTabButtons[4];
+	for(int i = 0; i < 4; ++i)
 	{
-		TabBar.HSplitTop(10.0f, nullptr, &TabBar);
-		TabBar.HSplitTop(26.0f, &Button, &TabBar);
-		if(DoButton_MenuTab(&s_aTabButtons[i], apTabs[i], g_Config.m_UiSettingsPage == i, &Button, IGraphics::CORNER_R, &m_aAnimatorsSettingsTab[i]))
-			g_Config.m_UiSettingsPage = i;
+		if(Compact)
+		{
+			Button = TabBar;
+			Button.w = (TabBar.w - 8.0f) / 2.0f;
+			Button.h = 44.0f;
+			Button.x += (i % 2) * (Button.w + 8.0f);
+			Button.y += (i / 2) * 50.0f;
+		}
+		else
+		{
+			TabBar.HSplitTop(8.0f, nullptr, &TabBar);
+			TabBar.HSplitTop(44.0f, &Button, &TabBar);
+		}
+		if(DoButton_MenuTab(&s_aTabButtons[i], apTabs[i], g_Config.m_UiSettingsPage == aPages[i], &Button, IGraphics::CORNER_ALL))
+			g_Config.m_UiSettingsPage = aPages[i];
 	}
+	// Retain access to legal attribution, not asset/editor customization.
+	if(Compact)
+	{
+		MainView.HSplitBottom(44.0f, &MainView, &Button);
+		MainView.HSplitBottom(8.0f, &MainView, nullptr);
+	}
+	else
+		TabBar.HSplitBottom(44.0f, &TabBar, &Button);
+	static CButtonContainer s_Credits;
+	if(DoButton_Menu(&s_Credits, Localize("Credits"), 0, &Button))
+		g_Config.m_UiSettingsPage = SETTINGS_CREDITS;
 
 	if(g_Config.m_UiSettingsPage == SETTINGS_LANGUAGE)
 	{
@@ -151,7 +173,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		static CButtonContainer s_RestartButton;
 		if(DoButton_Menu(&s_RestartButton, Localize("Restart"), 0, &RestartButton))
 		{
-			if(Client()->State() == IClient::STATE_ONLINE || GameClient()->Editor()->HasUnsavedData())
+			if(Client()->State() == IClient::STATE_ONLINE)
 			{
 				m_Popup = POPUP_RESTART;
 			}
@@ -352,7 +374,7 @@ bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alp
 		Button.VSplitLeft(140.0f, &Label, &Button);
 		Label.VMargin(10.0f, &Label);
 
-		Button.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 1.0f);
+		Button.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 1.0f), IGraphics::CORNER_ALL, 4.0f);
 
 		CUIRect Rail;
 		Button.Margin(2.0f, &Rail);

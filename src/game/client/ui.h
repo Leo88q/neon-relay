@@ -112,11 +112,12 @@ class CDarkButtonColorFunction : public IButtonColorFunction
 public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
+		// New design Form A – Void #060A1C, Deck #0C1334, Cyan #5FE3F5
 		if(Active)
-			return ColorRGBA(0.15f, 0.15f, 0.15f, 0.25f);
+			return ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.35f); // Cyan active
 		else if(Hovered)
-			return ColorRGBA(0.5f, 0.5f, 0.5f, 0.25f);
-		return ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
+			return ColorRGBA(0.0706f, 0.1059f, 0.2745f, 0.85f); // Deck2 hover
+		return ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.94f); // Deck
 	}
 };
 class CLightButtonColorFunction : public IButtonColorFunction
@@ -125,10 +126,10 @@ public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
 		if(Active)
-			return ColorRGBA(1.0f, 1.0f, 1.0f, 0.4f);
+			return ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.55f);
 		else if(Hovered)
-			return ColorRGBA(1.0f, 1.0f, 1.0f, 0.6f);
-		return ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f);
+			return ColorRGBA(0.0706f, 0.1059f, 0.2745f, 0.65f);
+		return ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
 	}
 };
 class CScrollBarColorFunction : public IButtonColorFunction
@@ -137,10 +138,10 @@ public:
 	ColorRGBA GetColor(bool Active, bool Hovered) const override
 	{
 		if(Active)
-			return ColorRGBA(0.9f, 0.9f, 0.9f, 1.0f);
+			return ColorRGBA(0.92f, 0.68f, 0.12f, 1.0f);
 		else if(Hovered)
-			return ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-		return ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f);
+			return ColorRGBA(0.05f, 0.90f, 0.92f, 1.0f);
+		return ColorRGBA(0.05f, 0.90f, 0.92f, 0.75f);
 	}
 };
 
@@ -296,8 +297,8 @@ struct SPopupMenuId
 struct SPopupMenuProperties
 {
 	int m_Corners = IGraphics::CORNER_ALL;
-	ColorRGBA m_BorderColor = ColorRGBA(0.5f, 0.5f, 0.5f, 0.75f);
-	ColorRGBA m_BackgroundColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.75f);
+	ColorRGBA m_BorderColor = ColorRGBA(0.30f, 0.89f, 0.97f, 0.85f);
+	ColorRGBA m_BackgroundColor = ColorRGBA(0.06f, 0.09f, 0.16f, 0.96f);
 };
 
 /**
