@@ -8,6 +8,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { loadConfig, type Config } from "./config.ts";
 import { Db, migrate } from "./db.ts";
 import { AuthService, AuthFailure } from "./auth.ts";
+import { AdminError, adminConfigured } from "./admin.ts";
 import { RewardService, RewardsError } from "./rewards.ts";
 import { SessionStore } from "./sessions.ts";
 import { WalletStore } from "./wallets.ts";
@@ -66,6 +67,8 @@ export function createApp(config: Config = loadConfig()): App {
           { error: { code: err.code, message: err.message } });
       } else if (err instanceof RewardsError) {
         sendJson(res, err.status, { error: { code: err.code, message: err.message } });
+      } else if (err instanceof AdminError) {
+        sendJson(res, err.status, { error: { code: err.code, message: err.message } });
       } else {
         // never leak internals; the message goes to the log only
         console.error("unhandled error", err);
@@ -96,7 +99,10 @@ export function createApp(config: Config = loadConfig()): App {
 export async function main(): Promise<void> {
   const app = createApp();
   const port = await app.listen();
-  console.log(`neonrelay-backend listening on :${port} (domain ${app.config.authDomain})`);
+  const adminMode = app.config.operatorToken && app.config.superadminToken
+    ? "roles=operator+superadmin"
+    : adminConfigured(app.config) ? "roles=legacy-single-token" : "roles=disabled";
+  console.log(`neonrelay-backend listening on :${port} (domain ${app.config.authDomain}, ${adminMode})`);
   const shutdown = () => {
     void app.close().then(() => process.exit(0));
   };

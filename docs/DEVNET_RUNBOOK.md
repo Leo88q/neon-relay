@@ -82,7 +82,8 @@ may be the same operator keypair; see `docs/SOLANA_ARCHITECTURE.md` §7.
 ```bash
 cd backend
 NEONRELAY_SERVER_SIGNING_PUBLIC_KEY=<base64url pubkey of the stage-8 seed> \
-NEONRELAY_ADMIN_TOKEN=<operator bearer token> \
+NEONRELAY_OPERATOR_TOKEN=<propose + read bearer token> \
+NEONRELAY_SUPERADMIN_TOKEN=<approve + backup bearer token> \
 NEONRELAY_EPOCH_MS=604800000 \
 NEONRELAY_DB=var/neonrelay.db \
 npm start
@@ -120,14 +121,20 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 1. Ship JSONL lines to `POST /v1/rewards/events` (operator-controlled
    transport; the game server makes no network calls for rewards). Responses
    carry statuses `accepted | duplicate | rejected_*` (`docs/API.md`).
-2. At the epoch boundary, seal:
-   `POST /v1/rewards/epochs/seal {epoch_id}` with `NEONRELAY_ADMIN_TOKEN`.
-   The response contains `merkle_root` and a recomputed `audit_root` — they
-   must match, otherwise **stop and investigate** (ledger tampering or bug).
+2. At the epoch boundary, seal through the two-person workflow: an operator
+   proposes (`POST /v1/admin/proposals {type:"seal-reward-epoch",
+   params:{epoch_id}}` with `NEONRELAY_OPERATOR_TOKEN`) and a superadmin
+   approves (`POST /v1/admin/proposals/approve {proposal_id}` with
+   `NEONRELAY_SUPERADMIN_TOKEN`). The approval result contains `merkle_root`
+   and a recomputed `audit_root` — they must match, otherwise **stop and
+   investigate** (ledger tampering or bug). Economy closes work the same way
+   (`close-economy-epoch`); the pool is derived from vault state automatically.
 3. Publish the root on-chain:
-   `program.methods.publishEpoch(new BN(epochId), hexToBytes(merkleRoot))`
-   signed by the operator keypair. One-way: a second publish for the same
-   epoch fails by design.
+   `program.methods.publishEpoch(new BN(epochId), hexToBytes(merkleRoot), leafCount)`
+   signed by the operator keypair (`leaf_count` comes from the sealed epoch).
+   One-way: a second publish for the same epoch fails by design.
+4. Snapshot the ledger: `POST /v1/admin/backup` (superadmin) and copy the
+   file from `NEONRELAY_BACKUP_DIR` off-site before any paid epoch.
 
 ## 7. Player claim ⛓️
 

@@ -35,8 +35,13 @@ limitation.
       (`docs/REWARD_SECURITY.md` §8).
 - [ ] 🟠 Generate the operator Solana keypair (`config.authority`) offline;
       decide custody (hardware wallet / multisig) — it can publish roots.
-- [ ] 🟠 Set `NEONRELAY_ADMIN_TOKEN` (seal route) to a strong secret; store
-      outside the repo.
+- [ ] 🟠 Set `NEONRELAY_OPERATOR_TOKEN` and `NEONRELAY_SUPERADMIN_TOKEN`
+      (distinct strong secrets; proposal workflow, constant-time auth,
+      append-only audit) and store them outside the repo. The legacy single
+      `NEONRELAY_ADMIN_TOKEN` is devnet-only.
+- [ ] 🟠 Copy SQLite snapshots from `POST /v1/admin/backup`
+      (`NEONRELAY_BACKUP_DIR`) off-site on a schedule, and run a restore
+      drill before the first paid epoch.
 - [ ] 🔴 **Program upgrade authority**: before any non-devnet deployment,
       transfer to a multisig or renounce (`docs/THREAT_MODEL.md` §6 residual).
 - [ ] ✅ No secret material in the repository:

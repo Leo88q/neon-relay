@@ -82,13 +82,20 @@ successes.
 
 ## 6. Epochs, Merkle roots and claims
 
-Sealing (`POST /v1/rewards/epochs/seal`, operator token only):
+Sealing (Tranche-A proposal workflow: an operator proposes
+`seal-reward-epoch`, a superadmin approves and the approval executes):
 
 1. sum accepted events per `wallet_binding_id`;
 2. leaf = `SHA256(publicKeyBytes(32) || u64be(amount))`;
 3. leaves ordered by binding id, padded by duplication to a power of two;
 4. binary SHA-256 tree; root stored on the epoch with `total_micro` and
    `leaf_count`; leaves stored with their indices.
+
+The sealed `leaf_count` travels on-chain with the root
+(`publish_epoch(epoch_id, root, leaf_count)`): claims enforce the exact proof
+depth derived from it plus `leaf_index < leaf_count`, so short proofs on the
+padded tree can never verify. Every proposal step is mirrored into the
+append-only `admin_audit` log (`docs/API.md` §Admin).
 
 Claiming:
 
@@ -121,7 +128,7 @@ from stored leaves — anyone can re-derive a root and detect ledger tampering.
 | inflated leaf amounts | leaves derived only from `accepted` events; caps bound the input; `total_micro` equals the leaf sum (asserted by tests) |
 | stolen claim proof | a proof only proves membership; payment requires the wallet signature of the leaf's public key on-chain |
 | double claim | on-chain claim PDA (stage 9); backend intent unique per binding+epoch |
-| operator abuse of seal | operator route requires `NEONRELAY_ADMIN_TOKEN`; seal is idempotent-refusing and fully auditable via stored events/leaves |
+| operator abuse of seal | two-person workflow (`NEONRELAY_OPERATOR_TOKEN` proposes, `NEONRELAY_SUPERADMIN_TOKEN` approves; constant-time auth); seal is idempotent-refusing and fully auditable via stored events/leaves plus the append-only `admin_audit` log |
 | backend DB tampering | `audit_root` recomputation, stored rejected events, forward-only migrations |
 | unbounded ingestion DoS | per-IP token bucket; batch size ≤ 500; signature verification is constant-work |
 
@@ -130,9 +137,9 @@ from stored leaves — anyone can re-derive a root and detect ledger tampering.
 The backend holds **no** signing key of its own: it only verifies. The operator
 authority lives in the Anchor program (`config.authority`, set once at
 `initialize`): only that Solana keypair can publish epoch roots or pause
-claims; the backend's seal API is gated by its own operator token, so a root
-reaches the chain only when both sides agree. Treasury/mainnet credentials
-never appear in this repository, its CI variables or its logs.
+claims; the backend's seal API is gated by the two-person proposal workflow,
+so a root reaches the chain only when both sides agree. Treasury/mainnet
+credentials never appear in this repository, its CI variables or its logs.
 
 The game-server signer (stage 8) is **off by default** and inert until an
 operator opts in:

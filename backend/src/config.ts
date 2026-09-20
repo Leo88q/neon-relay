@@ -35,6 +35,18 @@ export interface Config {
   gameIdentityPublicKey: string | null;
   /** Bearer token for operator routes (epoch sealing). Absent = disabled. */
   adminToken: string | null;
+  /**
+   * Tranche-A role split. When set, `operatorToken` may create admin
+   * proposals and read audit data, while `superadminToken` alone may approve
+   * (execute) them. `adminToken` is the legacy single token and acts as a
+   * superadmin; configure the two role tokens to enforce separation.
+   */
+  operatorToken: string | null;
+  superadminToken: string | null;
+  /** How long a proposed admin action waits for approval before expiring. */
+  adminProposalTtlMs: number;
+  /** Directory for SQLite hot backups created via POST /v1/admin/backup. */
+  backupDir: string;
   /** Epoch length; events are assigned to the epoch open at ingestion time. */
   epochMs: number;
   /** Reward caps, in micro units (1e-6 of the reward mint unit). */
@@ -72,16 +84,31 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const skrMint = mintAddress(env.NEONRELAY_SKR_MINT, "NEONRELAY_SKR_MINT");
   const potatoMint = mintAddress(env.NEONRELAY_POTATO_MINT, "NEONRELAY_POTATO_MINT");
   if (skrMint !== null && skrMint === potatoMint) throw new Error("SKR and POTATO must use distinct mints");
+  // Tranche-A fail-fast: the .example placeholder domain must never authenticate
+  // real wallets. Production refuses to boot without an explicit domain.
+  const production = env.NODE_ENV === "production";
+  const authDomain = env.NEONRELAY_AUTH_DOMAIN;
+  if (authDomain === undefined || authDomain === "") {
+    if (production) {
+      throw new Error("NEONRELAY_AUTH_DOMAIN must be set in production (refusing the .example placeholder)");
+    }
+  } else if (production && authDomain.endsWith(".example")) {
+    throw new Error("NEONRELAY_AUTH_DOMAIN must not use the .example placeholder in production");
+  }
   return {
     port: num(env.PORT, 8787),
     dbPath: env.NEONRELAY_DB ?? "var/neonrelay.db",
-    authDomain: env.NEONRELAY_AUTH_DOMAIN ?? "neonrelay.leo88q.example",
+    authDomain: authDomain ?? "neonrelay.leo88q.example",
     challengeTtlMs: num(env.NEONRELAY_CHALLENGE_TTL_MS, 120_000),
     sessionTtlMs: num(env.NEONRELAY_SESSION_TTL_MS, 12 * 60 * 60 * 1000),
     version: env.npm_package_version ?? "0.1.0",
     serverSigningPublicKey: env.NEONRELAY_SERVER_SIGNING_PUBLIC_KEY ?? null,
     gameIdentityPublicKey: env.NEONRELAY_GAME_IDENTITY_PUBLIC_KEY ?? null,
     adminToken: env.NEONRELAY_ADMIN_TOKEN ?? null,
+    operatorToken: env.NEONRELAY_OPERATOR_TOKEN ?? null,
+    superadminToken: env.NEONRELAY_SUPERADMIN_TOKEN ?? null,
+    adminProposalTtlMs: num(env.NEONRELAY_ADMIN_PROPOSAL_TTL_MS, 24 * 60 * 60 * 1000),
+    backupDir: env.NEONRELAY_BACKUP_DIR ?? "var/backups",
     epochMs: num(env.NEONRELAY_EPOCH_MS, 7 * 24 * 60 * 60 * 1000),
     capPerMatchMicro: num(env.NEONRELAY_CAP_PER_MATCH_MICRO, 50_000_000),
     capDailyMicro: num(env.NEONRELAY_CAP_DAILY_MICRO, 250_000_000),

@@ -113,11 +113,64 @@ player, reset timestamps and `can_earn`.
 
 ### GET /v1/rewards/epochs
 Public list: `{id, state, started_at, ended_at, sealed_at, merkle_root, total_micro, leaf_count}`.
+Optional pagination: `?limit=1..200&offset=n` returns
+`{ epochs, pagination: { limit, offset, total } }` instead of the bare array.
 
-### POST /v1/rewards/epochs/seal  (operator)
-`Authorization: Bearer $NEONRELAY_ADMIN_TOKEN`, body `{ "epoch_id": n }`.
-One-way; returns `{ epoch, audit_root }`. Missing token config → `503`,
-wrong token → `403`, already sealed → `409`.
+### POST /v1/rewards/epochs/seal — removed (410)
+Direct sealing was replaced by the two-person proposal workflow
+(`POST /v1/admin/proposals` + approve). The old path answers
+`410 admin-workflow-required` with migration guidance, never a silent stub.
+
+## Admin (Tranche A: roles, proposals, audit, backups)
+
+Admin tokens: `NEONRELAY_OPERATOR_TOKEN` (propose + read) and
+`NEONRELAY_SUPERADMIN_TOKEN` (approve/reject + backup). The legacy
+`NEONRELAY_ADMIN_TOKEN` acts as a superadmin. Authentication is constant-time;
+unknown tokens and wrong roles both answer `403 admin-forbidden`, missing
+configuration answers `503 admin-disabled`. Secrets never touch the database:
+audit attribution uses sha256 fingerprints.
+
+### POST /v1/admin/proposals  (operator+)
+Body `{ "type": "seal-reward-epoch" | "close-economy-epoch", "params": { … } }`
+with `params = { epoch_id }` for seals and `{ epoch }` for closes.
+Returns the open proposal (default TTL 24h, `NEONRELAY_ADMIN_PROPOSAL_TTL_MS`).
+Bad type → `400 bad-proposal-type`, bad params → `400 bad-request`.
+
+### POST /v1/admin/proposals/approve  (superadmin)
+Body `{ "proposal_id": "uuid" }`. Executes the action and returns
+`{ row, result, selfApproved }`. With split role tokens the approver must
+differ from the proposer (`403 distinct-approver-required`); single-token
+setups may self-approve, flagged in the audit log. Approving an expired
+proposal marks it expired → `410 proposal-expired`. If execution itself
+fails (e.g. `409 epoch-already-sealed`), the proposal stays open and the
+failure is audited.
+
+### POST /v1/admin/proposals/reject  (superadmin)
+Body `{ "proposal_id": "uuid", "reason?": "…" }`. Marks the proposal rejected
+without executing; approving afterwards → `409 proposal-rejected`.
+
+### GET /v1/admin/proposals  (operator+)
+`{ proposals, pagination: { limit, offset, total } }`; supports
+`?limit=&offset=` (defaults 50/0, max 200). Open proposals past their expiry
+read back as `expired`.
+
+### GET /v1/admin/audit  (operator+)
+Append-only audit log (SQL triggers forbid UPDATE/DELETE):
+`{ entries: [{ id, created_at, actor_role, actor_hash, action, proposal_id,
+params, result, request_ip }], pagination }`. Actions: `proposal-created`,
+`proposal-approved`, `proposal-rejected`, `proposal-expired`,
+`proposal-approve-failed`, `backup-created`.
+
+### POST /v1/admin/backup  (superadmin)
+Hot SQLite snapshot (`VACUUM INTO`) into `NEONRELAY_BACKUP_DIR`
+(default `var/backups`). Returns `{ file, bytes, sha256, created_at }`.
+Off-site copying is an operator step (see `DEVNET_RUNBOOK.md`).
+
+### GET /v1/admin/backups  (operator+)
+`{ backups: [{ file, bytes, modified_at }] }` (newest first, capped at 200).
+
+### GET /v1/admin/ledger-stats  (operator+)
+`{ db_bytes, tables: { <table>: <rows> } }` for ledger-size monitoring.
 
 ### POST /v1/rewards/claim-intent  (bearer)
 Body `{ "epoch_id": n }` → `{ intent_id, epoch_id, amount_micro, leaf_hash,
@@ -132,7 +185,8 @@ Body `{ "intent_id", "transaction_id", "status": "submitted|confirmed|failed" }`
 `409 intent-already-confirmed` on repeat confirmation.
 
 ### GET /v1/rewards/intents  (bearer)
-All intents of the session's wallet binding.
+All intents of the session's wallet binding. Optional `?limit=&offset=`
+pagination adds a `pagination: { limit, offset, total }` field.
 
 ## On-chain hand-off (stage 9)
 
@@ -151,8 +205,8 @@ All economy routes require a wallet session unless noted; all return
 | --- | --- | --- |
 | `GET /v1/economy/reference?kind=&epoch=&extra=` | session | entry-payment reference (SHA256(kind‖epoch‖extra‖wallet)) for `pay_entry` |
 | `GET /v1/economy/ticket?kind=&epoch=&extra=` | session | on-chain EntryTicket status (PDA read over RPC): `{ticketed, kind, amountMicro, paidAt}` |
-| `POST /v1/economy/epoch-close` `{epoch, poolMicro}` | admin token | ranks accepted reward events, keeps ticketed wallets, applies the top-10 table, stores the Merkle root + distribution for the operator publish step |
-| `GET /v1/economy/epochs` | public | closed prize epochs (root + total) |
+| `POST /v1/economy/epoch-close` | — (410) | removed: closes run through `POST /v1/admin/proposals {type:"close-economy-epoch"}` + superadmin approval; the pool is derived from vault balance minus reservations over RPC, never from the request |
+| `GET /v1/economy/epochs` | public | closed prize epochs (root + total); optional `?limit=&offset=` pagination adds a `pagination` field |
 | `GET /v1/economy/current-epoch` | public | current epoch index (`floor(now / epochMs)`) used by entry references |
 | `POST /v1/economy/match-intent` `{epoch?}` | session | creates a per-match record, returns `{matchId, epoch, reference}` for `pay_entry` |
 | `GET /v1/economy/proof?epoch=&wallet=` | public | place, amount, leaf index and Merkle proof for `claim_prize` (public by design: reveals only the caller's own leaf, already committed in the root; used by the on-device claim flow) |

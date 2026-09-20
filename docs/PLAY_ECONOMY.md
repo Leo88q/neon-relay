@@ -70,15 +70,38 @@ server-side (spec §5); the chain only holds money and published results.
 
 * Rake default **1000 bps (10%)**, operator-adjustable via `set_params`,
   hard-capped at **2000 bps (20%)** in the program.
-* Epoch prize pool = vault balance grown by entry prizes during the epoch.
+* Epoch prize pool = **vault balance minus aggregate on-chain reservations**,
+  read from finalized chain state at close time (`readVaultPool`: config
+  account → vault address + `reserved`, then vault token balance). The pool is
+  never operator-supplied: `poolMicro` in a request is rejected, and the
+  vault snapshot (address, balance, reserved) is stored next to every closed
+  epoch for later reconciliation. `publish_prizes` re-checks coverage
+  on-chain, so an RPC race can only fail closed, never over-allocate.
 * Approved share table (basis points of the pool, places 1→10):
   **2500 / 1800 / 1400 / 1100 / 900 / 700 / 600 / 500 / 300 / 200** (sums to
   10000 = 100%; exported as `PRIZE_TABLE_BPS` in `onchain/src/constants.ts`).
-* Epoch close job (backend, stage 15): freeze leaderboard → amounts =
-  pool × share → leaves `SHA256(wallet || amount_be)` → padded Merkle tree →
-  `publish_prizes(epoch, root, total)` (one-way; `total` must be ≤ vault
-  balance) → players claim with indexed proofs; a Claim PDA per
-  `(epoch, player)` blocks double claims.
+* **Leftover policy: redistribution (Tranche A).** With fewer than 10 ticketed
+  winners, the occupied places' shares rescale to 100%:
+  `amount[i] = floor(pool × bps[i] / sum(occupied bps))`, and the
+  integer-division dust (always < n units) goes +1 to the largest remainders,
+  ties broken by rank. A full 10-winner close is identical to the raw table;
+  a lone winner takes the whole pool. Rationale: the alternatives strand
+  funds — carry-over needs cross-epoch vault accounting, refunds need a
+  separate instruction — while redistribution keeps every close fully
+  accounted: distributed total always equals the pool. Two documented edges:
+  dust pools (pool < winner count) may round tail places to zero — those
+  winners get no leaf and the remainder stays vaulted; zero eligible winners
+  refuse the close entirely and the pool rolls into the next epoch's vault
+  balance. Covered by `backend/test/economy.test.ts` (1/2/3/7/10 winners,
+  dust, unpaid-leader exclusion, empty close).
+* Epoch close job (backend, stage 15; Tranche-A workflow): an operator
+  proposes `close-economy-epoch`, a superadmin approves → freeze leaderboard
+  → vault-derived pool → redistributed amounts → leaves
+  `SHA256(wallet || amount_be)` → padded Merkle tree →
+  `publish_prizes(epoch, root, total, leaf_count)` (one-way; `total` must be ≤
+  free vault balance; `leaf_count` binds the exact proof depth) → players
+  claim with indexed proofs; a Claim PDA per `(epoch, player)` blocks double
+  claims.
 * Top-10 players additionally receive the existing supply-1 badge tokens as
   non-transferable glory (features program).
 

@@ -80,17 +80,22 @@ pub mod neonrelay_rewards {
 	/// Operator-only: publish the Merkle root of a sealed backend epoch.
 	/// One-way — re-publishing the same `epoch_id` fails because the epoch PDA
 	/// already exists. An all-zero root is rejected.
-	pub fn publish_epoch(ctx: Context<PublishEpoch>, epoch_id: u64, root: [u8; 32]) -> Result<()> {
+	///
+	/// Tranche A: `leaf_count` (the sealed backend leaf total) is bound into
+	/// the epoch so `claim` enforces the exact proof depth derived from it —
+	/// short proofs on the padded tree can never verify.
+	pub fn publish_epoch(ctx: Context<PublishEpoch>, epoch_id: u64, root: [u8; 32], leaf_count: u32) -> Result<()> {
 		require!(root != [0u8; 32], NeonRelayError::EmptyRoot);
+		require!(leaf_count > 0, NeonRelayError::InvalidLeafCount);
 		let epoch = &mut ctx.accounts.epoch;
 		epoch.id = epoch_id;
 		epoch.root = root;
 		epoch.published_at = Clock::get()?.unix_timestamp;
 		epoch.bump = ctx.bumps.epoch;
-		epoch.leaf_count = 0; // HIGH-05 fix: leaf_count for exact proof depth check (future publish with count)
+		epoch.leaf_count = leaf_count;
 		let config = &mut ctx.accounts.config;
 		config.epoch_count = config.epoch_count.checked_add(1).ok_or(NeonRelayError::Overflow)?;
-		emit!(EpochPublished { epoch_id, root });
+		emit!(EpochPublished { epoch_id, root, leaf_count });
 		Ok(())
 	}
 
@@ -145,11 +150,12 @@ pub mod neonrelay_rewards {
 		// MEDIUM-01 fix: vault not frozen (initialized state)
 		require!(ctx.accounts.vault.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
 		require!(ctx.accounts.player_token_account.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
-		// MEDIUM-02 fix: exact depth check when leaf_count known (prevents short proof attack on padded tree)
-		if ctx.accounts.epoch.leaf_count != 0 {
-			let depth = (ctx.accounts.epoch.leaf_count as u32).next_power_of_two().trailing_zeros() as usize;
-			require!(proof.len() == depth, NeonRelayError::ProofInvalid);
-		}
+		// Tranche A: exact depth + index bound, unconditional. leaf_count is
+		// always bound at publish time, so a short proof on the padded tree
+		// (or an out-of-range leaf index) can never verify.
+		let depth = ctx.accounts.epoch.leaf_count.next_power_of_two().trailing_zeros() as usize;
+		require!(proof.len() == depth, NeonRelayError::ProofInvalid);
+		require!(leaf_index < ctx.accounts.epoch.leaf_count, NeonRelayError::ProofInvalid);
 
 		let epoch = &ctx.accounts.epoch;
 		require!(epoch.id == epoch_id, NeonRelayError::EpochMismatch);
@@ -394,6 +400,7 @@ pub struct Initialized {
 pub struct EpochPublished {
 	pub epoch_id: u64,
 	pub root: [u8; 32],
+	pub leaf_count: u32,
 }
 
 #[event]
@@ -453,6 +460,9 @@ pub enum NeonRelayError {
 	TimelockNotExpired,
 	#[msg("vault is frozen")]
 	VaultFrozen,
+	// Appended last so existing error discriminants stay stable.
+	#[msg("leaf count must be greater than zero")]
+	InvalidLeafCount,
 }
 
 // ---------------------------------------------------------------- unit tests
@@ -480,6 +490,15 @@ mod tests {
 		let leaf = merkle_leaf(&wallet, 1200);
 		let expected = hex(&std::fs::read_to_string("tests/golden_leaf.txt").unwrap().trim());
 		assert_eq!(leaf, expected);
+	}
+
+	#[test]
+	fn proof_depth_matches_backend_padding() {
+		// depth = trailing zeros of next_power_of_two(leaf_count):
+		// 1 leaf -> empty proof, 2 -> 1 sibling, 3..4 -> 2, 5..8 -> 3, 9..16 -> 4.
+		for (leaves, depth) in [(1u32, 0usize), (2, 1), (3, 2), (4, 2), (7, 3), (8, 3), (10, 4)] {
+			assert_eq!(leaves.next_power_of_two().trailing_zeros() as usize, depth);
+		}
 	}
 
 	#[test]

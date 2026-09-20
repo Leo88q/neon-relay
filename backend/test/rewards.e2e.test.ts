@@ -6,10 +6,11 @@ import {
 import { verifyProofIndexed, leafHash } from "../src/merkle.ts";
 import type { Config } from "../src/config.ts";
 
-function rewardConfig(serverKey: string): Partial<Config> {
+export function rewardConfig(serverKey: string): Partial<Config> {
   return {
     serverSigningPublicKey: serverKey,
-    adminToken: "operator-token",
+    operatorToken: "operator-token",
+    superadminToken: "superadmin-token",
     epochMs: 3_600_000,
     capPerMatchMicro: 1_000,
     capDailyMicro: 1_500,
@@ -110,24 +111,55 @@ test("reward lifecycle: sign, ingest, caps, seal, claim, confirm", async () => {
     assert.equal(earlyClaim.status, 409);
     assert.equal(earlyClaim.json.error.code, "epoch-not-sealed");
 
-    const noAdmin = await postJson(base, "/v1/rewards/epochs/seal", { epoch_id: epochId });
+    // Tranche A: sealing runs through the two-person proposal workflow.
+    const gone = await postJson(base, "/v1/rewards/epochs/seal",
+      { epoch_id: epochId }, "operator-token");
+    assert.equal(gone.status, 410);
+    assert.equal(gone.json.error.code, "admin-workflow-required");
+
+    const noAdmin = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } });
     assert.equal(noAdmin.status, 403);
-    const wrongAdmin = await postJson(base, "/v1/rewards/epochs/seal",
-      { epoch_id: epochId }, "not-the-operator");
+    const wrongAdmin = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "not-the-operator");
     assert.equal(wrongAdmin.status, 403);
 
-    const sealed = await postJson(base, "/v1/rewards/epochs/seal",
-      { epoch_id: epochId }, "operator-token");
-    assert.equal(sealed.status, 200);
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "operator-token");
+    assert.equal(proposed.status, 200);
+    assert.equal(proposed.json.status, "open");
+    const proposalId = proposed.json.id as string;
+
+    // Operators cannot approve, even their own proposal (role split enforced).
+    const selfApprove = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposalId }, "operator-token");
+    assert.equal(selfApprove.status, 403);
+
+    const approved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposalId }, "superadmin-token");
+    assert.equal(approved.status, 200);
+    assert.equal(approved.json.row.status, "executed");
+    assert.equal(approved.json.selfApproved, false);
+    const sealed = { status: 200, json: approved.json.result };
     assert.equal(sealed.json.epoch.state, "sealed");
     assert.equal(sealed.json.epoch.total_micro, 1_200);
     assert.equal(sealed.json.epoch.leaf_count, 1);
     assert.match(sealed.json.epoch.merkle_root, /^[0-9a-f]{64}$/);
     assert.equal(sealed.json.audit_root, sealed.json.epoch.merkle_root);
 
-    const resealed = await postJson(base, "/v1/rewards/epochs/seal",
-      { epoch_id: epochId }, "operator-token");
-    assert.equal(resealed.status, 409);
+    const reapproved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposalId }, "superadmin-token");
+    assert.equal(reapproved.status, 409);
+    assert.equal(reapproved.json.error.code, "proposal-executed");
+
+    // Sealing an already-sealed epoch fails inside approval (proposal stays
+    // open, the failure is audited) instead of double-sealing.
+    const dupSeal = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "operator-token");
+    const dupApprove = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: dupSeal.json.id }, "superadmin-token");
+    assert.equal(dupApprove.status, 409);
+    assert.equal(dupApprove.json.error.code, "epoch-already-sealed");
 
     // ---- balance moves pending -> available
     const balanceSealed = await getJson(base, "/v1/rewards/balance", token);
