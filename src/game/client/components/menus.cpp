@@ -2461,7 +2461,9 @@ void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, Co
 	Graphics()->QuadsEnd();
 	}
 
-	// Subtle raster / glass line
+	// Subtle raster / glass line – skip for character frames to keep portrait bright
+	if(!SkipBg)
+	{
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(0.3725f, 0.8902f, 0.9608f, 0.06f);
@@ -2474,6 +2476,7 @@ void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, Co
 		}
 	}
 	Graphics()->QuadsEnd();
+	}
 
 	// Border – 2px chamfered frame, more visible on iOS
 	Graphics()->TextureClear();

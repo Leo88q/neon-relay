@@ -242,7 +242,7 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 
 	// Light background behind character – not dark, so portrait is bright
 	CUIRect Bg = Rect;
-	Bg.Draw(ColorRGBA(0.0706f, 0.1059f, 0.2745f, 0.85f), IGraphics::CORNER_ALL, 10.0f);
+	Bg.Draw(ColorRGBA(0.12f, 0.18f, 0.32f, 0.88f), IGraphics::CORNER_ALL, 10.0f); // lighter, not dark, so portrait bright
 
 	CUIRect Inner = Rect;
 	Inner.Margin(6.0f, &Inner);
@@ -334,11 +334,11 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		else if(Entry.m_PriceSkr == 2000) { BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); ImpulseColor = BorderColor; ImpulseDur = 6.0f; }
 
 		bool IsSelected = s_Selected == i;
-		// Draw card panel
+		// Draw card panel – lighter for bright portraits, not dark blurred
 		{
 			float t = (time_get() / (float)time_freq());
 			float prog = std::fmod(t, ImpulseDur) / ImpulseDur;
-			RenderFormAPanel(Card, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), BorderColor, true, IsSelected, prog, ImpulseColor);
+			RenderFormAPanel(Card, 12.0f, ColorRGBA(0.09f, 0.14f, 0.26f, 0.85f), BorderColor, true, IsSelected, prog, ImpulseColor);
 		}
 		if(DoButton_Menu(&s_aSelect[i], "", IsSelected, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.0f)))
 		{ s_Selected = i; if(Compact) s_DetailOpen = true; }
