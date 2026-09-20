@@ -3,10 +3,12 @@
  * Two directions, one boundary:
  *   Kotlin → native : NativeBridge.pushWalletEvent → neonrelay_wallet_push_event
  *                     (only the sanitized JSON of src/neonrelay/wallet_bridge.h).
- *   native → Kotlin : neonrelay_wallet_platform_request / _economy (in-game
- *                     Wallet page) → NativeBridge.requestWalletConnect /
- *                     requestWalletDisconnect / requestEconomy, which drive the
- *                     Mobile Wallet Adapter flow.
+ *   native → Kotlin : neonrelay_wallet_platform_request / _economy /
+ *                     _rewards_claim (in-game Wallet page) →
+ *                     NativeBridge.requestWalletConnect /
+ *                     requestWalletDisconnect / requestEconomy /
+ *                     requestRewardsClaim, which drive the Mobile Wallet
+ *                     Adapter flow.
  *
  * JNI_OnLoad ownership: the statically linked SDL2 (ddnet-libs, SDL_android.c)
  * already exports JNI_OnLoad for libneonrelay.so, so this shim must NOT define
@@ -115,6 +117,27 @@ void neonrelay_wallet_platform_economy(const char *json)
 	if(!pEnv)
 		return;
 	jmethodID method = BridgeMethod(pEnv, "requestEconomy", "(Ljava/lang/String;)V");
+	if(!method)
+		return;
+	jstring payload = pEnv->NewStringUTF(json ? json : "{}");
+	if(payload)
+	{
+		pEnv->CallStaticVoidMethod(s_pBridgeClass, method, payload);
+		pEnv->DeleteLocalRef(payload);
+	}
+	if(pEnv->ExceptionCheck())
+		pEnv->ExceptionClear();
+}
+
+/* Implemented in wallet_bridge.h's contract: forward the in-game Wallet page
+ * rewards claim request (claim-intent fields as JSON, no session token) to
+ * the Kotlin layer. */
+void neonrelay_wallet_platform_rewards_claim(const char *json)
+{
+	JNIEnv *pEnv = AttachWalletEnv();
+	if(!pEnv)
+		return;
+	jmethodID method = BridgeMethod(pEnv, "requestRewardsClaim", "(Ljava/lang/String;)V");
 	if(!method)
 		return;
 	jstring payload = pEnv->NewStringUTF(json ? json : "{}");

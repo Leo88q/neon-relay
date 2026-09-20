@@ -109,14 +109,24 @@ and `data/mapres/*` (gameplay maps need artists or a map generator),
 `game.png` and `data/themes/*.map` (BL-14). All stay block-release in
 docs/ASSET_MANIFEST.csv until replaced or licensed.
 
-### BL-17 — MWA economy flow awaits on-device verification
+### BL-17 — MWA flows await on-device verification
 Stage 17 implemented the on-device builder (EconomyTxBuilder.kt: base58, PDA
 with RFC 8032 on-curve test, ATA derivation, Anchor Borsh payloads, legacy
 message compilation) plus the match-intent channel and public proof route.
-The Kotlin/Android layer cannot be compiled or device-tested in the offline
-sandbox (no Gradle/JVM toolchain, BL-06), so the flow awaits a physical
-Seeker/wallet-app dry run per docs/DEVNET_RUNBOOK.md §5 before mainnet money
-(BL-16 gate still applies).
+The rewards `claim` builder followed the same pattern (RewardsTxBuilder.kt:
+rewards PDAs with big-endian epoch seeds, config/epoch parsing, client-side
+proof pre-verification, 9-account claim message; `runRewardsClaim` sends via
+`signAndSendTransactions` and returns the signature for claim-confirmation).
+Its contract is pinned offline against the program source
+(`onchain/test/rewards_claim.test.ts`, `backend/test/rewards_pda.test.ts`),
+and the `signAndSendTransactions` call shape was corrected to the pinned
+clientlib-ktx 2.x API (single transactions argument,
+`result.signatures: Array<ByteArray>` — verified against upstream sources).
+The Kotlin/Android layer still cannot be compiled or device-tested in the
+offline sandbox (no Gradle/JVM toolchain, BL-06), so both flows await the
+first Gradle build plus a physical Seeker/wallet-app dry run per
+docs/DEVNET_RUNBOOK.md §5/§7 before mainnet money (BL-16 gate still
+applies).
 
 ### BL-16 — SKR mainnet money gated on compliance sign-off
 The economy program is mint-agnostic by design: the SKR (Solana Mobile Seeker

@@ -6,12 +6,17 @@
 //
 //   { "connected": 0|1, "account_label": "<display name>",
 //     "public_key_base64": "<base64 of the account public key>",
-//     "error_message": "<short, user-safe text>" }
+//     "error_message": "<short, user-safe text>",
+//     "transaction_signature": "<base58 tx signature, rewards claims only>" }
 //
-// Auth tokens, signatures, challenge payloads and anything else the wallet
-// returns are stripped on the Kotlin side before `neonrelay_wallet_push_event`
-// is called (see android/app/src/main/cpp/neonrelay_wallet_jni.cpp and
-// WalletManager.kt). No private key material ever exists in this process.
+// Auth tokens, challenge payloads and message signatures are stripped on the
+// Kotlin side before `neonrelay_wallet_push_event` is called (see
+// android/app/src/main/cpp/neonrelay_wallet_jni.cpp and WalletManager.kt).
+// The one exception is transaction_signature: a *transaction* signature is
+// public chain data (readable by anyone on Solana), not a secret, and the
+// game needs it to post claim confirmations
+// (POST /v1/rewards/claim-confirmation). No private key material ever exists
+// in this process.
 //
 #ifndef NEONRELAY_WALLET_BRIDGE_H
 #define NEONRELAY_WALLET_BRIDGE_H
@@ -26,6 +31,7 @@ enum
 	NEONRELAY_WALLET_EVENT_CONNECTED = 1,
 	NEONRELAY_WALLET_EVENT_ERROR = 2,
 	NEONRELAY_WALLET_EVENT_ECONOMY = 3,
+	NEONRELAY_WALLET_EVENT_REWARDS_CLAIM = 4,
 };
 
 typedef struct NeonRelayWalletInfo
@@ -33,6 +39,9 @@ typedef struct NeonRelayWalletInfo
 	char account_label[64];
 	char public_key_base64[64];
 	char error_message[128];
+	/* Base58 transaction signature (public chain data), set only on
+	 * NEONRELAY_WALLET_EVENT_REWARDS_CLAIM success; empty otherwise. */
+	char transaction_signature[128];
 	int connected;
 	/* 1 while a connect/disconnect request is waiting for the wallet layer to
 	 * answer with an event; reset by every pushed event. */
@@ -66,8 +75,22 @@ void neonrelay_wallet_request_disconnect(void);
  */
 void neonrelay_wallet_request_economy(const char *json);
 
+/**
+ * Ask the platform wallet layer to run a rewards claim (DEVNET_RUNBOOK §7)
+ * described by a sanitized JSON payload: {"programId": "<base58>",
+ * "rpcUrl": "<https>", "epoch": N, "amountMicro": M, "leafIndex": I,
+ * "proof": ["<hex>", ...]}. The game fetches the claim intent over its own
+ * authenticated backend channel first; the session token never crosses this
+ * boundary. The result arrives as NEONRELAY_WALLET_EVENT_REWARDS_CLAIM with
+ * `transaction_signature` set on success.
+ */
+void neonrelay_wallet_request_rewards_claim(const char *json);
+
 /** Platform hook implemented per backend (JNI on Android, stub elsewhere). */
 void neonrelay_wallet_platform_economy(const char *json);
+
+/** Platform hook implemented per backend (JNI on Android, stub elsewhere). */
+void neonrelay_wallet_platform_rewards_claim(const char *json);
 
 /* Implemented per platform: Android in android/app/src/main/cpp/
  * neonrelay_wallet_jni.cpp, other platforms by a stub inside

@@ -59,10 +59,11 @@ limitation.
       (127 clean / 1 skip / 0 fail).
 - [ ] ✅ Signer cross-verification: `./scripts/neonrelay_signer_test.sh`
       (log: `docs/baseline/neonrelay-signer-test.log`).
-- [ ] ✅ Backend: `cd backend && npm test` (155/155 incl. Tranche-B
+- [ ] ✅ Backend: `cd backend && npm test` (159/159 incl. Tranche-B
       reconcile/stuck/game-events/metrics/alerts suites + dual-RPC
-      failover (9 rpc + 2 config), Node 22).
-- [ ] ✅ On-chain offline suite: `cd onchain && npm test` (41/41).
+      failover (9 rpc + 2 config) + rewards PDA goldens (4), Node 22).
+- [ ] ✅ On-chain offline suite: `cd onchain && npm test` (49/49 incl.
+      the rewards-claim client contract suite (8)).
 - [ ] ✅ Hygiene: `check_config_variables.py`, `check_header_guards.py`,
       `tidy_alphabetical.py`, `check_standard_headers.py`.
 
@@ -95,10 +96,11 @@ limitation.
       mint (`onchain/scripts/create_test_mint.sh`): ingest → caps → seal →
       publish → claim → confirmation, plus a pause/resume drill and a key
       rotation drill.
-- [ ] ✅ Segment-wise pipeline evidence already in-repo: backend 155/155
+- [ ] ✅ Segment-wise pipeline evidence already in-repo: backend 159/159
       (incl. 10 reconcile + 5 game-events + 2 metrics + 4 alerts = 21 new
-      Tranche-B tests + 11 dual-RPC failover tests), Merkle parity
-      backend↔client↔program-source (12/12),
+      Tranche-B tests + 11 dual-RPC failover tests + 4 rewards PDA goldens),
+      Merkle parity backend↔client↔program-source plus the 8-test
+      rewards-claim client contract suite,
       signer C++↔Node (harness PASS), plus live shipper idempotence smoke
       (`scripts/ship_game_events.sh` run1 accepted / run2 duplicates).
 - [ ] 🟠 Rehearse the new beta-operations layer on devnet: batch game events

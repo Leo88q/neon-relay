@@ -13,6 +13,7 @@ object NativeBridge {
     const val EVENT_CONNECTED = 1
     const val EVENT_ERROR = 2
     const val EVENT_ECONOMY = 3
+    const val EVENT_REWARDS_CLAIM = 4
 
     /** False when the native library is not present (e.g. JVM unit tests). */
     val available: Boolean by lazy {
@@ -40,6 +41,20 @@ object NativeBridge {
     fun requestEconomy(json: String) {
         android.util.Log.i("NeonRelayEconomy", "economy request: $json")
         WalletHolder.request(WalletHolder.Request.Economy(json))
+        WalletBridgeIntents.start()
+    }
+
+    /**
+     * Rewards claim flow (DEVNET_RUNBOOK §7): the game passes the
+     * chain-relevant claim-intent fields (program id, epoch, amount, leaf
+     * index, proof) as JSON — never the backend session token. The result
+     * arrives as EVENT_REWARDS_CLAIM carrying the public transaction
+     * signature for claim-confirmation.
+     */
+    @JvmStatic
+    fun requestRewardsClaim(json: String) {
+        android.util.Log.i("NeonRelayRewards", "rewards claim request: $json")
+        WalletHolder.request(WalletHolder.Request.RewardsClaim(json))
         WalletBridgeIntents.start()
     }
 

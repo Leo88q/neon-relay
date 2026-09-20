@@ -182,8 +182,12 @@ class WalletManager(
                     }
                     else -> throw IllegalArgumentException("unknown economy action: $action")
                 }
-                val sent = signAndSendTransactions(arrayOf(EconomyTxBuilder.unsignedTransaction(message)), arrayOf(account.publicKey))
-                sent.signature ?: ""
+                // clientlib-ktx 2.x: one argument (transactions); signatures come
+                // back as raw bytes, base58-encoded for transport and audit.
+                val sent = signAndSendTransactions(arrayOf(EconomyTxBuilder.unsignedTransaction(message)))
+                val walletSignature = sent.signatures.firstOrNull()
+                    ?: throw IllegalStateException("wallet returned no transaction signature")
+                EconomyTxBuilder.base58Encode(walletSignature)
             }.asWalletResult()
         }.getOrElse { WalletResult.Failure(it.toWalletError()) }
         return when (result) {
@@ -194,6 +198,110 @@ class WalletManager(
             is WalletResult.Failure -> {
                 session.update(WalletSession.State.ERROR, message = result.error.userMessage)
                 pushEvent(NativeBridge.EVENT_ECONOMY, connected = false, message = result.error.userMessage)
+                result
+            }
+        }
+    }
+
+    /**
+     * Run a rewards claim (docs/DEVNET_RUNBOOK.md §7). The game fetched a
+     * claim intent over its own authenticated backend channel and passes the
+     * chain-relevant fields — no session token crosses JNI:
+     * {"programId","rpcUrl","epoch","amountMicro","leafIndex","proof":[hex]}.
+     *
+     * Reads the rewards config + epoch over public RPC, replays every
+     * on-chain precondition client-side (RewardsTxBuilder.verifyClaim),
+     * best-effort checks the claim record does not exist yet (the program's
+     * `init` is the real no-double-claim guard), and lets the wallet app
+     * sign AND send via signAndSendTransactions. Returns the base58
+     * transaction signature so the game can post claim-confirmation.
+     */
+    suspend fun runRewardsClaim(requestJson: String): WalletResult<String> = mutex.withLock {
+        val activitySender = sender ?: return WalletResult.Failure(
+            WalletError.OperationFailed("wallet manager is not attached to an activity")
+        )
+        val request = runCatching { org.json.JSONObject(requestJson) }.getOrElse {
+            return WalletResult.Failure(WalletError.OperationFailed("rewards claim request is not valid JSON"))
+        }
+        val programId = request.optString("programId", "")
+        val rpcUrl = request.optString("rpcUrl", "https://api.devnet.solana.com")
+        val epoch = request.optLong("epoch", -1L)
+        val amountMicro = request.optLong("amountMicro", 0L)
+        val leafIndex = request.optInt("leafIndex", -1)
+        if (programId.isEmpty()) {
+            return WalletResult.Failure(WalletError.OperationFailed("rewards program id is not configured"))
+        }
+        val programIdBytes = runCatching { EconomyTxBuilder.base58Decode(programId) }.getOrElse {
+            return WalletResult.Failure(WalletError.OperationFailed("rewards program id is not valid base58"))
+        }
+        if (programIdBytes.size != 32) {
+            return WalletResult.Failure(WalletError.OperationFailed("rewards program id must be 32 bytes"))
+        }
+        if (epoch < 0 || amountMicro <= 0 || leafIndex < 0) {
+            return WalletResult.Failure(WalletError.OperationFailed("claim epoch/amount/index are invalid"))
+        }
+        val proofJson = request.optJSONArray("proof")
+            ?: return WalletResult.Failure(WalletError.OperationFailed("claim proof is missing"))
+        val result = runCatching {
+            adapter.transact(activitySender) { auth: AuthorizationResult ->
+                adopt(auth)
+                val player = auth.accounts[0].publicKey
+                require(player.size == 32) { "wallet account is not a 32-byte public key" }
+                val proof = mutableListOf<ByteArray>()
+                for (i in 0 until proofJson.length()) proof.add(EconomyTxBuilder.hexToBytes(proofJson.getString(i)))
+                val configData = rpc(rpcUrl, "getAccountInfo", org.json.JSONArray().apply {
+                    put(EconomyTxBuilder.base58Encode(RewardsTxBuilder.configAddress(programIdBytes)))
+                    put(org.json.JSONObject().put("encoding", "base64"))
+                })
+                require(!configData.isNull("value")) { "rewards config account not found" }
+                val configAccount = configData.getJSONObject("value")
+                require(configAccount.getString("owner") == programId && !configAccount.getBoolean("executable")) { "invalid rewards config owner" }
+                require(configAccount.getJSONArray("data").getString(1) == "base64") { "invalid account encoding" }
+                val config = RewardsTxBuilder.parseConfig(
+                    android.util.Base64.decode(configAccount.getJSONArray("data").getString(0), android.util.Base64.DEFAULT),
+                )
+                require(!config.paused) { "rewards program is paused" }
+                val epochData = rpc(rpcUrl, "getAccountInfo", org.json.JSONArray().apply {
+                    put(EconomyTxBuilder.base58Encode(RewardsTxBuilder.epochAddress(epoch, programIdBytes)))
+                    put(org.json.JSONObject().put("encoding", "base64"))
+                })
+                require(!epochData.isNull("value")) { "epoch $epoch is not published on-chain" }
+                val epochAccount = epochData.getJSONObject("value")
+                require(epochAccount.getString("owner") == programId && !epochAccount.getBoolean("executable")) { "invalid epoch account owner" }
+                val epochState = RewardsTxBuilder.parseEpochState(
+                    android.util.Base64.decode(epochAccount.getJSONArray("data").getString(0), android.util.Base64.DEFAULT),
+                    epoch,
+                )
+                val claimData = rpc(rpcUrl, "getAccountInfo", org.json.JSONArray().apply {
+                    put(EconomyTxBuilder.base58Encode(RewardsTxBuilder.claimAddress(epoch, player, programIdBytes)))
+                    put(org.json.JSONObject().put("encoding", "base64"))
+                })
+                require(claimData.isNull("value")) { "epoch $epoch is already claimed by this wallet" }
+                // Full client-side replay of the on-chain preconditions; throws
+                // before any blockhash is spent when the claim cannot succeed.
+                RewardsTxBuilder.verifyClaim(player, config, epochState, epoch, amountMicro, leafIndex, proof)
+                val blockhash = EconomyTxBuilder.base58Decode(
+                    rpc(rpcUrl, "getLatestBlockhash", org.json.JSONArray())
+                        .getJSONObject("value").getString("blockhash"),
+                )
+                val message = RewardsTxBuilder.buildClaimMessage(
+                    player, config, epochState, programIdBytes, epoch, amountMicro, leafIndex, proof, blockhash,
+                )
+                val sent = signAndSendTransactions(arrayOf(EconomyTxBuilder.unsignedTransaction(message)))
+                val walletSignature = sent.signatures.firstOrNull()
+                    ?: throw IllegalStateException("wallet returned no transaction signature")
+                EconomyTxBuilder.base58Encode(walletSignature)
+            }.asWalletResult()
+        }.getOrElse { WalletResult.Failure(it.toWalletError()) }
+        return when (result) {
+            is WalletResult.Success -> {
+                pushEvent(NativeBridge.EVENT_REWARDS_CLAIM, connected = true,
+                    transactionSignature = result.value)
+                result
+            }
+            is WalletResult.Failure -> {
+                session.update(WalletSession.State.ERROR, message = result.error.userMessage)
+                pushEvent(NativeBridge.EVENT_REWARDS_CLAIM, connected = false, message = result.error.userMessage)
                 result
             }
         }
@@ -249,7 +357,13 @@ class WalletManager(
     }
 
     /** Only sanitized fields cross into native code. */
-    private fun pushEvent(type: Int, connected: Boolean, account: WalletAccount? = null, message: String? = null) {
+    private fun pushEvent(
+        type: Int,
+        connected: Boolean,
+        account: WalletAccount? = null,
+        message: String? = null,
+        transactionSignature: String? = null,
+    ) {
         NativeBridge.pushWalletEvent(
             type,
             WalletEventJson.build(
@@ -257,6 +371,7 @@ class WalletManager(
                 accountLabel = account?.label,
                 publicKeyBase64 = account?.publicKeyBase64,
                 errorMessage = message,
+                transactionSignature = transactionSignature,
             ),
         )
     }

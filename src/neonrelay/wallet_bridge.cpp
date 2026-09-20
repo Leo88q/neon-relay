@@ -98,12 +98,14 @@ void neonrelay_wallet_push_event(int event_type, const char *json)
 		s_info.account_label[0] = '\0';
 		s_info.public_key_base64[0] = '\0';
 		s_info.error_message[0] = '\0';
+		s_info.transaction_signature[0] = '\0';
 		s_info.connected = 0;
 		if(json)
 		{
 			JsonString(json, "account_label", s_info.account_label, sizeof(s_info.account_label));
 			JsonString(json, "public_key_base64", s_info.public_key_base64, sizeof(s_info.public_key_base64));
 			JsonString(json, "error_message", s_info.error_message, sizeof(s_info.error_message));
+			JsonString(json, "transaction_signature", s_info.transaction_signature, sizeof(s_info.transaction_signature));
 			s_info.connected = JsonBool(json, "connected", false) ? 1 : 0;
 		}
 		s_info.requesting = 0;
@@ -131,6 +133,13 @@ void neonrelay_wallet_platform_economy(const char *json)
 	neonrelay_wallet_push_event(NEONRELAY_WALLET_EVENT_ECONOMY,
 		"{\"connected\": false, \"error_message\": \"SKR entry payments and prize claims run in the Neon Relay Android build (Mobile Wallet Adapter); see docs/PLAY_ECONOMY.md.\"}");
 }
+
+void neonrelay_wallet_platform_rewards_claim(const char *json)
+{
+	(void)json;
+	neonrelay_wallet_push_event(NEONRELAY_WALLET_EVENT_REWARDS_CLAIM,
+		"{\"connected\": false, \"error_message\": \"Reward claims run in the Neon Relay Android build (Mobile Wallet Adapter); see docs/DEVNET_RUNBOOK.md section 7.\"}");
+}
 #endif
 
 static void RequestWallet(int connect)
@@ -156,6 +165,11 @@ void neonrelay_wallet_request_disconnect(void)
 void neonrelay_wallet_request_economy(const char *json)
 {
 	neonrelay_wallet_platform_economy(json ? json : "{}");
+}
+
+void neonrelay_wallet_request_rewards_claim(const char *json)
+{
+	neonrelay_wallet_platform_rewards_claim(json ? json : "{}");
 }
 
 } // extern "C"

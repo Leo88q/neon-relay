@@ -33,6 +33,12 @@ object WalletHolder {
          * plus action/kind/epoch; see docs/PLAY_ECONOMY.md and BL-17.
          */
         data class Economy(val json: String) : Request
+        /**
+         * Rewards claim flow (DEVNET_RUNBOOK §7). The JSON carries the
+         * chain-relevant claim-intent fields from the game (program id,
+         * epoch, amount, leaf index, proof) — never the session token.
+         */
+        data class RewardsClaim(val json: String) : Request
     }
 
     private lateinit var application: Application

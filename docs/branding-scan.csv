@@ -64,7 +64,7 @@ UPSTREAM_BASE.md,53,historical-documentation,document that describes the upstrea
 UPSTREAM_BASE.md,93,historical-documentation,document that describes the upstream derivation,"artwork — `data/gui_logo.png`, the `other/icons/DDNet*` / `DDNet-Server*` raster icons."
 android/app/build.gradle.kts,73,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"// template, rebranded) plus the SDL Java bindings from ddnet-libs"
 android/app/build.gradle.kts,75,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"java.srcDir(""../../ddnet-libs/sdl/java"")"
-android/app/src/main/cpp/neonrelay_wallet_jni.cpp,11,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"* JNI_OnLoad ownership: the statically linked SDL2 (ddnet-libs, SDL_android.c)"
+android/app/src/main/cpp/neonrelay_wallet_jni.cpp,13,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"* JNI_OnLoad ownership: the statically linked SDL2 (ddnet-libs, SDL_android.c)"
 ci/upstream-reference/README.md,4,historical-documentation,document that describes the upstream derivation,(https://github.com/ddnet/ddnet @ `a853d333ac9e61ebfa2899b4641f8b0658ba60d5`).
 ci/upstream-reference/github-workflows/build-libraries-android.yml,29,historical-documentation,document that describes the upstream derivation,name: ddnet-libs-android
 ci/upstream-reference/github-workflows/build-libraries-android.yml,30,historical-documentation,document that describes the upstream derivation,path: build-android-libs/ddnet-libs
