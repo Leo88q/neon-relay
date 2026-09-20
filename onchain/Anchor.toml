@@ -13,9 +13,11 @@ skip-lint = false
 
 [programs.devnet]
 # PLACEHOLDERS — replace with the output of `anchor keys list` before deploying.
+# See docs/SOLANA_2026_PRODUCTION_RESEARCH.md §4.3 and docs/ASSETS_PRODUCTION_DEPLOYMENT.md.
 neonrelay_rewards = "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj"
 neonrelay_features = "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP"
 neonrelay_economy = "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9"
+neonrelay_assets = "F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc"
 
 [provider]
 cluster = "devnet"

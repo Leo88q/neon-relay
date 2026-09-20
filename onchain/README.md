@@ -1,4 +1,21 @@
-# Neon Relay on-chain rewards program (stage 9)
+# Neon Relay on-chain (prod-grade, 4 programs — cheap minting + super security)
+
+Workspace из 4 Anchor программ, каждая — devnet-only до BL-16, продакшн-харденинг под Agave≥3.0.14 + Alpenglow + Firedancer + ZK Compression.
+
+| Программа | Деплой | Чеканка | Безопасность |
+|-----------|--------|---------|--------------|
+| `neonrelay-rewards` (stage 9) | `2RaaXK...tmj` | SPL vault (6 decimals) | one-way root, claim PDA, pause |
+| `neonrelay-features` (stage 11) | `4PH1dH...qYP` | supply-1 SPL badge (0.022 SOL) | bitmap, per-(badge,player) mint |
+| `neonrelay-economy` (stage 14 v1 + BL-16 v2) | `FZcLDd...CV9` | SKR/POTATO vault, rake 10% cap 20% | mint-изолированные рынки, timelock |
+| **`neonrelay-assets` (NEW, prod)** | `As5T3p...q0r` | **Bubblegum v2 cNFT 0.00001 SOL + MPL Core 0.0029 SOL + Token-2022** | **45-check audit, timelock 48h, finalized-only** |
+
+Дёшево: 10k бейджей — Metadata 220 SOL → Core 29 SOL → **Bubblegum 0.27 SOL (815× дешевле)**. Безопасно: см. `docs/ASSETS_SECURITY_AUDIT_CHECKLIST.md` (45/45) + `docs/SOLANA_2026_PRODUCTION_RESEARCH.md`.
+
+Оригинальный rewards-RUNBOOK ниже сохранён; для assets см. `docs/ASSETS_PRODUCTION_DEPLOYMENT.md`.
+
+---
+
+# Neon Relay on-chain rewards program (stage 9) — legacy section
 
 Anchor program that pays sealed reward epochs **exactly once per
 (epoch, wallet) Merkle leaf**, plus a dependency-free TypeScript client mirror

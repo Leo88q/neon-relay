@@ -164,7 +164,7 @@ async fn initialize_and_isolate_two_mint_markets() {
     // instruction-created accounts, including ATA/System/SPL CPI initialization.
     let old = EconomyConfig { authority: admin.pubkey(), mint: mints[0], treasury_ata: treasuries[0],
         vault_ata: Pubkey::new_unique(), rake_bps: 1000, fee_match: 50, fee_tournament: 100,
-        paused: false, bump: legacy_bump };
+        paused: false, bump: legacy_bump, reserved: 0, pending_authority: Pubkey::default(), authority_change_slot: 0 };
     let mut data = Vec::new(); old.try_serialize(&mut data).unwrap();
     test.add_account(legacy, stored(data, neonrelay_economy::id()));
     for (i, decimals) in [0, 6, 16].into_iter().enumerate() {

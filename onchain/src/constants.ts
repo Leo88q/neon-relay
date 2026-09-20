@@ -69,3 +69,25 @@ export const ENTRY_KIND = { match: 0, tournament: 1 } as const;
  * (places 1..10; sums to 10000 = 100%).
  */
 export const PRIZE_TABLE_BPS = [2500, 1800, 1400, 1100, 900, 700, 600, 500, 300, 200] as const;
+
+/** --- neonrelay-assets program (prod cheap-minting, 2026) --- */
+
+export const ASSETS_PROGRAM_ID_PLACEHOLDER =
+  "F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc";
+
+export const ASSETS_SEEDS = {
+  config: "neonrelay_assets_config",
+  collection: "neonrelay_collection",
+  badge: "neonrelay_badge_asset",
+  treeConfig: "neonrelay_tree_config",
+  mintConfig: "neonrelay_mint_config",
+} as const;
+
+export const BUBBLEGUM_PROGRAM_ID =
+  "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY";
+export const COMPRESSION_PROGRAM_ID =
+  "cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK";
+export const NOOP_PROGRAM_ID =
+  "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV";
+export const MPL_CORE_PROGRAM_ID =
+  "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d";

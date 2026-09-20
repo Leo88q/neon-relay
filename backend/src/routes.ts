@@ -87,7 +87,7 @@ export function buildRouter(deps: {
     guard(ctx, "verify");
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const result = auth.verifyWallet({
-      challenge: str(body["challenge"], "challenge", 8192),
+      challenge: str(body["challenge"], "challenge", 2048),
       signature: str(body["signature"], "signature", 512),
       publicKey: str(body["public_key"], "public_key", 128),
       accountLabel: optStr(body["account_label"]),

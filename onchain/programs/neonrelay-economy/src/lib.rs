@@ -40,6 +40,8 @@ pub const ENTRY_KIND_MATCH: u8 = 0;
 pub const ENTRY_KIND_TOURNAMENT: u8 = 1;
 /// Maximum Merkle proof length accepted by `claim_prize`.
 pub const MAX_PROOF_LEN: usize = 32;
+/// 48h timelock for authority change (CRITICAL-02 fix)
+pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
 
 #[program]
 pub mod neonrelay_economy {
@@ -65,6 +67,9 @@ pub mod neonrelay_economy {
 		config.fee_tournament = fee_tournament;
 		config.paused = false;
 		config.bump = ctx.bumps.config;
+		config.reserved = 0;
+		config.pending_authority = Pubkey::default();
+		config.authority_change_slot = 0;
 		Ok(())
 	}
 
@@ -90,12 +95,36 @@ pub mod neonrelay_economy {
 		Ok(())
 	}
 
+	pub fn propose_authority_change(ctx: Context<Admin>, new_authority: Pubkey) -> Result<()> {
+		require!(new_authority != Pubkey::default(), EconomyError::InvalidAuthority);
+		let config = &mut ctx.accounts.config;
+		config.pending_authority = new_authority;
+		config.authority_change_slot = Clock::get()?.slot;
+		Ok(())
+	}
+
+	pub fn accept_authority_change(ctx: Context<AcceptAuthorityV1>) -> Result<()> {
+		let config = &mut ctx.accounts.config;
+		require!(config.pending_authority != Pubkey::default(), EconomyError::NoPendingAuthority);
+		let current_slot = Clock::get()?.slot;
+		require!(current_slot >= config.authority_change_slot + MIN_AUTHORITY_DELAY_SLOTS, EconomyError::TimelockNotExpired);
+		config.authority = config.pending_authority;
+		config.pending_authority = Pubkey::default();
+		config.authority_change_slot = 0;
+		Ok(())
+	}
+
 	/// Player pays the entry fee for `kind` (match/tournament). The fee is
 	/// split on-chain: rake -> treasury ATA, remainder -> prize vault ATA.
 	/// The (reference, player) ticket PDA makes duplicate payments fail.
 	pub fn pay_entry(ctx: Context<PayEntry>, reference: [u8; 32], kind: u8) -> Result<()> {
 		let config = &ctx.accounts.config;
 		require!(!config.paused, EconomyError::Paused);
+		// MEDIUM-03 fix: prevent aliasing vault/treasury as player ATA
+		require!(ctx.accounts.player_ata.key() != config.vault_ata, EconomyError::WrongVault);
+		require!(ctx.accounts.player_ata.key() != config.treasury_ata, EconomyError::WrongTreasury);
+		require!(ctx.accounts.vault_ata.mint == config.mint, EconomyError::WrongMint);
+		require!(ctx.accounts.vault_ata.owner == config.key(), EconomyError::WrongVault);
 		let fee = match kind {
 			ENTRY_KIND_MATCH => config.fee_match,
 			ENTRY_KIND_TOURNAMENT => config.fee_tournament,
@@ -155,11 +184,15 @@ pub mod neonrelay_economy {
 		root: [u8; 32],
 		total: u64,
 	) -> Result<()> {
+		require!(!ctx.accounts.config.paused, EconomyError::Paused);
+		require!(root != [0u8; 32], EconomyError::InvalidTotal);
 		require!(total > 0, EconomyError::InvalidTotal);
-		require!(
-			ctx.accounts.vault_ata.amount >= total,
-			EconomyError::VaultUnderfunded
-		);
+		require!(ctx.accounts.vault_ata.amount >= total, EconomyError::VaultUnderfunded);
+		// CRITICAL-01 fix: aggregate reservation prevents double-allocation
+		let config = &mut ctx.accounts.config;
+		let free = ctx.accounts.vault_ata.amount.checked_sub(config.reserved).ok_or(EconomyError::VaultUnderfunded)?;
+		require!(total <= free, EconomyError::VaultUnderfunded);
+		config.reserved = config.reserved.checked_add(total).ok_or(EconomyError::Overflow)?;
 		let prizes = &mut ctx.accounts.prizes;
 		prizes.epoch = epoch;
 		prizes.root = root;
@@ -178,6 +211,7 @@ pub mod neonrelay_economy {
 		leaf_index: u32,
 		proof: Vec<[u8; 32]>,
 	) -> Result<()> {
+		require!(!ctx.accounts.config.paused, EconomyError::Paused);
 		require!(amount > 0, EconomyError::ZeroAmount);
 		require!(proof.len() <= MAX_PROOF_LEN, EconomyError::ProofTooLong);
 		let prizes = &ctx.accounts.prizes;
@@ -187,6 +221,10 @@ pub mod neonrelay_economy {
 			verify_proof_indexed(&leaf, leaf_index, &proof, &prizes.root),
 			EconomyError::ProofInvalid
 		);
+
+		// CRITICAL-01: decrement aggregate reservation (mirrors v2)
+		ctx.accounts.config.reserved = ctx.accounts.config.reserved.checked_sub(amount).ok_or(EconomyError::VaultUnderfunded)?;
+		ctx.accounts.prizes.total = ctx.accounts.prizes.total.checked_sub(amount).unwrap_or(ctx.accounts.prizes.total);
 
 		let claim = &mut ctx.accounts.claim;
 		claim.epoch = epoch;
@@ -332,6 +370,7 @@ pub struct Initialize<'info> {
 	pub mint: Box<Account<'info, Mint>>,
 	#[account(
 		constraint = treasury_ata.mint == mint.key() @ EconomyError::InvalidTreasuryMint,
+		constraint = treasury_ata.owner == authority.key() @ EconomyError::WrongTreasury,
 	)]
 	pub treasury_ata: Box<Account<'info, TokenAccount>>,
 	#[account(
@@ -354,6 +393,14 @@ pub struct Admin<'info> {
 	pub authority: Signer<'info>,
 	#[account(mut, seeds = [CONFIG_SEED], bump = config.bump)]
 	pub config: Account<'info, EconomyConfig>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptAuthorityV1<'info> {
+	#[account(mut, seeds = [CONFIG_SEED], bump = config.bump,
+		constraint = config.pending_authority == pending_authority.key() @ EconomyError::Unauthorized)]
+	pub config: Account<'info, EconomyConfig>,
+	pub pending_authority: Signer<'info>,
 }
 
 #[derive(Accounts)]
@@ -399,7 +446,7 @@ pub struct PublishPrizes<'info> {
 		constraint = authority.key() == config.authority @ EconomyError::Unauthorized,
 	)]
 	pub authority: Signer<'info>,
-	#[account(seeds = [CONFIG_SEED], bump = config.bump)]
+	#[account(mut, seeds = [CONFIG_SEED], bump = config.bump)]
 	pub config: Account<'info, EconomyConfig>,
 	#[account(
 		constraint = vault_ata.key() == config.vault_ata @ EconomyError::WrongVault,
@@ -427,7 +474,7 @@ pub struct ClaimPrize<'info> {
 		constraint = player_ata.owner == player.key() @ EconomyError::NotPlayerAta,
 	)]
 	pub player_ata: Account<'info, TokenAccount>,
-	#[account(seeds = [CONFIG_SEED], bump = config.bump)]
+	#[account(mut, seeds = [CONFIG_SEED], bump = config.bump)]
 	pub config: Account<'info, EconomyConfig>,
 	#[account(
 		mut,
@@ -465,6 +512,9 @@ pub struct EconomyConfig {
 	pub fee_tournament: u64,
 	pub paused: bool,
 	pub bump: u8,
+	pub reserved: u64,
+	pub pending_authority: Pubkey,
+	pub authority_change_slot: u64,
 }
 
 #[account]
@@ -548,6 +598,10 @@ pub enum EconomyError {
 	ProofTooLong,
 	ProofInvalid,
 	EpochMismatch,
+	InvalidAuthority,
+	NoPendingAuthority,
+	TimelockNotExpired,
+	VaultFrozen,
 }
 
 
