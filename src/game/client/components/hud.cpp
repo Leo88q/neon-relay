@@ -94,10 +94,17 @@ void CHud::OnReset()
 
 void CHud::RenderYieldBloomPanel(float x, float y, float w, float h, float Rounding)
 {
-	// New design Form A – Void #060A1C, Deck #0C1334, cyan dim border 2px, glow 10px 30%, holographic glass
+	// New design Form A iOS – Void translucent, Deck 0.62 alpha, cyan dim border 2px, glow 10px 30%
 	float c = 8.0f;
 	if(Rounding > 0) c = Rounding;
-	// Glow outside
+	// iOS blur
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.0235f, 0.0392f, 0.1098f, 0.28f);
+	IGraphics::CQuadItem Blur(x - 12, y - 12, w + 24, h + 24);
+	Graphics()->QuadsDrawTL(&Blur, 1);
+	Graphics()->QuadsEnd();
+
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(0.1647f, 0.5294f, 0.5922f, 0.18f);
@@ -105,10 +112,9 @@ void CHud::RenderYieldBloomPanel(float x, float y, float w, float h, float Round
 	Graphics()->QuadsDrawTL(&Glow, 1);
 	Graphics()->QuadsEnd();
 
-	// Main background chamfered
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.047f, 0.0745f, 0.2039f, 0.92f); // Deck #0C1334
+	Graphics()->SetColor(0.047f, 0.0745f, 0.2039f, 0.62f); // Deck iOS translucent
 	IGraphics::CFreeformItem FreeTop(x + c, y, x + w - c, y, x + w, y + c, x, y + c);
 	Graphics()->QuadsDrawFreeform(&FreeTop, 1);
 	IGraphics::CQuadItem Mid(x, y + c, w, h - 2 * c);
@@ -117,18 +123,16 @@ void CHud::RenderYieldBloomPanel(float x, float y, float w, float h, float Round
 	Graphics()->QuadsDrawFreeform(&FreeBottom, 1);
 	Graphics()->QuadsEnd();
 
-	// Top gradient Deck2 #121B46
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.0706f, 0.1059f, 0.2745f, 0.5f);
+	Graphics()->SetColor(0.0706f, 0.1059f, 0.2745f, 0.32f);
 	IGraphics::CQuadItem TopGrad(x + c, y, w - 2 * c, h * 0.4f);
 	Graphics()->QuadsDrawTL(&TopGrad, 1);
 	Graphics()->QuadsEnd();
 
-	// Border 2px cyan dim
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.1647f, 0.5294f, 0.5922f, 0.85f);
+	Graphics()->SetColor(0.1647f, 0.5294f, 0.5922f, 0.75f);
 	IGraphics::CQuadItem TopEdge(x + c, y, w - 2 * c, 2.0f);
 	IGraphics::CQuadItem BottomEdge(x + c, y + h - 2.0f, w - 2 * c, 2.0f);
 	IGraphics::CQuadItem LeftEdge(x, y + c, 2.0f, h - 2 * c);

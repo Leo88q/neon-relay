@@ -84,8 +84,25 @@ CKeyBinder::CKeyReaderResult CKeyBinder::DoKeyReader(CButtonContainer *pReaderBu
 		GameClient()->m_Binds.GetKeyBindName(Result.m_Bind.m_Key, Result.m_Bind.m_ModifierMask, aBuf, sizeof(aBuf));
 	}
 
-	const ColorRGBA Color = m_pKeyReaderId == pReaderButton && m_TakeKey ? ColorRGBA(0.05f, 0.90f, 0.92f, 0.65f) : ColorRGBA(0.11f, 0.12f, 0.14f, 0.92f * Ui()->ButtonColorMul(pReaderButton));
-	KeyReaderButton.Draw(Color, IGraphics::CORNER_L, 4.0f);
+	// iOS translucent key reader - Deck 0.62 alpha, cyan when taking key
+	const ColorRGBA Color = m_pKeyReaderId == pReaderButton && m_TakeKey ? ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.55f) : ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.62f * Ui()->ButtonColorMul(pReaderButton));
+	{
+		float x = KeyReaderButton.x; float y = KeyReaderButton.y; float w = KeyReaderButton.w; float h = KeyReaderButton.h; float skew = 6.0f;
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(Color.r, Color.g, Color.b, Color.a);
+		IGraphics::CFreeformItem Free(x + skew, y, x + w, y, x + w - skew, y + h, x, y + h);
+		Graphics()->QuadsDrawFreeform(&Free, 1);
+		Graphics()->QuadsEnd();
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(0.1647f, 0.5294f, 0.5922f, 0.75f);
+		IGraphics::CQuadItem Top(x + skew, y, w - skew, 1.5f);
+		IGraphics::CQuadItem Bottom(x, y + h - 1.5f, w - skew, 1.5f);
+		Graphics()->QuadsDrawTL(&Top, 1);
+		Graphics()->QuadsDrawTL(&Bottom, 1);
+		Graphics()->QuadsEnd();
+	}
 	if(Ui()->HotItem() == pReaderButton)
 	{
 		CUIRect Edge = {KeyReaderButton.x, KeyReaderButton.y, KeyReaderButton.w, 1.5f};

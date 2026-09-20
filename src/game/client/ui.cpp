@@ -1177,7 +1177,60 @@ int CUi::DoButton_Menu(CUIElement &UIElement, const CButtonContainer *pId, const
 
 void CUi::DrawButton_FontIcon(const char *pText, const CUIRect *pRect, ColorRGBA Color, int Corners, bool Enabled) const
 {
-	pRect->Draw(Color, Corners, 5.0f);
+	// Custom Form A iOS translucent for trash/plus – cyan for plus, magenta for trash
+	bool IsTrash = false;
+	bool IsPlus = false;
+	// FontIcon::TRASH and PLUS are unicode, check via string compare
+	if(pText && (str_find(pText, "\uf1f8") != nullptr || str_find(pText, "\uf014") != nullptr)) IsTrash = true;
+	if(pText && str_find(pText, "\uf067") != nullptr) IsPlus = true;
+
+	float x = pRect->x;
+	float y = pRect->y;
+	float w = pRect->w;
+	float h = pRect->h;
+	float skew = 6.0f;
+
+	ColorRGBA BgColor = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.62f);
+	ColorRGBA BorderColor = ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f);
+	if(IsTrash)
+	{
+		BgColor = ColorRGBA(0.9333f, 0.2706f, 0.5725f, 0.22f);
+		BorderColor = ColorRGBA(0.9333f, 0.2706f, 0.5725f, 0.85f);
+	}
+	else if(IsPlus)
+	{
+		BgColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.22f);
+		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f);
+	}
+	else
+	{
+		BgColor = ColorRGBA(Color.r, Color.g, Color.b, Color.a * 0.62f);
+		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.65f);
+	}
+
+	// iOS blur behind
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.0235f, 0.0392f, 0.1098f, 0.15f);
+	IGraphics::CQuadItem Blur(x - 2, y - 2, w + 4, h + 4);
+	Graphics()->QuadsDrawTL(&Blur, 1);
+	Graphics()->QuadsEnd();
+
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, BgColor.a);
+	IGraphics::CFreeformItem FreeBtn(x + skew, y, x + w, y, x + w - skew, y + h, x, y + h);
+	Graphics()->QuadsDrawFreeform(&FreeBtn, 1);
+	Graphics()->QuadsEnd();
+
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a);
+	IGraphics::CQuadItem Top(x + skew, y, w - skew, 1.5f);
+	IGraphics::CQuadItem Bottom(x, y + h - 1.5f, w - skew, 1.5f);
+	Graphics()->QuadsDrawTL(&Top, 1);
+	Graphics()->QuadsDrawTL(&Bottom, 1);
+	Graphics()->QuadsEnd();
 
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
@@ -1186,6 +1239,7 @@ void CUi::DrawButton_FontIcon(const char *pText, const CUIRect *pRect, ColorRGBA
 
 	CUIRect Label;
 	pRect->HMargin(2.0f, &Label);
+	Label.x += skew * 0.3f;
 	DoLabel(&Label, pText, Label.h * ms_FontmodHeight, TEXTALIGN_MC);
 
 	if(!Enabled)
