@@ -240,14 +240,10 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 	if(Entry.m_PriceSkr == 1000) { BorderColor = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.95f); Diamonds = 2; }
 	else if(Entry.m_PriceSkr == 2000) { BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); Diamonds = 3; }
 
-	// Light background behind character – not dark, so portrait is bright
-	CUIRect Bg = Rect;
-	Bg.Draw(ColorRGBA(0.12f, 0.18f, 0.32f, 0.88f), IGraphics::CORNER_ALL, 10.0f); // lighter, not dark, so portrait bright
-
+	// CLEAN – no background at all, only portrait, 100% bright
 	CUIRect Inner = Rect;
-	Inner.Margin(6.0f, &Inner);
-	float Size = std::min(Inner.w, Inner.h * 0.88f);
-	// Draw portrait with full brightness, no dark overlay
+	Inner.Margin(2.0f, &Inner);
+	float Size = std::min(Inner.w, Inner.h);
 	Graphics()->TextureSet(Portrait);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -255,8 +251,8 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 	Graphics()->QuadsDrawTL(&Quad, 1);
 	Graphics()->QuadsEnd();
 
-	// Border only – no background, so character stays bright
-	GameClient()->m_Menus.RenderFormAPanel(Rect, 12.0f, ColorRGBA(0,0,0,0), BorderColor, true, false, 0.0f, BorderColor);
+	// Border only – transparent, no film, no triangles (chamfer 0)
+	GameClient()->m_Menus.RenderFormAPanel(Rect, 0.0f, ColorRGBA(0,0,0,0), BorderColor, false, false, 0.0f, BorderColor);
 
 	float dx = Rect.x + Rect.w / 2.0f - (Diamonds * 10.0f) / 2.0f;
 	float dy = Rect.y + Rect.h - 14.0f;
