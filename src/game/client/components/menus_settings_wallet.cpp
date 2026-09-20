@@ -334,21 +334,19 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		else if(Entry.m_PriceSkr == 2000) { BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); ImpulseColor = BorderColor; ImpulseDur = 6.0f; }
 
 		bool IsSelected = s_Selected == i;
-		// Draw card panel – CLEAN, no covering over portrait area
-		// Split card: top for portrait (clean), bottom for text (with bg)
+		// CLEAN – no blue/purple/yellow film, no triangles, only border with rarity color
 		CUIRect CardTop, CardBottom;
 		Card.HSplitTop(Height * 0.57f, &CardTop, &CardBottom);
-		// Bottom text part with bg
+		// Bottom text – no film, just text on transparent, only border below
 		{
-			float t = (time_get() / (float)time_freq());
-			float prog = std::fmod(t, ImpulseDur) / ImpulseDur;
-			RenderFormAPanel(CardBottom, 10.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.82f), BorderColor, false, false, 0.0f, BorderColor);
+			// No background film, only border for text part
+			RenderFormAPanel(CardBottom, 0.0f, ColorRGBA(0,0,0,0), BorderColor, false, false, 0.0f, BorderColor);
 		}
-		// Full card border with impulse (no bg covering portrait)
+		// Full card border – no background film, no triangles (chamfer 0), only border + glow + impulse
 		{
 			float t = (time_get() / (float)time_freq());
 			float prog = std::fmod(t, ImpulseDur) / ImpulseDur;
-			RenderFormAPanel(Card, 12.0f, ColorRGBA(0,0,0,0), BorderColor, true, IsSelected, prog, ImpulseColor);
+			RenderFormAPanel(Card, 0.0f, ColorRGBA(0,0,0,0), BorderColor, true, IsSelected, prog, ImpulseColor);
 		}
 		if(DoButton_Menu(&s_aSelect[i], "", IsSelected, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.0f)))
 		{ s_Selected = i; if(Compact) s_DetailOpen = true; }

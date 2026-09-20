@@ -2441,13 +2441,21 @@ void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, Co
 		Graphics()->TextureClear();
 		Graphics()->QuadsBegin();
 		Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, bgAlpha);
-		IGraphics::CFreeformItem FreeTop(x + c, y, x + w - c, y, x + w, y + c, x, y + c);
-	Graphics()->QuadsDrawFreeform(&FreeTop, 1);
-	IGraphics::CQuadItem QuadMid(x, y + c, w, h - 2 * c);
-	Graphics()->QuadsDrawTL(&QuadMid, 1);
-	IGraphics::CFreeformItem FreeBottom(x, y + h - c, x + w, y + h - c, x + w - c, y + h, x + c, y + h);
-	Graphics()->QuadsDrawFreeform(&FreeBottom, 1);
-	Graphics()->QuadsEnd();
+		if(c > 0.5f)
+		{
+			IGraphics::CFreeformItem FreeTop(x + c, y, x + w - c, y, x + w, y + c, x, y + c);
+			Graphics()->QuadsDrawFreeform(&FreeTop, 1);
+			IGraphics::CQuadItem QuadMid(x, y + c, w, h - 2 * c);
+			Graphics()->QuadsDrawTL(&QuadMid, 1);
+			IGraphics::CFreeformItem FreeBottom(x, y + h - c, x + w, y + h - c, x + w - c, y + h, x + c, y + h);
+			Graphics()->QuadsDrawFreeform(&FreeBottom, 1);
+		}
+		else
+		{
+			IGraphics::CQuadItem Quad(x, y, w, h);
+			Graphics()->QuadsDrawTL(&Quad, 1);
+		}
+		Graphics()->QuadsEnd();
 	}
 
 	// Inner gradient top – Deck2 #121B46 with more translucency
@@ -2478,26 +2486,40 @@ void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, Co
 	Graphics()->QuadsEnd();
 	}
 
-	// Border – 2px chamfered frame, more visible on iOS
+	// Border – 2px frame, no triangles when chamfer 0
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a * 0.92f);
-	IGraphics::CQuadItem TopEdge(x + c, y, w - 2 * c, 2.0f);
-	IGraphics::CQuadItem BottomEdge(x + c, y + h - 2.0f, w - 2 * c, 2.0f);
-	IGraphics::CQuadItem LeftEdge(x, y + c, 2.0f, h - 2 * c);
-	IGraphics::CQuadItem RightEdge(x + w - 2.0f, y + c, 2.0f, h - 2 * c);
-	Graphics()->QuadsDrawTL(&TopEdge, 1);
-	Graphics()->QuadsDrawTL(&BottomEdge, 1);
-	Graphics()->QuadsDrawTL(&LeftEdge, 1);
-	Graphics()->QuadsDrawTL(&RightEdge, 1);
-	IGraphics::CFreeformItem CornerTL(x, y + c, x + c, y, x + c, y + 2.0f, x + 2.0f, y + c);
-	IGraphics::CFreeformItem CornerTR(x + w - c, y, x + w, y + c, x + w - 2.0f, y + c, x + w - c, y + 2.0f);
-	IGraphics::CFreeformItem CornerBL(x, y + h - c, x + 2.0f, y + h - c, x + c, y + h - 2.0f, x + c, y + h);
-	IGraphics::CFreeformItem CornerBR(x + w - 2.0f, y + h - c, x + w, y + h - c, x + w - c, y + h, x + w - c, y + h - 2.0f);
-	Graphics()->QuadsDrawFreeform(&CornerTL, 1);
-	Graphics()->QuadsDrawFreeform(&CornerTR, 1);
-	Graphics()->QuadsDrawFreeform(&CornerBL, 1);
-	Graphics()->QuadsDrawFreeform(&CornerBR, 1);
+	if(c > 0.5f)
+	{
+		IGraphics::CQuadItem TopEdge(x + c, y, w - 2 * c, 2.0f);
+		IGraphics::CQuadItem BottomEdge(x + c, y + h - 2.0f, w - 2 * c, 2.0f);
+		IGraphics::CQuadItem LeftEdge(x, y + c, 2.0f, h - 2 * c);
+		IGraphics::CQuadItem RightEdge(x + w - 2.0f, y + c, 2.0f, h - 2 * c);
+		Graphics()->QuadsDrawTL(&TopEdge, 1);
+		Graphics()->QuadsDrawTL(&BottomEdge, 1);
+		Graphics()->QuadsDrawTL(&LeftEdge, 1);
+		Graphics()->QuadsDrawTL(&RightEdge, 1);
+		IGraphics::CFreeformItem CornerTL(x, y + c, x + c, y, x + c, y + 2.0f, x + 2.0f, y + c);
+		IGraphics::CFreeformItem CornerTR(x + w - c, y, x + w, y + c, x + w - 2.0f, y + c, x + w - c, y + 2.0f);
+		IGraphics::CFreeformItem CornerBL(x, y + h - c, x + 2.0f, y + h - c, x + c, y + h - 2.0f, x + c, y + h);
+		IGraphics::CFreeformItem CornerBR(x + w - 2.0f, y + h - c, x + w, y + h - c, x + w - c, y + h, x + w - c, y + h - 2.0f);
+		Graphics()->QuadsDrawFreeform(&CornerTL, 1);
+		Graphics()->QuadsDrawFreeform(&CornerTR, 1);
+		Graphics()->QuadsDrawFreeform(&CornerBL, 1);
+		Graphics()->QuadsDrawFreeform(&CornerBR, 1);
+	}
+	else
+	{
+		IGraphics::CQuadItem TopEdge(x, y, w, 2.0f);
+		IGraphics::CQuadItem BottomEdge(x, y + h - 2.0f, w, 2.0f);
+		IGraphics::CQuadItem LeftEdge(x, y, 2.0f, h);
+		IGraphics::CQuadItem RightEdge(x + w - 2.0f, y, 2.0f, h);
+		Graphics()->QuadsDrawTL(&TopEdge, 1);
+		Graphics()->QuadsDrawTL(&BottomEdge, 1);
+		Graphics()->QuadsDrawTL(&LeftEdge, 1);
+		Graphics()->QuadsDrawTL(&RightEdge, 1);
+	}
 	Graphics()->QuadsEnd();
 
 	// Impulse – running light around border (5s, Legendary 6s gold)
