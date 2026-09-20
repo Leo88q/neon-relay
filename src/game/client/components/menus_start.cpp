@@ -45,8 +45,8 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		Content.VSplitLeft(Content.w*0.55f, &Hero, &Menu);
 		Menu.VSplitLeft(20.0f, nullptr, &Menu);
 	}
-	// Form A iOS – translucent Deck, cyan border, no darkening of character
-	GameClient()->m_Menus.RenderFormAPanel(Hero, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.68f), ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+	// Form A CLEAN – no covering over main character, only border, portrait 100% bright
+	GameClient()->m_Menus.RenderFormAPanel(Hero, 16.0f, ColorRGBA(0,0,0,0), ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
 	CUIRect Art = Hero;
 	Art.Margin(8.0f, &Art);
 	if(!Compact)
