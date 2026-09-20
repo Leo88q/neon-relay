@@ -50,9 +50,12 @@ export class SessionStore {
     return { token, row };
   }
 
+  // Absolute hard cap: 30 days from creation, even with sliding.
+  private static readonly MAX_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
+
   /**
-   * Validate a bearer token; slides the expiry. Returns the session or a
-   * reason: `missing` | `expired` | `revoked`.
+   * Validate a bearer token; slides the expiry but respects absolute max.
+   * Returns the session or a reason: `missing` | `expired` | `revoked`.
    */
   validate(token: string | null, now: number = Date.now()):
     { session: SessionRow; reason: null } | { session: null; reason: string } {
@@ -63,9 +66,14 @@ export class SessionStore {
     if (!row) return { session: null, reason: "missing" };
     if (row.revoked_at !== null) return { session: null, reason: "revoked" };
     if (now > row.expires_at) return { session: null, reason: "expired" };
+    // MEDIUM-07 fix: absolute lifetime prevents infinite extension via ping.
+    if (now > row.created_at + SessionStore.MAX_LIFETIME_MS) {
+      return { session: null, reason: "expired" };
+    }
+    const nextExpires = Math.min(now + this.ttlMs, row.created_at + SessionStore.MAX_LIFETIME_MS);
     this.db.run("UPDATE sessions SET last_seen_at = ?, expires_at = ? WHERE id = ?",
-      now, now + this.ttlMs, row.id);
-    return { session: { ...row, last_seen_at: now, expires_at: now + this.ttlMs }, reason: null };
+      now, nextExpires, row.id);
+    return { session: { ...row, last_seen_at: now, expires_at: nextExpires }, reason: null };
   }
 
   revoke(sessionId: string, now: number = Date.now()): void {

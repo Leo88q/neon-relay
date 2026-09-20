@@ -63,11 +63,43 @@ function readConfig(account: unknown, program: Buffer, mint: Buffer) {
     reserved: bytes.readBigUInt64LE(170), paused: bytes[178] === 1 };
 }
 function readMint(account: unknown): number {
-  const bytes = accountBytes(account, TOKEN_PROGRAM, V2_ACCOUNT_BYTES.mint);
-  check(bytes[45] === 1, "mint-uninitialized");
-  check(bytes.readUInt32LE(0) <= 1 && bytes.readUInt32LE(46) <= 1, "invalid-mint-options");
-  // All four paid tiers must fit u64, matching tier_fees_v2 in Rust.
-  const decimals = bytes[44]!;
+  // MEDIUM-08 fix: accept both classic SPL (82) and Token-2022 extended mints.
+  // Classic path uses strict 82-byte check; extended path validates TLV extensions.
+  let raw: Buffer;
+  try {
+    raw = accountBytes(account, TOKEN_PROGRAM, V2_ACCOUNT_BYTES.mint);
+  } catch (e) {
+    // If exact 82 fails, try extended Token-2022 path
+    if (!(e instanceof V2AccountError) || (e as Error).message !== "wrong-account-size") throw e;
+    // Manual extended parsing: allow larger base64
+    check(account !== null, "account-missing");
+    const acc = record((account as any));
+    // Already checked owner/executable in accountBytes path, re-check quickly
+    check((acc as any).owner === TOKEN_PROGRAM && (acc as any).executable === false, "wrong-account-owner");
+    const data = (acc as any).data;
+    check(Array.isArray(data) && data[1] === "base64" && typeof data[0] === "string", "wrong-account-encoding");
+    const bytes = Buffer.from(data[0] as string, "base64");
+    check(bytes.length > V2_ACCOUNT_BYTES.mint, "wrong-account-size");
+    check(bytes.toString("base64") === data[0], "noncanonical-account-data");
+    // Validate classic prefix still holds
+    check(bytes[45] === 1, "mint-uninitialized");
+    check(bytes.readUInt32LE(0) <= 1 && bytes.readUInt32LE(46) <= 1, "invalid-mint-options");
+    // Scan extensions for PermanentDelegate (type 12)
+    const extBytes = bytes.subarray(82);
+    for (let i = 0; i + 4 <= extBytes.length; ) {
+      const extType = extBytes.readUInt16LE(i);
+      const extLen = extBytes.readUInt16LE(i + 2);
+      if (extType === 12) throw new V2AccountError("permanent-delegate-not-allowed");
+      if (extLen > extBytes.length - i - 4) break;
+      i += 4 + extLen;
+    }
+    raw = bytes;
+  }
+  if (raw.length === V2_ACCOUNT_BYTES.mint) {
+    check(raw[45] === 1, "mint-uninitialized");
+    check(raw.readUInt32LE(0) <= 1 && raw.readUInt32LE(46) <= 1, "invalid-mint-options");
+  }
+  const decimals = raw[44]!;
   check(decimals <= 15, "unsupported-mint-decimals");
   return decimals;
 }

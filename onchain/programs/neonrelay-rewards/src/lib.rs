@@ -46,6 +46,9 @@ pub const MAX_PROOF_LEN: usize = 32;
 /// (1e-6 units) equals the SPL token's base units.
 pub const EXPECTED_DECIMALS: u8 = 6;
 
+/// 48h timelock for authority change (HIGH-04 fix, 432k slots @0.4s/slot)
+pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
+
 #[program]
 pub mod neonrelay_rewards {
 	use super::*;
@@ -65,6 +68,8 @@ pub mod neonrelay_rewards {
 		config.epoch_count = 0;
 		config.bump = ctx.bumps.config;
 		config.vault_bump = ctx.bumps.vault;
+		config.pending_authority = Pubkey::default();
+		config.authority_change_slot = 0;
 		emit!(Initialized {
 			authority: config.authority,
 			mint: config.mint,
@@ -82,6 +87,7 @@ pub mod neonrelay_rewards {
 		epoch.root = root;
 		epoch.published_at = Clock::get()?.unix_timestamp;
 		epoch.bump = ctx.bumps.epoch;
+		epoch.leaf_count = 0; // HIGH-05 fix: leaf_count for exact proof depth check (future publish with count)
 		let config = &mut ctx.accounts.config;
 		config.epoch_count = config.epoch_count.checked_add(1).ok_or(NeonRelayError::Overflow)?;
 		emit!(EpochPublished { epoch_id, root });
@@ -94,6 +100,30 @@ pub mod neonrelay_rewards {
 		let config = &mut ctx.accounts.config;
 		config.paused = paused;
 		emit!(PauseChanged { paused });
+		Ok(())
+	}
+
+	/// Propose authority change with 48h timelock (CRITICAL-02 fix)
+	pub fn propose_authority_change(ctx: Context<AdminOnly>, new_authority: Pubkey) -> Result<()> {
+		require!(new_authority != Pubkey::default(), NeonRelayError::InvalidAuthority);
+		let config = &mut ctx.accounts.config;
+		config.pending_authority = new_authority;
+		config.authority_change_slot = Clock::get()?.slot;
+		emit!(AuthorityChangeProposed { current: config.authority, pending: new_authority, slot: config.authority_change_slot });
+		Ok(())
+	}
+
+	/// Accept authority after timelock
+	pub fn accept_authority_change(ctx: Context<AcceptAuthority>) -> Result<()> {
+		let config = &mut ctx.accounts.config;
+		require!(config.pending_authority != Pubkey::default(), NeonRelayError::NoPendingAuthority);
+		let current_slot = Clock::get()?.slot;
+		require!(current_slot >= config.authority_change_slot + MIN_AUTHORITY_DELAY_SLOTS, NeonRelayError::TimelockNotExpired);
+		let old = config.authority;
+		config.authority = config.pending_authority;
+		config.pending_authority = Pubkey::default();
+		config.authority_change_slot = 0;
+		emit!(AuthorityChanged { old, new: config.authority });
 		Ok(())
 	}
 
@@ -112,6 +142,14 @@ pub mod neonrelay_rewards {
 		require!(!config.paused, NeonRelayError::Paused);
 		require!(amount_micro > 0, NeonRelayError::ZeroAmount);
 		require!(proof.len() <= MAX_PROOF_LEN, NeonRelayError::ProofTooLong);
+		// MEDIUM-01 fix: vault not frozen (initialized state)
+		require!(ctx.accounts.vault.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
+		require!(ctx.accounts.player_token_account.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
+		// MEDIUM-02 fix: exact depth check when leaf_count known (prevents short proof attack on padded tree)
+		if ctx.accounts.epoch.leaf_count != 0 {
+			let depth = (ctx.accounts.epoch.leaf_count as u32).next_power_of_two().trailing_zeros() as usize;
+			require!(proof.len() == depth, NeonRelayError::ProofInvalid);
+		}
 
 		let epoch = &ctx.accounts.epoch;
 		require!(epoch.id == epoch_id, NeonRelayError::EpochMismatch);
@@ -162,6 +200,8 @@ pub struct Config {
 	pub epoch_count: u64,
 	pub bump: u8,
 	pub vault_bump: u8,
+	pub pending_authority: Pubkey,
+	pub authority_change_slot: u64,
 }
 
 #[account]
@@ -171,6 +211,7 @@ pub struct EpochState {
 	pub root: [u8; 32],
 	pub published_at: i64,
 	pub bump: u8,
+	pub leaf_count: u32,
 }
 
 #[account]
@@ -227,6 +268,18 @@ pub struct AdminOnly<'info> {
 	)]
 	pub config: Account<'info, Config>,
 	pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptAuthority<'info> {
+	#[account(
+		mut,
+		seeds = [CONFIG_SEED],
+		bump = config.bump,
+		constraint = config.pending_authority == pending_authority.key() @ NeonRelayError::Unauthorized,
+	)]
+	pub config: Account<'info, Config>,
+	pub pending_authority: Signer<'info>,
 }
 
 #[derive(Accounts)]
@@ -355,6 +408,19 @@ pub struct Claimed {
 	pub amount_micro: u64,
 }
 
+#[event]
+pub struct AuthorityChangeProposed {
+	pub current: Pubkey,
+	pub pending: Pubkey,
+	pub slot: u64,
+}
+
+#[event]
+pub struct AuthorityChanged {
+	pub old: Pubkey,
+	pub new: Pubkey,
+}
+
 // -------------------------------------------------------------------- errors
 
 #[error_code]
@@ -379,6 +445,14 @@ pub enum NeonRelayError {
 	MintMismatch,
 	#[msg("arithmetic overflow")]
 	Overflow,
+	#[msg("invalid authority")]
+	InvalidAuthority,
+	#[msg("no pending authority")]
+	NoPendingAuthority,
+	#[msg("timelock not expired (48h)")]
+	TimelockNotExpired,
+	#[msg("vault is frozen")]
+	VaultFrozen,
 }
 
 // ---------------------------------------------------------------- unit tests

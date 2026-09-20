@@ -227,6 +227,13 @@ export async function closeEpochPrizes(deps: {
   poolMicro: number;
   epoch: number;
 }): Promise<EpochCloseResult> {
+  // HIGH-05 fix: validate poolMicro u64 and prizeTable sum before distribution.
+  if (!Number.isInteger(deps.poolMicro) || deps.poolMicro <= 0 || deps.poolMicro > Number.MAX_SAFE_INTEGER) {
+    throw new Error("poolMicro must be positive safe integer u64");
+  }
+  const tableSum = PRIZE_TABLE_BPS.reduce((a,b)=>a+b,0);
+  if (tableSum !== 10000) throw new Error("prizeTable must sum to 10000");
+  if (!Number.isInteger(deps.epoch) || deps.epoch <= 0) throw new Error("epoch must be positive integer");
   const leaves: PrizeLeaf[] = [];
   for (const row of deps.rankedTotals) {
     if (leaves.length >= PRIZE_TABLE_BPS.length) break;

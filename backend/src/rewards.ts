@@ -215,33 +215,64 @@ export class RewardService {
       event.occurred_at, now, event.server_signature, status, reason);
   }
 
-  /** Caps are per player_id (game identity) and per match. */
+  /** Caps are dual-enforced (HIGH-04 fix): per player_id AND per wallet_binding_id.
+   *  Prevents bypass by changing nickname: if wallet linked, wallet cap is the
+   *  stable identity; we enforce BOTH so neither dimension can be abused. */
   private capViolation(event: IncomingEvent, now: number): string | null {
     if (event.amount_micro > this.config.capPerMatchMicro) {
       return `amount exceeds per-match cap (${this.config.capPerMatchMicro} micro)`;
     }
-    const matchSum = this.db.get<{ s: number }>(
+    // per-match caps — check both player and wallet dimensions
+    const matchSumPlayer = this.db.get<{ s: number }>(
       `SELECT COALESCE(SUM(amount_micro), 0) AS s FROM reward_events
         WHERE match_id = ? AND player_id = ? AND status = 'accepted'`,
       event.match_id, event.player_id);
-    if ((matchSum?.s ?? 0) + event.amount_micro > this.config.capPerMatchMicro) {
+    if ((matchSumPlayer?.s ?? 0) + event.amount_micro > this.config.capPerMatchMicro) {
       return "per-match cap exceeded";
     }
+    if (event.wallet_binding_id) {
+      const matchSumWallet = this.db.get<{ s: number }>(
+        `SELECT COALESCE(SUM(amount_micro), 0) AS s FROM reward_events
+          WHERE match_id = ? AND wallet_binding_id = ? AND status = 'accepted'`,
+        event.match_id, event.wallet_binding_id);
+      if ((matchSumWallet?.s ?? 0) + event.amount_micro > this.config.capPerMatchMicro) {
+        return "per-match cap exceeded (wallet)";
+      }
+    }
     const dayStart = windowStart(now, DAY_MS);
-    const daySum = this.db.get<{ s: number }>(
+    // daily caps — player AND wallet (if linked)
+    const daySumPlayer = this.db.get<{ s: number }>(
       `SELECT COALESCE(SUM(amount_micro), 0) AS s FROM reward_events
         WHERE player_id = ? AND status = 'accepted' AND ingested_at >= ?`,
       event.player_id, dayStart);
-    if ((daySum?.s ?? 0) + event.amount_micro > this.config.capDailyMicro) {
+    if ((daySumPlayer?.s ?? 0) + event.amount_micro > this.config.capDailyMicro) {
       return "daily cap exceeded";
     }
+    if (event.wallet_binding_id) {
+      const daySumWallet = this.db.get<{ s: number }>(
+        `SELECT COALESCE(SUM(amount_micro), 0) AS s FROM reward_events
+          WHERE wallet_binding_id = ? AND status = 'accepted' AND ingested_at >= ?`,
+        event.wallet_binding_id, dayStart);
+      if ((daySumWallet?.s ?? 0) + event.amount_micro > this.config.capDailyMicro) {
+        return "daily cap exceeded (wallet)";
+      }
+    }
     const weekStart = windowStart(now, WEEK_MS);
-    const weekSum = this.db.get<{ s: number }>(
+    const weekSumPlayer = this.db.get<{ s: number }>(
       `SELECT COALESCE(SUM(amount_micro), 0) AS s FROM reward_events
         WHERE player_id = ? AND status = 'accepted' AND ingested_at >= ?`,
       event.player_id, weekStart);
-    if ((weekSum?.s ?? 0) + event.amount_micro > this.config.capWeeklyMicro) {
+    if ((weekSumPlayer?.s ?? 0) + event.amount_micro > this.config.capWeeklyMicro) {
       return "weekly cap exceeded";
+    }
+    if (event.wallet_binding_id) {
+      const weekSumWallet = this.db.get<{ s: number }>(
+        `SELECT COALESCE(SUM(amount_micro), 0) AS s FROM reward_events
+          WHERE wallet_binding_id = ? AND status = 'accepted' AND ingested_at >= ?`,
+        event.wallet_binding_id, weekStart);
+      if ((weekSumWallet?.s ?? 0) + event.amount_micro > this.config.capWeeklyMicro) {
+        return "weekly cap exceeded (wallet)";
+      }
     }
     return null;
   }

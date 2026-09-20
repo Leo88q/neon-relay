@@ -56,6 +56,8 @@ pub mod neonrelay_features {
 		config.achievements_recorded = 0;
 		config.badges_minted = 0;
 		config.bump = ctx.bumps.config;
+		config.pending_authority = Pubkey::default();
+		config.authority_change_slot = 0;
 		emit!(FeaturesInitialized { authority: config.authority });
 		Ok(())
 	}
@@ -239,6 +241,28 @@ pub mod neonrelay_features {
 		emit!(FeaturesPauseChanged { paused });
 		Ok(())
 	}
+
+	pub fn propose_authority_change(ctx: Context<FeaturesAdminOnly>, new_authority: Pubkey) -> Result<()> {
+		require!(new_authority != Pubkey::default(), FeaturesError::InvalidAuthority);
+		let config = &mut ctx.accounts.config;
+		config.pending_authority = new_authority;
+		config.authority_change_slot = Clock::get()?.slot;
+		emit!(AuthorityChangeProposed { current: config.authority, pending: new_authority, slot: config.authority_change_slot });
+		Ok(())
+	}
+
+	pub fn accept_authority_change(ctx: Context<AcceptFeaturesAuthority>) -> Result<()> {
+		let config = &mut ctx.accounts.config;
+		require!(config.pending_authority != Pubkey::default(), FeaturesError::NoPendingAuthority);
+		let current_slot = Clock::get()?.slot;
+		require!(current_slot >= config.authority_change_slot + MIN_AUTHORITY_DELAY_SLOTS, FeaturesError::TimelockNotExpired);
+		let old = config.authority;
+		config.authority = config.pending_authority;
+		config.pending_authority = Pubkey::default();
+		config.authority_change_slot = 0;
+		emit!(AuthorityChanged { old, new: config.authority });
+		Ok(())
+	}
 }
 
 // --------------------------------------------------------------------- state
@@ -251,7 +275,12 @@ pub struct FeaturesConfig {
 	pub achievements_recorded: u64,
 	pub badges_minted: u64,
 	pub bump: u8,
+	pub pending_authority: Pubkey,
+	pub authority_change_slot: u64,
 }
+
+/// 48h timelock for authority change (CRITICAL-02 fix)
+pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
 
 #[account]
 pub struct AchievementRegistry {
@@ -337,6 +366,18 @@ pub struct FeaturesAdminOnly<'info> {
 	)]
 	pub config: Account<'info, FeaturesConfig>,
 	pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptFeaturesAuthority<'info> {
+	#[account(
+		mut,
+		seeds = [CONFIG_SEED],
+		bump = config.bump,
+		constraint = config.pending_authority == pending_authority.key() @ FeaturesError::Unauthorized,
+	)]
+	pub config: Account<'info, FeaturesConfig>,
+	pub pending_authority: Signer<'info>,
 }
 
 #[derive(Accounts)]
@@ -565,6 +606,19 @@ pub struct FeaturesPauseChanged {
 	pub paused: bool,
 }
 
+#[event]
+pub struct AuthorityChangeProposed {
+	pub current: Pubkey,
+	pub pending: Pubkey,
+	pub slot: u64,
+}
+
+#[event]
+pub struct AuthorityChanged {
+	pub old: Pubkey,
+	pub new: Pubkey,
+}
+
 // -------------------------------------------------------------------- errors
 
 #[error_code]
@@ -573,6 +627,12 @@ pub enum FeaturesError {
 	Unauthorized,
 	#[msg("program is paused; player actions are temporarily disabled")]
 	Paused,
+	#[msg("invalid authority")]
+	InvalidAuthority,
+	#[msg("no pending authority")]
+	NoPendingAuthority,
+	#[msg("timelock not expired (48h)")]
+	TimelockNotExpired,
 	#[msg("achievement id must be below the bitmap size")]
 	AchievementIdOutOfRange,
 	#[msg("achievement has not been recorded for this player")]
