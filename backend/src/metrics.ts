@@ -10,6 +10,7 @@
  *                    companion to GET /v1/admin/stuck).
  */
 import type { Db } from "./db.ts";
+import type { RpcPoolStatus } from "./rpc.ts";
 
 export const STUCK_SUBMITTED_MS = 6 * 60 * 60 * 1000;
 
@@ -84,10 +85,23 @@ export interface Metrics {
     open_proposals: number;
     oldest_open_proposal_age_ms: number | null;
     unreconciled_prize_epochs: number[];
+    /** Compact RPC-pool health (full detail: GET /v1/admin/rpc-status). */
+    rpc: {
+      configured: boolean;
+      active: "primary" | "fallback" | null;
+      single_provider: boolean;
+      failovers_total: number;
+      last_failover_at: number | null;
+      chain_match: boolean | null;
+      chain_rejected: ("primary" | "fallback")[];
+    };
   };
 }
 
-export function computeMetrics(db: Db, days: number, now: number = Date.now()): Metrics {
+export function computeMetrics(
+  db: Db, days: number, now: number = Date.now(),
+  rpc: RpcPoolStatus | null = null,
+): Metrics {
   if (!Number.isInteger(days) || days < 1 || days > 90) {
     throw new Error("window must be within 1..90 days");
   }
@@ -191,6 +205,24 @@ export function computeMetrics(db: Db, days: number, now: number = Date.now()): 
       oldest_open_proposal_age_ms: openProposals.length === 0
         ? null : now - (openProposals[0] as { created_at: number }).created_at,
       unreconciled_prize_epochs: unreconciled,
+      rpc: rpc === null
+        ? {
+          configured: false, active: null, single_provider: true,
+          failovers_total: 0, last_failover_at: null,
+          chain_match: null, chain_rejected: [],
+        }
+        : {
+          configured: true,
+          active: rpc.active,
+          single_provider: rpc.single_provider,
+          failovers_total: rpc.failovers_total,
+          last_failover_at: rpc.last_failover_at,
+          chain_match: rpc.chain.match,
+          chain_rejected: [
+            rpc.endpoints.primary.chain_rejected ? "primary" as const : null,
+            rpc.endpoints.fallback?.chain_rejected ? "fallback" as const : null,
+          ].filter((role): role is "primary" | "fallback" => role !== null),
+        },
     },
   };
 }

@@ -90,11 +90,37 @@ migrations plus `POST /v1/admin/backup` restores are the recovery story.
 
 ## 6. RPC configuration
 
-Production reads chain state through `NEONRELAY_RPC_URL`. Requirements:
+Production reads chain state through a dual-provider pool
+(`backend/src/rpc.ts`): `NEONRELAY_RPC_URL` (primary) plus the optional
+`NEONRELAY_RPC_FALLBACK_URL`. Every chain read — tickets, vault pool,
+reconciliation, treasury snapshots — tries primary first and fails over
+to the fallback on any transport failure, timeout, HTTP error or
+JSON-RPC error; a failed endpoint cools down for
+`NEONRELAY_RPC_COOLDOWN_MS` (default 30s) and traffic fails back
+automatically on recovery. Per-request timeout:
+`NEONRELAY_RPC_TIMEOUT_MS` (default 10s).
 
-- HTTPS endpoint with `finalized` commitment support (Helius/Triton or
+Chain-identity guard ("config comparison"): the pool pins the first
+`getGenesisHash` it learns and rejects any endpoint serving another
+chain; with `NEONRELAY_EXPECTED_GENESIS_HASH` set, every endpoint must
+match it. A provider pointed at the wrong cluster therefore fails
+closed instead of feeding money-path reads. Identity is pinned per
+process lifetime; a restart re-verifies.
+
+Requirements:
+
+- HTTPS endpoints with `finalized` commitment support (Helius/Triton or
   self-hosted Agave ≥ 3.0.14); the public `api.*.solana.com` endpoints are
-  devnet-convenience only.
-- Dual-provider failover (primary + fallback with config comparison) is the
-  documented follow-up; until it lands, an RPC outage fails closed — closes
-  and reconciliations return 502/503 and no distribution is computed.
+  devnet-convenience only. Primary and fallback SHOULD sit on distinct
+  infrastructure (distinct providers, or provider + self-hosted).
+- Staging and mainnet MUST set `NEONRELAY_RPC_FALLBACK_URL` and
+  `NEONRELAY_EXPECTED_GENESIS_HASH` (the cluster's public genesis hash).
+
+Operability: `GET /v1/admin/rpc-status` shows per-endpoint health
+(counters, cooldowns, pinned genesis; URLs are credential-redacted),
+`pipeline.rpc` in `GET /v1/admin/metrics` carries the compact summary,
+and an on-fallback or chain-rejected state adds a line to stuck-report
+digests (`GET /v1/admin/stuck&alert=1`). When *both* providers are down
+the pool fails closed — closes and reconciliations return 502/503 and
+no distribution is computed. Fallback drill: `docs/DEVNET_RUNBOOK.md`
+§8.

@@ -44,9 +44,10 @@ import type { SessionStore } from "./sessions.ts";
 import type { WalletStore } from "./wallets.ts";
 import { migrationCount, type Db } from "./db.ts";
 import {
-  base58Decode, base58Encode, closeEpochPrizes, entryReference, httpRpc,
+  base58Decode, base58Encode, closeEpochPrizes, entryReference,
   readVaultPool, ticketStatus, VaultReadError,
 } from "./economy.ts";
+import { createRpcPool } from "./rpc.ts";
 import { buildTree, leafHash, proofFor } from "./merkle.ts";
 
 const str = (value: unknown, field: string, max = 512): string => {
@@ -504,7 +505,18 @@ export function buildRouter(deps: {
     if (!binding) throw new HttpError(401, "binding-missing", "wallet binding is gone");
     return Buffer.from(binding.public_key, "base64url");
   };
-  const rpc = httpRpc(config.rpcUrl);
+  // Dual-provider chain-read pool (docs/DEPLOYMENT_POLICY.md §6): every RPC
+  // call below — tickets, vault pool, reconciliation, treasury — fails
+  // over to the fallback provider while primary is down and fails back
+  // automatically. Both endpoints are genesis-pinned to one chain.
+  const rpcPool = createRpcPool({
+    primary: config.rpcUrl,
+    fallback: config.rpcFallbackUrl,
+    timeoutMs: config.rpcTimeoutMs,
+    cooldownMs: config.rpcCooldownMs,
+    expectedGenesis: config.expectedGenesisHash,
+  });
+  const rpc = rpcPool.call;
 
   router.add("GET", "/v1/economy/reference", (ctx) => {
     economyGuard();
@@ -730,7 +742,13 @@ export function buildRouter(deps: {
     if (!Number.isInteger(days) || days < 1 || days > 90) {
       throw new HttpError(400, "bad-request", "days must be an integer within 1..90");
     }
-    return computeMetrics(db, days);
+    return computeMetrics(db, days, Date.now(), rpcPool.getStatus());
+  });
+
+  router.add("GET", "/v1/admin/rpc-status", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    return rpcPool.getStatus();
   });
 
   // ------------------------------------------------- Tranche B: stuck + reconcile
@@ -772,6 +790,14 @@ export function buildRouter(deps: {
     if (report.proposals.length > 0) lines.push(`${report.proposals.length} proposals open past threshold`);
     if (report.unreconciled_prize_epochs.length > 0) {
       lines.push(`prize epochs never reconciled: ${report.unreconciled_prize_epochs.join(",")}`);
+    }
+    const rpcStatus = rpcPool.getStatus();
+    if (rpcStatus.active === "fallback") {
+      lines.push(`rpc serving from fallback provider (failovers ${rpcStatus.failovers_total})`);
+    }
+    for (const role of ["primary", "fallback"] as const) {
+      const ep = rpcStatus.endpoints[role];
+      if (ep?.chain_rejected) lines.push(`rpc ${role} rejected: ${ep.last_error ?? "chain mismatch"}`);
     }
     return { ...report, alert: await maybeAlert(identity, ctx, "stuck pipeline items", lines) };
   });

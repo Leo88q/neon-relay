@@ -213,8 +213,11 @@ All economy routes require a wallet session unless noted; all return
 
 Configuration: `NEONRELAY_ECONOMY_PROGRAM_ID`, `NEONRELAY_SKR_MINT`
 (operator-set, validated, never hardcoded), `NEONRELAY_RPC_URL`
-(default devnet). Without the program id the routes answer
-`503 economy-not-configured`.
+(default devnet) plus the dual-provider pool settings
+`NEONRELAY_RPC_FALLBACK_URL`, `NEONRELAY_RPC_TIMEOUT_MS`,
+`NEONRELAY_RPC_COOLDOWN_MS` and `NEONRELAY_EXPECTED_GENESIS_HASH`
+(`docs/DEPLOYMENT_POLICY.md` §6). Without the program id the routes
+answer `503 economy-not-configured`.
 
 ## Game events (Tranche B, docs/PRIVACY_GAME_EVENTS.md)
 
@@ -253,6 +256,17 @@ Retention enforcement (audited). Exactly one of
 per-day DAU/sessions/avg session duration, match finish rate (overall + by
 mode), claim-intent mix + failure rate + stale count, and backlog ages (open
 reward epochs + pending value, open proposals, unreconciled prize epochs).
+`pipeline.rpc` carries the compact RPC-pool summary (active provider,
+failover count, chain-identity state); full detail lives in
+`GET /v1/admin/rpc-status`.
+
+### GET /v1/admin/rpc-status  (operator+)
+Dual-provider RPC health (`docs/DEPLOYMENT_POLICY.md` §6): `{ active,
+single_provider, failovers_total, last_failover_at, last_failback_at,
+chain, endpoints }` with per-endpoint counters, cooldowns and pinned
+genesis hashes. Endpoint URLs are credential-redacted. An `active:
+"fallback"` or chain-rejected state also adds a line to stuck-report
+digests.
 
 ### GET /v1/admin/stuck?threshold_hours=1..720&alert=  (operator+)
 `{ checked_at, threshold_ms, intents, proposals, unreconciled_prize_epochs,

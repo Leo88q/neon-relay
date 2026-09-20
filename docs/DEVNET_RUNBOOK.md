@@ -160,6 +160,14 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
   switch with old signatures are rejected (`rejected_signature`).
 * **Vault top-ups**: operator-only, test mint only; the program can never
   mint.
+* **RPC fallback drill** (after configuring `NEONRELAY_RPC_FALLBACK_URL`):
+  point `NEONRELAY_RPC_URL` at a dead address, restart the backend and
+  confirm a ticket read still succeeds (`GET /v1/economy/ticket`) while
+  `GET /v1/admin/rpc-status` reports `active: "fallback"` with
+  `failovers_total` 1; restore the primary URL, wait out
+  `NEONRELAY_RPC_COOLDOWN_MS`, and confirm reads fail back
+  (`last_failback_at` set, `active: "primary"`). Also verify both
+  endpoints report the same `genesis` before any paid epoch.
 * **Audit**: `GET /v1/rewards/epochs` exposes `audit_root` per epoch; compare
   with the on-chain `EpochState.root` directly, or run the automated compare
   `GET /v1/admin/reconcile/rewards` / `.../prizes` (per-epoch verdicts +

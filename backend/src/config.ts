@@ -54,6 +54,22 @@ export interface Config {
   capDailyMicro: number;
   capWeeklyMicro: number;
   rpcUrl: string;
+  /**
+   * Optional second Solana RPC provider. When set, chain reads fail over
+   * to it while the primary is failing (cooldown-bounded) and fail back
+   * automatically; both must serve the same chain (genesis-pinned).
+   */
+  rpcFallbackUrl: string | null;
+  /** Per-request RPC timeout (AbortSignal). */
+  rpcTimeoutMs: number;
+  /** How long a failed RPC endpoint is skipped before being retried. */
+  rpcCooldownMs: number;
+  /**
+   * Optional expected chain identity (base58 genesis hash). When set, any
+   * RPC endpoint serving another chain is rejected — the last line of
+   * defence against a provider pointed at the wrong cluster.
+   */
+  expectedGenesisHash: string | null;
   economyProgramId: string | null;
   /** Rewards program id for on-chain epoch reconciliation (Tranche B). */
   rewardsProgramId: string | null;
@@ -75,14 +91,14 @@ const num = (value: string | undefined, fallback: number): number => {
   return parsed;
 };
 
-function mintAddress(value: string | undefined, name: string): string | null {
+function mintAddress(value: string | undefined, name: string, noun = "public key"): string | null {
   if (value === undefined || value === "") return null;
   try {
     if (value.length < 32 || value.length > 44) throw new Error();
     const raw = base58Decode(value);
     if (raw.length !== 32 || raw.every((byte) => byte === 0) || base58Encode(raw) !== value) throw new Error();
   } catch {
-    throw new Error(`${name} must be a canonical nonzero 32-byte base58 public key`);
+    throw new Error(`${name} must be a canonical nonzero 32-byte base58 ${noun}`);
   }
   return value;
 }
@@ -122,6 +138,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     capWeeklyMicro: num(env.NEONRELAY_CAP_WEEKLY_MICRO, 1_000_000_000),
     // --- economy (stage 15): SKR pay-to-play, docs/PLAY_ECONOMY.md
     rpcUrl: env.NEONRELAY_RPC_URL ?? "https://api.devnet.solana.com",
+    rpcFallbackUrl: env.NEONRELAY_RPC_FALLBACK_URL ?? null,
+    rpcTimeoutMs: num(env.NEONRELAY_RPC_TIMEOUT_MS, 10_000),
+    rpcCooldownMs: num(env.NEONRELAY_RPC_COOLDOWN_MS, 30_000),
+    expectedGenesisHash: mintAddress(env.NEONRELAY_EXPECTED_GENESIS_HASH, "NEONRELAY_EXPECTED_GENESIS_HASH", "genesis hash"),
     economyProgramId: env.NEONRELAY_ECONOMY_PROGRAM_ID ?? null,
     rewardsProgramId: env.NEONRELAY_REWARDS_PROGRAM_ID ?? null,
     // Operator-set SKR mint (Solana Mobile Seeker token). Never hardcoded;
