@@ -251,7 +251,7 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 
 	// Background Deck
 	CUIRect Bg = Rect;
-	Bg.Draw(ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.62f), IGraphics::CORNER_ALL, 8.0f); // iOS translucent behind character
+	Bg.Draw(ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), IGraphics::CORNER_ALL, 8.0f); // solid behind character, not blurred
 
 	// Portrait inside
 	CUIRect Inner = Rect;

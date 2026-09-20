@@ -265,13 +265,12 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 	float h = Rect.h;
 
 	ColorRGBA BgColor = ms_ColorTabbarInactive;
-	BgColor.a = 0.62f; // iOS translucent
+	BgColor.a = 0.68f; // iOS translucent
 	ColorRGBA BorderColor = ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.65f);
 	if(Checked)
 	{
-		BgColor = ms_ColorTabbarActive;
-		BgColor.a = 0.78f;
-		BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 1.0f);
+		BgColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.78f); // Cyan active, not gold
+		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f);
 	}
 	else if(MouseInside)
 	{
@@ -2388,10 +2387,10 @@ void CMenus::UpdateColors()
 	// Violet #A077FF Rare, Gold #FFC857 Legendary
 	ms_GuiColor = ColorRGBA(0.0235f, 0.0392f, 0.1098f, 1.0f);
 
-	// Tabs: inactive Deck with dim border, active Gold/Cyan, hover Cyan
-	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.94f);
-	ms_ColorTabbarActiveOutgame = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.96f); // Gold for active
-	ms_ColorTabbarHoverOutgame = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.92f); // Cyan
+	// Tabs: inactive Deck, active Cyan (no yellow), hover Cyan – fix yellow broken buttons
+	ms_ColorTabbarInactiveOutgame = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.72f);
+	ms_ColorTabbarActiveOutgame = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f); // Cyan for active, no yellow
+	ms_ColorTabbarHoverOutgame = ColorRGBA(0.0706f, 0.1059f, 0.2745f, 0.85f); // Deck2 hover
 
 	ms_ColorTabbarInactiveIngame = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.90f);
 	ms_ColorTabbarActiveIngame = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.90f);
@@ -2431,29 +2430,36 @@ void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, Co
 		Graphics()->QuadsEnd();
 	}
 
-	// Main background – iOS translucent 0.62-0.78, not solid
+	// Main background – respect transparent for character frames
+	bool SkipBg = BgColor.a < 0.05f;
 	float bgAlpha = BgColor.a * 0.72f;
-	if(BgColor.a < 0.1f) bgAlpha = 0.68f; // for character frames that passed 0.0f
-	else if(BgColor.a > 0.9f) bgAlpha = 0.74f;
+	if(BgColor.a > 0.9f) bgAlpha = 0.74f;
+	if(BgColor.a < 0.01f) SkipBg = true;
 
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, bgAlpha);
-	IGraphics::CFreeformItem FreeTop(x + c, y, x + w - c, y, x + w, y + c, x, y + c);
+	if(!SkipBg)
+	{
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, bgAlpha);
+		IGraphics::CFreeformItem FreeTop(x + c, y, x + w - c, y, x + w, y + c, x, y + c);
 	Graphics()->QuadsDrawFreeform(&FreeTop, 1);
 	IGraphics::CQuadItem QuadMid(x, y + c, w, h - 2 * c);
 	Graphics()->QuadsDrawTL(&QuadMid, 1);
 	IGraphics::CFreeformItem FreeBottom(x, y + h - c, x + w, y + h - c, x + w - c, y + h, x + c, y + h);
 	Graphics()->QuadsDrawFreeform(&FreeBottom, 1);
 	Graphics()->QuadsEnd();
+	}
 
 	// Inner gradient top – Deck2 #121B46 with more translucency
+	if(!SkipBg)
+	{
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(0.0706f, 0.1059f, 0.2745f, 0.42f);
 	IGraphics::CQuadItem QuadTopGrad(x + c, y, w - 2 * c, h * 0.38f);
 	Graphics()->QuadsDrawTL(&QuadTopGrad, 1);
 	Graphics()->QuadsEnd();
+	}
 
 	// Subtle raster / glass line
 	Graphics()->TextureClear();
