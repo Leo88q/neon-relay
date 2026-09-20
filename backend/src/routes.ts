@@ -29,6 +29,13 @@ import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
 import { RewardService, RewardsError } from "./rewards.ts";
+import { GameEventService, GameEventsError } from "./game_events.ts";
+import { collectStuck, computeMetrics } from "./metrics.ts";
+import { alertSinks, formatDigest, sendAlertText } from "./alerts.ts";
+import {
+  ReconcileError, readTreasuryState, reconcilePrizeEpoch,
+  reconcileRewardsEpoch, recordTreasury,
+} from "./reconcile.ts";
 import {
   AdminStore, adminConfigured, authenticateAdmin, type AdminIdentity, type ProposalRow,
 } from "./admin.ts";
@@ -350,7 +357,8 @@ export function buildRouter(deps: {
     "reward_leaves", "claim_intents", "economy_epochs", "economy_matches",
     "economy_v2_epochs", "economy_v2_intents", "game_identity_challenges",
     "game_identity_grants", "game_accounts", "game_pairings",
-    "admin_proposals", "admin_audit", "schema_migrations",
+    "admin_proposals", "admin_audit", "game_events",
+    "reconcile_snapshots", "treasury_snapshots", "schema_migrations",
   ];
 
   router.add("GET", "/v1/admin/ledger-stats", (ctx) => {
@@ -635,6 +643,268 @@ export function buildRouter(deps: {
         page.limit, page.offset),
       pagination: { limit: page.limit, offset: page.offset, total },
     };
+  });
+
+  // ------------------------------------------------- Tranche B: game events
+  const gameEvents = new GameEventService(db, config);
+
+  router.add("POST", "/v1/game/events", (ctx) => {
+    guard(ctx, "game-ingest");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const events = body["events"];
+    if (!Array.isArray(events) || events.length === 0 || events.length > 500) {
+      throw new HttpError(400, "bad-request", "events must be an array of 1..500 items");
+    }
+    const results = gameEvents.ingest(events as never[], Date.now());
+    return {
+      results,
+      accepted: results.filter((r) => r.status === "accepted").length,
+    };
+  });
+
+  router.add("GET", "/v1/admin/game-events", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const sinceRaw = ctx.url.searchParams.get("since");
+    const since = sinceRaw === null ? null : Number(sinceRaw);
+    if (sinceRaw !== null && (!Number.isInteger(since) || (since as number) < 0)) {
+      throw new HttpError(400, "bad-request", "since must be a non-negative integer timestamp");
+    }
+    const eventType = ctx.url.searchParams.get("event_type");
+    const playerId = ctx.url.searchParams.get("player_id");
+    if (playerId !== null && (playerId.length === 0 || playerId.length > 128)) {
+      throw new HttpError(400, "bad-request", "player_id filter invalid");
+    }
+    try {
+      const { rows, total } = gameEvents.list({
+        limit: page.limit, offset: page.offset,
+        eventType, playerId, since,
+      });
+      return { events: rows, pagination: { limit: page.limit, offset: page.offset, total } };
+    } catch (err) {
+      if (err instanceof GameEventsError) throw new HttpError(err.status, err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("POST", "/v1/admin/game-events/purge", (ctx) => {
+    guard(ctx, "admin-backup");
+    const identity = requireAdmin(ctx, "superadmin");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const days = body["older_than_days"];
+    const playerId = body["player_id"];
+    const byAge = typeof days === "number";
+    const byPlayer = typeof playerId === "string";
+    if (byAge === byPlayer) {
+      throw new HttpError(400, "bad-request", "supply exactly one of older_than_days|player_id");
+    }
+    if (byAge && (!Number.isInteger(days) || (days as number) < 1 || (days as number) > 3650)) {
+      throw new HttpError(400, "bad-request", "older_than_days must be an integer within 1..3650");
+    }
+    if (byPlayer && ((playerId as string).length === 0 || (playerId as string).length > 128)) {
+      throw new HttpError(400, "bad-request", "player_id invalid");
+    }
+    const now = Date.now();
+    const purged = byPlayer
+      ? gameEvents.purge({ playerId: playerId as string }, now)
+      : gameEvents.purge({ olderThanMs: (days as number) * 86_400_000 }, now);
+    const result = byPlayer
+      ? { purged, player_id: playerId }
+      : { purged, older_than_days: days, cutoff: now - (days as number) * 86_400_000 };
+    admin.audit({
+      actorRole: identity.role, actorHash: identity.fingerprint,
+      action: "game-events-purged",
+      params: byPlayer ? { player_id: playerId } : { older_than_days: days },
+      result, ip: ctx.ip,
+    }, now);
+    return result;
+  });
+
+  // ------------------------------------------------- Tranche B: metrics
+  router.add("GET", "/v1/admin/metrics", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const rawDays = ctx.url.searchParams.get("days");
+    const days = rawDays === null ? 7 : Number(rawDays);
+    if (!Number.isInteger(days) || days < 1 || days > 90) {
+      throw new HttpError(400, "bad-request", "days must be an integer within 1..90");
+    }
+    return computeMetrics(db, days);
+  });
+
+  // ------------------------------------------------- Tranche B: stuck + reconcile
+  const reconcileStatus = (code: string): number =>
+    code === "rpc-unavailable" ? 502 : code === "bad-epoch" ? 400 : 503;
+
+  const maybeAlert = async (
+    identity: { role: string; fingerprint: string },
+    ctx: RequestContext,
+    reason: string,
+    lines: string[],
+  ): Promise<unknown> => {
+    if (ctx.url.searchParams.get("alert") !== "1" || lines.length === 0) {
+      return { alerted: false };
+    }
+    const text = formatDigest(`Neon Relay: ${reason}`, lines);
+    const result = await sendAlertText(config, text);
+    admin.audit({
+      actorRole: identity.role, actorHash: identity.fingerprint,
+      action: "alert-sent", params: { reason, lines }, result, ip: ctx.ip,
+    });
+    return { alerted: result.sent, sinks: result.sinks, errors: result.errors };
+  };
+
+  router.add("GET", "/v1/admin/stuck", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    const rawHours = ctx.url.searchParams.get("threshold_hours");
+    const hours = rawHours === null ? 6 : Number(rawHours);
+    if (!Number.isInteger(hours) || hours < 1 || hours > 720) {
+      throw new HttpError(400, "bad-request", "threshold_hours must be an integer within 1..720");
+    }
+    const report = collectStuck(db, hours * 3_600_000);
+    const lines: string[] = [];
+    if (report.intents.length > 0) {
+      lines.push(`${report.intents.length} claim intents stuck in submitted `
+        + `(oldest ${Math.round((report.intents[0] as { age_ms: number }).age_ms / 3_600_000)}h)`);
+    }
+    if (report.proposals.length > 0) lines.push(`${report.proposals.length} proposals open past threshold`);
+    if (report.unreconciled_prize_epochs.length > 0) {
+      lines.push(`prize epochs never reconciled: ${report.unreconciled_prize_epochs.join(",")}`);
+    }
+    return { ...report, alert: await maybeAlert(identity, ctx, "stuck pipeline items", lines) };
+  });
+
+  const rewardsGuard = () => {
+    if (!config.rewardsProgramId) {
+      throw new HttpError(503, "rewards-not-configured",
+        "set NEONRELAY_REWARDS_PROGRAM_ID to enable rewards reconciliation");
+    }
+  };
+
+  router.add("GET", "/v1/admin/reconcile/rewards", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    rewardsGuard();
+    const epochId = Number(ctx.url.searchParams.get("epoch_id") ?? "NaN");
+    if (!Number.isInteger(epochId) || epochId < 0) {
+      throw new HttpError(400, "bad-request", "epoch_id must be a non-negative integer");
+    }
+    try {
+      const result = await reconcileRewardsEpoch(db, rpc, config.rewardsProgramId as string, epochId);
+      const lines = result.status === "match" || result.status === "not-sealed"
+        ? []
+        : [`rewards epoch ${epochId}: ${result.status} (snapshot ${result.snapshot_id})`];
+      return { ...result, alert: await maybeAlert(identity, ctx, "rewards reconcile", lines) };
+    } catch (err) {
+      if (err instanceof ReconcileError) throw new HttpError(reconcileStatus(err.code), err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("GET", "/v1/admin/reconcile/prizes", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    economyGuard();
+    const epoch = Number(ctx.url.searchParams.get("epoch") ?? "NaN");
+    if (!Number.isInteger(epoch) || epoch <= 0) {
+      throw new HttpError(400, "bad-request", "epoch must be a positive integer");
+    }
+    try {
+      const result = await reconcilePrizeEpoch(db, rpc, config.economyProgramId as string, epoch);
+      const lines = result.status === "match"
+        ? []
+        : [`prize epoch ${epoch}: ${result.status} (snapshot ${result.snapshot_id})`];
+      return { ...result, alert: await maybeAlert(identity, ctx, "prize reconcile", lines) };
+    } catch (err) {
+      if (err instanceof ReconcileError) throw new HttpError(reconcileStatus(err.code), err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("GET", "/v1/admin/reconcile/snapshots", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const kind = ctx.url.searchParams.get("kind");
+    if (kind !== null && !["rewards-epoch", "prize-epoch"].includes(kind)) {
+      throw new HttpError(400, "bad-request", "kind must be rewards-epoch|prize-epoch");
+    }
+    const where = kind === null ? "" : "WHERE kind = ?";
+    const args = kind === null ? [] : [kind];
+    const total = db.get<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM reconcile_snapshots ${where}`, ...args)?.n ?? 0;
+    const snapshots = db.all(
+      `SELECT * FROM reconcile_snapshots ${where} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      ...args, page.limit, page.offset);
+    return { snapshots, pagination: { limit: page.limit, offset: page.offset, total } };
+  });
+
+  router.add("POST", "/v1/admin/treasury/snapshot", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    economyGuard();
+    try {
+      const state = await readTreasuryState(rpc, config.economyProgramId as string, config.skrMint);
+      const recorded = recordTreasury(db, state);
+      admin.audit({
+        actorRole: identity.role, actorHash: identity.fingerprint,
+        action: "treasury-snapshotted", result: { id: recorded.id }, ip: ctx.ip,
+      });
+      return recorded;
+    } catch (err) {
+      if (err instanceof ReconcileError) throw new HttpError(reconcileStatus(err.code), err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("GET", "/v1/admin/treasury", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const total = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM treasury_snapshots")?.n ?? 0;
+    const rows = db.all<{
+      id: number; created_at: number; program: string; mint: string; vault: string;
+      treasury: string; vault_balance: string; treasury_balance: string; reserved: string;
+    }>("SELECT * FROM treasury_snapshots ORDER BY id DESC LIMIT ? OFFSET ?", page.limit, page.offset);
+    // Deltas against the chronologically previous row (null when unknown).
+    const chronological = [...rows].reverse();
+    const withDeltas = chronological.map((row, i) => {
+      const prev = i === 0 ? undefined : chronological[i - 1];
+      const previous = prev ?? (page.offset === 0 ? undefined : db.get<{
+        vault_balance: string; treasury_balance: string; reserved: string;
+      }>("SELECT vault_balance, treasury_balance, reserved FROM treasury_snapshots WHERE id < ? ORDER BY id DESC LIMIT 1",
+        row.id));
+      const delta = (nowText: string, before?: string): string | null =>
+        before === undefined ? null : (BigInt(nowText) - BigInt(before)).toString();
+      return {
+        ...row,
+        vault_delta: delta(row.vault_balance, previous?.vault_balance),
+        treasury_delta: delta(row.treasury_balance, previous?.treasury_balance),
+        reserved_delta: delta(row.reserved, previous?.reserved),
+      };
+    }).reverse();
+    return { snapshots: withDeltas, pagination: { limit: page.limit, offset: page.offset, total } };
+  });
+
+  router.add("POST", "/v1/admin/alerts/test", async (ctx) => {
+    guard(ctx, "admin-backup");
+    const identity = requireAdmin(ctx, "superadmin");
+    const sinks = alertSinks(config);
+    if (sinks.length === 0) {
+      throw new HttpError(503, "alerts-not-configured",
+        "set NEONRELAY_ALERT_WEBHOOK_URL and/or the Telegram pair to enable alerts");
+    }
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const custom = typeof body["text"] === "string" ? body["text"].slice(0, 500) : "";
+    const text = formatDigest("Neon Relay alert test", custom ? [custom] : ["if you read this, the sink works"]);
+    const result = await sendAlertText(config, text);
+    admin.audit({
+      actorRole: identity.role, actorHash: identity.fingerprint,
+      action: "alert-sent", params: { reason: "test" }, result, ip: ctx.ip,
+    });
+    return result;
   });
 
   router.add("GET", "/v1/economy/proof", (ctx) => {

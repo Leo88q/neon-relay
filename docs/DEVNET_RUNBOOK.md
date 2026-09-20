@@ -33,7 +33,7 @@ on-chain root → player claims.
 ./scripts/local_syntax_probe.sh          # C++20 probe: 127 clean / 1 skip / 0 fail
 ./scripts/neonrelay_signer_test.sh       # C++ signer vs node:crypto: PASS
 (cd backend && npm test)                 # 30/30
-(cd onchain && npm test)                 # 12/12
+(cd onchain && npm test)                 # 41/41
 ./scripts/check_secrets.py --self-test && ./scripts/check_secrets.py
 ./scripts/check_branding.sh --release --check-translations
 ./scripts/check_assets.sh --licenses
@@ -161,8 +161,26 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 * **Vault top-ups**: operator-only, test mint only; the program can never
   mint.
 * **Audit**: `GET /v1/rewards/epochs` exposes `audit_root` per epoch; compare
-  with the on-chain `EpochState.root` (`anchor shell`:
-  `await program.account.epochState.fetch(epochPda)`).
+  with the on-chain `EpochState.root` directly, or run the automated compare
+  `GET /v1/admin/reconcile/rewards` / `.../prizes` (per-epoch verdicts +
+  persisted snapshots, `docs/API.md` "Beta operations"). Snapshot the treasury
+  after every publish and claim (`POST /v1/admin/treasury/snapshot`) so
+  movement deltas are reviewable in `GET /v1/admin/treasury`.
+* **Health review**: `GET /v1/admin/metrics` (DAU/sessions, finish rate,
+  failed-tx rate, pipeline age) and `GET /v1/admin/stuck` every ops shift;
+  append `&alert=1` to either reconcile call or the stuck report to push a
+  digest to the configured alert channel on non-clean results.
+* **Game event shipper**: batch the game server's signed JSONL with
+  `scripts/ship_game_events.sh --file events.jsonl --backend $BACKEND`
+  (idempotent: re-runs collapse to `duplicate`; see the logrotate note at the
+  top of the script). Game event privacy/retention:
+  `docs/PRIVACY_GAME_EVENTS.md`.
+* **Deployment check**: after every deploy or authority change, re-run
+  `onchain/scripts/verify_deployment.sh --cluster devnet --manifest
+  onchain/deployment.devnet.json` (manifest copied from
+  `deployment.example.json`); promotion policy, Squads + 48h timelock rules
+  and incident runbooks live in `docs/DEPLOYMENT_POLICY.md` and
+  `docs/INCIDENT_RESPONSE.md`.
 
 ## 9. Known gaps
 

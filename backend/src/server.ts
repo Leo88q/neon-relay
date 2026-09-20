@@ -9,6 +9,7 @@ import { loadConfig, type Config } from "./config.ts";
 import { Db, migrate } from "./db.ts";
 import { AuthService, AuthFailure } from "./auth.ts";
 import { AdminError, adminConfigured } from "./admin.ts";
+import { GameEventsError } from "./game_events.ts";
 import { RewardService, RewardsError } from "./rewards.ts";
 import { SessionStore } from "./sessions.ts";
 import { WalletStore } from "./wallets.ts";
@@ -68,6 +69,8 @@ export function createApp(config: Config = loadConfig()): App {
       } else if (err instanceof RewardsError) {
         sendJson(res, err.status, { error: { code: err.code, message: err.message } });
       } else if (err instanceof AdminError) {
+        sendJson(res, err.status, { error: { code: err.code, message: err.message } });
+      } else if (err instanceof GameEventsError) {
         sendJson(res, err.status, { error: { code: err.code, message: err.message } });
       } else {
         // never leak internals; the message goes to the log only

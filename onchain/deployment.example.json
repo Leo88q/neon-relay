@@ -1,0 +1,11 @@
+{
+  "_comment": "Copy to deployment.<cluster>.json, fill in real program ids and the Squads vault, never commit mainnet keys. Verified with onchain/scripts/verify_deployment.sh (docs/DEPLOYMENT_POLICY.md).",
+  "cluster": "devnet",
+  "upgrade_authority": "SQUADS_VAULT_PUBKEY_HERE",
+  "programs": {
+    "neonrelay_rewards": "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
+    "neonrelay_features": "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP",
+    "neonrelay_economy": "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9",
+    "neonrelay_assets": "F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc"
+  }
+}

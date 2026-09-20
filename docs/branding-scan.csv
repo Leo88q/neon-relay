@@ -500,10 +500,10 @@ docs/ASSET_MANIFEST.csv,822,legal-attribution,upstream/third-party license notic
 docs/ASSET_MANIFEST.csv,823,legal-attribution,upstream/third-party license notice (must stay),"data/themes/winter_day.map,b806fa10983bc1a2e15520ddcd5e982066d4b1145108618221ddf895a6128d91,application/x-teeworlds-map,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstre"
 docs/ASSET_MANIFEST.csv,824,legal-attribution,upstream/third-party license notice (must stay),"data/themes/winter_night.map,d05ed31158419e9fe73ab84ae6a1612b444cd41f61efc8d78110e273876ec358,application/x-teeworlds-map,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upst"
 docs/ASSET_MANIFEST.csv,825,legal-attribution,upstream/third-party license notice (must stay),"data/touch_controls.json,f29a81a585c59af8734421ee73684bae35a1406e34ed4f62cc1051ad3729880a,application/json,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-"
-docs/ASSET_MANIFEST.csv,826,legal-attribution,upstream/third-party license notice (must stay),"data/wordlist.txt,8f5ca830b8bffb6fe39c9736c024a00a6a6411adb3f83a9be8bfeeb6e067ae69,text/plain,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,https://g"
-docs/ASSET_MANIFEST.csv,830,legal-attribution,upstream/third-party license notice (must stay),"other/emscripten/index.html,89a84ef0d1c1c1e77239617e1a7622cb62745fec8164832640a9d23d5871e77b,.html,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,http"
-docs/ASSET_MANIFEST.csv,831,legal-attribution,upstream/third-party license notice (must stay),"other/emscripten/server.py,f77ce96cfeba90de427616db5e855b12287d36e70ae80574b417fe968ec60261,.py,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,https:/"
-docs/ASSET_MANIFEST.csv,846,legal-attribution,upstream/third-party license notice (must stay),"other/icons/license.txt,a74d290ced4df0e235d4b27db1cec600a6a5c41b1a3cbdd2b8f95da8a203a2bd,text/plain,see file,see file,see file,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/other/icons/license.txt,third-party "
+docs/ASSET_MANIFEST.csv,834,legal-attribution,upstream/third-party license notice (must stay),"data/wordlist.txt,8f5ca830b8bffb6fe39c9736c024a00a6a6411adb3f83a9be8bfeeb6e067ae69,text/plain,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,https://g"
+docs/ASSET_MANIFEST.csv,838,legal-attribution,upstream/third-party license notice (must stay),"other/emscripten/index.html,89a84ef0d1c1c1e77239617e1a7622cb62745fec8164832640a9d23d5871e77b,.html,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,http"
+docs/ASSET_MANIFEST.csv,839,legal-attribution,upstream/third-party license notice (must stay),"other/emscripten/server.py,f77ce96cfeba90de427616db5e855b12287d36e70ae80574b417fe968ec60261,.py,DDNet contributors (no individual author named upstream),Copyright DDNet contributors (no individual author named upstream),CC-BY-SA-3.0,https:/"
+docs/ASSET_MANIFEST.csv,854,legal-attribution,upstream/third-party license notice (must stay),"other/icons/license.txt,a74d290ced4df0e235d4b27db1cec600a6a5c41b1a3cbdd2b8f95da8a203a2bd,text/plain,see file,see file,see file,https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/other/icons/license.txt,third-party "
 docs/BENCHMARKING.md,3,historical-documentation,document that describes the upstream derivation,DDNet is available in the [Phoronix Test Suite](https://openbenchmarking.org/test/pts/ddnet). If you have PTS installed you can easily benchmark DDNet on your own system like this:
 docs/BENCHMARKING.md,6,historical-documentation,document that describes the upstream derivation,phoronix-test-suite benchmark ddnet
 docs/BUILDING-android.md,5,historical-documentation,document that describes the upstream derivation,-	First follow the general instructions for setting up https://github.com/ddnet/ddnet for building on Linux.
@@ -755,8 +755,7 @@ docs/baseline/cmake-configure-upstream.log,123,historical-documentation,document
 docs/baseline/cmake-configure-upstream.log,144,historical-documentation,document that describes the upstream derivation,You must install Curl to compile DDNet
 docs/baseline/cmake-configure-upstream.log,148,historical-documentation,document that describes the upstream derivation,You must install Rust and Cargo to compile DDNet
 docs/baseline/cmake-configure-upstream.log,152,historical-documentation,document that describes the upstream derivation,You must install SQLite3 to compile DDNet
-docs/dm/CHROME_DM_RU.md,60,historical-documentation,document that describes the upstream derivation,Источник: https://github.com/teeworlds/teeworlds-maps/blob/64baa0e11c7f9a1390279394ca3536277afcd61b/dm7.map
-docs/dm/CHROME_STUDY.json,302,legal-attribution,upstream/third-party license notice (must stay),"""upstream_repository"": ""https://github.com/teeworlds/teeworlds-maps"","
+docs/dm/CHROME_STUDY.json,306,legal-attribution,upstream/third-party license notice (must stay),"""upstream_repository"": ""https://github.com/teeworlds/teeworlds-maps"","
 docs/dm/NEON_DM_RU.md,6,historical-documentation,document that describes the upstream derivation,`sv_gametype neon-dm`. Значение по умолчанию `ddnet` и выбор контроллера
 docs/dm/NEON_DM_RU.md,26,historical-documentation,document that describes the upstream derivation,- Дробовик выпускает пять снарядов. Обычный DDRace-дробовик остаётся лучом.
 docs/dm/NEON_DM_RU.md,56,historical-documentation,document that describes the upstream derivation,"после map settings, чтобы не унаследовать медленные DDRace-снаряды."
@@ -837,9 +836,8 @@ other/icons/license.txt,10,legal-attribution,upstream/third-party license notice
 other/neonrelay.desktop,12,comment,"source comment, not shown to users",# Neon Relay is a standalone derivative of the upstream DDNet project.
 scripts/android/cmake_android.sh,271,comment,"source comment, not shown to users",# rebrand (upstream: org/ddnet/client)
 scripts/android/cmake_android.sh,273,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),cp -R ../ddnet-libs/sdl/java/org src/main/java/
-scripts/build_chrome_dm.py,44,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
-scripts/build_chrome_dm.py,45,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
-scripts/build_chrome_dm.py,133,legal-attribution,"derived map author, modification notice or pinned source","'upstream_repository':'https://github.com/teeworlds/teeworlds-maps',"
+scripts/build_chrome_dm.py,39,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
+scripts/build_chrome_dm.py,40,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
 scripts/build_neon_mapres.py,41,code/api-identifier,identifier kept for protocol/build compatibility ((ddnet|ddrace|teeworlds)[-_][a-z0-9_\-]*\.(png|r),"""desert_main.png"", ""ddnet_tiles.png"", ""round_tiles.png"", ""snow.png"","
 scripts/build_neon_skins_all.py,505,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",The 128x128 sheet is the standard DDNet 0.7 eye layout: each cell is a
 scripts/build_warmup.py,41,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
@@ -875,10 +873,10 @@ scripts/gen_asset_manifest.py,39,historical-documentation,document that describe
 scripts/gen_asset_manifest.py,86,historical-documentation,document that describes the upstream derivation,"""grass_main is redrawn from the original Teeworlds grass_main mapres (Apache-2.0)"","
 scripts/gen_asset_manifest.py,190,historical-documentation,document that describes the upstream derivation,"unnamed = ""DDNet contributors (no individual author named upstream)"""
 scripts/gen_asset_manifest.py,191,historical-documentation,document that describes the upstream derivation,"unnamed_cc = ""Copyright DDNet contributors (no individual author named upstream)"""
-scripts/gen_asset_manifest.py,289,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
-scripts/gen_asset_manifest.py,293,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
-scripts/gen_asset_manifest.py,355,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""Teeworlds 0.7 contributors"", ""no per-file license upstream"","
-scripts/gen_asset_manifest.py,357,historical-documentation,document that describes the upstream derivation,"""Teeworlds 0.7 skin system; upstream names neither author nor license here"","
+scripts/gen_asset_manifest.py,296,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
+scripts/gen_asset_manifest.py,300,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""DDNet/Teeworlds translation contributors"","
+scripts/gen_asset_manifest.py,362,historical-documentation,document that describes the upstream derivation,"add(rel, path, ""Teeworlds 0.7 contributors"", ""no per-file license upstream"","
+scripts/gen_asset_manifest.py,364,historical-documentation,document that describes the upstream derivation,"""Teeworlds 0.7 skin system; upstream names neither author nor license here"","
 scripts/git_revision.py,6,code/api-identifier,brand appears only inside code identifiers,"git_hash = os.environ.get(""DDNET_GIT_SHORTREV_HASH"")"
 scripts/import_file_score.py,72,code/api-identifier,brand appears only inside code identifiers,"""DDNet7 BOOL DEFAULT FALSE"""
 scripts/import_file_score.py,76,code/api-identifier,brand appears only inside code identifiers,"""INSERT INTO record_race (Map, Name, Time, Server, "" + """".join(f""cp{i + 1}, "" for i in range(25)) + ""GameId, DDNet7) "" + f""VALUES ({','.join('?' * 31)})"","
@@ -1531,37 +1529,37 @@ src/game/client/components/ghost.cpp,206,comment,brand appears only in a source 
 src/game/client/components/ghost.h,122,code/api-identifier,brand appears only inside code identifiers,"static void GetGhostCharacter(CGhostCharacter *pGhostChar, const CNetObj_Character *pChar, const CNetObj_DDNetCharacter *pDDnetChar);"
 src/game/client/components/ghost.h,127,code/api-identifier,brand appears only inside code identifiers,"void AddInfos(const CNetObj_Character *pChar, const CNetObj_DDNetCharacter *pDDnetChar);"
 src/game/client/components/hud.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/hud.cpp,33,code/api-identifier,brand appears only inside code identifiers,m_DDRaceEffectsTextContainerIndex.Reset();
-src/game/client/components/hud.cpp,59,code/api-identifier,brand appears only inside code identifiers,TextRender()->DeleteTextContainer(m_DDRaceEffectsTextContainerIndex);
-src/game/client/components/hud.cpp,79,code/api-identifier,brand appears only inside code identifiers,m_DDRaceTime = 0;
-src/game/client/components/hud.cpp,355,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_ReceivedDDNetPlayerFinishTimes && ClientData.m_FinishTimeSeconds != FinishTime::NOT_FINISHED_MILLIS)
-src/game/client/components/hud.cpp,756,code/api-identifier,brand appears only inside code identifiers,if(!GameClient()->m_GameInfo.m_HudDDRace && Client()->IsSixup())
-src/game/client/components/hud.cpp,1703,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),if(GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_LocalClientId].m_HasExtendedData && g_Config.m_ClShowhudDDRace && GameClient()->m_GameInfo.m_HudDDRace)
-src/game/client/components/hud.cpp,1709,code/api-identifier,brand appears only inside code identifiers,RenderDDRaceEffects();
-src/game/client/components/hud.cpp,1720,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),g_Config.m_ClShowhudDDRace &&
-src/game/client/components/hud.cpp,1722,code/api-identifier,brand appears only inside code identifiers,GameClient()->m_GameInfo.m_HudDDRace)
-src/game/client/components/hud.cpp,1752,code/api-identifier,brand appears only inside code identifiers,if(MsgType == NETMSGTYPE_SV_DDRACETIME || MsgType == NETMSGTYPE_SV_DDRACETIMELEGACY)
-src/game/client/components/hud.cpp,1754,code/api-identifier,brand appears only inside code identifiers,CNetMsg_Sv_DDRaceTime *pMsg = (CNetMsg_Sv_DDRaceTime *)pRawMsg;
-src/game/client/components/hud.cpp,1756,code/api-identifier,brand appears only inside code identifiers,m_DDRaceTime = pMsg->m_Time;
-src/game/client/components/hud.cpp,1776,code/api-identifier,brand appears only inside code identifiers,if(MsgType == NETMSGTYPE_SV_RECORDLEGACY && GameClient()->m_GameInfo.m_DDRaceRecordMessage)
-src/game/client/components/hud.cpp,1778,code/api-identifier,brand appears only inside code identifiers,m_DDRaceTime = pMsg->m_ServerTimeBest; // First value: m_Time
-src/game/client/components/hud.cpp,1796,code/api-identifier,brand appears only inside code identifiers,void CHud::RenderDDRaceEffects()
-src/game/client/components/hud.cpp,1798,code/api-identifier,brand appears only inside code identifiers,if(m_DDRaceTime)
-src/game/client/components/hud.cpp,1804,code/api-identifier,brand appears only inside code identifiers,"str_time(m_DDRaceTime, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));"
-src/game/client/components/hud.cpp,1819,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RecreateTextContainer(m_DDRaceEffectsTextContainerIndex, &Cursor, aBuf);"
-src/game/client/components/hud.cpp,1820,code/api-identifier,brand appears only inside code identifiers,if(m_FinishTimeDiff != 0.0f && m_DDRaceEffectsTextContainerIndex.Valid())
-src/game/client/components/hud.cpp,1837,code/api-identifier,brand appears only inside code identifiers,"TextRender()->AppendTextContainer(m_DDRaceEffectsTextContainerIndex, &DiffCursor, aBuf);"
-src/game/client/components/hud.cpp,1839,code/api-identifier,brand appears only inside code identifiers,if(m_DDRaceEffectsTextContainerIndex.Valid())
-src/game/client/components/hud.cpp,1843,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RenderTextContainer(m_DDRaceEffectsTextContainerIndex, TextRender()->DefaultTextColor(), OutlineColor);"
-src/game/client/components/hud.cpp,1878,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RecreateTextContainer(m_DDRaceEffectsTextContainerIndex, &Cursor, aBuf);"
-src/game/client/components/hud.cpp,1880,code/api-identifier,brand appears only inside code identifiers,if(m_DDRaceEffectsTextContainerIndex.Valid())
-src/game/client/components/hud.cpp,1884,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RenderTextContainer(m_DDRaceEffectsTextContainerIndex, TextRender()->DefaultTextColor(), OutlineColor);"
-src/game/client/components/hud.cpp,1904,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_ReceivedDDNetPlayerFinishTimes)
+src/game/client/components/hud.cpp,34,code/api-identifier,brand appears only inside code identifiers,m_DDRaceEffectsTextContainerIndex.Reset();
+src/game/client/components/hud.cpp,60,code/api-identifier,brand appears only inside code identifiers,TextRender()->DeleteTextContainer(m_DDRaceEffectsTextContainerIndex);
+src/game/client/components/hud.cpp,80,code/api-identifier,brand appears only inside code identifiers,m_DDRaceTime = 0;
+src/game/client/components/hud.cpp,495,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_ReceivedDDNetPlayerFinishTimes && ClientData.m_FinishTimeSeconds != FinishTime::NOT_FINISHED_MILLIS)
+src/game/client/components/hud.cpp,914,code/api-identifier,brand appears only inside code identifiers,if(!GameClient()->m_GameInfo.m_HudDDRace && Client()->IsSixup())
+src/game/client/components/hud.cpp,1731,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),if(GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_LocalClientId].m_HasExtendedData && g_Config.m_ClShowhudDDRace && GameClient()->m_GameInfo.m_HudDDRace)
+src/game/client/components/hud.cpp,1737,code/api-identifier,brand appears only inside code identifiers,RenderDDRaceEffects();
+src/game/client/components/hud.cpp,1748,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),g_Config.m_ClShowhudDDRace &&
+src/game/client/components/hud.cpp,1750,code/api-identifier,brand appears only inside code identifiers,GameClient()->m_GameInfo.m_HudDDRace)
+src/game/client/components/hud.cpp,1780,code/api-identifier,brand appears only inside code identifiers,if(MsgType == NETMSGTYPE_SV_DDRACETIME || MsgType == NETMSGTYPE_SV_DDRACETIMELEGACY)
+src/game/client/components/hud.cpp,1782,code/api-identifier,brand appears only inside code identifiers,CNetMsg_Sv_DDRaceTime *pMsg = (CNetMsg_Sv_DDRaceTime *)pRawMsg;
+src/game/client/components/hud.cpp,1784,code/api-identifier,brand appears only inside code identifiers,m_DDRaceTime = pMsg->m_Time;
+src/game/client/components/hud.cpp,1804,code/api-identifier,brand appears only inside code identifiers,if(MsgType == NETMSGTYPE_SV_RECORDLEGACY && GameClient()->m_GameInfo.m_DDRaceRecordMessage)
+src/game/client/components/hud.cpp,1806,code/api-identifier,brand appears only inside code identifiers,m_DDRaceTime = pMsg->m_ServerTimeBest; // First value: m_Time
+src/game/client/components/hud.cpp,1824,code/api-identifier,brand appears only inside code identifiers,void CHud::RenderDDRaceEffects()
+src/game/client/components/hud.cpp,1826,code/api-identifier,brand appears only inside code identifiers,if(m_DDRaceTime)
+src/game/client/components/hud.cpp,1832,code/api-identifier,brand appears only inside code identifiers,"str_time(m_DDRaceTime, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));"
+src/game/client/components/hud.cpp,1847,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RecreateTextContainer(m_DDRaceEffectsTextContainerIndex, &Cursor, aBuf);"
+src/game/client/components/hud.cpp,1848,code/api-identifier,brand appears only inside code identifiers,if(m_FinishTimeDiff != 0.0f && m_DDRaceEffectsTextContainerIndex.Valid())
+src/game/client/components/hud.cpp,1865,code/api-identifier,brand appears only inside code identifiers,"TextRender()->AppendTextContainer(m_DDRaceEffectsTextContainerIndex, &DiffCursor, aBuf);"
+src/game/client/components/hud.cpp,1867,code/api-identifier,brand appears only inside code identifiers,if(m_DDRaceEffectsTextContainerIndex.Valid())
+src/game/client/components/hud.cpp,1871,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RenderTextContainer(m_DDRaceEffectsTextContainerIndex, TextRender()->DefaultTextColor(), OutlineColor);"
+src/game/client/components/hud.cpp,1906,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RecreateTextContainer(m_DDRaceEffectsTextContainerIndex, &Cursor, aBuf);"
+src/game/client/components/hud.cpp,1908,code/api-identifier,brand appears only inside code identifiers,if(m_DDRaceEffectsTextContainerIndex.Valid())
+src/game/client/components/hud.cpp,1912,code/api-identifier,brand appears only inside code identifiers,"TextRender()->RenderTextContainer(m_DDRaceEffectsTextContainerIndex, TextRender()->DefaultTextColor(), OutlineColor);"
+src/game/client/components/hud.cpp,1932,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_ReceivedDDNetPlayerFinishTimes)
 src/game/client/components/hud.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/hud.h,52,code/api-identifier,brand appears only inside code identifiers,STextContainerIndex m_DDRaceEffectsTextContainerIndex;
-src/game/client/components/hud.h,121,comment,brand appears only in a source comment,// DDRace
-src/game/client/components/hud.h,128,code/api-identifier,brand appears only inside code identifiers,void RenderDDRaceEffects();
-src/game/client/components/hud.h,132,code/api-identifier,brand appears only inside code identifiers,int m_DDRaceTime;
+src/game/client/components/hud.h,54,code/api-identifier,brand appears only inside code identifiers,STextContainerIndex m_DDRaceEffectsTextContainerIndex;
+src/game/client/components/hud.h,124,comment,brand appears only in a source comment,// DDRace
+src/game/client/components/hud.h,131,code/api-identifier,brand appears only inside code identifiers,void RenderDDRaceEffects();
+src/game/client/components/hud.h,135,code/api-identifier,brand appears only inside code identifiers,int m_DDRaceTime;
 src/game/client/components/important_alert.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/important_alert.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/infomessages.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
@@ -1601,27 +1599,27 @@ src/game/client/components/maplayers.h,2,code/api-identifier,identifier kept for
 src/game/client/components/menu_background.cpp,43,code/api-identifier,identifier kept for protocol/build compatibility (POS_SETTINGS_DDNET),"Positions[CMenuBackground::POS_SETTINGS_DDNET] = vec2(1200.0f, 200.0f);"
 src/game/client/components/menu_background.h,44,code/api-identifier,identifier kept for protocol/build compatibility (POS_SETTINGS_DDNET),"POS_SETTINGS_DDNET,"
 src/game/client/components/menus.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/menus.cpp,767,comment,brand appears only in a source comment,// Initially add DDNet as favorite community and select its tab.
-src/game/client/components/menus.cpp,768,comment,brand appears only in a source comment,// This must be delayed until the DDNet info is available.
-src/game/client/components/menus.cpp,770,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),ServerBrowser()->DDNetInfoAvailable())
-src/game/client/components/menus.cpp,773,code/api-identifier,identifier kept for protocol/build compatibility (\bCOMMUNITY_DDNET\b),if(ServerBrowser()->Community(IServerBrowser::COMMUNITY_DDNET) != nullptr)
-src/game/client/components/menus.cpp,776,code/api-identifier,identifier kept for protocol/build compatibility (\bCOMMUNITY_DDNET\b),ServerBrowser()->FavoriteCommunitiesFilter().Add(IServerBrowser::COMMUNITY_DDNET);
-src/game/client/components/menus.cpp,1513,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
-src/game/client/components/menus.cpp,1521,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
-src/game/client/components/menus.cpp,2341,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
-src/game/client/components/menus.cpp,2361,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
-src/game/client/components/menus.cpp,2374,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
+src/game/client/components/menus.cpp,924,comment,brand appears only in a source comment,// Initially add DDNet as favorite community and select its tab.
+src/game/client/components/menus.cpp,925,comment,brand appears only in a source comment,// This must be delayed until the DDNet info is available.
+src/game/client/components/menus.cpp,927,code/api-identifier,identifier kept for protocol/build compatibility (\bDDNetInfo[A-Za-z]*\b),ServerBrowser()->DDNetInfoAvailable())
+src/game/client/components/menus.cpp,930,code/api-identifier,identifier kept for protocol/build compatibility (\bCOMMUNITY_DDNET\b),if(ServerBrowser()->Community(IServerBrowser::COMMUNITY_DDNET) != nullptr)
+src/game/client/components/menus.cpp,933,code/api-identifier,identifier kept for protocol/build compatibility (\bCOMMUNITY_DDNET\b),ServerBrowser()->FavoriteCommunitiesFilter().Add(IServerBrowser::COMMUNITY_DDNET);
+src/game/client/components/menus.cpp,1671,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
+src/game/client/components/menus.cpp,1679,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
+src/game/client/components/menus.cpp,2736,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
+src/game/client/components/menus.cpp,2756,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
+src/game/client/components/menus.cpp,2769,code/api-identifier,identifier kept for protocol/build compatibility (\b(Load|Reset|Request)DDNetInfo[A-Za-z]*\b),Client()->RequestDDNetInfo();
 src/game/client/components/menus.h,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/menus.h,526,code/api-identifier,brand appears only inside code identifiers,"void RenderServerbrowserDDNetFilter(CUIRect View,"
-src/game/client/components/menus.h,583,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),// found in menus_settings_ddnet.cpp
-src/game/client/components/menus.h,584,code/api-identifier,brand appears only inside code identifiers,void RenderSettingsDDNet(CUIRect MainView);
-src/game/client/components/menus.h,724,code/api-identifier,brand appears only inside code identifiers,"SETTINGS_DDNET,"
-src/game/client/components/menus.h,767,comment,brand appears only in a source comment,// DDRace
+src/game/client/components/menus.h,527,code/api-identifier,brand appears only inside code identifiers,"void RenderServerbrowserDDNetFilter(CUIRect View,"
+src/game/client/components/menus.h,584,code/api-identifier,identifier kept for protocol/build compatibility ((ddracechat|ddracecommands|menus_settings_ddnet|),// found in menus_settings_ddnet.cpp
+src/game/client/components/menus.h,585,code/api-identifier,brand appears only inside code identifiers,void RenderSettingsDDNet(CUIRect MainView);
+src/game/client/components/menus.h,730,code/api-identifier,brand appears only inside code identifiers,"SETTINGS_DDNET,"
+src/game/client/components/menus.h,773,comment,brand appears only in a source comment,// DDRace
 src/game/client/components/menus_browser.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/menus_browser.cpp,867,code/api-identifier,brand appears only inside code identifiers,"void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,"
-src/game/client/components/menus_browser.cpp,1063,code/api-identifier,brand appears only inside code identifiers,"RenderServerbrowserDDNetFilter(View, ServerBrowser()->CommunitiesFilter(), ItemHeight + 2.0f * Spacing, MaxEntries, EntriesPerRow, s_ScrollRegion, s_vItemIds, true, GetItemName, RenderItem);"
-src/game/client/components/menus_browser.cpp,1088,code/api-identifier,brand appears only inside code identifiers,"RenderServerbrowserDDNetFilter(View, ServerBrowser()->CountriesFilter(), ItemHeight + 2.0f * Spacing, MaxEntries, EntriesPerRow, s_ScrollRegion, s_vItemIds, false, GetItemName, RenderItem);"
-src/game/client/components/menus_browser.cpp,1112,code/api-identifier,brand appears only inside code identifiers,"RenderServerbrowserDDNetFilter(View, ServerBrowser()->TypesFilter(), ItemHeight + 2.0f * Spacing, MaxEntries, EntriesPerRow, s_ScrollRegion, s_vItemIds, false, GetItemName, RenderItem);"
+src/game/client/components/menus_browser.cpp,869,code/api-identifier,brand appears only inside code identifiers,"void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,"
+src/game/client/components/menus_browser.cpp,1067,code/api-identifier,brand appears only inside code identifiers,"RenderServerbrowserDDNetFilter(View, ServerBrowser()->CommunitiesFilter(), ItemHeight + 2.0f * Spacing, MaxEntries, EntriesPerRow, s_ScrollRegion, s_vItemIds, true, GetItemName, RenderItem);"
+src/game/client/components/menus_browser.cpp,1092,code/api-identifier,brand appears only inside code identifiers,"RenderServerbrowserDDNetFilter(View, ServerBrowser()->CountriesFilter(), ItemHeight + 2.0f * Spacing, MaxEntries, EntriesPerRow, s_ScrollRegion, s_vItemIds, false, GetItemName, RenderItem);"
+src/game/client/components/menus_browser.cpp,1116,code/api-identifier,brand appears only inside code identifiers,"RenderServerbrowserDDNetFilter(View, ServerBrowser()->TypesFilter(), ItemHeight + 2.0f * Spacing, MaxEntries, EntriesPerRow, s_ScrollRegion, s_vItemIds, false, GetItemName, RenderItem);"
 src/game/client/components/menus_demo.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/menus_ingame.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/menus_ingame.cpp,48,code/api-identifier,brand appears only inside code identifiers,bool ShowDDRaceButtons = MainView.w > 855.0f;
@@ -1629,9 +1627,9 @@ src/game/client/components/menus_ingame.cpp,206,code/api-identifier,brand appear
 src/game/client/components/menus_ingame.cpp,220,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_ReceivedDDNetPlayer && GameClient()->m_Snap.m_pLocalInfo && (ShowDDRaceButtons || !GameClient()->IsTeamPlay()))
 src/game/client/components/menus_ingame.cpp,767,code/api-identifier,brand appears only inside code identifiers,if(GameClient()->m_GameInfo.m_DDRaceTeam)
 src/game/client/components/menus_settings.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
-src/game/client/components/menus_settings.cpp,129,code/api-identifier,brand appears only inside code identifiers,else if(g_Config.m_UiSettingsPage == SETTINGS_DDNET)
-src/game/client/components/menus_settings.cpp,131,code/api-identifier,identifier kept for protocol/build compatibility (POS_SETTINGS_DDNET),GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_DDNET);
-src/game/client/components/menus_settings.cpp,132,code/api-identifier,brand appears only inside code identifiers,RenderSettingsDDNet(MainView);
+src/game/client/components/menus_settings.cpp,131,code/api-identifier,brand appears only inside code identifiers,else if(g_Config.m_UiSettingsPage == SETTINGS_DDNET)
+src/game/client/components/menus_settings.cpp,133,code/api-identifier,identifier kept for protocol/build compatibility (POS_SETTINGS_DDNET),GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_DDNET);
+src/game/client/components/menus_settings.cpp,134,code/api-identifier,brand appears only inside code identifiers,RenderSettingsDDNet(MainView);
 src/game/client/components/menus_settings_appearance.cpp,2,code/api-identifier,identifier kept for protocol/build compatibility (acquire a complete release at teeworlds\.com),"/* If you are missing that file, acquire a complete release at teeworlds.com.                */"
 src/game/client/components/menus_settings_appearance.cpp,118,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),"DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudDDRace, Localize(""Show race HUD""), &g_Config.m_ClShowhudDDRace, &RightView, LineSize);"
 src/game/client/components/menus_settings_appearance.cpp,119,code/api-identifier,identifier kept for protocol/build compatibility (\bm_(Cl|Sv|Br|Ui|Gfx|Snd|Dbg|Inp|Dbg|Ed|Player|S),if(g_Config.m_ClShowhudDDRace)

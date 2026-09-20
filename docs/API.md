@@ -215,3 +215,79 @@ Configuration: `NEONRELAY_ECONOMY_PROGRAM_ID`, `NEONRELAY_SKR_MINT`
 (operator-set, validated, never hardcoded), `NEONRELAY_RPC_URL`
 (default devnet). Without the program id the routes answer
 `503 economy-not-configured`.
+
+## Game events (Tranche B, docs/PRIVACY_GAME_EVENTS.md)
+
+### POST /v1/game/events
+Ingest server-signed session/match lifecycle events. **No bearer auth**:
+authenticity is the per-event Ed25519 signature against
+`NEONRELAY_SERVER_SIGNING_PUBLIC_KEY` (absent key → `503`). Body:
+
+```json
+{ "events": [ {
+    "session_id": "uuid|null", "event_type": "session_start|session_end|match_start|match_end|disconnect",
+    "player_id": "p1|null", "match_id": "m1|null", "mode": "race|null",
+    "result": { "finished": true, "place": 2 },
+    "occurred_at": 1730000000000, "server_signature": "<base64url>"
+} ] }
+```
+
+Response `200`: `{ results: [{ idempotency_hash, status, reason? }], accepted: n }`
+with `status` ∈ `accepted | duplicate | rejected_signature | rejected_validation`.
+Batch limit 500; match events require `match_id`; `result` ≤ 2 KiB JSON.
+Transport: `scripts/ship_game_events.sh` (at-least-once; replays collapse).
+
+### GET /v1/admin/game-events  (operator+)
+`{ events, pagination }` with `?limit=&offset=` (defaults 50/0, max 200) plus
+`?event_type=`, `?player_id=` and `?since=` (unix ms) filters.
+
+### POST /v1/admin/game-events/purge  (superadmin)
+Retention enforcement (audited). Exactly one of
+`{ "older_than_days": 1..3650 }` (rolling retention) or
+`{ "player_id": "…" }` (deletion request) → `{ purged, … }`.
+
+## Beta operations (Tranche B)
+
+### GET /v1/admin/metrics?days=1..90  (operator+)
+`{ window_days, since, now, activity, finish, claims, pipeline }`:
+per-day DAU/sessions/avg session duration, match finish rate (overall + by
+mode), claim-intent mix + failure rate + stale count, and backlog ages (open
+reward epochs + pending value, open proposals, unreconciled prize epochs).
+
+### GET /v1/admin/stuck?threshold_hours=1..720&alert=  (operator+)
+`{ checked_at, threshold_ms, intents, proposals, unreconciled_prize_epochs,
+alert }`: claim intents stuck in `submitted`, proposals open past the
+threshold (default 6h) and prize closes nobody reconciled. `&alert=1` sends
+a digest to the configured sinks when anything is found (audited).
+
+### GET /v1/admin/reconcile/rewards?epoch_id=  (operator+)
+Compares a sealed backend epoch against the on-chain `EpochState`
+(`NEONRELAY_REWARDS_PROGRAM_ID`; `503 rewards-not-configured` without it):
+`{ status, mismatches, backend, onchain, details, snapshot_id, alert }`.
+`status` ∈ `match | not-sealed | missing-onchain | missing-backend |
+missing-both | unexpected-onchain | mismatch:<fields>`. Every run is
+persisted; `&alert=1` notifies on anything but `match`/`not-sealed`.
+
+### GET /v1/admin/reconcile/prizes?epoch=  (operator+)
+Same for v1 prize closes vs the on-chain `PrizeEpoch`. The on-chain total
+may lag the backend figure (claims decrement it; reported as
+`details.claimed_micro`) but never lead it.
+
+### GET /v1/admin/reconcile/snapshots  (operator+)
+Append-only comparison history: `{ snapshots, pagination }` with
+`?kind=rewards-epoch|prize-epoch` and `?limit=&offset=`.
+
+### POST /v1/admin/treasury/snapshot  (operator+)
+Reads the v1 economy vault/treasury balances + reservations from finalized
+chain state, appends a `treasury_snapshots` row and returns it with deltas
+against the previous snapshot (`vault_delta`, …; `null` for the first).
+
+### GET /v1/admin/treasury  (operator+)
+Balance history with per-row deltas: `{ snapshots, pagination }`.
+
+### POST /v1/admin/alerts/test  (superadmin)
+Sends a test digest to every configured sink
+(`NEONRELAY_ALERT_WEBHOOK_URL`, `NEONRELAY_TELEGRAM_BOT_TOKEN` +
+`NEONRELAY_TELEGRAM_CHAT_ID`); optional `{ "text": "…" }` (≤ 500 chars).
+No sinks → `503 alerts-not-configured`. Sink failures are reported in the
+response, never thrown.

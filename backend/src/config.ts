@@ -55,8 +55,15 @@ export interface Config {
   capWeeklyMicro: number;
   rpcUrl: string;
   economyProgramId: string | null;
+  /** Rewards program id for on-chain epoch reconciliation (Tranche B). */
+  rewardsProgramId: string | null;
   skrMint: string | null;
   potatoMint: string | null;
+  /** Generic JSON webhook for alert digests (optional, Tranche B). */
+  alertWebhookUrl: string | null;
+  /** Telegram alert sink (optional; both must be set to enable). */
+  telegramBotToken: string | null;
+  telegramChatId: string | null;
 }
 
 const num = (value: string | undefined, fallback: number): number => {
@@ -116,9 +123,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // --- economy (stage 15): SKR pay-to-play, docs/PLAY_ECONOMY.md
     rpcUrl: env.NEONRELAY_RPC_URL ?? "https://api.devnet.solana.com",
     economyProgramId: env.NEONRELAY_ECONOMY_PROGRAM_ID ?? null,
+    rewardsProgramId: env.NEONRELAY_REWARDS_PROGRAM_ID ?? null,
     // Operator-set SKR mint (Solana Mobile Seeker token). Never hardcoded;
     // devnet runs use a labelled test mint (BL-16).
     skrMint,
     potatoMint,
+    alertWebhookUrl: env.NEONRELAY_ALERT_WEBHOOK_URL ?? null,
+    telegramBotToken: env.NEONRELAY_TELEGRAM_BOT_TOKEN ?? null,
+    telegramChatId: env.NEONRELAY_TELEGRAM_CHAT_ID ?? null,
   };
 }

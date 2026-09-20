@@ -43,7 +43,10 @@ limitation.
       (`NEONRELAY_BACKUP_DIR`) off-site on a schedule, and run a restore
       drill before the first paid epoch.
 - [ ] 🔴 **Program upgrade authority**: before any non-devnet deployment,
-      transfer to a multisig or renounce (`docs/THREAT_MODEL.md` §6 residual).
+      transfer all four programs to the Squads multisig vault and verify with
+      `onchain/scripts/verify_deployment.sh`; staging/mainnet promotion path
+      in `docs/DEPLOYMENT_POLICY.md` (BL-16 gate for real mints). The transfer
+      itself is operator action on the release machine.
 - [ ] ✅ No secret material in the repository:
       `python3 scripts/check_secrets.py --self-test && python3 scripts/check_secrets.py`.
 
@@ -53,8 +56,9 @@ limitation.
       (127 clean / 1 skip / 0 fail).
 - [ ] ✅ Signer cross-verification: `./scripts/neonrelay_signer_test.sh`
       (log: `docs/baseline/neonrelay-signer-test.log`).
-- [ ] ✅ Backend: `cd backend && npm test` (30/30, Node 22).
-- [ ] ✅ On-chain offline suite: `cd onchain && npm test` (12/12).
+- [ ] ✅ Backend: `cd backend && npm test` (144/144 incl. Tranche-B
+      reconcile/stuck/game-events/metrics/alerts suites, Node 22).
+- [ ] ✅ On-chain offline suite: `cd onchain && npm test` (41/41).
 - [ ] ✅ Hygiene: `check_config_variables.py`, `check_header_guards.py`,
       `tidy_alphabetical.py`, `check_standard_headers.py`.
 
@@ -87,9 +91,16 @@ limitation.
       mint (`onchain/scripts/create_test_mint.sh`): ingest → caps → seal →
       publish → claim → confirmation, plus a pause/resume drill and a key
       rotation drill.
-- [ ] ✅ Segment-wise pipeline evidence already in-repo: backend e2e (30/30),
-      Merkle parity backend↔client↔program-source (12/12), signer C++↔Node
-      (harness PASS).
+- [ ] ✅ Segment-wise pipeline evidence already in-repo: backend 144/144
+      (incl. 10 reconcile + 5 game-events + 2 metrics + 4 alerts = 21 new
+      Tranche-B tests), Merkle parity backend↔client↔program-source (12/12),
+      signer C++↔Node (harness PASS), plus live shipper idempotence smoke
+      (`scripts/ship_game_events.sh` run1 accepted / run2 duplicates).
+- [ ] 🟠 Rehearse the new beta-operations layer on devnet: batch game events
+      through the shipper, `GET /v1/admin/metrics`, `GET /v1/admin/stuck`,
+      reconcile every sealed epoch, snapshot the treasury after publish/claim
+      (`docs/API.md` "Beta operations"), and deliver
+      `POST /v1/admin/alerts/test` to the operator channel.
 - [ ] 🔴 No mainnet mint, no official token, nothing named SKR anywhere —
       re-run `grep -ri skr onchain/ backend/ docs/` and keep it empty
       (enforced for `onchain/` by `onchain/test/program.test.ts`).
@@ -102,8 +113,13 @@ limitation.
 - [ ] ✅ Docs never present mocks as production: blockers BL-01…BL-12 with
       exact failing commands (`docs/KNOWN_LIMITATIONS.md`), final report
       (`docs/FINAL_REPORT.md`).
+- [ ] 🟠 Game event privacy: 90-day rolling purge + per-player deletion are
+      implemented and audited (`docs/PRIVACY_GAME_EVENTS.md`); schedule the
+      weekly purge cron and record the backup rotation actually used.
 - [ ] 🟠 Privacy policy / ToS for wallet linking and reward data (operator
       legal, outside repo scope).
+- [ ] 🟠 Incident response: staff the on-call roster and confirm alert
+      delivery before mainnet (`docs/INCIDENT_RESPONSE.md`).
 
 ## 8. Release decision
 
