@@ -234,40 +234,30 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 	}
 	if(!Portrait.IsValid()) return;
 
-	// New design Form A – Void #060A1C, Deck #0C1334, rarity border cyan/violet/gold, chamfer 12px
 	const auto &Entry = POTATO_CATALOG[Index % 10];
-	ColorRGBA BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.95f); // Cyan Common
+	ColorRGBA BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.95f);
 	int Diamonds = 1;
-	if(Entry.m_PriceSkr == 1000)
-	{
-		BorderColor = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.95f); // Violet Rare
-		Diamonds = 2;
-	}
-	else if(Entry.m_PriceSkr == 2000)
-	{
-		BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); // Gold Legendary
-		Diamonds = 3;
-	}
+	if(Entry.m_PriceSkr == 1000) { BorderColor = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.95f); Diamonds = 2; }
+	else if(Entry.m_PriceSkr == 2000) { BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); Diamonds = 3; }
 
-	// Background Deck
+	// Light background behind character – not dark, so portrait is bright
 	CUIRect Bg = Rect;
-	Bg.Draw(ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), IGraphics::CORNER_ALL, 8.0f); // solid behind character, not blurred
+	Bg.Draw(ColorRGBA(0.0706f, 0.1059f, 0.2745f, 0.85f), IGraphics::CORNER_ALL, 10.0f);
 
-	// Portrait inside
 	CUIRect Inner = Rect;
-	Inner.Margin(8.0f, &Inner);
-	float Size = std::min(Inner.w, Inner.h * 0.85f);
+	Inner.Margin(6.0f, &Inner);
+	float Size = std::min(Inner.w, Inner.h * 0.88f);
+	// Draw portrait with full brightness, no dark overlay
 	Graphics()->TextureSet(Portrait);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-	IGraphics::CQuadItem Quad(Inner.x + (Inner.w - Size) / 2.0f, Inner.y, Size, Size);
+	IGraphics::CQuadItem Quad(Inner.x + (Inner.w - Size) / 2.0f, Inner.y + (Inner.h - Size) / 2.0f, Size, Size);
 	Graphics()->QuadsDrawTL(&Quad, 1);
 	Graphics()->QuadsEnd();
 
-	// Form A frame – chamfer 12px, 2px border with rarity color, glow outside 10px 30%
-	GameClient()->m_Menus.RenderFormAPanel(Rect, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.0f), BorderColor, true, false, 0.0f, BorderColor);
+	// Border only – no background, so character stays bright
+	GameClient()->m_Menus.RenderFormAPanel(Rect, 12.0f, ColorRGBA(0,0,0,0), BorderColor, true, false, 0.0f, BorderColor);
 
-	// Diamonds indicator bottom center
 	float dx = Rect.x + Rect.w / 2.0f - (Diamonds * 10.0f) / 2.0f;
 	float dy = Rect.y + Rect.h - 14.0f;
 	for(int d = 0; d < Diamonds; ++d)

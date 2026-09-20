@@ -45,17 +45,8 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		Content.VSplitLeft(Content.w*0.55f, &Hero, &Menu);
 		Menu.VSplitLeft(20.0f, nullptr, &Menu);
 	}
-	// Cyberpunk panel – sharp angles, pixel grid, bright neon
-	Hero.Draw(ColorRGBA(0.09f, 0.10f, 0.12f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
-	// Inner neon border cyan
-	CUIRect Border = Hero;
-	Border.Margin(2.0f, &Border);
-	Border.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f), IGraphics::CORNER_ALL, 4.0f);
-	// Cyan edge top
-	CUIRect TopEdge = {Hero.x, Hero.y, Hero.w, 3.0f};
-	TopEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.95f), IGraphics::CORNER_T, 4.0f);
-	CUIRect LeftEdge = {Hero.x, Hero.y, 3.0f, Hero.h};
-	LeftEdge.Draw(ColorRGBA(0.92f, 0.68f, 0.12f, 0.65f), IGraphics::CORNER_L, 4.0f);
+	// Form A iOS – translucent Deck, cyan border, no darkening of character
+	GameClient()->m_Menus.RenderFormAPanel(Hero, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.68f), ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
 	CUIRect Art = Hero;
 	Art.Margin(8.0f, &Art);
 	if(!Compact)

@@ -126,7 +126,7 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	CUIRect Text = *pRect;
 	bool IsActive = Checked != 0;
 	bool IsHot = Ui()->HotItem() == pButtonContainer;
-	float skew = 12.0f;
+	float skew = 8.0f; // reduced from 12 to fix broken shape on large buttons
 	float x = pRect->x;
 	float y = pRect->y;
 	float w = pRect->w;
@@ -258,7 +258,7 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 	}
 
 	// Form A iOS tab – slanted, translucent, active Gold/Cyan, with glow and impulse
-	float skew = 14.0f;
+	float skew = 10.0f; // reduced to fix yellow broken tabs
 	float x = Rect.x;
 	float y = Rect.y;
 	float w = Rect.w;
