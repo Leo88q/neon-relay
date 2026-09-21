@@ -43,6 +43,8 @@ pub const ACHIEVEMENT_BITS: usize = 256;
 pub const MAX_LEADERBOARD_ENTRIES: usize = 64;
 /// Tournament capacity cap (account-space bound).
 pub const MAX_TOURNAMENT_CAPACITY: u32 = 65_535;
+/// Anti-sybil minimum player balance required to register (0.01 SOL).
+pub const MIN_SYBIL_PLAYER_LAMPORTS: u64 = 10_000_000;
 
 #[program]
 pub mod neonrelay_features {
@@ -198,6 +200,7 @@ pub mod neonrelay_features {
 	/// One registration per (tournament, wallet) — the PDA `init` enforces it.
 	pub fn register(ctx: Context<Register>, tournament_id: u64) -> Result<()> {
 		require!(!ctx.accounts.config.paused, FeaturesError::Paused);
+		require!(ctx.accounts.player.lamports() >= MIN_SYBIL_PLAYER_LAMPORTS, FeaturesError::InsufficientPlayerBalance);
 		let tournament = &mut ctx.accounts.tournament;
 		let now = Clock::get()?.unix_timestamp;
 		require!(now >= tournament.starts_at, FeaturesError::TournamentNotStarted);
@@ -651,6 +654,8 @@ pub enum FeaturesError {
 	TournamentFull,
 	#[msg("registration is not active")]
 	RegistrationNotActive,
+	#[msg("insufficient player lamports: anti-sybil minimum balance required")]
+	InsufficientPlayerBalance,
 	#[msg("arithmetic overflow")]
 	Overflow,
 }

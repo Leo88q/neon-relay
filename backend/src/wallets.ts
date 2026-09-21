@@ -75,6 +75,13 @@ export class WalletStore {
     return this.db.get<BindingRow>("SELECT * FROM wallet_bindings WHERE id = ?", id);
   }
 
+  findActiveByPlayerId(playerId: string): BindingRow | undefined {
+    return this.db.get<BindingRow>(
+      "SELECT * FROM wallet_bindings WHERE player_id = ? AND revoked_at IS NULL ORDER BY created_at DESC",
+      playerId,
+    );
+  }
+
   /** Create or revive the binding for a wallet public key. */
   upsertBinding(publicKeyBase64: string, label: string | null,
     now: number = Date.now()): BindingRow {

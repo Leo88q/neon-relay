@@ -173,9 +173,12 @@ export class RewardService {
     const hash = idempotencyHash(event);
     const prior = this.db.get<{ status: string; reward_epoch: number }>(
       "SELECT status, reward_epoch FROM reward_events WHERE idempotency_hash = ?", hash);
-    if (prior) {
+    if (prior && prior.status !== "rejected_signature" && prior.status !== "rejected_validation") {
       return { idempotency_hash: hash, status: "duplicate",
         reason: `already ingested as ${prior.status}`, reward_epoch: prior.reward_epoch };
+    }
+    if (prior && (prior.status === "rejected_signature" || prior.status === "rejected_validation")) {
+      this.db.run("DELETE FROM reward_events WHERE idempotency_hash = ?", hash);
     }
     const problem = validateEvent(event);
     if (problem) {
@@ -194,29 +197,58 @@ export class RewardService {
       this.record(event, hash, epoch.id, "rejected_epoch_sealed", "epoch already sealed", now);
       return { idempotency_hash: hash, status: "rejected_epoch_sealed" };
     }
-    const capProblem = this.capViolation(event, now);
+    // Authenticate wallet binding against player_id to prevent redirection attacks (CRIT-01)
+    const authoritativeBinding = this.wallets.findActiveByPlayerId(event.player_id);
+    let resolvedBindingId = authoritativeBinding?.id ?? null;
+    if (event.wallet_binding_id) {
+      const explicitBinding = this.wallets.findBinding(event.wallet_binding_id);
+      if (!explicitBinding || explicitBinding.revoked_at !== null ||
+          (explicitBinding.player_id !== null && explicitBinding.player_id !== event.player_id)) {
+        this.record(event, hash, epoch.id, "rejected_validation",
+          "wallet binding does not belong to player", now, null);
+        return { idempotency_hash: hash, status: "rejected_validation",
+          reason: "wallet binding does not belong to player" };
+      }
+      const activeBinding = this.wallets.findActiveByPlayerId(event.player_id);
+      if (activeBinding && activeBinding.id !== event.wallet_binding_id) {
+        this.record(event, hash, epoch.id, "rejected_validation",
+          "wallet binding does not match player's active wallet", now, null);
+        return { idempotency_hash: hash, status: "rejected_validation",
+          reason: "wallet binding does not match player's active wallet" };
+      }
+      resolvedBindingId = event.wallet_binding_id;
+    } else {
+      const activeBinding = this.wallets.findActiveByPlayerId(event.player_id);
+      if (activeBinding) {
+        resolvedBindingId = activeBinding.id;
+      }
+    }
+    const capProblem = this.capViolation({ ...event, wallet_binding_id: resolvedBindingId ?? undefined }, now);
     if (capProblem) {
-      this.record(event, hash, epoch.id, "rejected_caps", capProblem, now);
+      this.record(event, hash, epoch.id, "rejected_caps", capProblem, now, resolvedBindingId);
       return { idempotency_hash: hash, status: "rejected_caps", reason: capProblem };
     }
-    this.record(event, hash, epoch.id, "accepted", null, now);
+    this.record(event, hash, epoch.id, "accepted", null, now, resolvedBindingId);
     return { idempotency_hash: hash, status: "accepted", reward_epoch: epoch.id };
   }
 
   private record(event: IncomingEvent, hash: string, epochId: number, status: EventStatus,
-    reason: string | null, now: number): void {
+    reason: string | null, now: number, effectiveBindingId?: string | null): void {
     // Fail-closed audit: validation-rejected events are still recorded, but a
     // malformed field must never crash the insert (NOT NULL columns, CHECKs).
     const text = (value: unknown): string => typeof value === "string" ? value : "";
     const int = (value: unknown): number =>
       typeof value === "number" && Number.isInteger(value) ? value : 0;
+    const finalBinding = effectiveBindingId !== undefined
+      ? effectiveBindingId
+      : (typeof event.wallet_binding_id === "string" ? event.wallet_binding_id : null);
     this.db.run(
       `INSERT INTO reward_events
          (id, idempotency_hash, match_id, player_id, wallet_binding_id, reward_epoch,
           event_type, amount_micro, occurred_at, ingested_at, server_signature, status, reason)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       crypto.randomUUID(), hash, text(event.match_id), text(event.player_id),
-      typeof event.wallet_binding_id === "string" ? event.wallet_binding_id : null,
+      finalBinding,
       epochId, text(event.event_type), int(event.amount_micro),
       int(event.occurred_at), now, text(event.server_signature), status, reason);
   }
@@ -349,9 +381,13 @@ export class RewardService {
       throw new RewardsError(409, "epoch-already-sealed", `epoch ${epochId} is already sealed`);
     }
     const sums = this.db.all<{ wallet_binding_id: string; s: number }>(
-      `SELECT wallet_binding_id, SUM(amount_micro) AS s FROM reward_events
-        WHERE reward_epoch = ? AND status = 'accepted' AND wallet_binding_id IS NOT NULL
-        GROUP BY wallet_binding_id ORDER BY wallet_binding_id`, epochId);
+      `SELECT COALESCE(e.wallet_binding_id, b.id) AS wallet_binding_id, SUM(e.amount_micro) AS s
+       FROM reward_events e
+       LEFT JOIN wallet_bindings b ON b.player_id = e.player_id AND b.revoked_at IS NULL
+       WHERE e.reward_epoch = ? AND e.status = 'accepted'
+         AND (e.wallet_binding_id IS NOT NULL OR b.id IS NOT NULL)
+       GROUP BY COALESCE(e.wallet_binding_id, b.id)
+       ORDER BY COALESCE(e.wallet_binding_id, b.id)`, epochId);
     const leaves: { bindingId: string; publicKey: string; leaf: string; amount: number }[] = [];
     for (const row of sums) {
       const binding = this.wallets.findBinding(row.wallet_binding_id);

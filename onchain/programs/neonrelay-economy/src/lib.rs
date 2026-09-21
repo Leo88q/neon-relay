@@ -359,6 +359,32 @@ pub mod neonrelay_economy {
 		}, signer_seeds), amount)
 	}
 
+	pub fn set_params_v2(ctx: Context<AdminV2>, rake_bps: u16) -> Result<()> {
+		require!(rake_bps <= MAX_RAKE_BPS, EconomyError::InvalidRake);
+		let config = &mut ctx.accounts.config;
+		config.rake_bps = rake_bps;
+		Ok(())
+	}
+
+	pub fn propose_authority_change_v2(ctx: Context<ProposeAuthorityV2>, new_authority: Pubkey) -> Result<()> {
+		require!(new_authority != Pubkey::default(), EconomyError::InvalidAuthority);
+		let pending = &mut ctx.accounts.pending_authority;
+		pending.mint = ctx.accounts.config.mint;
+		pending.new_authority = new_authority;
+		pending.change_slot = Clock::get()?.slot;
+		pending.bump = ctx.bumps.pending_authority;
+		Ok(())
+	}
+
+	pub fn accept_authority_change_v2(ctx: Context<AcceptAuthorityV2>) -> Result<()> {
+		let current_slot = Clock::get()?.slot;
+		let pending = &ctx.accounts.pending_authority;
+		require!(current_slot >= pending.change_slot + MIN_AUTHORITY_DELAY_SLOTS, EconomyError::TimelockNotExpired);
+		let config = &mut ctx.accounts.config;
+		config.authority = pending.new_authority;
+		Ok(())
+	}
+
 }
 
 // -------------------------------------------------------------------- accounts
@@ -491,6 +517,7 @@ pub struct ClaimPrize<'info> {
 	)]
 	pub vault_ata: Account<'info, TokenAccount>,
 	#[account(
+		mut,
 		seeds = [PRIZES_SEED, epoch.to_le_bytes().as_ref()],
 		bump = prizes.bump,
 	)]
@@ -622,6 +649,7 @@ const CONFIG_V2_SEED: &[u8] = b"neonrelay_economy_v2";
 const ENTRY_V2_SEED: &[u8] = b"neonrelay_entry_v2";
 const PRIZES_V2_SEED: &[u8] = b"neonrelay_prizes_v2";
 const CLAIM_V2_SEED: &[u8] = b"neonrelay_claim_v2";
+const PENDING_V2_SEED: &[u8] = b"neonrelay_pending_v2";
 
 #[derive(Accounts)]
 pub struct InitializeV2<'info> {
@@ -719,6 +747,48 @@ pub struct ClaimPrizeV2<'info> {
 	pub claim: Box<Account<'info, PrizeClaimV2>>,
 	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ProposeAuthorityV2<'info> {
+	#[account(mut)]
+	pub authority: Signer<'info>,
+	#[account(seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump,
+		has_one = authority @ EconomyError::Unauthorized)]
+	pub config: Box<Account<'info, EconomyConfigV2>>,
+	#[account(
+		init,
+		payer = authority,
+		space = 8 + PendingAuthorityV2::INIT_SPACE,
+		seeds = [PENDING_V2_SEED, config.mint.as_ref()],
+		bump,
+	)]
+	pub pending_authority: Account<'info, PendingAuthorityV2>,
+	pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptAuthorityV2<'info> {
+	#[account(mut, seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump)]
+	pub config: Box<Account<'info, EconomyConfigV2>>,
+	#[account(
+		mut,
+		seeds = [PENDING_V2_SEED, config.mint.as_ref()],
+		bump = pending_authority.bump,
+		constraint = pending_authority.new_authority == new_authority.key() @ EconomyError::Unauthorized,
+		close = new_authority,
+	)]
+	pub pending_authority: Account<'info, PendingAuthorityV2>,
+	pub new_authority: Signer<'info>,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct PendingAuthorityV2 {
+	pub mint: Pubkey,
+	pub new_authority: Pubkey,
+	pub change_slot: u64,
+	pub bump: u8,
 }
 
 #[account]

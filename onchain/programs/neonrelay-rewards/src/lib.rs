@@ -150,6 +150,7 @@ pub mod neonrelay_rewards {
 		// MEDIUM-01 fix: vault not frozen (initialized state)
 		require!(ctx.accounts.vault.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
 		require!(ctx.accounts.player_token_account.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
+		require!(ctx.accounts.vault.amount >= amount_micro, NeonRelayError::InsufficientVaultFunds);
 		// Tranche A: exact depth + index bound, unconditional. leaf_count is
 		// always bound at publish time, so a short proof on the padded tree
 		// (or an out-of-range leaf index) can never verify.
@@ -463,6 +464,8 @@ pub enum NeonRelayError {
 	// Appended last so existing error discriminants stay stable.
 	#[msg("leaf count must be greater than zero")]
 	InvalidLeafCount,
+	#[msg("vault has insufficient funds for claim")]
+	InsufficientVaultFunds,
 }
 
 // ---------------------------------------------------------------- unit tests

@@ -3,6 +3,7 @@
  * router, bearer-token extraction and an in-memory token-bucket rate limiter.
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { isIP } from "node:net";
 
 export class HttpError extends Error {
   readonly status: number;
@@ -61,16 +62,23 @@ export function bearerToken(req: IncomingMessage): string | null {
 }
 
 export function clientIp(req: IncomingMessage): string {
-  // CRITICAL-04 fix: X-Forwarded-For spoof → rate limiter bypass.
+  // CRITICAL-04 / MED-02 fix: X-Forwarded-For spoof → rate limiter bypass.
   // Only trust proxy headers when explicitly enabled (TRUST_PROXY=1),
   // otherwise use the socket peer. Prevents IP rotation DoS on /v1/auth/*.
   if (process.env.TRUST_PROXY === "1") {
-    const forwarded = req.headers["x-forwarded-for"];
-    if (typeof forwarded === "string" && forwarded.length > 0) {
-      const first = forwarded.split(",")[0].trim();
-      // Basic IP sanity: 7..45 chars, no control chars, no injected commas beyond split.
-      if (first.length >= 7 && first.length <= 45 && !/[\u0000-\u001f\u007f]/.test(first)) {
-        return first;
+    const trustedProxies = process.env.TRUSTED_PROXIES
+      ? process.env.TRUSTED_PROXIES.split(",").map((s) => s.trim())
+      : null;
+    const socketIp = req.socket.remoteAddress;
+    const isSocketTrusted = !trustedProxies || (socketIp && trustedProxies.includes(socketIp));
+    if (isSocketTrusted) {
+      const forwarded = req.headers["x-forwarded-for"];
+      if (typeof forwarded === "string" && forwarded.length > 0) {
+        const first = forwarded.split(",")[0].trim();
+        // Strict IP sanity: must be a syntactically valid IPv4 or IPv6 address.
+        if (isIP(first) !== 0) {
+          return first;
+        }
       }
     }
   }

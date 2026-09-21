@@ -89,3 +89,25 @@ test("v2 RPC inspection is rate limited before network reads", async () => {
     assert.equal(s.fixture().callCount(), 0);
   } finally { await s.close(); }
 });
+
+test("v2 economy proof endpoint serves sealed Merkle proof", async () => {
+  const s = await setup();
+  try {
+    const store = new EconomyV2Store(s.app.db);
+    const mint = s.fixture().mint;
+    store.openEpoch(mint, 1n, 100_000_000n);
+    store.sealEpoch(mint, 1n, [{ wallet: s.wallet.rawPublicKey, amount: 50_000_000n }]);
+    const wallet58 = base58Encode(s.wallet.rawPublicKey);
+    const mint58 = base58Encode(mint);
+
+    const missing = await getJson(s.base, `/v2/economy/proof?mint=${mint58}&epoch=2&wallet=${wallet58}`);
+    assert.equal(missing.status, 404);
+
+    const res = await getJson(s.base, `/v2/economy/proof?mint=${mint58}&epoch=1&wallet=${wallet58}`);
+    assert.equal(res.status, 200);
+    assert.equal(res.json.version, 2);
+    assert.equal(res.json.amountBase, "50000000");
+    assert.equal(res.json.index, 0);
+    assert.ok(Array.isArray(res.json.proof));
+  } finally { await s.close(); }
+});

@@ -92,6 +92,19 @@ export function buildRouter(deps: {
   // ~5 challenge/verify attempts per minute per IP, burst 10
   const limiter = new RateLimiter(10, 5 / 60_000);
 
+  // Dual-provider chain-read pool (docs/DEPLOYMENT_POLICY.md §6): every RPC
+  // call below — tickets, vault pool, reconciliation, treasury — fails
+  // over to the fallback provider while primary is down and fails back
+  // automatically. Both endpoints are genesis-pinned to one chain.
+  const rpcPool = createRpcPool({
+    primary: config.rpcUrl,
+    fallback: config.rpcFallbackUrl,
+    timeoutMs: config.rpcTimeoutMs,
+    cooldownMs: config.rpcCooldownMs,
+    expectedGenesis: config.expectedGenesisHash,
+  });
+  const rpc = rpcPool.call;
+
   const guard = (ctx: RequestContext, bucket: string) => {
     if (!limiter.allow(`${bucket}:${ctx.ip}`)) {
       throw new HttpError(429, "rate-limited", "too many requests, slow down");
@@ -399,7 +412,7 @@ export function buildRouter(deps: {
     };
   });
 
-  router.add("POST", "/v1/rewards/claim-confirmation", (ctx) => {
+  router.add("POST", "/v1/rewards/claim-confirmation", async (ctx) => {
     const { binding } = requireSession(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const intentId = str(body["intent_id"], "intent_id", 64);
@@ -408,6 +421,22 @@ export function buildRouter(deps: {
     if (status !== "submitted" && status !== "confirmed" && status !== "failed") {
       throw new HttpError(400, "bad-request",
         "status must be one of submitted|confirmed|failed");
+    }
+    if (status === "confirmed" && process.env.NODE_ENV === "production") {
+      if (!/^[1-9A-HJ-NP-Za-km-z]{87,88}$/.test(transactionId)) {
+        throw new HttpError(400, "bad-transaction-signature", "transaction_id must be a valid base58 Solana signature");
+      }
+      try {
+        const statuses = await rpcPool.call<{ value: ({ confirmationStatus?: string; err?: unknown } | null)[] }>(
+          "getSignatureStatuses", [[transactionId]],
+        );
+        const entry = statuses?.value?.[0];
+        if (entry && entry.err) {
+          throw new HttpError(400, "transaction-failed-onchain", "transaction failed on-chain");
+        }
+      } catch (err) {
+        if (err instanceof HttpError) throw err;
+      }
     }
     const intent = rewards.claimConfirmation(binding, intentId, transactionId, status);
     return { intent_id: intent.id, status: intent.status, transaction_id: intent.transaction_id };
@@ -488,6 +517,35 @@ export function buildRouter(deps: {
     return { ...result, admissionEnabled: false };
   });
 
+  router.add("POST", "/v2/economy/intent", async (ctx) => {
+    guard(ctx, "economy-v2-write");
+    const { binding } = requireSession(ctx);
+    if (!binding.player_id) throw new HttpError(403, "player-link-required", "link a player before creating an entry intent");
+    const { program, mint } = configuredV2Market(ctx);
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const idempotencyKey = str(body["idempotency_key"], "idempotency_key", 128);
+    const tierName = str(body["tier"], "tier", 64);
+    const tierIndex = RACE_TIERS.findIndex((row) => row.id === tierName);
+    if (tierIndex < 0 || tierIndex > 3) throw new HttpError(400, "bad-tier", "tier must be copper, bronze, silver, or gold");
+    const kind = Number(body["kind"] ?? 0);
+    if (kind !== 0 && kind !== 1) throw new HttpError(400, "bad-kind", "kind must be 0 (match) or 1 (tournament)");
+    const epoch = BigInt(Math.floor(Date.now() / config.epochMs));
+    const wallet = Buffer.from(binding.public_key, "base64url");
+    const market = await v2Read(() => readMarketV2(rpc, program, mint));
+    const feeBase = BigInt(market.feesBase[tierIndex]!);
+    const result = v2Store.createIntent({
+      mint,
+      epoch,
+      playerId: binding.player_id,
+      wallet,
+      idempotencyKey,
+      kind: kind as 0 | 1,
+      tier: tierName,
+      amountBase: feeBase,
+    });
+    return { ...result, epoch: epoch.toString(), tier: tierName, amountBase: feeBase.toString() };
+  });
+
   // Surface auth failures with stable codes instead of 500s.
   // ------------------------------------------------------------- economy (15)
   // SKR pay-to-play support routes (docs/PLAY_ECONOMY.md). The backend never
@@ -505,18 +563,6 @@ export function buildRouter(deps: {
     if (!binding) throw new HttpError(401, "binding-missing", "wallet binding is gone");
     return Buffer.from(binding.public_key, "base64url");
   };
-  // Dual-provider chain-read pool (docs/DEPLOYMENT_POLICY.md §6): every RPC
-  // call below — tickets, vault pool, reconciliation, treasury — fails
-  // over to the fallback provider while primary is down and fails back
-  // automatically. Both endpoints are genesis-pinned to one chain.
-  const rpcPool = createRpcPool({
-    primary: config.rpcUrl,
-    fallback: config.rpcFallbackUrl,
-    timeoutMs: config.rpcTimeoutMs,
-    cooldownMs: config.rpcCooldownMs,
-    expectedGenesis: config.expectedGenesisHash,
-  });
-  const rpc = rpcPool.call;
 
   router.add("GET", "/v1/economy/reference", (ctx) => {
     economyGuard();
@@ -959,6 +1005,36 @@ export function buildRouter(deps: {
     if (tree.root !== row.root) throw new HttpError(500, "root-mismatch", "stored root does not match distribution");
     return { epoch, root: row.root, place: dist[index]?.place, amountMicro: dist[index]?.amount_micro,
       leafIndex: index, proof: proofFor(tree, index) };
+  });
+
+  router.add("GET", "/v2/economy/proof", (ctx) => {
+    economyGuard();
+    const mintStr = ctx.url.searchParams.get("mint") ?? config.skrMint;
+    if (!mintStr) throw new HttpError(400, "bad-request", "mint query parameter or skrMint config required");
+    let mint: Buffer;
+    try {
+      mint = base58Decode(mintStr);
+    } catch {
+      throw new HttpError(400, "bad-request", "mint must be a base58 public key");
+    }
+    if (mint.length !== 32) throw new HttpError(400, "bad-request", "mint must be 32 bytes");
+    const epochParam = ctx.url.searchParams.get("epoch");
+    if (!epochParam || !/^\d+$/.test(epochParam)) {
+      throw new HttpError(400, "bad-request", "epoch must be a non-negative integer");
+    }
+    const epoch = BigInt(epochParam);
+    const walletParam = ctx.url.searchParams.get("wallet") ?? "";
+    let wallet: Buffer;
+    try {
+      wallet = base58Decode(walletParam);
+    } catch {
+      throw new HttpError(400, "bad-request", "wallet must be a base58 public key");
+    }
+    if (wallet.length !== 32) throw new HttpError(400, "bad-request", "wallet must be 32 bytes");
+    const v2Store = new EconomyV2Store(db);
+    const res = v2Store.proof(mint, epoch, wallet);
+    if (!res) throw new HttpError(404, "not-found", "no proof found for this wallet/epoch/mint");
+    return res;
   });
 
   return router;

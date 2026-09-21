@@ -103,9 +103,34 @@ pub mod neonrelay_assets {
             .checked_add(1)
             .ok_or(AssetsError::Overflow)?;
 
-        // В продакшн раскомментировать CPI в MPL Core (требует mpl-core crate, feature="core"):
-        // let cpi_ctx = CpiContext::new_with_signer(... mpl_core::cpi::create_collection ...);
-        // Здесь оставляем оффлайн-совместимый PDA без внешнего CPI — дерево создаётся отдельно.
+        #[cfg(feature = "core")]
+        {
+            let config_bump = ctx.accounts.config.bump;
+            let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &[config_bump]]];
+            let mut ix_data = vec![0u8; 8];
+            ix_data.extend_from_slice(name.as_bytes());
+            let core_pubkey = MPL_CORE_PROGRAM_ID.parse::<Pubkey>().unwrap_or_default();
+            let ix = anchor_lang::solana_program::instruction::Instruction {
+                program_id: core_pubkey,
+                accounts: vec![
+                    anchor_lang::solana_program::instruction::AccountMeta::new(ctx.accounts.collection.key(), false),
+                    anchor_lang::solana_program::instruction::AccountMeta::new_readonly(ctx.accounts.config.key(), true),
+                    anchor_lang::solana_program::instruction::AccountMeta::new(ctx.accounts.authority.key(), true),
+                    anchor_lang::solana_program::instruction::AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
+                ],
+                data: ix_data,
+            };
+            anchor_lang::solana_program::program::invoke_signed(
+                &ix,
+                &[
+                    ctx.accounts.collection.to_account_info(),
+                    ctx.accounts.config.to_account_info(),
+                    ctx.accounts.authority.to_account_info(),
+                    ctx.accounts.system_program.to_account_info(),
+                ],
+                signer_seeds,
+            )?;
+        }
 
         emit!(CollectionCreated {
             collection: ctx.accounts.collection.key(),
@@ -244,12 +269,11 @@ pub mod neonrelay_assets {
             &creator_hash,
         ])
         .to_bytes();
-        // В продакшн здесь был бы CPI:
-        // invoke(
-        //   &Instruction { program_id: BGUM..., accounts: vec![tree, tree_config, leafOwner, ...], data: bubblegum::instruction::MintV1 { ... } },
-        //   &[tree, authority, ...]
-        // )?
-        // Для оффлайн-компиляции без mpl-bubblegum crate — не вызываем, но проверяем все аккаунты и эмитим событие.
+        let receipt = &mut ctx.accounts.receipt;
+        receipt.player = ctx.accounts.player.key();
+        receipt.badge_id = badge_id;
+        receipt.minted_at = Clock::get()?.unix_timestamp;
+        receipt.bump = ctx.bumps.receipt;
 
         // CEI: инкремент до CPI
         ctx.accounts.config.compressed_minted = ctx
@@ -258,6 +282,41 @@ pub mod neonrelay_assets {
             .compressed_minted
             .checked_add(1)
             .ok_or(AssetsError::Overflow)?;
+
+        // CPI в Bubblegum mint_v1
+        let config_bump = ctx.accounts.config.bump;
+        let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &[config_bump]]];
+        let mut ix_data = vec![145, 98, 192, 118, 184, 147, 118, 104];
+        ix_data.extend_from_slice(&badge_id.to_be_bytes());
+        ix_data.extend_from_slice(&metadata_hash);
+        ix_data.extend_from_slice(&creator_hash);
+        let ix = anchor_lang::solana_program::instruction::Instruction {
+            program_id: ctx.accounts.bubblegum_program.key(),
+            accounts: vec![
+                anchor_lang::solana_program::instruction::AccountMeta::new(ctx.accounts.tree_config.key(), false),
+                anchor_lang::solana_program::instruction::AccountMeta::new(ctx.accounts.merkle_tree.key(), false),
+                anchor_lang::solana_program::instruction::AccountMeta::new_readonly(ctx.accounts.config.key(), true),
+                anchor_lang::solana_program::instruction::AccountMeta::new_readonly(ctx.accounts.player.key(), false),
+                anchor_lang::solana_program::instruction::AccountMeta::new_readonly(ctx.accounts.noop_program.key(), false),
+                anchor_lang::solana_program::instruction::AccountMeta::new_readonly(ctx.accounts.compression_program.key(), false),
+                anchor_lang::solana_program::instruction::AccountMeta::new_readonly(ctx.accounts.system_program.key(), false),
+            ],
+            data: ix_data,
+        };
+        #[cfg(feature = "bubblegum")]
+        anchor_lang::solana_program::program::invoke_signed(
+            &ix,
+            &[
+                ctx.accounts.tree_config.to_account_info(),
+                ctx.accounts.merkle_tree.to_account_info(),
+                ctx.accounts.config.to_account_info(),
+                ctx.accounts.player.to_account_info(),
+                ctx.accounts.noop_program.to_account_info(),
+                ctx.accounts.compression_program.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+            signer_seeds,
+        )?;
 
         // Проверка что payer не алиасит vault/treasury (если они есть) — не применимо, но оставляем паттерн.
         emit!(BadgeMintedCompressed {
@@ -402,6 +461,15 @@ pub struct MintConfig {
     pub bump: u8,
 }
 
+#[account]
+#[derive(InitSpace)]
+pub struct BadgeReceipt {
+    pub player: Pubkey,
+    pub badge_id: u32,
+    pub minted_at: i64,
+    pub bump: u8,
+}
+
 // ------------------------------------------------------------------ contexts
 
 #[derive(Accounts)]
@@ -489,7 +557,10 @@ pub struct CreateTree<'info> {
     )]
     pub tree_config: Account<'info, TreeConfig>,
     // Optional collection to link tree to — if provided, must be owned by config authority.
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = collection.authority == authority.key() @ AssetsError::Unauthorized,
+    )]
     pub collection: Account<'info, Collection>,
     pub system_program: Program<'info, System>,
 }
@@ -558,6 +629,14 @@ pub struct MintBadgeCompressed<'info> {
     pub compression_program: UncheckedAccount<'info>,
     /// CHECK: Noop program for Bubblegum event logging.
     pub noop_program: UncheckedAccount<'info>,
+    #[account(
+        init,
+        payer = player,
+        space = 8 + BadgeReceipt::INIT_SPACE,
+        seeds = [BADGE_SEED, &badge_id.to_be_bytes(), player.key().as_ref()],
+        bump,
+    )]
+    pub receipt: Account<'info, BadgeReceipt>,
     #[account(mut)]
     pub player: Signer<'info>,
     pub system_program: Program<'info, System>,
