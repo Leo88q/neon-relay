@@ -132,5 +132,14 @@ class EconomyTxBuilderTest {
         invalid { builder.parseConfig(data.copyOf().also { it[0] = 0 }) }
         invalid { builder.parseConfig(data.copyOf().also { it[154] = 2 }) }
         invalid { builder.parseConfig(data.copyOf().also { it[153] = 0x80.toByte() }) }
+
+        val data204 = ByteArray(204)
+        data.copyInto(data204)
+        val parsed204 = builder.parseConfig(data204)
+        assertArrayEquals(config.mint, parsed204.mint)
+        assertEquals(50L, parsed204.feeMatch)
+        assertFalse(parsed204.paused)
+        invalid { builder.parseConfig(data204.copyOf(203)) }
+        invalid { builder.parseConfig(data204.copyOf(205)) }
     }
 }

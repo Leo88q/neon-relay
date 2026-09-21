@@ -164,7 +164,7 @@ object EconomyTxBuilder {
     )
 
     fun parseConfig(data: ByteArray): EconomyConfig {
-        require(data.size == 8 + 128 + 2 + 16 + 2) { "economy config account too short" }
+        require(data.size == 8 + 128 + 2 + 16 + 2 || data.size == 204) { "economy config account has an unexpected size" }
         require(data.copyOfRange(0, 8).contentEquals(sha256("account:EconomyConfig".toByteArray()).copyOfRange(0, 8))) { "wrong config discriminator" }
         require(data[8 + 146].toInt() in 0..1) { "invalid paused flag" }
         val mint = data.copyOfRange(8 + 32, 8 + 64)
@@ -301,7 +301,7 @@ object EconomyTxBuilder {
             AccountMeta(playerAta, signer = false, writable = true),
             AccountMeta(configAddress(programId), signer = false, writable = false),
             AccountMeta(config.vaultAta, signer = false, writable = true),
-            AccountMeta(prizesAddress(epoch, programId), signer = false, writable = false),
+            AccountMeta(prizesAddress(epoch, programId), signer = false, writable = true),
             AccountMeta(claimAddress(epoch, player, programId), signer = false, writable = true),
             AccountMeta(TOKEN_PROGRAM_ID, signer = false, writable = false),
             AccountMeta(SYSTEM_PROGRAM_ID, signer = false, writable = false),
