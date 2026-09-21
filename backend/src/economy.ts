@@ -452,3 +452,19 @@ export async function readVaultPool(
     available: Number(available),
   };
 }
+
+/** Minimal JSON-RPC caller for Solana RPC (injectable in tests). */
+export function httpRpc(url: string): RpcCaller {
+  return async (method, params) => {
+    const res = await fetch(url, {
+      method: "POST",
+      signal: AbortSignal.timeout(10_000),
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    });
+    if (!res.ok) throw new Error(`rpc http ${res.status}`);
+    const json = (await res.json()) as { result?: unknown; error?: { message?: string } };
+    if (json.error) throw new Error(`rpc error: ${json.error.message ?? "unknown"}`);
+    return json.result;
+  };
+}
