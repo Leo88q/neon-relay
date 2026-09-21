@@ -91,7 +91,7 @@ after the mitigation.
 | --- | --- | --- |
 | Secrets committed | `scripts/check_secrets.py` (CI gate + self-test proving the detector fires); allowlist by exact documented test vectors only | scanner pattern coverage |
 | Upstream branding silently returns | `scripts/check_branding.sh --release` classification gate + translation lockstep | none known |
-| Unlicensed/unvetted assets ship | `docs/ASSET_MANIFEST.csv` (878 rows: 180 ship / 698 block-release) + `check_assets.sh`; **release mode fails by design until legal review** (BL-05) | legal review pending |
+| Unlicensed/unvetted assets ship | `docs/ASSET_MANIFEST.csv` (853 rows: 603 ship / 250 block-release) + `check_assets.sh`; **release mode fails by design until legal review** (BL-05) | legal review pending |
 | Poisoned dependencies | backend/onchain: zero runtime deps; Android: pinned MWA coordinate (BL-06 unverified offline); Rust: pinned anchor versions (BL-03 uncompiled) | pinned-but-unverified coordinates |
 | Legally significant history rewriting | policy: no `git filter-repo` on notices; upstream provenance pinned in `UPSTREAM_BASE.md` | none known |
 | CI silently disabled/broken | workflow mirrors locally-evidenced gates; first real run blocked by **account billing** (BL-12) — recorded, not hidden | CI currently not executing |

@@ -12,7 +12,7 @@ limitation.
 
 ## 1. Legal & assets
 
-- [ ] 🔴 **Legal review of the 698 `block-release` assets** (BL-05). The gate
+- [ ] 🔴 **Legal review of the 250 `block-release` assets** (BL-05). The gate
       `./scripts/check_assets.sh --release` fails by design until every row in
       `docs/ASSET_MANIFEST.csv` marked `block-release` is either cleared,
       replaced, or removed. This is the single biggest release blocker.
@@ -56,7 +56,7 @@ limitation.
 ## 3. Code gates (all ✅ today)
 
 - [ ] ✅ C++ syntax probe: `./scripts/local_syntax_probe.sh`
-      (127 clean / 1 skip / 0 fail).
+      (134 clean / 1 skip / 0 fail).
 - [ ] ✅ Signer cross-verification: `./scripts/neonrelay_signer_test.sh`
       (log: `docs/baseline/neonrelay-signer-test.log`).
 - [ ] ✅ Backend: `cd backend && npm test` (159/159 incl. Tranche-B
@@ -87,7 +87,7 @@ limitation.
 - [ ] 🔴 **Fix GitHub billing** (BL-12): the committed workflow
       `.github/workflows/ci.yml` could not execute (run 35052569158 was
       rejected before any job started). After billing is fixed:
-      `gh run rerun 35052569158` or push any commit; all five jobs must be
+      `gh run rerun 35052569158` or push any commit; all seven jobs must be
       green on the release commit.
 
 ## 6. Devnet rehearsal (before any real deployment)
@@ -117,7 +117,7 @@ limitation.
 - [ ] ✅ In-game Wallet page states: optional wallet, no guaranteed earnings,
       test tokens have no value, seed phrases never requested
       (`src/game/client/components/menus_settings_wallet.cpp`).
-- [ ] ✅ Docs never present mocks as production: blockers BL-01…BL-12 with
+- [ ] ✅ Docs never present mocks as production: blockers BL-01…BL-18 with
       exact failing commands (`docs/KNOWN_LIMITATIONS.md`), final report
       (`docs/FINAL_REPORT.md`).
 - [ ] 🟠 Game event privacy: 90-day rolling purge + per-player deletion are

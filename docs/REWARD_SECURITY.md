@@ -162,22 +162,27 @@ operator opts in:
 
 ## 9. Evidence
 
-`cd backend && npm test` → **30/30 passing** on Node v22.22.3, including:
-forged-signature rejection, duplicate detection, per-match and daily cap
-rejections with reasons, pending→available→claimed balance transitions,
-seal/claim-intent proof verification against the stored root, confirmation
-state machine, and 404/409/403 paths for foreign wallets, unsealed epochs and
-missing operator tokens.
+`cd backend && npm test` → **159/159 passing** on Node v22, including the
+reward-ledger security coverage: forged-signature rejection, duplicate
+detection, per-match and daily cap rejections with reasons,
+pending→available→claimed balance transitions, seal/claim-intent proof
+verification against the stored root, the confirmation state machine, and
+404/409/403 paths for foreign wallets, unsealed epochs and missing operator
+tokens — plus the Tranche A/B admin/reconcile/alerts/game-events suites,
+dual-RPC failover, and the economy v1/v2, ticket-security and PDA-golden
+suites.
 
-Stage-9 program evidence: `cd onchain && npm test` → **12/12 passing** —
+Stage-9 program evidence: `cd onchain && npm test` → **49/49 passing** —
 the TS Merkle mirror is asserted byte-identical to `backend/src/merkle.ts` on
 randomized trees, golden leaf vectors are pinned identically for the Rust unit
 test (`programs/neonrelay-rewards/tests/golden_leaf.txt`), tamper negatives
-(amount, index direction, outsider leaf) fail, and static conformance tests
-bind PDA seeds, caps, the pause/double-claim guards and the no-hardcoded-mint /
-no-SKR policy between `lib.rs`, `Anchor.toml` and the client constants. The
-program itself cannot be compiled in the sandbox — see `KNOWN_LIMITATIONS.md`
-BL-03 for the exact commands to run on a connected machine.
+fail, and static conformance tests bind PDA seeds, caps, the pause/double-claim
+guards and the no-hardcoded-mint / no-SKR policy between `lib.rs`,
+`Anchor.toml` and the client constants — plus the 8-test rewards-claim client
+contract that spec-pins `RewardsTxBuilder.kt`, and the economy (15), features
+(6) and asset-manifest (7) suites. The program itself cannot be compiled in the
+sandbox — see `KNOWN_LIMITATIONS.md` BL-03 for the exact commands to run on a
+connected machine.
 
 Stage-8 signer evidence: `scripts/neonrelay_signer_test.sh` builds the vendored
 ed25519-donna, `match_signer.cpp` and the CLI tool with plain gcc/g++, signs a

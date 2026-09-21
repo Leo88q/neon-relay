@@ -599,8 +599,8 @@ docs/DESIGN_SYNTHWAVE.md,62,code/api-identifier,brand appears only inside code i
 docs/FINAL_REPORT.md,4,historical-documentation,document that describes the upstream derivation,"commercial fork of DDNet targeting Solana Mobile (Seeker), with a"
 docs/FINAL_REPORT.md,18,historical-documentation,document that describes the upstream derivation,"| Standalone base | upstream DDNet `a853d33` imported verbatim, provenance in `UPSTREAM_BASE.md`, no GitHub fork relationship, `upstream` remote only | ✅ |"
 docs/FINAL_REPORT.md,82,historical-documentation,document that describes the upstream derivation,| BL-10 | no settings migration from DDNet | documented behavior + enum-shift note |
-docs/KNOWN_LIMITATIONS.md,58,historical-documentation,document that describes the upstream derivation,"DDNet `data/fonts/index.json`, `data/wordlist.txt`, `data/censorlist.txt`,"
-docs/KNOWN_LIMITATIONS.md,83,historical-documentation,document that describes the upstream derivation,import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
+docs/KNOWN_LIMITATIONS.md,65,historical-documentation,document that describes the upstream derivation,"DDNet `data/fonts/index.json`, `data/wordlist.txt`, `data/censorlist.txt`,"
+docs/KNOWN_LIMITATIONS.md,90,historical-documentation,document that describes the upstream derivation,import an existing `settings_ddnet.cfg`; maps/skins/demos are still found through the
 docs/ORIGINAL_MAPS_RU.md,40,code/api-identifier,brand appears only inside code identifiers,`scripts/build_warmup.py` создаёт пустую DDNet06-карту через **twmap 0.6.6**.
 docs/REBRANDING.md,1,historical-documentation,document that describes the upstream derivation,# Rebranding: DDNet → Neon Relay
 docs/REBRANDING.md,7,historical-documentation,document that describes the upstream derivation,* Upstream: https://github.com/ddnet/ddnet @ `a853d333ac9e61ebfa2899b4641f8b0658ba60d5`

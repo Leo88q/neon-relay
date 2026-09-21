@@ -12,10 +12,11 @@ Nothing in this repository is presented as verified when it was not run.
 SQLite3/libcurl/OpenSSL development packages, and no route to `deb.debian.org`,
 `crates.io` or `static.rust-lang.org`.
 Raw output: [`baseline/cmake-configure-upstream.log`](baseline/cmake-configure-upstream.log).
-*Containment:* [`local_syntax_probe.sh`](../scripts/local_syntax_probe.sh) compiles 124
-translation units (server + client, minus SDL/SQLite-dependent ones) with `-std=c++20`
-after running the Python codegen; result in
-[`baseline/partial-compile-probe-rebrand.log`](baseline/partial-compile-probe-rebrand.log).
+*Containment:* [`local_syntax_probe.sh`](../scripts/local_syntax_probe.sh) compiles the
+tree (server + client, minus SDL/SQLite-dependent ones) with `-std=c++20` after running
+the Python codegen — 134 clean / 1 skip / 0 fail at the last sandbox run (the 2026-09-16
+baseline in [`baseline/partial-compile-probe-rebrand.log`](baseline/partial-compile-probe-rebrand.log)
+reported 123).
 
 ### BL-02 — Android / Gradle build impossible in the sandbox
 No JDK, no Android SDK/NDK, no route to Maven Central or Google Maven. The Gradle module,
@@ -27,9 +28,11 @@ Kotlin wallet layer and unit tests in `android/` are therefore **uncompiled** he
 No Rust/Solana/Anchor toolchain and no crates.io route, so the stage-9 program in `onchain/`
 was **written but never compiled** here: `cargo test`, `anchor build`, `anchor test` and the
 devnet deployment are a documented runbook (`onchain/README.md`), not executed procedures.
-What *is* executed offline: `cd onchain && npm test` (12/12 — Merkle parity with the backend,
-tamper negatives, static conformance of `lib.rs`/`Anchor.toml` against the TS constants) and a
-golden leaf vector pinned identically for the Rust unit test, the backend and the TS client.
+What *is* executed offline: `cd onchain && npm test` (49/49 — 5 Merkle-parity/tamper tests
+against the backend mirror, 8 program-conformance tests binding `lib.rs`/`Anchor.toml` to the
+TS constants, 8 rewards-claim client-contract tests spec-pinning the Kotlin builder, plus the
+economy (15), features (6) and asset-manifest (7) suites) and a golden leaf vector pinned
+identically for the Rust unit test, the backend and the TS client.
 The pinned `anchor-lang`/`anchor-spl` 0.30.1 coordinates are unverified offline (BL-06). The
 `declare_id!` value is a generated PLACEHOLDER to be replaced with `anchor keys list` output
 before any deployment.
@@ -47,12 +50,16 @@ infrastructure (update server, info service, master server) is a deployment task
 
 ## Product / legal gates
 
-### BL-04 — upstream Android template superseded, not deleted
-`scripts/android/files/**` (rebranded) still ships the upstream SDL activity/server service;
-the new `android/` module reuses those two classes as sources. Removing the template
-outright happens with the CI rework (stage 10).
+### BL-04 — upstream Android template still load-bearing
+`scripts/android/files/**` (rebranded) still ships the upstream SDL activity/server service:
+the `android/` module consumes the two classes plus `res/` as Gradle source dirs
+(`android/app/build.gradle.kts`), and `scripts/android/cmake_android.sh` assembles the
+CMake-driven APK build by copying the whole template into the build folder. Removing the
+template was planned with the stage-10 CI rework, but that CI has no Android job (and BL-12
+blocks any execution anyway), so the removal awaits a verified Android build pipeline that
+no longer needs the template.
 
-### BL-05 — 246 vendored assets are `block-release`
+### BL-05 — 250 vendored assets are `block-release`
 Upstream applies CC-BY-SA 3.0 to `data/audio/*.wv`, `data/shader/*`, `data/themes/*`,
 unreplaced `data/mapres/*` (54 sheets), unreplaced historical `data/maps*`, the
 DDNet `data/fonts/index.json`, `data/wordlist.txt`, `data/censorlist.txt`,
@@ -64,7 +71,7 @@ produced from the tree. They are vendored for development and gated by
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7 chooses: obtain authors,
 replace the assets, or ship a good-faith attribution page plus the full license
 text. The previous number (698) reflected a manifest that did not enumerate the
-`.wv` audio mirrors; those are now correctly counted (131 of the 246).
+`.wv` audio mirrors; those are now correctly counted (131 of the 250).
 
 ### BL-08 — upstream developer docs kept as reference
 `docs/BUILDING*.md`, `docs/DEBUGGING.md`, `docs/CONTRIBUTING.md`, `docs/DATABASE.md` and
