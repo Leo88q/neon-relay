@@ -86,3 +86,17 @@ test("no hardcoded mint, no SKR token anywhere in onchain/", () => {
 	assert.match(anchorNoComments, /cluster = "devnet"/);
 	assert.ok(!/mainnet/.test(anchorNoComments), "Anchor.toml must not configure mainnet");
 });
+
+test("Tranche A: publish_epoch binds leaf_count and claim enforces exact depth", () => {
+	assert.match(libRs,
+		/pub fn publish_epoch\(ctx: Context<PublishEpoch>, epoch_id: u64, root: \[u8; 32\], leaf_count: u32\)/);
+	assert.match(libRs, /require!\(leaf_count > 0, NeonRelayError::InvalidLeafCount\)/);
+	assert.match(libRs, /epoch\.leaf_count = leaf_count;/);
+	// unconditional: the old `if leaf_count != 0` gate is gone
+	assert.equal(libRs.includes("if ctx.accounts.epoch.leaf_count != 0"), false);
+	assert.match(libRs, /let depth = ctx\.accounts\.epoch\.leaf_count\.next_power_of_two\(\)\.trailing_zeros\(\) as usize;/);
+	assert.match(libRs, /require!\(proof\.len\(\) == depth, NeonRelayError::ProofInvalid\)/);
+	assert.match(libRs, /require!\(leaf_index < ctx\.accounts\.epoch\.leaf_count, NeonRelayError::ProofInvalid\)/);
+	// the publication event carries the count for indexers
+	assert.match(libRs, /pub struct EpochPublished \{[^}]*pub leaf_count: u32,/s);
+});

@@ -19,7 +19,7 @@ after the mitigation.
 | Operator Solana keypair (`config.authority`) | can publish roots for new epochs ⇒ can direct future vault funds |
 | Game-server Ed25519 signing seed | can fabricate match events within backend caps |
 | Backend DB (events, bindings, epochs, intents) | source of truth for who earned what |
-| `NEONRELAY_ADMIN_TOKEN` | can seal epochs (root selection) |
+| `NEONRELAY_OPERATOR_TOKEN` / `NEONRELAY_SUPERADMIN_TOKEN` | propose / approve seals and closes (root selection needs both); legacy single `NEONRELAY_ADMIN_TOKEN` is devnet-only |
 | Player wallets / sessions | identity; a stolen session can claim intents (not funds directly — claims are signed by the wallet itself) |
 | Repository integrity (licenses, notices, branding) | legal exposure; the fork must stay attributable |
 
@@ -59,7 +59,7 @@ after the mitigation.
 | Cap bypass via many players | caps per `player_id` for events, per wallet binding for payouts; linking a wallet requires a wallet-signed challenge | BL-11 name instability handled by binding-keyed payouts |
 | SQL injection | `node:sqlite` prepared statements everywhere (`backend/src/db.ts`); zero runtime dependencies reduces attack surface | none known |
 | Session hijacking | 256-bit tokens stored SHA-256-hashed, 12 h sliding TTL; TLS termination is a deployment concern (documented, not enforced in code) | plaintext HTTP deployments — runbook requires TLS in production hosting |
-| Admin-route abuse (seal) | bearer `NEONRELAY_ADMIN_TOKEN`, one-way seal, re-seal ⇒ 409 | token theft ⇒ bogus root for an epoch — bounded by on-chain publish being operator-only (separate credential) |
+| Admin-route abuse (seal/close) | two-person workflow (operator proposes, superadmin approves; constant-time auth), one-way seal/close, append-only audit | both tokens stolen ⇒ bogus root for an epoch — bounded by on-chain publish being operator-only (separate credential) plus vault-coverage checks |
 | Rate abuse | per-IP token bucket on auth routes (`docs/WALLET_AUTH.md`) | distributed abuse (generic) |
 
 ## 5. Wallet auth / Android / MWA (A7)
@@ -91,7 +91,7 @@ after the mitigation.
 | --- | --- | --- |
 | Secrets committed | `scripts/check_secrets.py` (CI gate + self-test proving the detector fires); allowlist by exact documented test vectors only | scanner pattern coverage |
 | Upstream branding silently returns | `scripts/check_branding.sh --release` classification gate + translation lockstep | none known |
-| Unlicensed/unvetted assets ship | `docs/ASSET_MANIFEST.csv` (878 rows: 180 ship / 698 block-release) + `check_assets.sh`; **release mode fails by design until legal review** (BL-05) | legal review pending |
+| Unlicensed/unvetted assets ship | `docs/ASSET_MANIFEST.csv` (853 rows: 603 ship / 250 block-release) + `check_assets.sh`; **release mode fails by design until legal review** (BL-05) | legal review pending |
 | Poisoned dependencies | backend/onchain: zero runtime deps; Android: pinned MWA coordinate (BL-06 unverified offline); Rust: pinned anchor versions (BL-03 uncompiled) | pinned-but-unverified coordinates |
 | Legally significant history rewriting | policy: no `git filter-repo` on notices; upstream provenance pinned in `UPSTREAM_BASE.md` | none known |
 | CI silently disabled/broken | workflow mirrors locally-evidenced gates; first real run blocked by **account billing** (BL-12) — recorded, not hidden | CI currently not executing |

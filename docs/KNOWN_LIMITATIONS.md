@@ -12,10 +12,11 @@ Nothing in this repository is presented as verified when it was not run.
 SQLite3/libcurl/OpenSSL development packages, and no route to `deb.debian.org`,
 `crates.io` or `static.rust-lang.org`.
 Raw output: [`baseline/cmake-configure-upstream.log`](baseline/cmake-configure-upstream.log).
-*Containment:* [`local_syntax_probe.sh`](../scripts/local_syntax_probe.sh) compiles 124
-translation units (server + client, minus SDL/SQLite-dependent ones) with `-std=c++20`
-after running the Python codegen; result in
-[`baseline/partial-compile-probe-rebrand.log`](baseline/partial-compile-probe-rebrand.log).
+*Containment:* [`local_syntax_probe.sh`](../scripts/local_syntax_probe.sh) compiles the
+tree (server + client, minus SDL/SQLite-dependent ones) with `-std=c++20` after running
+the Python codegen — 134 clean / 1 skip / 0 fail at the last sandbox run (the 2026-09-16
+baseline in [`baseline/partial-compile-probe-rebrand.log`](baseline/partial-compile-probe-rebrand.log)
+reported 123).
 
 ### BL-02 — Android / Gradle build impossible in the sandbox
 No JDK, no Android SDK/NDK, no route to Maven Central or Google Maven. The Gradle module,
@@ -27,9 +28,11 @@ Kotlin wallet layer and unit tests in `android/` are therefore **uncompiled** he
 No Rust/Solana/Anchor toolchain and no crates.io route, so the stage-9 program in `onchain/`
 was **written but never compiled** here: `cargo test`, `anchor build`, `anchor test` and the
 devnet deployment are a documented runbook (`onchain/README.md`), not executed procedures.
-What *is* executed offline: `cd onchain && npm test` (12/12 — Merkle parity with the backend,
-tamper negatives, static conformance of `lib.rs`/`Anchor.toml` against the TS constants) and a
-golden leaf vector pinned identically for the Rust unit test, the backend and the TS client.
+What *is* executed offline: `cd onchain && npm test` (50/50 — 6 Merkle-parity/tamper tests
+against the backend mirror, 8 program-conformance tests binding `lib.rs`/`Anchor.toml` to the
+TS constants, 8 rewards-claim client-contract tests spec-pinning the Kotlin builder, plus the
+economy (15), features (6) and asset-manifest (7) suites) and a golden leaf vector pinned
+identically for the Rust unit test, the backend and the TS client.
 The pinned `anchor-lang`/`anchor-spl` 0.30.1 coordinates are unverified offline (BL-06). The
 `declare_id!` value is a generated PLACEHOLDER to be replaced with `anchor keys list` output
 before any deployment.
@@ -47,24 +50,29 @@ infrastructure (update server, info service, master server) is a deployment task
 
 ## Product / legal gates
 
-### BL-04 — upstream Android template superseded, not deleted
-`scripts/android/files/**` (rebranded) still ships the upstream SDL activity/server service;
-the new `android/` module reuses those two classes as sources. Removing the template
-outright happens with the CI rework (stage 10).
+### BL-04 — upstream Android template still load-bearing
+`scripts/android/files/**` (rebranded) still ships the upstream SDL activity/server service:
+the `android/` module consumes the two classes plus `res/` as Gradle source dirs
+(`android/app/build.gradle.kts`), and `scripts/android/cmake_android.sh` assembles the
+CMake-driven APK build by copying the whole template into the build folder. Removing the
+template was planned with the stage-10 CI rework, but that CI has no Android job (and BL-12
+blocks any execution anyway), so the removal awaits a verified Android build pipeline that
+no longer needs the template.
 
-### BL-05 — 246 vendored assets are `block-release`
-Upstream applies CC-BY-SA 3.0 to `data/audio/*.wv`, `data/shader/*`, `data/themes/*`,
-unreplaced `data/mapres/*` (54 sheets), unreplaced historical `data/maps*`, the
-DDNet `data/fonts/index.json`, `data/wordlist.txt`, `data/censorlist.txt`,
-`data/announcement.txt`, `data/autoexec_server.cfg`, `data/touch_controls.json`,
-`data/debug_font.png`, `data/gui_buttons.png` and `other/emscripten/*` **without
-naming authors**, so the attribution required by CC-BY-SA 3.0 §4(b) cannot be
+### BL-05 — 48 vendored assets are `block-release`
+The original-art pass cut the gated set from 250 to 48: 173 files deleted,
+the rest repainted or regenerated as originals (full account in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7). What remains is
+unattributed CC-BY-SA 3.0 content — `data/shader/*` (32 files),
+`data/maps/ctf*.map`, `data/maps/dm*.map`, `data/maps/coverage.map` (14 maps
+with no author named anywhere in the tree) and the `warm-workshops` prototype
+(2 files) — so the attribution required by CC-BY-SA 3.0 §4(b) cannot be
 produced from the tree. They are vendored for development and gated by
 `./scripts/check_assets.sh --release`, which fails until the rights review in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7 chooses: obtain authors,
 replace the assets, or ship a good-faith attribution page plus the full license
-text. The previous number (698) reflected a manifest that did not enumerate the
-`.wv` audio mirrors; those are now correctly counted (131 of the 246).
+text. (The audit also corrected 14 classic maps that the manifest had
+mislabeled as BL-14 originals; they were never part of the 250.)
 
 ### BL-08 — upstream developer docs kept as reference
 `docs/BUILDING*.md`, `docs/DEBUGGING.md`, `docs/CONTRIBUTING.md`, `docs/DATABASE.md` and
@@ -109,14 +117,26 @@ and `data/mapres/*` (gameplay maps need artists or a map generator),
 `game.png` and `data/themes/*.map` (BL-14). All stay block-release in
 docs/ASSET_MANIFEST.csv until replaced or licensed.
 
-### BL-17 — MWA economy flow awaits on-device verification
+### BL-17 — MWA flows await on-device verification
 Stage 17 implemented the on-device builder (EconomyTxBuilder.kt: base58, PDA
 with RFC 8032 on-curve test, ATA derivation, Anchor Borsh payloads, legacy
 message compilation) plus the match-intent channel and public proof route.
-The Kotlin/Android layer cannot be compiled or device-tested in the offline
-sandbox (no Gradle/JVM toolchain, BL-06), so the flow awaits a physical
-Seeker/wallet-app dry run per docs/DEVNET_RUNBOOK.md §5 before mainnet money
-(BL-16 gate still applies).
+The rewards `claim` builder followed the same pattern (RewardsTxBuilder.kt:
+rewards PDAs with big-endian epoch seeds, config/epoch parsing, client-side
+proof pre-verification, 9-account claim message; `runRewardsClaim` owns the
+backend session, sealed-epoch discovery, intent fetch, send, finality poll and
+the single claim-confirmation internally, fired by the in-game Wallet screen
+Claim button through `neonrelay_wallet_request_rewards_claim`).
+Its contract is pinned offline against the program source
+(`onchain/test/rewards_claim.test.ts`, `backend/test/rewards_pda.test.ts`),
+and the `signAndSendTransactions` call shape was corrected to the pinned
+clientlib-ktx 2.x API (single transactions argument,
+`result.signatures: Array<ByteArray>` — verified against upstream sources).
+The Kotlin/Android layer still cannot be compiled or device-tested in the
+offline sandbox (no Gradle/JVM toolchain, BL-06), so both flows await the
+first Gradle build plus a physical Seeker/wallet-app dry run per
+docs/DEVNET_RUNBOOK.md §5/§7 before mainnet money (BL-16 gate still
+applies).
 
 ### BL-16 — SKR mainnet money gated on compliance sign-off
 The economy program is mint-agnostic by design: the SKR (Solana Mobile Seeker
@@ -156,8 +176,9 @@ was redrawn with unique procedural silhouettes and per-name hue shifts; the 0.7 
 tree (17 body silhouettes + 5 eye sets + 50 marking compositions + 7 decorations +
 hands/feet mitts + bot chassis + xmas hat + 49 descriptors) was rebuilt as well.
 `docs/ASSET_MANIFEST.csv` lists all 235 skin pixels as `ship` (Zlib), and BL-05
-no longer mentions skins. Theme `.map` files remain the only art-side blocker on
-this branch — see §7 in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+no longer mentions skins. The theme `.map` files are deleted; the remaining
+art-side blockers are the shader tree and the 14 unattributed classic maps —
+see §7 in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ### BL-13 — features program has no gameplay producer yet; badge metadata is off-chain
 The stage-11 `neonrelay-features` program (achievements, badges, leaderboards, tournaments)

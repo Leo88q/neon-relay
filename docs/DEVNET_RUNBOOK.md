@@ -30,10 +30,10 @@ on-chain root → player claims.
 ## 1. Verify the tree ✅
 
 ```bash
-./scripts/local_syntax_probe.sh          # C++20 probe: 127 clean / 1 skip / 0 fail
+./scripts/local_syntax_probe.sh          # C++20 probe: 134 clean / 1 skip / 0 fail
 ./scripts/neonrelay_signer_test.sh       # C++ signer vs node:crypto: PASS
-(cd backend && npm test)                 # 30/30
-(cd onchain && npm test)                 # 12/12
+(cd backend && npm test)                 # 240/240
+(cd onchain && npm test)                 # 50/50
 ./scripts/check_secrets.py --self-test && ./scripts/check_secrets.py
 ./scripts/check_branding.sh --release --check-translations
 ./scripts/check_assets.sh --licenses
@@ -82,7 +82,8 @@ may be the same operator keypair; see `docs/SOLANA_ARCHITECTURE.md` §7.
 ```bash
 cd backend
 NEONRELAY_SERVER_SIGNING_PUBLIC_KEY=<base64url pubkey of the stage-8 seed> \
-NEONRELAY_ADMIN_TOKEN=<operator bearer token> \
+NEONRELAY_OPERATOR_TOKEN=<propose + read bearer token> \
+NEONRELAY_SUPERADMIN_TOKEN=<approve + backup bearer token> \
 NEONRELAY_EPOCH_MS=604800000 \
 NEONRELAY_DB=var/neonrelay.db \
 npm start
@@ -120,27 +121,50 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 1. Ship JSONL lines to `POST /v1/rewards/events` (operator-controlled
    transport; the game server makes no network calls for rewards). Responses
    carry statuses `accepted | duplicate | rejected_*` (`docs/API.md`).
-2. At the epoch boundary, seal:
-   `POST /v1/rewards/epochs/seal {epoch_id}` with `NEONRELAY_ADMIN_TOKEN`.
-   The response contains `merkle_root` and a recomputed `audit_root` — they
-   must match, otherwise **stop and investigate** (ledger tampering or bug).
+2. At the epoch boundary, seal through the two-person workflow: an operator
+   proposes (`POST /v1/admin/proposals {type:"seal-reward-epoch",
+   params:{epoch_id}}` with `NEONRELAY_OPERATOR_TOKEN`) and a superadmin
+   approves (`POST /v1/admin/proposals/approve {proposal_id}` with
+   `NEONRELAY_SUPERADMIN_TOKEN`). The approval result contains `merkle_root`
+   and a recomputed `audit_root` — they must match, otherwise **stop and
+   investigate** (ledger tampering or bug). Economy closes work the same way
+   (`close-economy-epoch`); the pool is derived from vault state automatically.
 3. Publish the root on-chain:
-   `program.methods.publishEpoch(new BN(epochId), hexToBytes(merkleRoot))`
-   signed by the operator keypair. One-way: a second publish for the same
-   epoch fails by design.
+   `program.methods.publishEpoch(new BN(epochId), hexToBytes(merkleRoot), leafCount)`
+   signed by the operator keypair (`leaf_count` comes from the sealed epoch).
+   One-way: a second publish for the same epoch fails by design.
+4. Snapshot the ledger: `POST /v1/admin/backup` (superadmin) and copy the
+   file from `NEONRELAY_BACKUP_DIR` off-site before any paid epoch.
 
 ## 7. Player claim ⛓️
 
 1. Player: Settings → Wallet → Connect (MWA on Solana Mobile), then
-   `POST /v1/wallet/link` (`docs/WALLET_AUTH.md`).
-2. `POST /v1/rewards/claim-intent {epoch_id}` →
-   `{amount_micro, leaf_hash, leaf_index, merkle_proof}`.
-3. Client pre-verifies the proof with `onchain/src/merkle.ts` before signing
-   anything; then submits
-   `claim(epochId, amountMicro, leafIndex, proof)` with the player wallet.
-4. `POST /v1/rewards/claim-confirmation {intent_id, transaction_id,
-   status: "confirmed"}` for audit. A replayed claim fails on-chain (claim PDA
-   exists) — that is the guarantee, not the confirmation call.
+   `POST /v1/wallet/link` (`docs/WALLET_AUTH.md`), then tap **Claim
+   rewards** (needs the backend URL, RPC URL and rewards program id
+   configured; config alone never moves money).
+2. The wallet layer owns the whole flow (`WalletManager.runRewardsClaim`,
+   fed operator configuration only through
+   `neonrelay_wallet_request_rewards_claim` — no session token crosses
+   JNI): backend session (challenge → wallet signs → verify, cached in
+   memory with a 60s expiry skew), sealed-epoch discovery over the public
+   `GET /v1/rewards/epochs` list (recent first, at most 8 intent attempts,
+   skipping epochs with no allocation for the wallet), then
+   `POST /v1/rewards/claim-intent {epoch_id}` for the first claimable
+   epoch.
+3. The mobile client pre-verifies before signing anything:
+   `RewardsTxBuilder.verifyClaim` (paused flag, exact proof depth and index
+   bound from the on-chain leaf count, indexed Merkle fold against the epoch
+   root — the same rule `onchain/src/merkle.ts` and the program enforce)
+   plus a best-effort already-claimed check; then it submits
+   `claim(epochId, amountMicro, leafIndex, proof)` via MWA. The base58
+   transaction signature comes back in the
+   `NEONRELAY_WALLET_EVENT_REWARDS_CLAIM` bridge event.
+4. The wallet layer polls `getSignatureStatuses` (≤30s) and posts exactly
+   one `POST /v1/rewards/claim-confirmation {intent_id, transaction_id,
+   status}` for audit with the observed outcome (`confirmed`/`failed`, or
+   `submitted` when finality times out so the backend watches it). A
+   replayed claim fails on-chain (claim PDA exists) — that is the
+   guarantee, not the confirmation call.
 
 ## 8. Operations
 
@@ -153,18 +177,49 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
   switch with old signatures are rejected (`rejected_signature`).
 * **Vault top-ups**: operator-only, test mint only; the program can never
   mint.
+* **RPC fallback drill** (after configuring `NEONRELAY_RPC_FALLBACK_URL`):
+  point `NEONRELAY_RPC_URL` at a dead address, restart the backend and
+  confirm a ticket read still succeeds (`GET /v1/economy/ticket`) while
+  `GET /v1/admin/rpc-status` reports `active: "fallback"` with
+  `failovers_total` 1; restore the primary URL, wait out
+  `NEONRELAY_RPC_COOLDOWN_MS`, and confirm reads fail back
+  (`last_failback_at` set, `active: "primary"`). Also verify both
+  endpoints report the same `genesis` before any paid epoch.
 * **Audit**: `GET /v1/rewards/epochs` exposes `audit_root` per epoch; compare
-  with the on-chain `EpochState.root` (`anchor shell`:
-  `await program.account.epochState.fetch(epochPda)`).
+  with the on-chain `EpochState.root` directly, or run the automated compare
+  `GET /v1/admin/reconcile/rewards` / `.../prizes` (per-epoch verdicts +
+  persisted snapshots, `docs/API.md` "Beta operations"). Snapshot the treasury
+  after every publish and claim (`POST /v1/admin/treasury/snapshot`) so
+  movement deltas are reviewable in `GET /v1/admin/treasury`.
+* **Health review**: `GET /v1/admin/metrics` (DAU/sessions, finish rate,
+  failed-tx rate, pipeline age) and `GET /v1/admin/stuck` every ops shift;
+  append `&alert=1` to either reconcile call or the stuck report to push a
+  digest to the configured alert channel on non-clean results.
+* **Game event shipper**: batch the game server's signed JSONL with
+  `scripts/ship_game_events.sh --file events.jsonl --backend $BACKEND`
+  (idempotent: re-runs collapse to `duplicate`; see the logrotate note at the
+  top of the script). Game event privacy/retention:
+  `docs/PRIVACY_GAME_EVENTS.md`.
+* **Deployment check**: after every deploy or authority change, re-run
+  `onchain/scripts/verify_deployment.sh --cluster devnet --manifest
+  onchain/deployment.devnet.json` (manifest copied from
+  `deployment.example.json`); promotion policy, Squads + 48h timelock rules
+  and incident runbooks live in `docs/DEPLOYMENT_POLICY.md` and
+  `docs/INCIDENT_RESPONSE.md`.
 
 ## 9. Known gaps
 
 * No automated e2e test spans backend→chain (BL-03); the pipeline is covered
-  segment-wise: backend e2e (✅ 30/30), Merkle parity backend↔client↔program
-  source (✅ 12/12), signer C++↔node:crypto (✅ harness).
-* The `claim` transaction builder for the mobile client is not implemented
-  yet (needs the generated IDL); the Android layer signs transactions via MWA
-  (`signTransactions`) and the intent response contains everything required.
+  segment-wise: backend (✅ 240/240, incl. the e2e auth/claim flows), Merkle
+  parity + rewards-claim client contract vs the program source (onchain ✅
+  50/50), signer C++↔node:crypto (✅ harness).
+* The mobile `claim` flow is implemented end to end in the client
+  (`RewardsTxBuilder.kt` + `runRewardsClaim`, spec-pinned by
+  `onchain/test/rewards_claim.test.ts` and `backend/test/rewards_pda.test.ts`
+  against the program source) and the in-game Wallet screen has the Claim
+  button firing `neonrelay_wallet_request_rewards_claim`; like the rest of
+  the Kotlin layer, it awaits the first Gradle build and an on-device dry
+  run (BL-17).
 * Upgrade authority of the deployed program remains the deploy keypair on
   devnet; hardening is a release-checklist item.
 

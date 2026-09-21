@@ -10,7 +10,15 @@
  *
  * Reward routes (/v1/rewards/…) arrive in stage 7 and are intentionally absent:
  * an unknown path is a 404, never a silent stub.
+ *
+ * Tranche A: direct seal/close execution was replaced by the two-person
+ * proposal workflow (POST /v1/admin/proposals → approve/reject); the old
+ * paths answer 410 with migration guidance. List routes accept optional
+ * ?limit=&offset= pagination.
  */
+import { createHash, randomUUID } from "node:crypto";
+import { mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { raceLobby, parseRaceCurrency, RACE_TIERS } from "./race_catalog.ts";
 import { readMarketV2, readTicketV2, V2AccountError } from "./economy_v2_rpc.ts";
 import { issueSealedPairing } from "./game_pairing_seal.ts";
@@ -21,13 +29,25 @@ import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
 import { RewardService, RewardsError } from "./rewards.ts";
+import { GameEventService, GameEventsError } from "./game_events.ts";
+import { collectStuck, computeMetrics } from "./metrics.ts";
+import { alertSinks, formatDigest, sendAlertText } from "./alerts.ts";
+import {
+  ReconcileError, readTreasuryState, reconcilePrizeEpoch,
+  reconcileRewardsEpoch, recordTreasury,
+} from "./reconcile.ts";
+import {
+  AdminStore, adminConfigured, authenticateAdmin, type AdminIdentity, type ProposalRow,
+} from "./admin.ts";
 import { HttpError, RateLimiter, Router, type RequestContext } from "./http.ts";
 import type { SessionStore } from "./sessions.ts";
 import type { WalletStore } from "./wallets.ts";
 import { migrationCount, type Db } from "./db.ts";
 import {
-  base58Decode, base58Encode, closeEpochPrizes, entryReference, httpRpc, ticketStatus,
+  base58Decode, base58Encode, closeEpochPrizes, entryReference,
+  readVaultPool, ticketStatus, VaultReadError,
 } from "./economy.ts";
+import { createRpcPool } from "./rpc.ts";
 import { buildTree, leafHash, proofFor } from "./merkle.ts";
 
 const str = (value: unknown, field: string, max = 512): string => {
@@ -39,6 +59,25 @@ const str = (value: unknown, field: string, max = 512): string => {
 
 const optStr = (value: unknown): string | null =>
   typeof value === "string" && value.length > 0 && value.length <= 512 ? value : null;
+
+/** Optional ?limit=&offset= pagination. `present` is false when neither param was sent. */
+const parsePagination = (ctx: RequestContext, defaultLimit: number, maxLimit: number):
+  { limit: number; offset: number; present: boolean } => {
+  const rawLimit = ctx.url.searchParams.get("limit");
+  const rawOffset = ctx.url.searchParams.get("offset");
+  if (rawLimit === null && rawOffset === null) {
+    return { limit: defaultLimit, offset: 0, present: false };
+  }
+  const limit = rawLimit === null ? defaultLimit : Number(rawLimit);
+  const offset = rawOffset === null ? 0 : Number(rawOffset);
+  if (!Number.isInteger(limit) || limit < 1 || limit > maxLimit) {
+    throw new HttpError(400, "bad-pagination", `limit must be an integer within 1..${maxLimit}`);
+  }
+  if (!Number.isInteger(offset) || offset < 0) {
+    throw new HttpError(400, "bad-pagination", "offset must be a non-negative integer");
+  }
+  return { limit, offset, present: true };
+};
 
 export function buildRouter(deps: {
   config: Config;
@@ -69,6 +108,25 @@ export function buildRouter(deps: {
       throw new HttpError(401, "binding-revoked", "wallet binding is revoked");
     }
     return { session: result.session, binding };
+  };
+
+  // ------------------------------------------------------------ admin (Tranche A)
+  // Role-separated, constant-time admin plane. Operators propose, superadmins
+  // approve (execution happens inside approval); everything is audit-logged.
+  const admin = new AdminStore(db, config);
+
+  const requireAdmin = (ctx: RequestContext, role: "operator" | "superadmin" = "operator"): AdminIdentity => {
+    if (!adminConfigured(config)) {
+      throw new HttpError(503, "admin-disabled", "admin routes are not configured");
+    }
+    const identity = authenticateAdmin(config, ctx.bearer);
+    if (!identity) {
+      throw new HttpError(403, "admin-forbidden", "admin authentication required");
+    }
+    if (role === "superadmin" && identity.role !== "superadmin") {
+      throw new HttpError(403, "admin-forbidden", "this action requires the superadmin role");
+    }
+    return identity;
   };
 
   router.add("GET", "/v1/health", () => ({
@@ -195,22 +253,131 @@ export function buildRouter(deps: {
     return rewards.eligibility(binding.player_id, binding);
   });
 
-  router.add("GET", "/v1/rewards/epochs", () => rewards.listEpochs());
+  router.add("GET", "/v1/rewards/epochs", (ctx) => {
+    const page = parsePagination(ctx, 50, 200);
+    const epochs = rewards.listEpochs();
+    if (!page.present) return epochs;
+    return {
+      epochs: epochs.slice(page.offset, page.offset + page.limit),
+      pagination: { limit: page.limit, offset: page.offset, total: epochs.length },
+    };
+  });
 
-  router.add("POST", "/v1/rewards/epochs/seal", (ctx) => {
-    if (!config.adminToken) {
-      throw new HttpError(503, "admin-disabled", "operator routes are not configured");
-    }
-    if (ctx.bearer !== config.adminToken) {
-      throw new HttpError(403, "admin-forbidden", "operator token required");
-    }
+  // Direct seal was removed in Tranche A: sealing runs only through the
+  // two-person proposal workflow below (410, not a silent stub).
+  router.add("POST", "/v1/rewards/epochs/seal", () => {
+    throw new HttpError(410, "admin-workflow-required",
+      "direct seal is disabled; POST /v1/admin/proposals {type:\"seal-reward-epoch\"} then approve");
+  });
+
+  router.add("POST", "/v1/admin/proposals", (ctx) => {
+    guard(ctx, "admin-propose");
+    const identity = requireAdmin(ctx, "operator");
     const body = (ctx.body ?? {}) as Record<string, unknown>;
-    const epochId = body["epoch_id"];
-    if (typeof epochId !== "number" || !Number.isInteger(epochId)) {
-      throw new HttpError(400, "bad-request", "epoch_id must be an integer");
+    const params = (body["params"] ?? body) as Record<string, unknown>;
+    return admin.createProposal(identity, body["type"], params, ctx.ip);
+  });
+
+  router.add("POST", "/v1/admin/proposals/approve", async (ctx) => {
+    guard(ctx, "admin-approve");
+    const identity = requireAdmin(ctx, "superadmin");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const id = str(body["proposal_id"], "proposal_id", 64);
+    return admin.approveProposal(identity, id, ctx.ip, executeProposal);
+  });
+
+  router.add("POST", "/v1/admin/proposals/reject", (ctx) => {
+    guard(ctx, "admin-approve");
+    const identity = requireAdmin(ctx, "superadmin");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const id = str(body["proposal_id"], "proposal_id", 64);
+    return admin.rejectProposal(identity, id, body["reason"], ctx.ip);
+  });
+
+  router.add("GET", "/v1/admin/proposals", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const { rows, total } = admin.listProposals(page.limit, page.offset);
+    return { proposals: rows, pagination: { limit: page.limit, offset: page.offset, total } };
+  });
+
+  router.add("GET", "/v1/admin/audit", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const { rows, total } = admin.listAudit(page.limit, page.offset);
+    return { entries: rows, pagination: { limit: page.limit, offset: page.offset, total } };
+  });
+
+  router.add("POST", "/v1/admin/backup", (ctx) => {
+    guard(ctx, "admin-backup");
+    const identity = requireAdmin(ctx, "superadmin");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const file = `neonrelay-${stamp}-${randomUUID().slice(0, 8)}.db`;
+    mkdirSync(config.backupDir, { recursive: true });
+    const full = join(config.backupDir, file);
+    // The name is fully server-generated; escape it for the SQL string literal.
+    db.exec(`VACUUM INTO '${full.replace(/'/g, "''")}'`);
+    const bytes = statSync(full).size;
+    const sha256 = createHash("sha256").update(readFileSync(full)).digest("hex");
+    const result = { file, bytes, sha256, created_at: Date.now() };
+    admin.audit({
+      actorRole: identity.role, actorHash: identity.fingerprint,
+      action: "backup-created", result, ip: ctx.ip,
+    });
+    return result;
+  });
+
+  router.add("GET", "/v1/admin/backups", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    let files: string[] = [];
+    try {
+      files = readdirSync(config.backupDir);
+    } catch {
+      files = [];
     }
-    const epoch = rewards.sealEpoch(epochId);
-    return { epoch, audit_root: rewards.auditRoot(epochId) };
+    const backups = files
+      .filter((f) => f.startsWith("neonrelay-") && f.endsWith(".db"))
+      .sort().reverse().slice(0, 200)
+      .map((f) => {
+        try {
+          const st = statSync(join(config.backupDir, f));
+          return { file: f, bytes: st.size, modified_at: Math.floor(st.mtimeMs) };
+        } catch {
+          return null;
+        }
+      })
+      .filter((row): row is { file: string; bytes: number; modified_at: number } => row !== null);
+    return { backups };
+  });
+
+  const LEDGER_TABLES = [
+    "wallet_bindings", "auth_nonces", "sessions", "reward_events", "reward_epochs",
+    "reward_leaves", "claim_intents", "economy_epochs", "economy_matches",
+    "economy_v2_epochs", "economy_v2_intents", "game_identity_challenges",
+    "game_identity_grants", "game_accounts", "game_pairings",
+    "admin_proposals", "admin_audit", "game_events",
+    "reconcile_snapshots", "treasury_snapshots", "schema_migrations",
+  ];
+
+  router.add("GET", "/v1/admin/ledger-stats", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    let dbBytes: number | null = null;
+    try {
+      dbBytes = statSync(config.dbPath).size;
+    } catch {
+      const pages = db.get<{ page_count: number }>("PRAGMA page_count")?.page_count ?? 0;
+      const size = db.get<{ page_size: number }>("PRAGMA page_size")?.page_size ?? 0;
+      dbBytes = pages * size;
+    }
+    const tables: Record<string, number> = {};
+    for (const table of LEDGER_TABLES) {
+      tables[table] = db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`)?.n ?? 0;
+    }
+    return { db_bytes: dbBytes, tables };
   });
 
   router.add("POST", "/v1/rewards/claim-intent", (ctx) => {
@@ -248,7 +415,13 @@ export function buildRouter(deps: {
 
   router.add("GET", "/v1/rewards/intents", (ctx) => {
     const { binding } = requireSession(ctx);
-    return { intents: rewards.intentsFor(binding) };
+    const page = parsePagination(ctx, 50, 200);
+    const intents = rewards.intentsFor(binding);
+    if (!page.present) return { intents };
+    return {
+      intents: intents.slice(page.offset, page.offset + page.limit),
+      pagination: { limit: page.limit, offset: page.offset, total: intents.length },
+    };
   });
 
   // Read-only v2 catalog: no legacy ticket or transfer is reused for POTATO.
@@ -332,7 +505,18 @@ export function buildRouter(deps: {
     if (!binding) throw new HttpError(401, "binding-missing", "wallet binding is gone");
     return Buffer.from(binding.public_key, "base64url");
   };
-  const rpc = httpRpc(config.rpcUrl);
+  // Dual-provider chain-read pool (docs/DEPLOYMENT_POLICY.md §6): every RPC
+  // call below — tickets, vault pool, reconciliation, treasury — fails
+  // over to the fallback provider while primary is down and fails back
+  // automatically. Both endpoints are genesis-pinned to one chain.
+  const rpcPool = createRpcPool({
+    primary: config.rpcUrl,
+    fallback: config.rpcFallbackUrl,
+    timeoutMs: config.rpcTimeoutMs,
+    cooldownMs: config.rpcCooldownMs,
+    expectedGenesis: config.expectedGenesisHash,
+  });
+  const rpc = rpcPool.call;
 
   router.add("GET", "/v1/economy/reference", (ctx) => {
     economyGuard();
@@ -357,28 +541,44 @@ export function buildRouter(deps: {
     return status;
   });
 
-  router.add("POST", "/v1/economy/epoch-close", async (ctx) => {
+  // Direct close was removed in Tranche A: the prize pool is derived from
+  // vault state and execution runs only through the proposal workflow.
+  router.add("POST", "/v1/economy/epoch-close", () => {
+    throw new HttpError(410, "admin-workflow-required",
+      "direct close is disabled; POST /v1/admin/proposals {type:\"close-economy-epoch\"} then approve "
+      + "(the pool is derived from vault balance minus reservations, never from the request)");
+  });
+
+  const executeEconomyClose = async (epoch: number) => {
     economyGuard();
-    if (!config.adminToken || ctx.bearer !== config.adminToken) {
-      throw new HttpError(401, "admin-required", "economy epoch close needs the admin token");
+    const existing = db.get<{ epoch: number }>(
+      "SELECT epoch FROM economy_epochs WHERE epoch = ?", epoch);
+    if (existing) {
+      throw new HttpError(409, "epoch-already-closed", `economy epoch ${epoch} is already closed`);
     }
-    const body = (ctx.body ?? {}) as Record<string, unknown>;
-    const epoch = Number(body.epoch);
-    const poolMicro = Number(body.poolMicro);
-    if (!Number.isInteger(epoch) || epoch <= 0 || !Number.isInteger(poolMicro) || poolMicro <= 0) {
-      throw new HttpError(400, "bad-request", "epoch and poolMicro must be positive integers");
+    let pool;
+    try {
+      pool = await readVaultPool(rpc, config.economyProgramId as string, config.skrMint);
+    } catch (err) {
+      if (err instanceof VaultReadError) {
+        const status = err.code === "rpc-unavailable" ? 502
+          : err.code === "vault-underfunded" || err.code === "empty-pool" ? 409
+          : 503;
+        throw new HttpError(status, err.code, err.message);
+      }
+      throw err;
     }
     const rows = db.all<{ pk: string; total: number; binding: string }>(
       `SELECT b.public_key AS pk, b.id AS binding, COALESCE(SUM(e.amount_micro), 0) AS total
        FROM reward_events e JOIN wallet_bindings b ON b.id = e.wallet_binding_id
        WHERE e.reward_epoch = ? AND e.status = 'accepted'
-       GROUP BY b.id ORDER BY total DESC`, [epoch]);
+       GROUP BY b.id ORDER BY total DESC`, epoch);
     const ranked = rows.map((r) => ({ wallet: base58Encode(Buffer.from(r.pk, "base64url")), totalMicro: r.total }));
     const refsByBinding = new Map<string, string[]>();
     for (const row of rows) {
       const intents = db.all<{ reference: string }>(
         "SELECT reference FROM economy_matches WHERE wallet_binding_id = ? AND epoch = ?",
-        [row.binding, epoch]);
+        row.binding, epoch);
       refsByBinding.set(row.binding, intents.map((i) => i.reference));
     }
     const bindingOf = new Map(ranked.map((r, i) => [r.wallet, rows[i]?.binding ?? ""]));
@@ -394,16 +594,32 @@ export function buildRouter(deps: {
         }
         return false;
       },
-      poolMicro,
+      poolMicro: pool.available,
       epoch,
     });
-    db.run("INSERT INTO economy_epochs (epoch, root, total_micro, distribution, created_at) VALUES (?, ?, ?, ?, ?)",
-      [epoch, result.root, result.totalMicro,
-       JSON.stringify(result.leaves.map((l) => ({ wallet: l.wallet, amount_micro: l.amountMicro, place: l.place }))),
-       Date.now()]);
+    if (result.leaves.length === 0) {
+      throw new HttpError(409, "no-eligible-winners",
+        "no ticketed winners in this epoch; the pool stays vaulted for the next epoch");
+    }
+    db.run("INSERT INTO economy_epochs (epoch, root, total_micro, distribution, created_at, vault_ata, vault_balance, vault_reserved) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      epoch, result.root, result.totalMicro,
+      JSON.stringify(result.leaves.map((l) => ({ wallet: l.wallet, amount_micro: l.amountMicro, place: l.place }))),
+      Date.now(), pool.vault, pool.balance, pool.reserved);
     return { epoch, root: result.root, totalMicro: result.totalMicro,
+      pool: { available: pool.available, vault: pool.vault, balance: pool.balance, reserved: pool.reserved },
       leaves: result.leaves.map((l) => ({ place: l.place, wallet: l.wallet, amountMicro: l.amountMicro })) };
-  });
+  };
+
+  const executeSeal = (epochId: number) => {
+    const epoch = rewards.sealEpoch(epochId);
+    return { epoch, audit_root: rewards.auditRoot(epochId) };
+  };
+
+  const executeProposal = async (row: ProposalRow) => {
+    const params = JSON.parse(row.params) as Record<string, number>;
+    if (row.type === "seal-reward-epoch") return executeSeal(params["epoch_id"] as number);
+    return executeEconomyClose(params["epoch"] as number);
+  };
 
   router.add("GET", "/v1/economy/current-epoch", (ctx) => {
     economyGuard();
@@ -419,17 +635,302 @@ export function buildRouter(deps: {
     const raw = walletRawOf(ctx);
     const id = db.runInsert(
       "INSERT INTO economy_matches (wallet_binding_id, epoch, reference, created_at) VALUES (?, ?, ?, ?)",
-      [session.session.wallet_binding_id, epoch, "pending", Date.now()]);
+      session.session.wallet_binding_id, epoch, "pending", Date.now());
     const reference = entryReference(0, epoch, raw, id).toString("hex");
-    db.run("UPDATE economy_matches SET reference = ? WHERE id = ?", [reference, id]);
+    db.run("UPDATE economy_matches SET reference = ? WHERE id = ?", reference, id);
     return { matchId: id, epoch, reference };
   });
 
   router.add("GET", "/v1/economy/epochs", (ctx) => {
     economyGuard();
-    void ctx;
-    return { epochs: db.all<{ epoch: number; root: string; total_micro: number }>(
-      "SELECT epoch, root, total_micro FROM economy_epochs ORDER BY epoch DESC") };
+    const page = parsePagination(ctx, 50, 200);
+    if (!page.present) {
+      return { epochs: db.all<{ epoch: number; root: string; total_micro: number }>(
+        "SELECT epoch, root, total_micro FROM economy_epochs ORDER BY epoch DESC") };
+    }
+    const total = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM economy_epochs")?.n ?? 0;
+    return {
+      epochs: db.all<{ epoch: number; root: string; total_micro: number }>(
+        "SELECT epoch, root, total_micro FROM economy_epochs ORDER BY epoch DESC LIMIT ? OFFSET ?",
+        page.limit, page.offset),
+      pagination: { limit: page.limit, offset: page.offset, total },
+    };
+  });
+
+  // ------------------------------------------------- Tranche B: game events
+  const gameEvents = new GameEventService(db, config);
+
+  router.add("POST", "/v1/game/events", (ctx) => {
+    guard(ctx, "game-ingest");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const events = body["events"];
+    if (!Array.isArray(events) || events.length === 0 || events.length > 500) {
+      throw new HttpError(400, "bad-request", "events must be an array of 1..500 items");
+    }
+    const results = gameEvents.ingest(events as never[], Date.now());
+    return {
+      results,
+      accepted: results.filter((r) => r.status === "accepted").length,
+    };
+  });
+
+  router.add("GET", "/v1/admin/game-events", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const sinceRaw = ctx.url.searchParams.get("since");
+    const since = sinceRaw === null ? null : Number(sinceRaw);
+    if (sinceRaw !== null && (!Number.isInteger(since) || (since as number) < 0)) {
+      throw new HttpError(400, "bad-request", "since must be a non-negative integer timestamp");
+    }
+    const eventType = ctx.url.searchParams.get("event_type");
+    const playerId = ctx.url.searchParams.get("player_id");
+    if (playerId !== null && (playerId.length === 0 || playerId.length > 128)) {
+      throw new HttpError(400, "bad-request", "player_id filter invalid");
+    }
+    try {
+      const { rows, total } = gameEvents.list({
+        limit: page.limit, offset: page.offset,
+        eventType, playerId, since,
+      });
+      return { events: rows, pagination: { limit: page.limit, offset: page.offset, total } };
+    } catch (err) {
+      if (err instanceof GameEventsError) throw new HttpError(err.status, err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("POST", "/v1/admin/game-events/purge", (ctx) => {
+    guard(ctx, "admin-backup");
+    const identity = requireAdmin(ctx, "superadmin");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const days = body["older_than_days"];
+    const playerId = body["player_id"];
+    const byAge = typeof days === "number";
+    const byPlayer = typeof playerId === "string";
+    if (byAge === byPlayer) {
+      throw new HttpError(400, "bad-request", "supply exactly one of older_than_days|player_id");
+    }
+    if (byAge && (!Number.isInteger(days) || (days as number) < 1 || (days as number) > 3650)) {
+      throw new HttpError(400, "bad-request", "older_than_days must be an integer within 1..3650");
+    }
+    if (byPlayer && ((playerId as string).length === 0 || (playerId as string).length > 128)) {
+      throw new HttpError(400, "bad-request", "player_id invalid");
+    }
+    const now = Date.now();
+    const purged = byPlayer
+      ? gameEvents.purge({ playerId: playerId as string }, now)
+      : gameEvents.purge({ olderThanMs: (days as number) * 86_400_000 }, now);
+    const result = byPlayer
+      ? { purged, player_id: playerId }
+      : { purged, older_than_days: days, cutoff: now - (days as number) * 86_400_000 };
+    admin.audit({
+      actorRole: identity.role, actorHash: identity.fingerprint,
+      action: "game-events-purged",
+      params: byPlayer ? { player_id: playerId } : { older_than_days: days },
+      result, ip: ctx.ip,
+    }, now);
+    return result;
+  });
+
+  // ------------------------------------------------- Tranche B: metrics
+  router.add("GET", "/v1/admin/metrics", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const rawDays = ctx.url.searchParams.get("days");
+    const days = rawDays === null ? 7 : Number(rawDays);
+    if (!Number.isInteger(days) || days < 1 || days > 90) {
+      throw new HttpError(400, "bad-request", "days must be an integer within 1..90");
+    }
+    return computeMetrics(db, days, Date.now(), rpcPool.getStatus());
+  });
+
+  router.add("GET", "/v1/admin/rpc-status", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    return rpcPool.getStatus();
+  });
+
+  // ------------------------------------------------- Tranche B: stuck + reconcile
+  const reconcileStatus = (code: string): number =>
+    code === "rpc-unavailable" ? 502 : code === "bad-epoch" ? 400 : 503;
+
+  const maybeAlert = async (
+    identity: { role: string; fingerprint: string },
+    ctx: RequestContext,
+    reason: string,
+    lines: string[],
+  ): Promise<unknown> => {
+    if (ctx.url.searchParams.get("alert") !== "1" || lines.length === 0) {
+      return { alerted: false };
+    }
+    const text = formatDigest(`Neon Relay: ${reason}`, lines);
+    const result = await sendAlertText(config, text);
+    admin.audit({
+      actorRole: identity.role, actorHash: identity.fingerprint,
+      action: "alert-sent", params: { reason, lines }, result, ip: ctx.ip,
+    });
+    return { alerted: result.sent, sinks: result.sinks, errors: result.errors };
+  };
+
+  router.add("GET", "/v1/admin/stuck", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    const rawHours = ctx.url.searchParams.get("threshold_hours");
+    const hours = rawHours === null ? 6 : Number(rawHours);
+    if (!Number.isInteger(hours) || hours < 1 || hours > 720) {
+      throw new HttpError(400, "bad-request", "threshold_hours must be an integer within 1..720");
+    }
+    const report = collectStuck(db, hours * 3_600_000);
+    const lines: string[] = [];
+    if (report.intents.length > 0) {
+      lines.push(`${report.intents.length} claim intents stuck in submitted `
+        + `(oldest ${Math.round((report.intents[0] as { age_ms: number }).age_ms / 3_600_000)}h)`);
+    }
+    if (report.proposals.length > 0) lines.push(`${report.proposals.length} proposals open past threshold`);
+    if (report.unreconciled_prize_epochs.length > 0) {
+      lines.push(`prize epochs never reconciled: ${report.unreconciled_prize_epochs.join(",")}`);
+    }
+    const rpcStatus = rpcPool.getStatus();
+    if (rpcStatus.active === "fallback") {
+      lines.push(`rpc serving from fallback provider (failovers ${rpcStatus.failovers_total})`);
+    }
+    for (const role of ["primary", "fallback"] as const) {
+      const ep = rpcStatus.endpoints[role];
+      if (ep?.chain_rejected) lines.push(`rpc ${role} rejected: ${ep.last_error ?? "chain mismatch"}`);
+    }
+    return { ...report, alert: await maybeAlert(identity, ctx, "stuck pipeline items", lines) };
+  });
+
+  const rewardsGuard = () => {
+    if (!config.rewardsProgramId) {
+      throw new HttpError(503, "rewards-not-configured",
+        "set NEONRELAY_REWARDS_PROGRAM_ID to enable rewards reconciliation");
+    }
+  };
+
+  router.add("GET", "/v1/admin/reconcile/rewards", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    rewardsGuard();
+    const epochId = Number(ctx.url.searchParams.get("epoch_id") ?? "NaN");
+    if (!Number.isInteger(epochId) || epochId < 0) {
+      throw new HttpError(400, "bad-request", "epoch_id must be a non-negative integer");
+    }
+    try {
+      const result = await reconcileRewardsEpoch(db, rpc, config.rewardsProgramId as string, epochId);
+      const lines = result.status === "match" || result.status === "not-sealed"
+        ? []
+        : [`rewards epoch ${epochId}: ${result.status} (snapshot ${result.snapshot_id})`];
+      return { ...result, alert: await maybeAlert(identity, ctx, "rewards reconcile", lines) };
+    } catch (err) {
+      if (err instanceof ReconcileError) throw new HttpError(reconcileStatus(err.code), err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("GET", "/v1/admin/reconcile/prizes", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    economyGuard();
+    const epoch = Number(ctx.url.searchParams.get("epoch") ?? "NaN");
+    if (!Number.isInteger(epoch) || epoch <= 0) {
+      throw new HttpError(400, "bad-request", "epoch must be a positive integer");
+    }
+    try {
+      const result = await reconcilePrizeEpoch(db, rpc, config.economyProgramId as string, epoch);
+      const lines = result.status === "match"
+        ? []
+        : [`prize epoch ${epoch}: ${result.status} (snapshot ${result.snapshot_id})`];
+      return { ...result, alert: await maybeAlert(identity, ctx, "prize reconcile", lines) };
+    } catch (err) {
+      if (err instanceof ReconcileError) throw new HttpError(reconcileStatus(err.code), err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("GET", "/v1/admin/reconcile/snapshots", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const kind = ctx.url.searchParams.get("kind");
+    if (kind !== null && !["rewards-epoch", "prize-epoch"].includes(kind)) {
+      throw new HttpError(400, "bad-request", "kind must be rewards-epoch|prize-epoch");
+    }
+    const where = kind === null ? "" : "WHERE kind = ?";
+    const args = kind === null ? [] : [kind];
+    const total = db.get<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM reconcile_snapshots ${where}`, ...args)?.n ?? 0;
+    const snapshots = db.all(
+      `SELECT * FROM reconcile_snapshots ${where} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      ...args, page.limit, page.offset);
+    return { snapshots, pagination: { limit: page.limit, offset: page.offset, total } };
+  });
+
+  router.add("POST", "/v1/admin/treasury/snapshot", async (ctx) => {
+    guard(ctx, "admin-read");
+    const identity = requireAdmin(ctx, "operator");
+    economyGuard();
+    try {
+      const state = await readTreasuryState(rpc, config.economyProgramId as string, config.skrMint);
+      const recorded = recordTreasury(db, state);
+      admin.audit({
+        actorRole: identity.role, actorHash: identity.fingerprint,
+        action: "treasury-snapshotted", result: { id: recorded.id }, ip: ctx.ip,
+      });
+      return recorded;
+    } catch (err) {
+      if (err instanceof ReconcileError) throw new HttpError(reconcileStatus(err.code), err.code, err.message);
+      throw err;
+    }
+  });
+
+  router.add("GET", "/v1/admin/treasury", (ctx) => {
+    guard(ctx, "admin-read");
+    requireAdmin(ctx, "operator");
+    const page = parsePagination(ctx, 50, 200);
+    const total = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM treasury_snapshots")?.n ?? 0;
+    const rows = db.all<{
+      id: number; created_at: number; program: string; mint: string; vault: string;
+      treasury: string; vault_balance: string; treasury_balance: string; reserved: string;
+    }>("SELECT * FROM treasury_snapshots ORDER BY id DESC LIMIT ? OFFSET ?", page.limit, page.offset);
+    // Deltas against the chronologically previous row (null when unknown).
+    const chronological = [...rows].reverse();
+    const withDeltas = chronological.map((row, i) => {
+      const prev = i === 0 ? undefined : chronological[i - 1];
+      const previous = prev ?? (page.offset === 0 ? undefined : db.get<{
+        vault_balance: string; treasury_balance: string; reserved: string;
+      }>("SELECT vault_balance, treasury_balance, reserved FROM treasury_snapshots WHERE id < ? ORDER BY id DESC LIMIT 1",
+        row.id));
+      const delta = (nowText: string, before?: string): string | null =>
+        before === undefined ? null : (BigInt(nowText) - BigInt(before)).toString();
+      return {
+        ...row,
+        vault_delta: delta(row.vault_balance, previous?.vault_balance),
+        treasury_delta: delta(row.treasury_balance, previous?.treasury_balance),
+        reserved_delta: delta(row.reserved, previous?.reserved),
+      };
+    }).reverse();
+    return { snapshots: withDeltas, pagination: { limit: page.limit, offset: page.offset, total } };
+  });
+
+  router.add("POST", "/v1/admin/alerts/test", async (ctx) => {
+    guard(ctx, "admin-backup");
+    const identity = requireAdmin(ctx, "superadmin");
+    const sinks = alertSinks(config);
+    if (sinks.length === 0) {
+      throw new HttpError(503, "alerts-not-configured",
+        "set NEONRELAY_ALERT_WEBHOOK_URL and/or the Telegram pair to enable alerts");
+    }
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const custom = typeof body["text"] === "string" ? body["text"].slice(0, 500) : "";
+    const text = formatDigest("Neon Relay alert test", custom ? [custom] : ["if you read this, the sink works"]);
+    const result = await sendAlertText(config, text);
+    admin.audit({
+      actorRole: identity.role, actorHash: identity.fingerprint,
+      action: "alert-sent", params: { reason: "test" }, result, ip: ctx.ip,
+    });
+    return result;
   });
 
   router.add("GET", "/v1/economy/proof", (ctx) => {
@@ -448,7 +949,7 @@ export function buildRouter(deps: {
     if (raw.length !== 32) throw new HttpError(400, "bad-request", "wallet must be 32 bytes");
     const wallet = walletParam;
     const row = db.get<{ root: string; distribution: string }>(
-      "SELECT root, distribution FROM economy_epochs WHERE epoch = ?", [epoch]);
+      "SELECT root, distribution FROM economy_epochs WHERE epoch = ?", epoch);
     if (!row) throw new HttpError(404, "epoch-not-found", "no closed prize epoch with this id");
     const dist = JSON.parse(row.distribution) as { wallet: string; amount_micro: number; place: number }[];
     const index = dist.findIndex((d) => d.wallet === wallet);

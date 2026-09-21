@@ -13,6 +13,7 @@ object NativeBridge {
     const val EVENT_CONNECTED = 1
     const val EVENT_ERROR = 2
     const val EVENT_ECONOMY = 3
+    const val EVENT_REWARDS_CLAIM = 4
 
     /** False when the native library is not present (e.g. JVM unit tests). */
     val available: Boolean by lazy {
@@ -32,14 +33,29 @@ object NativeBridge {
     }
 
     /**
-     * Economy flows (SKR entry payments / prize claims, docs/PLAY_ECONOMY.md).
-     * The MWA transaction builder lands in stage 17 (BL-17); until then the
-     * request is logged and surfaced as a user-safe wallet error event.
+     * Economy flows (SKR entry payments / prize claims, docs/PLAY_ECONOMY.md
+     * stage 17): runEconomy builds the transaction fully on-device and sends
+     * it via signAndSendTransactions; the result arrives as EVENT_ECONOMY.
      */
     @JvmStatic
     fun requestEconomy(json: String) {
         android.util.Log.i("NeonRelayEconomy", "economy request: $json")
         WalletHolder.request(WalletHolder.Request.Economy(json))
+        WalletBridgeIntents.start()
+    }
+
+    /**
+     * Rewards claim flow (DEVNET_RUNBOOK §7): the game passes operator
+     * configuration only (rewards program id, RPC URL, backend URL) as JSON.
+     * runRewardsClaim owns auth + sealed-epoch discovery + intent + send +
+     * the single claim-confirmation internally, so no session token crosses
+     * JNI. The result arrives as EVENT_REWARDS_CLAIM carrying the public
+     * transaction signature.
+     */
+    @JvmStatic
+    fun requestRewardsClaim(json: String) {
+        android.util.Log.i("NeonRelayRewards", "rewards claim request: $json")
+        WalletHolder.request(WalletHolder.Request.RewardsClaim(json))
         WalletBridgeIntents.start()
     }
 

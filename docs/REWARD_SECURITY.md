@@ -82,13 +82,20 @@ successes.
 
 ## 6. Epochs, Merkle roots and claims
 
-Sealing (`POST /v1/rewards/epochs/seal`, operator token only):
+Sealing (Tranche-A proposal workflow: an operator proposes
+`seal-reward-epoch`, a superadmin approves and the approval executes):
 
 1. sum accepted events per `wallet_binding_id`;
 2. leaf = `SHA256(publicKeyBytes(32) || u64be(amount))`;
 3. leaves ordered by binding id, padded by duplication to a power of two;
 4. binary SHA-256 tree; root stored on the epoch with `total_micro` and
    `leaf_count`; leaves stored with their indices.
+
+The sealed `leaf_count` travels on-chain with the root
+(`publish_epoch(epoch_id, root, leaf_count)`): claims enforce the exact proof
+depth derived from it plus `leaf_index < leaf_count`, so short proofs on the
+padded tree can never verify. Every proposal step is mirrored into the
+append-only `admin_audit` log (`docs/API.md` §Admin).
 
 Claiming:
 
@@ -121,7 +128,7 @@ from stored leaves — anyone can re-derive a root and detect ledger tampering.
 | inflated leaf amounts | leaves derived only from `accepted` events; caps bound the input; `total_micro` equals the leaf sum (asserted by tests) |
 | stolen claim proof | a proof only proves membership; payment requires the wallet signature of the leaf's public key on-chain |
 | double claim | on-chain claim PDA (stage 9); backend intent unique per binding+epoch |
-| operator abuse of seal | operator route requires `NEONRELAY_ADMIN_TOKEN`; seal is idempotent-refusing and fully auditable via stored events/leaves |
+| operator abuse of seal | two-person workflow (`NEONRELAY_OPERATOR_TOKEN` proposes, `NEONRELAY_SUPERADMIN_TOKEN` approves; constant-time auth); seal is idempotent-refusing and fully auditable via stored events/leaves plus the append-only `admin_audit` log |
 | backend DB tampering | `audit_root` recomputation, stored rejected events, forward-only migrations |
 | unbounded ingestion DoS | per-IP token bucket; batch size ≤ 500; signature verification is constant-work |
 
@@ -130,9 +137,9 @@ from stored leaves — anyone can re-derive a root and detect ledger tampering.
 The backend holds **no** signing key of its own: it only verifies. The operator
 authority lives in the Anchor program (`config.authority`, set once at
 `initialize`): only that Solana keypair can publish epoch roots or pause
-claims; the backend's seal API is gated by its own operator token, so a root
-reaches the chain only when both sides agree. Treasury/mainnet credentials
-never appear in this repository, its CI variables or its logs.
+claims; the backend's seal API is gated by the two-person proposal workflow,
+so a root reaches the chain only when both sides agree. Treasury/mainnet
+credentials never appear in this repository, its CI variables or its logs.
 
 The game-server signer (stage 8) is **off by default** and inert until an
 operator opts in:
@@ -155,22 +162,27 @@ operator opts in:
 
 ## 9. Evidence
 
-`cd backend && npm test` → **30/30 passing** on Node v22.22.3, including:
-forged-signature rejection, duplicate detection, per-match and daily cap
-rejections with reasons, pending→available→claimed balance transitions,
-seal/claim-intent proof verification against the stored root, confirmation
-state machine, and 404/409/403 paths for foreign wallets, unsealed epochs and
-missing operator tokens.
+`cd backend && npm test` → **240/240 passing** on Node v22, including the
+reward-ledger security coverage: forged-signature rejection, duplicate
+detection, per-match and daily cap rejections with reasons,
+pending→available→claimed balance transitions, seal/claim-intent proof
+verification against the stored root, the confirmation state machine, and
+404/409/403 paths for foreign wallets, unsealed epochs and missing operator
+tokens — plus the Tranche A/B admin/reconcile/alerts/game-events suites,
+dual-RPC failover, and the economy v1/v2, ticket-security and PDA-golden
+suites.
 
-Stage-9 program evidence: `cd onchain && npm test` → **12/12 passing** —
+Stage-9 program evidence: `cd onchain && npm test` → **50/50 passing** —
 the TS Merkle mirror is asserted byte-identical to `backend/src/merkle.ts` on
 randomized trees, golden leaf vectors are pinned identically for the Rust unit
 test (`programs/neonrelay-rewards/tests/golden_leaf.txt`), tamper negatives
-(amount, index direction, outsider leaf) fail, and static conformance tests
-bind PDA seeds, caps, the pause/double-claim guards and the no-hardcoded-mint /
-no-SKR policy between `lib.rs`, `Anchor.toml` and the client constants. The
-program itself cannot be compiled in the sandbox — see `KNOWN_LIMITATIONS.md`
-BL-03 for the exact commands to run on a connected machine.
+fail, and static conformance tests bind PDA seeds, caps, the pause/double-claim
+guards and the no-hardcoded-mint / no-SKR policy between `lib.rs`,
+`Anchor.toml` and the client constants — plus the 8-test rewards-claim client
+contract that spec-pins `RewardsTxBuilder.kt`, and the economy (15), features
+(6) and asset-manifest (7) suites. The program itself cannot be compiled in the
+sandbox — see `KNOWN_LIMITATIONS.md` BL-03 for the exact commands to run on a
+connected machine.
 
 Stage-8 signer evidence: `scripts/neonrelay_signer_test.sh` builds the vendored
 ed25519-donna, `match_signer.cpp` and the CLI tool with plain gcc/g++, signs a

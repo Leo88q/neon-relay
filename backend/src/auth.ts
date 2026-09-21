@@ -68,6 +68,9 @@ export class AuthService {
   }
 
   issueChallenge(now: number = Date.now()): IssuedChallenge {
+    // Opportunistic retention: every issuance sweeps nonces that expired over
+    // a day ago, so auth_nonces cannot grow without bound.
+    this.wallets.purgeNonces(now);
     const nonce = this.wallets.issueNonce(this.config.challengeTtlMs, now);
     const payload: ChallengePayload = {
       v: 1,
@@ -128,11 +131,11 @@ export class AuthService {
     }
 
     const publicKeyBase64 = input.publicKey;
+    // NOTE: upsertBinding unconditionally revives a revoked binding (documented
+    // in sessions.test.ts), so revocation is enforced at session use
+    // (requireSession → 401), never here.
     const binding = this.wallets.upsertBinding(
       publicKeyBase64, input.accountLabel ?? null, now);
-    if (binding.revoked_at !== null) {
-      throw new AuthFailure("binding-revoked", "wallet binding is revoked");
-    }
     const issued = this.sessions.issue(binding.id, now);
     return {
       sessionToken: issued.token,

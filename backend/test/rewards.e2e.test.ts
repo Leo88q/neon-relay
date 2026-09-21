@@ -6,10 +6,11 @@ import {
 import { verifyProofIndexed, leafHash } from "../src/merkle.ts";
 import type { Config } from "../src/config.ts";
 
-function rewardConfig(serverKey: string): Partial<Config> {
+export function rewardConfig(serverKey: string): Partial<Config> {
   return {
     serverSigningPublicKey: serverKey,
-    adminToken: "operator-token",
+    operatorToken: "operator-token",
+    superadminToken: "superadmin-token",
     epochMs: 3_600_000,
     capPerMatchMicro: 1_000,
     capDailyMicro: 1_500,
@@ -110,24 +111,55 @@ test("reward lifecycle: sign, ingest, caps, seal, claim, confirm", async () => {
     assert.equal(earlyClaim.status, 409);
     assert.equal(earlyClaim.json.error.code, "epoch-not-sealed");
 
-    const noAdmin = await postJson(base, "/v1/rewards/epochs/seal", { epoch_id: epochId });
+    // Tranche A: sealing runs through the two-person proposal workflow.
+    const gone = await postJson(base, "/v1/rewards/epochs/seal",
+      { epoch_id: epochId }, "operator-token");
+    assert.equal(gone.status, 410);
+    assert.equal(gone.json.error.code, "admin-workflow-required");
+
+    const noAdmin = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } });
     assert.equal(noAdmin.status, 403);
-    const wrongAdmin = await postJson(base, "/v1/rewards/epochs/seal",
-      { epoch_id: epochId }, "not-the-operator");
+    const wrongAdmin = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "not-the-operator");
     assert.equal(wrongAdmin.status, 403);
 
-    const sealed = await postJson(base, "/v1/rewards/epochs/seal",
-      { epoch_id: epochId }, "operator-token");
-    assert.equal(sealed.status, 200);
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "operator-token");
+    assert.equal(proposed.status, 200);
+    assert.equal(proposed.json.status, "open");
+    const proposalId = proposed.json.id as string;
+
+    // Operators cannot approve, even their own proposal (role split enforced).
+    const selfApprove = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposalId }, "operator-token");
+    assert.equal(selfApprove.status, 403);
+
+    const approved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposalId }, "superadmin-token");
+    assert.equal(approved.status, 200);
+    assert.equal(approved.json.row.status, "executed");
+    assert.equal(approved.json.selfApproved, false);
+    const sealed = { status: 200, json: approved.json.result };
     assert.equal(sealed.json.epoch.state, "sealed");
     assert.equal(sealed.json.epoch.total_micro, 1_200);
     assert.equal(sealed.json.epoch.leaf_count, 1);
     assert.match(sealed.json.epoch.merkle_root, /^[0-9a-f]{64}$/);
     assert.equal(sealed.json.audit_root, sealed.json.epoch.merkle_root);
 
-    const resealed = await postJson(base, "/v1/rewards/epochs/seal",
-      { epoch_id: epochId }, "operator-token");
-    assert.equal(resealed.status, 409);
+    const reapproved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposalId }, "superadmin-token");
+    assert.equal(reapproved.status, 409);
+    assert.equal(reapproved.json.error.code, "proposal-executed");
+
+    // Sealing an already-sealed epoch fails inside approval (proposal stays
+    // open, the failure is audited) instead of double-sealing.
+    const dupSeal = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "operator-token");
+    const dupApprove = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: dupSeal.json.id }, "superadmin-token");
+    assert.equal(dupApprove.status, 409);
+    assert.equal(dupApprove.json.error.code, "epoch-already-sealed");
 
     // ---- balance moves pending -> available
     const balanceSealed = await getJson(base, "/v1/rewards/balance", token);
@@ -224,6 +256,307 @@ test("caps block further earnings and eligibility reports can_earn false", async
     assert.equal(oneMore.json.results[0].status, "rejected_caps");
     const eligibilityAfter = await getJson(base, "/v1/rewards/eligibility", token);
     assert.equal(eligibilityAfter.json.can_earn, false);
+  } finally {
+    await app.close();
+  }
+});
+
+test("reward ingestion fails closed when the signing key is malformed", async () => {
+  const { app, base } = await startTestApp(rewardConfig("!!!not-a-key!!!"));
+  try {
+    const res = await postJson(base, "/v1/rewards/events", { events: [{ match_id: "m" }] });
+    assert.equal(res.status, 500);
+    assert.equal(res.json.error.code, "signing-key-invalid");
+  } finally {
+    await app.close();
+  }
+});
+
+test("reward ingestion rejects events with a non-integer timestamp", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const event = server.signEvent({
+      match_id: "m1", player_id: "p1", wallet_binding_id: "b1",
+      event_type: "match_win", amount_micro: 100, occurred_at: "soon" as unknown as number,
+    });
+    const res = await postJson(base, "/v1/rewards/events", { events: [event] });
+    assert.equal(res.json.results[0].status, "rejected_validation");
+    assert.match(res.json.results[0].reason, /occurred_at/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("reward ingestion rejects events without a server signature", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const res = await postJson(base, "/v1/rewards/events", {
+      events: [{
+        match_id: "m1", player_id: "p1", wallet_binding_id: "b1",
+        event_type: "match_win", amount_micro: 100, occurred_at: Date.now(),
+      }],
+    });
+    assert.equal(res.json.results[0].status, "rejected_validation");
+    assert.match(res.json.results[0].reason, /server_signature/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("reward ingestion rejects wrong-typed fields without crashing", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    // Signed over a valid match_id, then corrupted: validation runs before the
+    // signature check, so this must be rejected_validation, not a crash.
+    const event = {
+      ...server.signEvent({
+        match_id: "m1", player_id: "p1", wallet_binding_id: "b1",
+        event_type: "match_win", amount_micro: 100, occurred_at: Date.now(),
+      }),
+      match_id: null,
+    };
+    const res = await postJson(base, "/v1/rewards/events", { events: [event] });
+    assert.equal(res.json.results[0].status, "rejected_validation");
+    assert.match(res.json.results[0].reason, /match_id invalid/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("reward ingestion rejects a single event above the per-match cap", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const binding = auth.json.wallet_binding_id as string;
+    await postJson(base, "/v1/wallet/link", { player_id: "p1" }, auth.json.session_token as string);
+    const res = await postJson(base, "/v1/rewards/events", {
+      events: [server.signEvent({
+        match_id: "m1", player_id: "p1", wallet_binding_id: binding,
+        event_type: "match_win", amount_micro: 1_001, occurred_at: Date.now(),
+      })],
+    });
+    assert.equal(res.json.results[0].status, "rejected_caps");
+    assert.match(res.json.results[0].reason, /amount exceeds per-match cap/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("per-match cap is also enforced across the wallet dimension", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const binding = auth.json.wallet_binding_id as string;
+    const now = Date.now();
+    // Same wallet + same match, different players: each player stays under the
+    // 1_000 cap, the wallet total (1_200) does not.
+    const events = ["pA", "pB"].map((player) => server.signEvent({
+      match_id: "m9", player_id: player, wallet_binding_id: binding,
+      event_type: "match_win", amount_micro: 600, occurred_at: now,
+    }));
+    const res = await postJson(base, "/v1/rewards/events", { events });
+    assert.equal(res.json.results[0].status, "accepted");
+    assert.equal(res.json.results[1].status, "rejected_caps");
+    assert.match(res.json.results[1].reason, /\(wallet\)/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("daily cap is also enforced across the wallet dimension", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const binding = auth.json.wallet_binding_id as string;
+    const now = Date.now();
+    const events = [["pA", "m1"], ["pB", "m2"]].map(([player, match]) => server.signEvent({
+      match_id: match, player_id: player, wallet_binding_id: binding,
+      event_type: "match_win", amount_micro: 900, occurred_at: now,
+    }));
+    const res = await postJson(base, "/v1/rewards/events", { events });
+    assert.equal(res.json.results[0].status, "accepted");
+    assert.equal(res.json.results[1].status, "rejected_caps");
+    assert.match(res.json.results[1].reason, /daily cap.*\(wallet\)/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("weekly player cap blocks earnings above the weekly budget", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp({
+    ...rewardConfig(server.publicKeyBase64),
+    capDailyMicro: 100_000, // daily stays out of the way; weekly binds first
+    capWeeklyMicro: 1_500,
+  });
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const binding = auth.json.wallet_binding_id as string;
+    const now = Date.now();
+    const events = ["m1", "m2"].map((match) => server.signEvent({
+      match_id: match, player_id: "p1", wallet_binding_id: binding,
+      event_type: "match_win", amount_micro: 900, occurred_at: now,
+    }));
+    const res = await postJson(base, "/v1/rewards/events", { events });
+    assert.equal(res.json.results[0].status, "accepted");
+    assert.equal(res.json.results[1].status, "rejected_caps");
+    assert.match(res.json.results[1].reason, /weekly cap/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("weekly cap is also enforced across the wallet dimension", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp({
+    ...rewardConfig(server.publicKeyBase64),
+    capDailyMicro: 100_000,
+    capWeeklyMicro: 1_500,
+  });
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const binding = auth.json.wallet_binding_id as string;
+    const now = Date.now();
+    const events = [["pA", "m1"], ["pB", "m2"]].map(([player, match]) => server.signEvent({
+      match_id: match, player_id: player, wallet_binding_id: binding,
+      event_type: "match_win", amount_micro: 900, occurred_at: now,
+    }));
+    const res = await postJson(base, "/v1/rewards/events", { events });
+    assert.equal(res.json.results[0].status, "accepted");
+    assert.equal(res.json.results[1].status, "rejected_caps");
+    assert.match(res.json.results[1].reason, /weekly cap.*\(wallet\)/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("reward ingestion into a sealed epoch is rejected", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const token = auth.json.session_token as string;
+    const binding = auth.json.wallet_binding_id as string;
+    await postJson(base, "/v1/wallet/link", { player_id: "p1" }, token);
+    const now = Date.now();
+    await postJson(base, "/v1/rewards/events", {
+      events: [server.signEvent({
+        match_id: "m1", player_id: "p1", wallet_binding_id: binding,
+        event_type: "match_win", amount_micro: 600, occurred_at: now,
+      })],
+    });
+    const epochs = await getJson(base, "/v1/rewards/epochs");
+    const epochId = epochs.json[0].id as number;
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "operator-token");
+    await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposed.json.id }, "superadmin-token");
+    const late = await postJson(base, "/v1/rewards/events", {
+      events: [server.signEvent({
+        match_id: "m2", player_id: "p1", wallet_binding_id: binding,
+        event_type: "match_win", amount_micro: 100, occurred_at: now,
+      })],
+    });
+    assert.equal(late.json.results[0].status, "rejected_epoch_sealed");
+    const balance = await getJson(base, "/v1/rewards/balance", token);
+    assert.equal(balance.json.available_micro, 600);
+  } finally {
+    await app.close();
+  }
+});
+
+test("reward ingestion rejects an empty events array", async () => {
+  const { app, base } = await startTestApp({});
+  try {
+    const res = await postJson(base, "/v1/rewards/events", { events: [] });
+    assert.equal(res.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("claim intent rejects a non-integer epoch", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const auth = await authenticate(base, makeWallet());
+    const res = await postJson(base, "/v1/rewards/claim-intent",
+      { epoch_id: "x" }, auth.json.session_token as string);
+    assert.equal(res.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("claim confirmation rejects an unknown status", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const auth = await authenticate(base, makeWallet());
+    const res = await postJson(base, "/v1/rewards/claim-confirmation",
+      { intent_id: "i", transaction_id: "t", status: "weird" },
+      auth.json.session_token as string);
+    assert.equal(res.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("claim intents list paginates", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const token = auth.json.session_token as string;
+    const binding = auth.json.wallet_binding_id as string;
+    await postJson(base, "/v1/wallet/link", { player_id: "p1" }, token);
+    await postJson(base, "/v1/rewards/events", {
+      events: [server.signEvent({
+        match_id: "m1", player_id: "p1", wallet_binding_id: binding,
+        event_type: "match_win", amount_micro: 600, occurred_at: Date.now(),
+      })],
+    });
+    const epochId = (await getJson(base, "/v1/rewards/epochs")).json[0].id as number;
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, "operator-token");
+    await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposed.json.id }, "superadmin-token");
+    await postJson(base, "/v1/rewards/claim-intent", { epoch_id: epochId }, token);
+    const page = await getJson(base, "/v1/rewards/intents?limit=1&offset=0", token);
+    assert.equal(page.json.intents.length, 1);
+    assert.deepEqual(page.json.pagination, { limit: 1, offset: 0, total: 1 });
+    const empty = await getJson(base, "/v1/rewards/intents?limit=1&offset=5", token);
+    assert.deepEqual(empty.json.intents, []);
+    assert.equal(empty.json.pagination.total, 1);
+  } finally {
+    await app.close();
+  }
+});
+
+test("a revoked wallet binding fails closed on session use", async () => {
+  const server = makeTestServer();
+  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  try {
+    const auth = await authenticate(base, makeWallet());
+    const token = auth.json.session_token as string;
+    const bindingId = auth.json.wallet_binding_id as string;
+    app.db.run("UPDATE wallet_bindings SET revoked_at = ? WHERE id = ?", Date.now(), bindingId);
+    const res = await getJson(base, "/v1/rewards/balance", token);
+    assert.equal(res.status, 401);
+    assert.equal(res.json.error.code, "binding-revoked");
   } finally {
     await app.close();
   }

@@ -83,3 +83,17 @@ test("economy crate pins the same Anchor version as the other programs", () => {
 	assert.match(cargoToml, /anchor-lang = "0\.30\.1"/);
 	assert.match(cargoToml, /anchor-spl = "0\.30\.1"/);
 });
+
+test("Tranche A: v1 prizes bind leaf_count and v1 claims enforce exact depth", () => {
+	// Scope to the v1 instruction block: v2 already had these guards, so a
+	// whole-file match would pass without the v1 fix.
+	const v1 = libRs.slice(libRs.indexOf("pub fn publish_prizes("), libRs.indexOf("pub fn initialize_v2("));
+	assert.ok(v1.length > 1000, "v1 block must be found");
+	assert.match(v1, /total: u64,\n\t\tleaf_count: u32,/);
+	assert.match(v1, /require!\(leaf_count > 0 && leaf_count <= 10, EconomyError::InvalidLeafCount\)/);
+	assert.match(v1, /prizes\.leaf_count = leaf_count;/);
+	assert.match(v1, /require!\(proof\.len\(\) == depth, EconomyError::ProofInvalid\)/);
+	assert.match(v1, /require!\(leaf_index < ctx\.accounts\.prizes\.leaf_count, EconomyError::ProofInvalid\)/);
+	// both prize account types now carry the count
+	assert.equal((libRs.match(/pub leaf_count: u32,/g) ?? []).length, 2);
+});

@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getJson, postJson, startTestApp, makeWallet, authenticate } from "./helpers.ts";
 import type { Config } from "../src/config.ts";
+import { AuthFailure, AuthService } from "../src/auth.ts";
+import { SessionStore } from "../src/sessions.ts";
+import { WalletStore } from "../src/wallets.ts";
 
 /** Always closes the app, even when an assertion throws mid-test. */
 async function withApp<T>(
@@ -181,3 +184,42 @@ test("a second verification for the same wallet reuses the binding", () =>
     assert.equal(first.json.wallet_binding_id, second.json.wallet_binding_id);
     assert.notEqual(first.json.session_token, second.json.session_token);
   }));
+
+test("a challenge that is not JSON is a 400 bad-challenge", () => withApp({}, async (base) => {
+  const wallet = makeWallet();
+  const res = await postJson(base, "/v1/auth/verify-wallet", {
+    challenge: Buffer.from("not json", "utf8").toString("base64url"),
+    signature: wallet.sign(Buffer.from("x")).toString("base64url"),
+    public_key: wallet.publicKeyBase64,
+  });
+  assert.equal(res.status, 400);
+  assert.equal(res.json.error.code, "bad-challenge");
+}));
+
+test("verification with a non-string challenge fails closed", async () => {
+  const { app } = await startTestApp({});
+  try {
+    const auth = new AuthService(app.config, new WalletStore(app.db), new SessionStore(app.db, 3_600_000));
+    assert.throws(
+      () => auth.verifyWallet({ challenge: undefined, signature: "x", publicKey: "y" } as never),
+      (e: Error) => e instanceof AuthFailure && e.code === "bad-request");
+  } finally {
+    await app.close();
+  }
+});
+
+test("challenge issuance sweeps long-expired nonces", async () => {
+  const { app, base } = await startTestApp({});
+  try {
+    const ancient = Date.now() - 2 * 86_400_000;
+    app.db.run(
+      "INSERT INTO auth_nonces (nonce, created_at, expires_at, consumed_at) VALUES (?, ?, ?, NULL)",
+      "ancient-nonce", ancient, ancient + 60_000);
+    const res = await postJson(base, "/v1/auth/challenge", {});
+    assert.equal(res.status, 200);
+    assert.equal(
+      app.db.get("SELECT nonce FROM auth_nonces WHERE nonce = ?", "ancient-nonce"), undefined);
+  } finally {
+    await app.close();
+  }
+});

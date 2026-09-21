@@ -67,3 +67,14 @@ test("sealed issuance retains session, registry and explicit-consent requirement
     assert.equal((await postJson(s.base, "/v2/game/pair-sealed", s.request(), s.token)).status, 403);
   } finally { await s.app.close(); }
 });
+test("sealed pairing is disabled without an identity key", async () => {
+  const wallet = makeWallet();
+  const { app, base } = await startTestApp({});
+  try {
+    const token = (await authenticate(base, wallet)).json.session_token;
+    const res = await postJson(base, "/v2/game/pair-sealed",
+      { offer: "x", signature: "s".repeat(86), consent: true }, token);
+    assert.equal(res.status, 503);
+    assert.equal(res.json.error.code, "identity-not-configured");
+  } finally { await app.close(); }
+});

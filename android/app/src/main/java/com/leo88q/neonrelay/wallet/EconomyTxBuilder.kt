@@ -181,9 +181,10 @@ object EconomyTxBuilder {
 
     // ---------------------------------------------------------------- messages
 
-    private data class AccountMeta(val key: ByteArray, val signer: Boolean, val writable: Boolean)
+    /** Shared with RewardsTxBuilder (same module): the message compiler is program-agnostic. */
+    internal data class AccountMeta(val key: ByteArray, val signer: Boolean, val writable: Boolean)
 
-    private fun compileMessage(
+    internal fun compileMessage(
         payer: ByteArray,
         metas: List<AccountMeta>,
         programId: ByteArray,
@@ -324,6 +325,14 @@ object ByteBufferLe {
 
     fun u32(value: Int): ByteArray =
         ByteArray(4) { i -> ((value ushr (8 * i)) and 0xff).toByte() }
+
+    /** Big-endian u64: PDA seeds and Merkle leaves use network order. */
+    fun u64be(value: Long): ByteArray =
+        ByteArray(8) { i -> ((value ushr (8 * (7 - i))) and 0xff).toByte() }
+
+    fun u32At(data: ByteArray, offset: Int): Int =
+        (data[offset].toInt() and 0xff) or ((data[offset + 1].toInt() and 0xff) shl 8) or
+            ((data[offset + 2].toInt() and 0xff) shl 16) or ((data[offset + 3].toInt() and 0xff) shl 24)
 
     fun u16(data: ByteArray, offset: Int): Int =
         (data[offset].toInt() and 0xff) or ((data[offset + 1].toInt() and 0xff) shl 8)

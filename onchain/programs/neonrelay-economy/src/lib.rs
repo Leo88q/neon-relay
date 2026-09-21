@@ -178,15 +178,19 @@ pub mod neonrelay_economy {
 
 	/// Authority publishes the epoch prize distribution root (one-way).
 	/// `total` must be covered by the vault balance at publication time.
+	/// Tranche A: `leaf_count` (1..=10 for the v1 top-10 table) is bound into
+	/// the epoch so `claim_prize` enforces the exact proof depth (mirrors v2).
 	pub fn publish_prizes(
 		ctx: Context<PublishPrizes>,
 		epoch: u64,
 		root: [u8; 32],
 		total: u64,
+		leaf_count: u32,
 	) -> Result<()> {
 		require!(!ctx.accounts.config.paused, EconomyError::Paused);
 		require!(root != [0u8; 32], EconomyError::InvalidTotal);
 		require!(total > 0, EconomyError::InvalidTotal);
+		require!(leaf_count > 0 && leaf_count <= 10, EconomyError::InvalidLeafCount);
 		require!(ctx.accounts.vault_ata.amount >= total, EconomyError::VaultUnderfunded);
 		// CRITICAL-01 fix: aggregate reservation prevents double-allocation
 		let config = &mut ctx.accounts.config;
@@ -197,6 +201,7 @@ pub mod neonrelay_economy {
 		prizes.epoch = epoch;
 		prizes.root = root;
 		prizes.total = total;
+		prizes.leaf_count = leaf_count;
 		prizes.published_at = Clock::get()?.unix_timestamp;
 		prizes.bump = ctx.bumps.prizes;
 		Ok(())
@@ -214,6 +219,10 @@ pub mod neonrelay_economy {
 		require!(!ctx.accounts.config.paused, EconomyError::Paused);
 		require!(amount > 0, EconomyError::ZeroAmount);
 		require!(proof.len() <= MAX_PROOF_LEN, EconomyError::ProofTooLong);
+		// Tranche A: exact depth + index bound, unconditional (mirrors v2).
+		let depth = ctx.accounts.prizes.leaf_count.next_power_of_two().trailing_zeros() as usize;
+		require!(proof.len() == depth, EconomyError::ProofInvalid);
+		require!(leaf_index < ctx.accounts.prizes.leaf_count, EconomyError::ProofInvalid);
 		let prizes = &ctx.accounts.prizes;
 		require!(prizes.epoch == epoch, EconomyError::EpochMismatch);
 		let leaf = merkle_leaf(&ctx.accounts.player.key().to_bytes(), amount);
@@ -534,6 +543,7 @@ pub struct PrizeEpoch {
 	pub epoch: u64,
 	pub root: [u8; 32],
 	pub total: u64,
+	pub leaf_count: u32,
 	pub published_at: i64,
 	pub bump: u8,
 }
@@ -602,6 +612,8 @@ pub enum EconomyError {
 	NoPendingAuthority,
 	TimelockNotExpired,
 	VaultFrozen,
+	// Appended last so existing error discriminants stay stable.
+	InvalidLeafCount,
 }
 
 

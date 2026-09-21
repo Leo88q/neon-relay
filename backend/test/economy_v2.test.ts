@@ -27,7 +27,7 @@ test("v2 migration is repeatable and leaves legacy single-mint rows untouched", 
     migrate(db, oldDir);
     db.run("INSERT INTO economy_epochs VALUES (?, ?, ?, ?, ?)", 1, "old-root", 50, "[]", 1);
     db.run("INSERT INTO economy_matches(wallet_binding_id, epoch, reference, created_at) VALUES (?, ?, ?, ?)", "legacy", 1, "old-reference", 1);
-    assert.deepEqual(migrate(db), ["0005_economy_v2.sql", "0006_game_identity.sql", "0007_game_pairing.sql"]);
+    assert.deepEqual(migrate(db), ["0005_economy_v2.sql", "0006_game_identity.sql", "0007_game_pairing.sql", "0008_admin_workflow.sql", "0009_beta_operations.sql"]);
     assert.deepEqual(migrate(db), []);
     assert.equal(db.get<{ reference: string }>("SELECT reference FROM economy_matches")!.reference, "old-reference");
     assert.equal(db.get<{ root: string }>("SELECT root FROM economy_epochs WHERE epoch = 1")!.root, "old-root");
@@ -179,4 +179,10 @@ test("independent database connections share cap and idempotency state", () => {
     b.sealEpoch(mintA, 1n, [{ wallet, amount: 100n }]);
     assert.equal(a.proof(mintA, 1n, wallet)!.amountBase, "100");
   } finally { first.close(); second.close(); rmSync(dir, { recursive: true, force: true }); }
+});
+test("v2 intents reject identifiers with control characters", () => {
+  const { db, service } = store();
+  try {
+    assert.throws(() => service.createIntent(intent({ playerId: "bad\u0000id" })), /invalid identifier/);
+  } finally { db.close(); }
 });

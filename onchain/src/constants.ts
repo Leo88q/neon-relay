@@ -21,6 +21,34 @@ export const EXPECTED_DECIMALS = 6;
 /** Maximum Merkle proof length accepted by `claim`. */
 export const MAX_PROOF_LEN = 32;
 
+/** --- rewards `claim` client contract (mobile claim builder) ---
+ * Mirrored by android/.../wallet/RewardsTxBuilder.kt; test/rewards_claim.test.ts
+ * asserts every value below against programs/neonrelay-rewards/src/lib.rs. */
+
+/** Anchor instruction discriminator: sha256("global:claim")[0..8], hex. */
+export const CLAIM_IX_DISCRIMINATOR = "3ec6d6c1d59f6cd2";
+/** Account discriminators: sha256("account:<Name>")[0..8], hex. */
+export const REWARDS_CONFIG_DISCRIMINATOR = "9b0caae01efacc82";
+export const REWARDS_EPOCH_STATE_DISCRIMINATOR = "bf3f8bed900cdfd2";
+
+/** Account sizes including the 8-byte discriminator. */
+export const REWARDS_CONFIG_SIZE = 123;
+export const REWARDS_EPOCH_STATE_SIZE = 61;
+
+/** `Claim` account order, exactly as in lib.rs. */
+export const CLAIM_ACCOUNTS = [
+	"config", "epoch", "claim", "player", "player_token_account",
+	"mint", "vault", "token_program", "system_program",
+] as const;
+
+/** `claim` argument order and Borsh types, exactly as in lib.rs. */
+export const CLAIM_ARGS = [
+	["epoch_id", "u64"],
+	["amount_micro", "u64"],
+	["leaf_index", "u32"],
+	["proof", "Vec<[u8; 32]>"],
+] as const;
+
 /** --- neonrelay-features program (stage 11) --- */
 
 /** PLACEHOLDER program id from Anchor.toml; replace with `anchor keys list` output on deployment. */

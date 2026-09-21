@@ -216,10 +216,61 @@ export interface EpochCloseResult {
 }
 
 /**
+ * Leftover policy (Tranche A, docs/PLAY_ECONOMY.md §4): REDISTRIBUTION.
+ *
+ * When fewer than 10 ticketed winners exist, the pool is NOT split by the
+ * raw table (which would strand the unoccupied shares in the vault with no
+ * accounting). Instead the occupied places' bps are rescaled to 100%:
+ *
+ *   amount[i] = floor(pool * bps[i] / sum(bps[0..n]))
+ *
+ * with the integer-division dust (always < n units) distributed +1 to the
+ * largest remainders, ties broken by rank. The distributed total therefore
+ * always equals the pool; a full 10-winner close is byte-identical to the
+ * legacy table split.
+ *
+ * Dust pools (pool < winner count) may round some tail places to zero after
+ * the +1 pass; those winners receive no leaf (a zero leaf could never be
+ * claimed on-chain) and the undistributed remainder stays in the vault as
+ * accounted dust. Zero eligible winners produce no leaves at all: the route
+ * refuses to close and the pool stays in the vault for the next epoch.
+ */
+export function redistributePool(poolMicro: number, places: number): number[] {
+  if (!Number.isInteger(poolMicro) || poolMicro <= 0 || poolMicro > Number.MAX_SAFE_INTEGER) {
+    throw new Error("poolMicro must be positive safe integer u64");
+  }
+  const tableSum = PRIZE_TABLE_BPS.reduce((a, b) => a + b, 0);
+  if (tableSum !== 10000) throw new Error("prizeTable must sum to 10000");
+  if (!Number.isInteger(places) || places <= 0 || places > PRIZE_TABLE_BPS.length) {
+    throw new Error("places must be within 1..10");
+  }
+  const bps = PRIZE_TABLE_BPS.slice(0, places);
+  const denom = BigInt(bps.reduce((a, b) => a + b, 0));
+  const pool = BigInt(poolMicro);
+  const amounts = bps.map((b) => Number((pool * BigInt(b)) / denom));
+  const remainders = bps.map((b) => (pool * BigInt(b)) % denom);
+  let leftover = poolMicro - amounts.reduce((a, b) => a + b, 0);
+  const order = amounts.map((_, i) => i).sort((a, b) => {
+    const ra = remainders[a] as bigint;
+    const rb = remainders[b] as bigint;
+    if (ra !== rb) return rb > ra ? 1 : -1;
+    return a - b; // rank priority on ties
+  });
+  for (const i of order) {
+    if (leftover <= 0) break;
+    (amounts[i] as number) += 1;
+    leftover -= 1;
+  }
+  return amounts;
+}
+
+/**
  * Top-10 prize close: rank wallets by accepted reward-event volume, keep only
  * wallets holding a ranked epoch pass (kind 0) or any tournament ticket in
- * the epoch, apply PRIZE_TABLE_BPS to the pool and build the Merkle tree.
- * Ticket checks go through the injected RPC caller (mocked in tests).
+ * the epoch, apply the redistributed prize table to the pool and build the
+ * Merkle tree. Ticket checks go through the injected RPC caller (mocked in
+ * tests). The pool itself must come from `readVaultPool` (vault balance minus
+ * aggregate reservations) — never from an operator-supplied request field.
  */
 export async function closeEpochPrizes(deps: {
   rankedTotals: { wallet: string; totalMicro: number }[]; // desc
@@ -234,21 +285,30 @@ export async function closeEpochPrizes(deps: {
   const tableSum = PRIZE_TABLE_BPS.reduce((a,b)=>a+b,0);
   if (tableSum !== 10000) throw new Error("prizeTable must sum to 10000");
   if (!Number.isInteger(deps.epoch) || deps.epoch <= 0) throw new Error("epoch must be positive integer");
-  const leaves: PrizeLeaf[] = [];
+  const eligible: { wallet: string; raw: Buffer }[] = [];
   for (const row of deps.rankedTotals) {
-    if (leaves.length >= PRIZE_TABLE_BPS.length) break;
+    if (eligible.length >= PRIZE_TABLE_BPS.length) break;
     const raw = base58Decode(row.wallet);
     if (!(await deps.hasTicket(raw))) continue;
-    const bps = PRIZE_TABLE_BPS[leaves.length];
-    const amount = Number((BigInt(deps.poolMicro) * BigInt(bps)) / 10_000n);
-    if (amount <= 0) continue;
-    leaves.push({ wallet: row.wallet, publicKeyRaw: raw, amountMicro: amount, place: leaves.length + 1 });
+    eligible.push({ wallet: row.wallet, raw });
   }
+  const amounts = eligible.length === 0 ? [] : redistributePool(deps.poolMicro, eligible.length);
+  const leaves: PrizeLeaf[] = [];
+  eligible.forEach((winner, i) => {
+    const amount = amounts[i] as number;
+    if (!Number.isSafeInteger(amount) || amount < 0) {
+      throw new Error("internal prize rounding error");
+    }
+    if (amount === 0) return; // dust-pool tail: no leaf, remainder stays vaulted
+    leaves.push({ wallet: winner.wallet, publicKeyRaw: winner.raw, amountMicro: amount, place: i + 1 });
+  });
+  const totalMicro = leaves.reduce((a, l) => a + l.amountMicro, 0);
+  if (totalMicro > deps.poolMicro) throw new Error("prize total exceeds the pool");
   const tree = buildTree(leaves.map((l) => leafHash(l.publicKeyRaw, l.amountMicro)));
   return {
     epoch: deps.epoch,
     root: tree.root,
-    totalMicro: leaves.reduce((a, l) => a + l.amountMicro, 0),
+    totalMicro,
     leaves,
     tree,
   };
@@ -258,6 +318,139 @@ export function proofForWallet(result: EpochCloseResult, wallet: string): string
   const index = result.leaves.findIndex((l) => l.wallet === wallet);
   if (index < 0) return null;
   return proofFor(result.tree, index);
+}
+
+// ------------------------------------------------------------------ vault pool
+//
+// Tranche A: the prize pool is derived from chain state, never from an
+// operator request field. `readVaultPool` reads the v1 EconomyConfig account
+// (vault address + aggregate `reserved`), then the vault token balance, and
+// returns available = balance - reserved. The on-chain `publish_prizes`
+// re-checks coverage at publication time, so an RPC race can only fail
+// closed, never over-allocate.
+
+export const ECONOMY_CONFIG_SEED = Buffer.from("neonrelay_economy_config", "utf8");
+
+/** 8-byte discriminator + EconomyConfig fields (see economy lib.rs). */
+export const ECONOMY_V1_CONFIG_SIZE = 204;
+
+export const ECONOMY_V1_CONFIG_DISCRIMINATOR = createHash("sha256")
+  .update("account:EconomyConfig").digest().subarray(0, 8);
+
+export interface EconomyV1Config {
+  mint: Buffer;
+  treasury: Buffer;
+  vault: Buffer;
+  rakeBps: number;
+  feeMatch: bigint;
+  feeTournament: bigint;
+  paused: boolean;
+  reserved: bigint;
+}
+
+export function parseEconomyV1Config(data: Buffer): EconomyV1Config {
+  if (data.length !== ECONOMY_V1_CONFIG_SIZE ||
+      !data.subarray(0, 8).equals(ECONOMY_V1_CONFIG_DISCRIMINATOR)) {
+    throw new VaultReadError("bad-config-account", "not a v1 EconomyConfig account");
+  }
+  return {
+    mint: data.subarray(40, 72),
+    treasury: data.subarray(72, 104),
+    vault: data.subarray(104, 136),
+    rakeBps: data.readUInt16LE(136),
+    feeMatch: data.readBigUInt64LE(138),
+    feeTournament: data.readBigUInt64LE(146),
+    paused: data[154] === 1,
+    reserved: data.readBigUInt64LE(156),
+  };
+}
+
+export class VaultReadError extends Error {
+  readonly code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+export interface VaultPool {
+  /** Base58 config PDA the snapshot was read from. */
+  config: string;
+  /** Base58 vault token account. */
+  vault: string;
+  /** Vault raw balance (u64 decimal string). */
+  balance: string;
+  /** Aggregate on-chain reservations (u64 decimal string). */
+  reserved: string;
+  /** Spendable pool = balance - reserved, as a safe JS integer. */
+  available: number;
+}
+
+/** Read the spendable prize pool from finalized chain state. */
+export async function readVaultPool(
+  rpc: RpcCaller,
+  programIdB58: string,
+  expectedMintB58: string | null,
+): Promise<VaultPool> {
+  const program = base58Decode(programIdB58);
+  if (program.length !== 32) throw new VaultReadError("bad-config", "economy program id must be 32 bytes");
+  const { address } = findProgramAddress([ECONOMY_CONFIG_SEED], program);
+  let configAccount: { value?: { owner?: unknown; executable?: unknown; data?: unknown } };
+  try {
+    configAccount = (await rpc("getAccountInfo",
+      [base58Encode(address), { encoding: "base64", commitment: "finalized" }])) as typeof configAccount;
+  } catch (err) {
+    throw new VaultReadError("rpc-unavailable", `config read failed: ${(err as Error).message}`);
+  }
+  const account = configAccount?.value;
+  if (!account || account.owner !== programIdB58 || account.executable !== false ||
+      !Array.isArray(account.data) || account.data.length !== 2 || account.data[1] !== "base64" ||
+      typeof account.data[0] !== "string") {
+    throw new VaultReadError("bad-config-account", "economy config account missing or invalid");
+  }
+  const encoded = account.data[0] as string;
+  if (encoded.length !== Math.ceil(ECONOMY_V1_CONFIG_SIZE / 3) * 4) {
+    throw new VaultReadError("bad-config-account", "economy config has an unexpected size");
+  }
+  const data = Buffer.from(encoded, "base64");
+  if (data.toString("base64") !== encoded) {
+    throw new VaultReadError("bad-config-account", "economy config encoding is not canonical");
+  }
+  const parsed = parseEconomyV1Config(data);
+  if (expectedMintB58 && base58Encode(parsed.mint) !== expectedMintB58) {
+    throw new VaultReadError("mint-mismatch", "on-chain config mint differs from the operator mint");
+  }
+  const vaultB58 = base58Encode(parsed.vault);
+  let balanceReply: { value?: { amount?: unknown } };
+  try {
+    balanceReply = (await rpc("getTokenAccountBalance",
+      [vaultB58, { commitment: "finalized" }])) as typeof balanceReply;
+  } catch (err) {
+    throw new VaultReadError("rpc-unavailable", `vault balance read failed: ${(err as Error).message}`);
+  }
+  const amountText = balanceReply?.value?.amount;
+  if (typeof amountText !== "string" || !/^(0|[1-9][0-9]{0,19})$/.test(amountText)) {
+    throw new VaultReadError("bad-vault-balance", "vault balance is not a canonical u64");
+  }
+  const balance = BigInt(amountText);
+  if (parsed.reserved > balance) {
+    throw new VaultReadError("vault-underfunded", "vault balance is below aggregate reservations");
+  }
+  const available = balance - parsed.reserved;
+  if (available <= 0n) {
+    throw new VaultReadError("empty-pool", "no spendable pool in the vault (balance fully reserved)");
+  }
+  if (available > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new VaultReadError("pool-too-large", "spendable pool exceeds the safe integer range");
+  }
+  return {
+    config: base58Encode(address),
+    vault: vaultB58,
+    balance: balance.toString(),
+    reserved: parsed.reserved.toString(),
+    available: Number(available),
+  };
 }
 
 /** Minimal JSON-RPC caller for Solana RPC (injectable in tests). */
