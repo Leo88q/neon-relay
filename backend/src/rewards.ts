@@ -205,14 +205,20 @@ export class RewardService {
 
   private record(event: IncomingEvent, hash: string, epochId: number, status: EventStatus,
     reason: string | null, now: number): void {
+    // Fail-closed audit: validation-rejected events are still recorded, but a
+    // malformed field must never crash the insert (NOT NULL columns, CHECKs).
+    const text = (value: unknown): string => typeof value === "string" ? value : "";
+    const int = (value: unknown): number =>
+      typeof value === "number" && Number.isInteger(value) ? value : 0;
     this.db.run(
       `INSERT INTO reward_events
          (id, idempotency_hash, match_id, player_id, wallet_binding_id, reward_epoch,
           event_type, amount_micro, occurred_at, ingested_at, server_signature, status, reason)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      crypto.randomUUID(), hash, event.match_id, event.player_id,
-      event.wallet_binding_id ?? null, epochId, event.event_type, event.amount_micro,
-      event.occurred_at, now, event.server_signature, status, reason);
+      crypto.randomUUID(), hash, text(event.match_id), text(event.player_id),
+      typeof event.wallet_binding_id === "string" ? event.wallet_binding_id : null,
+      epochId, text(event.event_type), int(event.amount_micro),
+      int(event.occurred_at), now, text(event.server_signature), status, reason);
   }
 
   /** Caps are dual-enforced (HIGH-04 fix): per player_id AND per wallet_binding_id.

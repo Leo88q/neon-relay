@@ -9,6 +9,8 @@ import { getJson, postJson, startTestApp } from "./helpers.ts";
 import {
   canonicalGameEventBytes, type IncomingGameEvent,
 } from "../src/game_events.ts";
+import { Db, migrate } from "../src/db.ts";
+import { collectStuck, computeMetrics } from "../src/metrics.ts";
 
 const OPERATOR = "op-metrics";
 const SUPERADMIN = "sup-metrics";
@@ -149,4 +151,29 @@ test("metrics on an empty ledger return nulls, not errors", async () => {
   } finally {
     await app.close();
   }
+});
+
+test("stuck threshold must be within 1ms..30d", () => {
+  const db = new Db(":memory:");
+  migrate(db);
+  assert.throws(() => collectStuck(db, 0), /threshold must be within 1ms\.\.30d/);
+  assert.throws(() => collectStuck(db, 31 * 86_400_000), /threshold must be within 1ms\.\.30d/);
+  db.close();
+});
+
+test("metrics window must be within 1..90 days", () => {
+  const db = new Db(":memory:");
+  migrate(db);
+  assert.throws(() => computeMetrics(db, 0), /window must be within 1\.\.90 days/);
+  assert.throws(() => computeMetrics(db, 91), /window must be within 1\.\.90 days/);
+  db.close();
+});
+
+test("metrics without an RPC pool report the pool as unconfigured", () => {
+  const db = new Db(":memory:");
+  migrate(db);
+  const metrics = computeMetrics(db, 7, Date.now(), null);
+  assert.equal(metrics.pipeline.rpc.configured, false);
+  assert.equal(metrics.pipeline.rpc.active, null);
+  db.close();
 });

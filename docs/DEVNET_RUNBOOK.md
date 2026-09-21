@@ -32,8 +32,8 @@ on-chain root → player claims.
 ```bash
 ./scripts/local_syntax_probe.sh          # C++20 probe: 134 clean / 1 skip / 0 fail
 ./scripts/neonrelay_signer_test.sh       # C++ signer vs node:crypto: PASS
-(cd backend && npm test)                 # 159/159
-(cd onchain && npm test)                 # 49/49
+(cd backend && npm test)                 # 240/240
+(cd onchain && npm test)                 # 50/50
 ./scripts/check_secrets.py --self-test && ./scripts/check_secrets.py
 ./scripts/check_branding.sh --release --check-translations
 ./scripts/check_assets.sh --licenses
@@ -210,9 +210,9 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 ## 9. Known gaps
 
 * No automated e2e test spans backend→chain (BL-03); the pipeline is covered
-  segment-wise: backend (✅ 159/159, incl. the e2e auth/claim flows), Merkle
+  segment-wise: backend (✅ 240/240, incl. the e2e auth/claim flows), Merkle
   parity + rewards-claim client contract vs the program source (onchain ✅
-  49/49), signer C++↔node:crypto (✅ harness).
+  50/50), signer C++↔node:crypto (✅ harness).
 * The mobile `claim` flow is implemented end to end in the client
   (`RewardsTxBuilder.kt` + `runRewardsClaim`, spec-pinned by
   `onchain/test/rewards_claim.test.ts` and `backend/test/rewards_pda.test.ts`

@@ -110,3 +110,21 @@ test("identity attestation cannot bypass registry with a new challenge after dis
     assert.equal((await postJson(s.base, "/v2/identity/verify", { nonce: c.json.nonce, signature }, s.bearer)).status, 403);
   } finally { await s.app.close(); }
 });
+test("registry provisioning rejects malformed players and keys", async () => {
+  const s = await setup(false);
+  try {
+    const good = s.wallet.publicKeyBase64;
+    assert.throws(() => registerGameAccount(s.app.db, "bad id!!", good), /stable ASCII/);
+    assert.throws(() => registerGameAccount(s.app.db, "good-id", "not-a-key"), /stable ASCII/);
+  } finally { await s.app.close(); }
+});
+test("redeem rejects malformed proof encodings before lookup", async () => {
+  const s = await setup();
+  try {
+    const res = await postJson(s.base, "/v2/game/redeem", {
+      pairing_token: "a".repeat(43), connection_nonce: "zz", signature: "sig",
+    });
+    assert.equal(res.status, 400);
+    assert.equal(res.json.error.code, "pairing-invalid-proof");
+  } finally { await s.app.close(); }
+});

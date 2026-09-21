@@ -111,3 +111,11 @@ test("identity proof encodings and request rate are bounded", async () => {
     assert.equal((await getJson(s.base, "/v2/identity", s.token)).json.verified, false);
   } finally { await s.app.close(); }
 });
+test("identity challenge rejects control characters in player ids", async () => {
+  const s = await setup();
+  try {
+    const res = await postJson(s.base, "/v2/identity/challenge", { player_id: "\u0000evil" }, s.token);
+    assert.equal(res.status, 400);
+    assert.equal(res.json.error.code, "bad-player-id");
+  } finally { await s.app.close(); }
+});

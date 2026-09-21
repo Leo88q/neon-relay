@@ -162,7 +162,7 @@ operator opts in:
 
 ## 9. Evidence
 
-`cd backend && npm test` → **159/159 passing** on Node v22, including the
+`cd backend && npm test` → **240/240 passing** on Node v22, including the
 reward-ledger security coverage: forged-signature rejection, duplicate
 detection, per-match and daily cap rejections with reasons,
 pending→available→claimed balance transitions, seal/claim-intent proof
@@ -172,7 +172,7 @@ tokens — plus the Tranche A/B admin/reconcile/alerts/game-events suites,
 dual-RPC failover, and the economy v1/v2, ticket-security and PDA-golden
 suites.
 
-Stage-9 program evidence: `cd onchain && npm test` → **49/49 passing** —
+Stage-9 program evidence: `cd onchain && npm test` → **50/50 passing** —
 the TS Merkle mirror is asserted byte-identical to `backend/src/merkle.ts` on
 randomized trees, golden leaf vectors are pinned identically for the Rust unit
 test (`programs/neonrelay-rewards/tests/golden_leaf.txt`), tamper negatives

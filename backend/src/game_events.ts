@@ -185,16 +185,29 @@ export class GameEventService {
   private record(
     event: IncomingGameEvent, hash: string, status: GameEventStatus, reason: string | null, now: number,
   ): void {
+    // Fail-closed audit: validation-rejected events are still recorded, but a
+    // malformed field must never crash the insert (STRICT table, NOT NULLs).
+    const text = (value: unknown): string => typeof value === "string" ? value : "";
+    const maybeText = (value: unknown): string | null =>
+      typeof value === "string" ? value : null;
+    const int = (value: unknown): number =>
+      typeof value === "number" && Number.isInteger(value) ? value : 0;
+    // Any value reaching here already survived identical serialization in
+    // gameIdempotencyHash (ingestOne hashes before recording), so stringify
+    // cannot throw for values JSON can represent; the ?? "" covers exotic
+    // direct-call values (functions) that stringify as undefined.
+    let result: string | null = null;
+    if (event.result !== undefined && event.result !== null) {
+      result = JSON.stringify(stableResult(event.result)) ?? "";
+    }
     this.db.run(
       `INSERT INTO game_events
          (id, idempotency_hash, session_id, event_type, player_id, match_id, mode,
           result, occurred_at, ingested_at, server_signature, status, reason)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      crypto.randomUUID(), hash, event.session_id ?? null, event.event_type,
-      event.player_id ?? null, event.match_id ?? null, event.mode ?? null,
-      event.result === undefined || event.result === null
-        ? null : JSON.stringify(stableResult(event.result)),
-      event.occurred_at, now, event.server_signature, status, reason);
+      crypto.randomUUID(), hash, maybeText(event.session_id), text(event.event_type),
+      maybeText(event.player_id), maybeText(event.match_id), maybeText(event.mode),
+      result, int(event.occurred_at), now, text(event.server_signature), status, reason);
   }
 
   list(filters: {

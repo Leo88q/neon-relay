@@ -237,3 +237,137 @@ test("close refuses epochs with no ticketed winners", async () => {
     await rpc.close();
   }
 });
+
+test("close maps vault-read failures to 503", async () => {
+  const programRaw = base58Decode(PROGRAM);
+  const mint = createHash("sha256").update("test-skr-mint").digest();
+  const vault = createHash("sha256").update("test-vault").digest();
+  const stub: StubState = { accounts: new Map(), vaultBalance: "nope" };
+  const configAddr = base58Encode(findProgramAddress([ECONOMY_CONFIG_SEED], programRaw).address);
+  stub.accounts.set(configAddr, configBytes(mint, vault, 0n));
+  const rpc = await startStub(stub);
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR,
+    superadminToken: SUPERADMIN,
+    economyProgramId: PROGRAM,
+    skrMint: base58Encode(mint),
+    rpcUrl: rpc.url,
+  });
+  try {
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "close-economy-epoch", params: { epoch: 5 } }, OPERATOR);
+    const approved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposed.json.id }, SUPERADMIN);
+    assert.equal(approved.status, 503);
+    assert.equal(approved.json.error.code, "bad-vault-balance");
+  } finally {
+    await app.close();
+    await rpc.close();
+  }
+});
+
+test("close maps a dead RPC to 502", async () => {
+  const mint = createHash("sha256").update("test-skr-mint").digest();
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR,
+    superadminToken: SUPERADMIN,
+    economyProgramId: PROGRAM,
+    skrMint: base58Encode(mint),
+    rpcUrl: "http://127.0.0.1:9",
+  });
+  try {
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "close-economy-epoch", params: { epoch: 5 } }, OPERATOR);
+    const approved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposed.json.id }, SUPERADMIN);
+    assert.equal(approved.status, 502);
+    assert.equal(approved.json.error.code, "rpc-unavailable");
+  } finally {
+    await app.close();
+  }
+});
+
+test("close maps an underfunded vault to 409", async () => {
+  const programRaw = base58Decode(PROGRAM);
+  const mint = createHash("sha256").update("test-skr-mint").digest();
+  const vault = createHash("sha256").update("test-vault").digest();
+  const stub: StubState = { accounts: new Map(), vaultBalance: "50" };
+  const configAddr = base58Encode(findProgramAddress([ECONOMY_CONFIG_SEED], programRaw).address);
+  stub.accounts.set(configAddr, configBytes(mint, vault, 100n));
+  const rpc = await startStub(stub);
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR,
+    superadminToken: SUPERADMIN,
+    economyProgramId: PROGRAM,
+    skrMint: base58Encode(mint),
+    rpcUrl: rpc.url,
+  });
+  try {
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "close-economy-epoch", params: { epoch: 5 } }, OPERATOR);
+    const approved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposed.json.id }, SUPERADMIN);
+    assert.equal(approved.status, 409);
+    assert.equal(approved.json.error.code, "vault-underfunded");
+  } finally {
+    await app.close();
+    await rpc.close();
+  }
+});
+
+test("close honors per-match tickets bought through match intents", async () => {
+  const programRaw = base58Decode(PROGRAM);
+  const mint = createHash("sha256").update("test-skr-mint").digest();
+  const vault = createHash("sha256").update("test-vault").digest();
+  const stub: StubState = { accounts: new Map(), vaultBalance: "1100000" };
+  const configAddr = base58Encode(findProgramAddress([ECONOMY_CONFIG_SEED], programRaw).address);
+  stub.accounts.set(configAddr, configBytes(mint, vault, 100_000n));
+  const rpc = await startStub(stub);
+
+  const server = makeTestServer();
+  const { app, base } = await startTestApp({
+    serverSigningPublicKey: server.publicKeyBase64,
+    epochMs: 3_600_000,
+    capPerMatchMicro: 100_000,
+    capDailyMicro: 1_000_000,
+    capWeeklyMicro: 5_000_000,
+    operatorToken: OPERATOR,
+    superadminToken: SUPERADMIN,
+    economyProgramId: PROGRAM,
+    skrMint: base58Encode(mint),
+    rpcUrl: rpc.url,
+  });
+  try {
+    const wallet = makeWallet();
+    const auth = await authenticate(base, wallet);
+    const token = auth.json.session_token as string;
+    await postJson(base, "/v1/wallet/link", { player_id: "match-p" }, token);
+    await postJson(base, "/v1/rewards/events", {
+      events: [server.signEvent({
+        match_id: "m-match", player_id: "match-p",
+        wallet_binding_id: auth.json.wallet_binding_id as string,
+        event_type: "match_win", amount_micro: 100, occurred_at: Date.now(),
+      })],
+    });
+    const epochs = await getJson(base, "/v1/rewards/epochs");
+    const epochId = epochs.json[0].id as number;
+    // Buy a match intent in the epoch; the reference binds wallet+epoch+row.
+    const intent = await postJson(base, "/v1/economy/match-intent", { epoch: epochId }, token);
+    assert.equal(intent.status, 200);
+    assert.equal(intent.json.reference,
+      entryReference(0, epochId, wallet.rawPublicKey, intent.json.matchId as number).toString("hex"));
+    // Publish the ticket account at the match reference PDA.
+    const ref = Buffer.from(intent.json.reference as string, "hex");
+    const { address, bump } = findProgramAddress([ENTRY_SEED, ref, wallet.rawPublicKey], programRaw);
+    stub.accounts.set(base58Encode(address), ticketBytes(wallet.rawPublicKey, ref, bump));
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "close-economy-epoch", params: { epoch: epochId } }, OPERATOR);
+    const approved = await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposed.json.id }, SUPERADMIN);
+    assert.equal(approved.status, 200);
+    assert.equal(approved.json.result.leaves.length, 1);
+  } finally {
+    await app.close();
+    await rpc.close();
+  }
+});

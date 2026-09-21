@@ -80,3 +80,9 @@ test("two-leaf fold direction matches the on-chain rule", () => {
 test("empty tree has the all-zero root the program rejects at publish time", () => {
 	assert.equal(buildTree([]).root, "0".repeat(64));
 });
+
+test("leaf rejects non-32-byte keys and negative amounts", () => {
+	assert.throws(() => leafHash(Buffer.alloc(31), 1), /32-byte public key/);
+	assert.throws(() => leafHash(Buffer.alloc(32), -1), /non-negative integer/);
+	assert.throws(() => leafHash(Buffer.alloc(32), 1.5), /non-negative integer/);
+});

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { generateKeyPairSync, sign as edSign } from "node:crypto";
 import {
-  constantTimeEqual, parseChallenge, publicKeyFromRaw, serializeChallenge,
+  CryptoError, constantTimeEqual, parseChallenge, publicKeyFromRaw, serializeChallenge,
   sha256Hex, verifySignature,
 } from "../src/crypto.ts";
 import { makeWallet } from "./helpers.ts";
@@ -58,4 +58,29 @@ test("signatures from another key never verify", () => {
   // sanity: the same wallet does verify
   assert.equal(verifySignature(message, a.sign(message), publicKeyFromRaw(a.rawPublicKey)), true);
   void edSign; void generateKeyPairSync;
+});
+
+test("challenge parser rejects non-JSON bytes", () => {
+  assert.throws(() => parseChallenge(Buffer.from("not json", "utf8")),
+    (e: Error) => e instanceof CryptoError && e.code === "bad-challenge");
+});
+
+test("challenge parser rejects non-object JSON", () => {
+  assert.throws(() => parseChallenge(Buffer.from("42", "utf8")),
+    (e: Error) => e instanceof CryptoError && /not an object/.test(e.message));
+});
+
+test("challenge parser rejects payloads with missing keys", () => {
+  assert.throws(
+    () => parseChallenge(Buffer.from('{"v":1,"purpose":"neonrelay-wallet-auth"}', "utf8")),
+    (e: Error) => e instanceof CryptoError && /missing domain/.test(e.message));
+  assert.throws(
+    () => parseChallenge(Buffer.from(
+      '{"v":1,"purpose":"neonrelay-wallet-auth","domain":"d","nonce":"n"}', "utf8")),
+    (e: Error) => e instanceof CryptoError && /missing issued_at/.test(e.message));
+});
+
+test("signature verification never throws, even for a wrong key type", () => {
+  const { publicKey } = generateKeyPairSync("x25519");
+  assert.equal(verifySignature(Buffer.from("m"), Buffer.alloc(64), publicKey), false);
 });

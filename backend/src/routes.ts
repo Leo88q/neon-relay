@@ -635,7 +635,7 @@ export function buildRouter(deps: {
     const raw = walletRawOf(ctx);
     const id = db.runInsert(
       "INSERT INTO economy_matches (wallet_binding_id, epoch, reference, created_at) VALUES (?, ?, ?, ?)",
-      [session.session.wallet_binding_id, epoch, "pending", Date.now()]);
+      session.session.wallet_binding_id, epoch, "pending", Date.now());
     const reference = entryReference(0, epoch, raw, id).toString("hex");
     db.run("UPDATE economy_matches SET reference = ? WHERE id = ?", reference, id);
     return { matchId: id, epoch, reference };

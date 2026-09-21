@@ -347,3 +347,81 @@ test("vault pool fails closed on bad accounts and dead RPC", async () => {
   assert.throws(() => parseEconomyV1Config(Buffer.alloc(204)),
     (err: Error) => err instanceof VaultReadError && err.code === "bad-config-account");
 });
+
+test("redistributePool validates the pool and the paid places", () => {
+  assert.throws(() => redistributePool(0, 5), /poolMicro must be positive/);
+  assert.throws(() => redistributePool(1_000_000, 0), /places must be within 1\.\.10/);
+  assert.throws(() => redistributePool(1_000_000, 11), /places must be within 1\.\.10/);
+});
+
+test("closeEpochPrizes rejects a non-positive pool before ranking", async () => {
+  await assert.rejects(
+    closeEpochPrizes({ rankedTotals: [], hasTicket: async () => true, poolMicro: -5, epoch: 1 }),
+    /poolMicro must be positive/);
+});
+
+test("vault pool rejects a non-canonical config encoding", async () => {
+  const mint = createHash("sha256").update("skr-mint").digest();
+  const vault = createHash("sha256").update("vault").digest();
+  const treasury = createHash("sha256").update("treasury").digest();
+  const encoded = v1ConfigBytes({ mint, vault, treasury, reserved: 0n }).toString("base64");
+  const tampered = encoded.slice(0, 100) + "\n" + encoded.slice(101);
+  assert.equal(tampered.length, 272);
+  const stub: RpcCaller = async (method) => {
+    if (method === "getAccountInfo") {
+      return {
+        value: { owner: ECONOMY_PROGRAM_ID, executable: false, data: [tampered, "base64"] },
+      };
+    }
+    return { value: { amount: "100", decimals: 6 } };
+  };
+  await assert.rejects(readVaultPool(stub, ECONOMY_PROGRAM_ID, null),
+    (err: Error) => err instanceof VaultReadError && err.code === "bad-config-account");
+});
+
+test("vault pool maps a balance-read failure to rpc-unavailable", async () => {
+  const mint = createHash("sha256").update("skr-mint").digest();
+  const vault = createHash("sha256").update("vault").digest();
+  const treasury = createHash("sha256").update("treasury").digest();
+  const good = v1ConfigBytes({ mint, vault, treasury, reserved: 0n });
+  const stub: RpcCaller = async (method) => {
+    if (method === "getAccountInfo") {
+      return {
+        value: {
+          owner: ECONOMY_PROGRAM_ID, executable: false, data: [good.toString("base64"), "base64"],
+        },
+      };
+    }
+    throw new Error("balance node down");
+  };
+  await assert.rejects(readVaultPool(stub, ECONOMY_PROGRAM_ID, null),
+    (err: Error) => err instanceof VaultReadError && err.code === "rpc-unavailable");
+});
+
+test("vault pool rejects a non-canonical balance", async () => {
+  const mint = createHash("sha256").update("skr-mint").digest();
+  const vault = createHash("sha256").update("vault").digest();
+  const treasury = createHash("sha256").update("treasury").digest();
+  const stub = vaultRpcStub({
+    program: ECONOMY_PROGRAM_ID,
+    config: v1ConfigBytes({ mint, vault, treasury, reserved: 0n }),
+    vault: base58Encode(vault),
+    balance: "12ab",
+  });
+  await assert.rejects(readVaultPool(stub, ECONOMY_PROGRAM_ID, null),
+    (err: Error) => err instanceof VaultReadError && err.code === "bad-vault-balance");
+});
+
+test("vault pool refuses balances above the safe integer range", async () => {
+  const mint = createHash("sha256").update("skr-mint").digest();
+  const vault = createHash("sha256").update("vault").digest();
+  const treasury = createHash("sha256").update("treasury").digest();
+  const stub = vaultRpcStub({
+    program: ECONOMY_PROGRAM_ID,
+    config: v1ConfigBytes({ mint, vault, treasury, reserved: 0n }),
+    vault: base58Encode(vault),
+    balance: "9007199254740993", // 2^53 + 1: canonical u64, unsafe for float math
+  });
+  await assert.rejects(readVaultPool(stub, ECONOMY_PROGRAM_ID, null),
+    (err: Error) => err instanceof VaultReadError && err.code === "pool-too-large");
+});

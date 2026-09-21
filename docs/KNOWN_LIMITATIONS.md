@@ -28,7 +28,7 @@ Kotlin wallet layer and unit tests in `android/` are therefore **uncompiled** he
 No Rust/Solana/Anchor toolchain and no crates.io route, so the stage-9 program in `onchain/`
 was **written but never compiled** here: `cargo test`, `anchor build`, `anchor test` and the
 devnet deployment are a documented runbook (`onchain/README.md`), not executed procedures.
-What *is* executed offline: `cd onchain && npm test` (49/49 — 5 Merkle-parity/tamper tests
+What *is* executed offline: `cd onchain && npm test` (50/50 — 6 Merkle-parity/tamper tests
 against the backend mirror, 8 program-conformance tests binding `lib.rs`/`Anchor.toml` to the
 TS constants, 8 rewards-claim client-contract tests spec-pinning the Kotlin builder, plus the
 economy (15), features (6) and asset-manifest (7) suites) and a golden leaf vector pinned

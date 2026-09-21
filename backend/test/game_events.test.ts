@@ -9,7 +9,7 @@ import {
   authenticate, getJson, makeWallet, postJson, startTestApp,
 } from "./helpers.ts";
 import {
-  canonicalGameEventBytes, type IncomingGameEvent,
+  GameEventService, GameEventsError, canonicalGameEventBytes, type IncomingGameEvent,
 } from "../src/game_events.ts";
 
 const OPERATOR = "op-game";
@@ -163,6 +163,115 @@ test("retention purge deletes only old events and audits", async () => {
     assert.ok((audit.json.entries as { action: string }[]).some((e) => e.action === "game-events-purged"));
     void authenticate;
     void makeWallet;
+  } finally {
+    await app.close();
+  }
+});
+
+test("admin listing rejects a non-numeric since filter", async () => {
+  const { app, base } = await startGameApp();
+  try {
+    const res = await getJson(base, "/v1/admin/game-events?since=abc", OPERATOR);
+    assert.equal(res.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("admin listing rejects an empty player filter", async () => {
+  const { app, base } = await startGameApp();
+  try {
+    const res = await getJson(base, "/v1/admin/game-events?player_id=", OPERATOR);
+    assert.equal(res.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("purge route rejects an empty player_id", async () => {
+  const { app, base } = await startGameApp();
+  try {
+    const res = await postJson(base, "/v1/admin/game-events/purge", { player_id: "" }, SUPERADMIN);
+    assert.equal(res.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("purge validates the player filter before deleting", async () => {
+  const { app, base } = await startGameApp();
+  try {
+    const service = new GameEventService(app.db, app.config);
+    assert.throws(() => service.purge({ playerId: "" }),
+      (e: Error) => e instanceof GameEventsError && e.status === 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("purge validates the age filter before deleting", async () => {
+  const { app, base } = await startGameApp();
+  try {
+    const service = new GameEventService(app.db, app.config);
+    assert.throws(() => service.purge({ olderThanMs: 0 }),
+      (e: Error) => e instanceof GameEventsError && e.status === 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("ingestion rejects events with an empty session id", async () => {
+  const { app, base, server } = await startGameApp();
+  try {
+    const res = await postJson(base, "/v1/game/events", {
+      events: [server.sign({ session_id: "", event_type: "session_start", occurred_at: Date.now() })],
+    });
+    assert.equal(res.json.results[0].status, "rejected_validation");
+    assert.match(res.json.results[0].reason, /session_id invalid/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("ingestion rejects events without a server signature", async () => {
+  const { app, base } = await startGameApp();
+  try {
+    const res = await postJson(base, "/v1/game/events", {
+      events: [{
+        session_id: "s1", event_type: "session_start", player_id: "p1", occurred_at: Date.now(),
+      }],
+    });
+    assert.equal(res.json.results[0].status, "rejected_validation");
+    assert.match(res.json.results[0].reason, /server_signature/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("ingestion rejects wrong-typed fields without crashing the STRICT table", async () => {
+  const { app, base, server } = await startGameApp();
+  try {
+    const now = Date.now();
+    const event = {
+      ...server.sign({ session_id: "s1", event_type: "session_start", player_id: "p1", occurred_at: now }),
+      player_id: 123,
+    };
+    const res = await postJson(base, "/v1/game/events", { events: [event] });
+    assert.equal(res.json.results[0].status, "rejected_validation");
+    assert.match(res.json.results[0].reason, /player_id invalid/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("game ingestion fails closed when the signing key is malformed", async () => {
+  const { app, base } = await startTestApp({
+    serverSigningPublicKey: "!!!not-a-key!!!", operatorToken: OPERATOR,
+  });
+  try {
+    const res = await postJson(base, "/v1/game/events", { events: [{ event_type: "x" }] });
+    assert.equal(res.status, 500);
+    assert.equal(res.json.error.code, "signing-key-invalid");
   } finally {
     await app.close();
   }

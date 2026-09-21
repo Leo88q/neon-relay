@@ -89,10 +89,6 @@ export class Router {
   resolve(method: string, path: string): Handler | undefined {
     return this.routes.get(`${method} ${path}`);
   }
-
-  paths(): string[] {
-    return [...this.routes.keys()];
-  }
 }
 
 /**

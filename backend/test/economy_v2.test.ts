@@ -180,3 +180,9 @@ test("independent database connections share cap and idempotency state", () => {
     assert.equal(a.proof(mintA, 1n, wallet)!.amountBase, "100");
   } finally { first.close(); second.close(); rmSync(dir, { recursive: true, force: true }); }
 });
+test("v2 intents reject identifiers with control characters", () => {
+  const { db, service } = store();
+  try {
+    assert.throws(() => service.createIntent(intent({ playerId: "bad\u0000id" })), /invalid identifier/);
+  } finally { db.close(); }
+});

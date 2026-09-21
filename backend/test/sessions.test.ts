@@ -53,3 +53,26 @@ test("session validate slides expiry and rejects revoked/expired", () => {
   sessions.revokeForBinding(binding.id, 10_300);
   db.close();
 });
+
+test("absolute 30-day lifetime backstops even huge configured TTLs", () => {
+  const db = fresh();
+  const wallets = new WalletStore(db);
+  const binding = wallets.upsertBinding("cHVibGljLWtleQ", null, 10_000);
+  const sessions = new SessionStore(db, 60 * 86_400_000);
+  const issued = sessions.issue(binding.id, 10_000);
+  // 31 days in: inside the 60-day sliding window, past the absolute cap.
+  assert.equal(sessions.validate(issued.token, 10_000 + 31 * 86_400_000).reason, "expired");
+  db.close();
+});
+
+test("purgeNonces deletes only nonces past expiry plus the grace day", () => {
+  const db = fresh();
+  const wallets = new WalletStore(db);
+  const T0 = 1_700_000_000_000;
+  const ancient = wallets.issueNonce(1000, T0);
+  const recent = wallets.issueNonce(1000, T0 + 30 * 3_600_000);
+  wallets.purgeNonces(T0 + 2 * 86_400_000);
+  assert.equal(wallets.consumeNonce(ancient.nonce, T0 + 2 * 86_400_000), "unknown");
+  assert.equal(wallets.consumeNonce(recent.nonce, T0 + 2 * 86_400_000), "expired");
+  db.close();
+});

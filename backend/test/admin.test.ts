@@ -6,7 +6,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -306,3 +306,41 @@ test("legacy list routes paginate without breaking the default shape", () =>
     const badOffset = await getJson(base, "/v1/rewards/epochs?offset=-1");
     assert.equal(badOffset.status, 400);
   }));
+
+test("close-epoch proposals validate the epoch parameter", () =>
+  withApp({}, async (base) => {
+    const res = await postJson(base, "/v1/admin/proposals",
+      { type: "close-economy-epoch", params: { epoch: "x" } }, OPERATOR);
+    assert.equal(res.status, 400);
+  }));
+
+test("rejecting a decided proposal fails closed", () =>
+  withSeededApp(async (base, _app, epochId) => {
+    const proposed = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, OPERATOR);
+    await postJson(base, "/v1/admin/proposals/approve",
+      { proposal_id: proposed.json.id }, SUPERADMIN);
+    const rejected = await postJson(base, "/v1/admin/proposals/reject",
+      { proposal_id: proposed.json.id }, SUPERADMIN);
+    assert.equal(rejected.status, 409);
+    assert.equal(rejected.json.error.code, "proposal-executed");
+  }));
+
+test("backup listing tolerates a missing backup dir", () =>
+  withApp({ backupDir: join(mkdtempSync(join(tmpdir(), "neon-backup-absent-")), "no-such-dir") },
+    async (base) => {
+      const listed = await getJson(base, "/v1/admin/backups", OPERATOR);
+      assert.equal(listed.status, 200);
+      assert.deepEqual(listed.json.backups, []);
+    }));
+
+test("backup listing skips entries whose metadata vanishes", () => {
+  const dir = mkdtempSync(join(tmpdir(), "neon-backup-link-"));
+  return withApp({ backupDir: dir }, async (base) => {
+    symlinkSync(join(dir, "no-such-target.db"), join(dir, "neonrelay-dangling.db"));
+    const listed = await getJson(base, "/v1/admin/backups", OPERATOR);
+    assert.equal(listed.status, 200);
+    assert.deepEqual(listed.json.backups, []);
+    rmSync(dir, { recursive: true, force: true });
+  });
+});

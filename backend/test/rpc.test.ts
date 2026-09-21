@@ -344,3 +344,12 @@ test("server: ticket reads fail over to fallback RPC and surface everywhere", as
     await new Promise<void>((done) => hookServer.close(() => done()));
   }
 });
+
+test("non-object JSON-RPC replies fail closed as rpc-protocol", async () => {
+  const fetchFn = (async () => ({
+    ok: true, status: 200, json: async () => [1, 2],
+  })) as unknown as typeof fetch;
+  const pool = createRpcPool({ primary: "http://primary:8899", fetchFn });
+  await assert.rejects(pool.call("getSlot", []),
+    (e: Error) => e instanceof RpcError && e.code === "rpc-protocol");
+});

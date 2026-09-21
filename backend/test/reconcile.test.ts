@@ -18,8 +18,8 @@ import {
 import type { RpcCaller } from "../src/economy.ts";
 import {
   ReconcileError, comparePrizeEpoch, compareRewardsEpoch, parsePrizeEpochV1,
-  parseRewardsEpoch, prizeEpochAddressV1, readTreasuryState, reconcilePrizeEpoch,
-  reconcileRewardsEpoch, recordTreasury, rewardsEpochAddress,
+  parseRewardsEpoch, prizeEpochAddressV1, readRewardsEpochOnchain, readTreasuryState,
+  reconcilePrizeEpoch, reconcileRewardsEpoch, recordReconcile, recordTreasury, rewardsEpochAddress,
 } from "../src/reconcile.ts";
 import { ECONOMY_V1_CONFIG_DISCRIMINATOR } from "../src/economy.ts";
 
@@ -401,6 +401,258 @@ test("stuck route surfaces stale intents, proposals and unreconciled closes", as
     assert.deepEqual(fresh.json.alert, { alerted: false });
     const bad = await getJson(base, "/v1/admin/stuck?threshold_hours=0", OPERATOR);
     assert.equal(bad.status, 400);
+  } finally {
+    await app.close();
+    await stub.close();
+  }
+});
+
+test("epoch PDA helpers reject non-u64 epochs", () => {
+  const program = base58Decode(REWARDS_PROGRAM);
+  assert.throws(() => rewardsEpochAddress(-1, program),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-epoch");
+  assert.throws(() => prizeEpochAddressV1(1.5, program),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-epoch");
+  // 2^53 itself is exactly representable (safe); 2^53+2 is the first unsafe int.
+  assert.throws(() => prizeEpochAddressV1(9007199254740994, program),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-epoch");
+});
+
+test("reward epoch reads map an RPC failure to rpc-unavailable", async () => {
+  const rpc: RpcCaller = async () => { throw new Error("boom"); };
+  await assert.rejects(readRewardsEpochOnchain(rpc, REWARDS_PROGRAM, 9),
+    (e: Error) => e instanceof ReconcileError && e.code === "rpc-unavailable");
+});
+
+test("reward epoch reads reject accounts owned by another program", async () => {
+  const root = createHash("sha256").update("root").digest("hex");
+  const program = base58Decode(REWARDS_PROGRAM);
+  const address = base58Encode(rewardsEpochAddress(9, program));
+  const rpc = mockRpc(new Map([[address, rewardsEpochBytes(9, root, 3)]]), ECONOMY_PROGRAM);
+  await assert.rejects(readRewardsEpochOnchain(rpc, REWARDS_PROGRAM, 9),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-account");
+});
+
+test("reward epoch reads reject accounts with an unexpected size", async () => {
+  const program = base58Decode(REWARDS_PROGRAM);
+  const address = base58Encode(rewardsEpochAddress(9, program));
+  const rpc = mockRpc(new Map([[address, Buffer.alloc(10)]]), REWARDS_PROGRAM);
+  await assert.rejects(readRewardsEpochOnchain(rpc, REWARDS_PROGRAM, 9),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-account");
+});
+
+test("reward epoch reads reject non-canonical account encoding", async () => {
+  const root = createHash("sha256").update("root").digest("hex");
+  const encoded = rewardsEpochBytes(9, root, 3).toString("base64");
+  assert.equal(encoded.length, 84);
+  const tampered = encoded.slice(0, 40) + "\n" + encoded.slice(41);
+  const rpc: RpcCaller = async (method) => {
+    assert.equal(method, "getAccountInfo");
+    return { value: { owner: REWARDS_PROGRAM, executable: false, data: [tampered, "base64"] } };
+  };
+  await assert.rejects(readRewardsEpochOnchain(rpc, REWARDS_PROGRAM, 9),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-account");
+});
+
+test("treasury reads map a balance failure to rpc-unavailable", async () => {
+  const mint = createHash("sha256").update("t-mint").digest();
+  const vault = createHash("sha256").update("t-vault").digest();
+  const treasury = createHash("sha256").update("t-treasury").digest();
+  const config = Buffer.alloc(204);
+  ECONOMY_V1_CONFIG_DISCRIMINATOR.copy(config, 0);
+  mint.copy(config, 40);
+  treasury.copy(config, 72);
+  vault.copy(config, 104);
+  config.writeBigUInt64LE(25n, 156);
+  const program = base58Decode(ECONOMY_PROGRAM);
+  const configAddr = base58Encode(findProgramAddress(
+    [Buffer.from("neonrelay_economy_config")], program).address);
+  const rpc: RpcCaller = async (method, params) => {
+    if (method === "getAccountInfo") {
+      assert.equal(params[0], configAddr);
+      return {
+        value: { owner: ECONOMY_PROGRAM, executable: false, data: [config.toString("base64"), "base64"] },
+      };
+    }
+    throw new Error("balance node down");
+  };
+  await assert.rejects(readTreasuryState(rpc, ECONOMY_PROGRAM, base58Encode(mint)),
+    (e: Error) => e instanceof ReconcileError && e.code === "rpc-unavailable");
+});
+
+test("treasury reads reject a non-canonical balance", async () => {
+  const mint = createHash("sha256").update("t-mint").digest();
+  const vault = createHash("sha256").update("t-vault").digest();
+  const treasury = createHash("sha256").update("t-treasury").digest();
+  const config = Buffer.alloc(204);
+  ECONOMY_V1_CONFIG_DISCRIMINATOR.copy(config, 0);
+  mint.copy(config, 40);
+  treasury.copy(config, 72);
+  vault.copy(config, 104);
+  config.writeBigUInt64LE(25n, 156);
+  const rpc: RpcCaller = async (method) => {
+    if (method === "getAccountInfo") {
+      return {
+        value: { owner: ECONOMY_PROGRAM, executable: false, data: [config.toString("base64"), "base64"] },
+      };
+    }
+    return { value: { amount: "xyz", decimals: 6 } };
+  };
+  await assert.rejects(readTreasuryState(rpc, ECONOMY_PROGRAM, base58Encode(mint)),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-balance");
+});
+
+test("prize comparison reports a both-sides-missing case", () => {
+  assert.equal(comparePrizeEpoch(undefined, null).status, "missing-both");
+});
+
+test("prize comparison flags an unparseable backend distribution", () => {
+  const backend = { epoch: 7, root: "cd".repeat(32), total_micro: 100, distribution: "{broken" };
+  const onchain = { epoch: "7", root: "cd".repeat(32), total: "100", leafCount: 2, publishedAt: "1" };
+  const result = comparePrizeEpoch(backend, onchain);
+  assert.equal(result.status, "mismatch:distribution-unparseable");
+  assert.ok(result.mismatches.includes("distribution-unparseable"));
+});
+
+test("rewards reconcile route maps a dead RPC to 502", async () => {
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR, rewardsProgramId: REWARDS_PROGRAM, rpcUrl: "http://127.0.0.1:9",
+  });
+  try {
+    const res = await getJson(base, "/v1/admin/reconcile/rewards?epoch_id=1", OPERATOR);
+    assert.equal(res.status, 502);
+    assert.equal(res.json.error.code, "rpc-unavailable");
+  } finally {
+    await app.close();
+  }
+});
+
+test("prizes reconcile route maps a dead RPC to 502", async () => {
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR, economyProgramId: ECONOMY_PROGRAM, rpcUrl: "http://127.0.0.1:9",
+  });
+  try {
+    const res = await getJson(base, "/v1/admin/reconcile/prizes?epoch=1", OPERATOR);
+    assert.equal(res.status, 502);
+    assert.equal(res.json.error.code, "rpc-unavailable");
+  } finally {
+    await app.close();
+  }
+});
+
+test("treasury snapshot route maps a dead RPC to 502", async () => {
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR, economyProgramId: ECONOMY_PROGRAM, rpcUrl: "http://127.0.0.1:9",
+  });
+  try {
+    const res = await postJson(base, "/v1/admin/treasury/snapshot", {}, OPERATOR);
+    assert.equal(res.status, 502);
+    assert.equal(res.json.error.code, "rpc-unavailable");
+  } finally {
+    await app.close();
+  }
+});
+
+test("treasury snapshot route records chain state and lists it with deltas", async () => {
+  const mint = createHash("sha256").update("t-mint").digest();
+  const vault = createHash("sha256").update("t-vault").digest();
+  const treasury = createHash("sha256").update("t-treasury").digest();
+  const config = Buffer.alloc(204);
+  ECONOMY_V1_CONFIG_DISCRIMINATOR.copy(config, 0);
+  mint.copy(config, 40);
+  treasury.copy(config, 72);
+  vault.copy(config, 104);
+  config.writeBigUInt64LE(25n, 156);
+  const program = base58Decode(ECONOMY_PROGRAM);
+  const configAddr = base58Encode(findProgramAddress(
+    [Buffer.from("neonrelay_economy_config")], program).address);
+  const state: StubState = {
+    accounts: new Map([[configAddr, { owner: ECONOMY_PROGRAM, data: config }]]),
+    balances: new Map([[base58Encode(vault), "1000"], [base58Encode(treasury), "120"]]),
+    alerts: [],
+  };
+  const stub = await startStub(state);
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR, economyProgramId: ECONOMY_PROGRAM, rpcUrl: stub.url,
+  });
+  try {
+    const snap = await postJson(base, "/v1/admin/treasury/snapshot", {}, OPERATOR);
+    assert.equal(snap.status, 200);
+    assert.equal(snap.json.vaultBalance, "1000");
+    assert.equal(snap.json.treasuryBalance, "120");
+    assert.equal(snap.json.reserved, "25");
+    const listed = await getJson(base, "/v1/admin/treasury", OPERATOR);
+    assert.equal(listed.status, 200);
+    assert.equal(listed.json.snapshots.length, 1);
+    assert.equal(listed.json.snapshots[0].vault_balance, "1000");
+    assert.equal(listed.json.snapshots[0].vault_delta, null);
+  } finally {
+    await app.close();
+    await stub.close();
+  }
+});
+
+test("reconcile snapshots route lists and filters by kind", async () => {
+  const { app, base } = await startTestApp({ operatorToken: OPERATOR });
+  try {
+    recordReconcile(app.db, { kind: "rewards-epoch", ref: "1", status: "match" });
+    recordReconcile(app.db, { kind: "prize-epoch", ref: "2", status: "match" });
+    const all = await getJson(base, "/v1/admin/reconcile/snapshots", OPERATOR);
+    assert.equal(all.status, 200);
+    assert.equal(all.json.snapshots.length, 2);
+    assert.equal(all.json.pagination.total, 2);
+    const filtered = await getJson(base, "/v1/admin/reconcile/snapshots?kind=prize-epoch", OPERATOR);
+    assert.equal(filtered.json.snapshots.length, 1);
+    assert.equal(filtered.json.snapshots[0].kind, "prize-epoch");
+  } finally {
+    await app.close();
+  }
+});
+
+test("reconcile snapshots route rejects unknown kinds", async () => {
+  const { app, base } = await startTestApp({ operatorToken: OPERATOR });
+  try {
+    const res = await getJson(base, "/v1/admin/reconcile/snapshots?kind=nope", OPERATOR);
+    assert.equal(res.status, 400);
+  } finally {
+    await app.close();
+  }
+});
+
+test("treasury listing computes deltas against the previous page", async () => {
+  const mint = createHash("sha256").update("t-mint").digest();
+  const vault = createHash("sha256").update("t-vault").digest();
+  const treasury = createHash("sha256").update("t-treasury").digest();
+  const config = Buffer.alloc(204);
+  ECONOMY_V1_CONFIG_DISCRIMINATOR.copy(config, 0);
+  mint.copy(config, 40);
+  treasury.copy(config, 72);
+  vault.copy(config, 104);
+  config.writeBigUInt64LE(25n, 156);
+  const program = base58Decode(ECONOMY_PROGRAM);
+  const configAddr = base58Encode(findProgramAddress(
+    [Buffer.from("neonrelay_economy_config")], program).address);
+  const state: StubState = {
+    accounts: new Map([[configAddr, { owner: ECONOMY_PROGRAM, data: config }]]),
+    balances: new Map([[base58Encode(vault), "1000"], [base58Encode(treasury), "120"]]),
+    alerts: [],
+  };
+  const stub = await startStub(state);
+  const { app, base } = await startTestApp({
+    operatorToken: OPERATOR, economyProgramId: ECONOMY_PROGRAM, rpcUrl: stub.url,
+  });
+  try {
+    for (const balance of ["1000", "1200", "1500"]) {
+      state.balances.set(base58Encode(vault), balance);
+      const snap = await postJson(base, "/v1/admin/treasury/snapshot", {}, OPERATOR);
+      assert.equal(snap.status, 200);
+    }
+    // Second page, one row: the middle snapshot with its delta vs the oldest.
+    const page = await getJson(base, "/v1/admin/treasury?limit=1&offset=1", OPERATOR);
+    assert.equal(page.json.snapshots.length, 1);
+    assert.equal(page.json.snapshots[0].vault_balance, "1200");
+    assert.equal(page.json.snapshots[0].vault_delta, "200");
+    assert.equal(page.json.pagination.total, 3);
   } finally {
     await app.close();
     await stub.close();
