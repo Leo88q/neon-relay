@@ -1,12 +1,76 @@
-# Neon Relay original maps (BL-14)
+# Neon Relay shipped maps
 
-Every map shipped by Neon Relay is an **original, procedurally generated work**
-created for this project. No upstream map or map artwork is
-distributed: BL-14 removed the five upstream race maps, all dm/ctf/coverage
-maps, `data/maps7/` and every upstream `data/mapres/*.png` from the release
-tree (historical license record stays in `docs/THIRD_PARTY_NOTICES.md` §4).
+25 maps ship in `data/maps/` (plus 5 Teeworlds 0.7 conversions in `data/maps7/`).
+Provenance per file is recorded in `data/maps/license.txt` and enforced by
+`docs/ASSET_MANIFEST.csv` (`scripts/gen_asset_manifest.py` + `scripts/check_assets.sh`).
 
-## Shipped maps
+## Shipped set
+
+| Map | Origin | License | Status |
+| --- | --- | --- | --- |
+| `Neon Relay Basin`, `Chromatic Canyon`, `Vector Spire`, `Midnight Circuit`, `Aurora Ascent` | originals, `scripts/build_neon_maps.py` (BL-14) | Zlib | ship |
+| `Neon Relay Warmup` | original authored geometry + embedded original art, `scripts/build_warmup.py` | Zlib | ship |
+| `LearnToPlay Sound`, `LearnToPlay Sound Heights` | derivative of LearnToPlay, `scripts/retheme_learntoplay.py` | CC-BY-SA 3.0 | ship (share-alike, Tridemy & Cøke + Neon Relay) |
+| `Gold Mine`, `LearnToPlay`, `Sunny Side Up`, `Tsunami`, `Tutorial` (+ `data/maps7/` conversions via `src/tools/map_convert_07.cpp`) | original upstream maps, authors named in `data/maps/license.txt` | CC-BY-SA 3.0 | ship |
+| `ctf1`–`ctf7`, `dm1`, `dm2`, `dm6`–`dm9`, `coverage` | classic gameplay maps + `gameworld_test` fixture; no author named anywhere in the tree | CC-BY-SA 3.0 (default rule) | **block-release** (see `THIRD_PARTY_NOTICES.md` §7) |
+
+## External-art matrix
+
+Every shipped map's external image reference resolves to a shipped
+`data/mapres/*.png` — all of which are original Neon Relay pixels after the
+original-art pass — with exactly one pre-existing exception: `ctf4.map`
+references `jungle_doodads_old`, a file that was never in this tree (not even
+at HEAD). A dangling reference logs a console error and shows the in-game
+"Some map images could not be loaded" warning; the affected layers render with
+a null texture (`src/game/client/components/mapimages.cpp`, `ShowWarning` path).
+
+Reference (machine-checked against `data/mapres/`):
+
+* BL-14 originals → their `neonrelay_<style>_sky/_mid/_tiles` + `neonrelay_pulse`
+  (Basin: sound; Canyon/Ascent: folds; Spire: circuit; Circuit: chrome).
+* Warmup → none external (art is embedded `neonrelay_learn_*` originals).
+* Sound / Heights / LearnToPlay → `snow` (procedural replacement).
+* Gold Mine → `desert_main`, `jungle_unhookables`.
+* Sunny Side Up → `bg_cloud1`, `bg_cloud2`, `desert_doodads`, `jungle_midground`.
+* Tsunami → `jungle_midground`.
+* Tutorial → `bg_cloud1`, `bg_cloud2`, `bg_cloud3`, `generic_unhookable`, `grass_doodads`, `stars`.
+* coverage → `generic_unhookable`, `grass_main`.
+* ctf1/ctf7/dm2 → `grass_doodads`, `grass_main`, `mountains`, `sun`.
+* ctf2 → winter set (`moon`, `snow`, `stars`, `winter_doodads`, `winter_main`, `winter_mountains[23]`).
+* ctf3 → desert set + `moon`.
+* ctf4 → jungle set + `grass_main` + dangling `jungle_doodads_old` (see above).
+* ctf5/dm1 → `bg_cloud1/2/3`, `generic_unhookable`, `grass_doodads`, `grass_main` (+`mountains`, `sun` for dm1).
+* ctf6 → grass/jungle mix incl. `jungle_deathtiles`, `jungle_unhookables`.
+* dm6 → desert set + `generic_deathtiles`, `generic_unhookable`, `moon`.
+* dm7 → `grass_main`, `grass_doodads`, `moon`, `stars`.
+* dm8 → winter set + `generic_deathtiles`, `generic_unhookable`, `moon`, `snow`, `stars`.
+* dm9 → grass/jungle mix + `moon`.
+
+## Compatibility costs (documented, not blocking)
+
+* **sixup / 0.7.** When the client runs through sixup (`Client()->IsSixup()`)
+  and a map references one of `grass_doodads`, `grass_main`, `winter_main`,
+  `generic_shadows`, `generic_unhookable`, `easter` externally, the client
+  loads `mapres/<name>_0.7.png` instead (`mapimages.cpp`, `Translated` path).
+  The six `*_0.7.png` variants were upstream art and were deleted, so on a
+  0.7-protocol session any layer using those names warns and renders null.
+  Shipped maps affected through this path: Tutorial, coverage, ctf1/2/4/5/6/7,
+  dm1/2/6/7/8/9. Maps using only `neonrelay_*`, embedded, `snow` or
+  non-translated names (BL-14 set, Warmup, Sound/Heights, Gold Mine,
+  LearnToPlay, Sunny Side Up, Tsunami, ctf3) are unaffected. Restoring 0.7
+  layouts as original art is future work.
+* **editor / palette.** The in-game editor is removed (`src/game/editor` and
+  `data/editor` are gone, asserted by `scripts/test_menu_contract.py`), so no
+  map can be authored or palette-tweaked in-client; authoring happens through
+  the generator scripts or external tools. `src/tools/map_convert_07.cpp`
+  (the `data/maps7/` converter) still ships.
+* **community maps.** Runtime-downloaded maps that reference any of the 27
+  deleted upstream `data/mapres` names (`basic_freeze`, `ddnet_*`, `water`,
+  `light`, `*_0.7`, `round/mixed_tiles`, spares — see the manifest history)
+  hit the same warn + null-texture path as the `ctf4` case above. Maps using
+  embedded images or the surviving 27 filenames render fully.
+
+## BL-14 originals (reference)
 
 | Map | Size | Character |
 | --- | --- | --- |

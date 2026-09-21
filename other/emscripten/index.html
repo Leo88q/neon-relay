@@ -1,468 +1,478 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta name="description" content="The Neon Relay client running in a web browser.">
-		<title>Neon Relay Web</title>
-		<link rel="icon" type="image/x-icon" href="NeonRelay.ico">
-		<style>
-		body {
-			background: url('background.png') #ccc;
-			background-size: cover;
-			background-position: center center;
-			font-family: 'Arial', 'Helvetica', sans-serif;
-		}
-		body, html, #canvas {
-			width: 100%;
-			height: 100%;
-			margin: 0;
-		}
-		h1, h2 {
-			margin: 5px 0 15px 0;
-			color: #ffa500;
-		}
-		button {
-			height: 30px;
-			padding: 0 20px;
-			border: none;
-			border-radius: 6px;
-			background-color: #ffa500;
-			transition: background-color 0.3s linear;
-			color: #fff;
-			font-weight: bold;
-			cursor: pointer;
-		}
-		button:hover {
-			background-color: #f27400;
-		}
-		button[disabled] {
-			background-color: #965518;
-			cursor: not-allowed;
-		}
-		#controls, #output {
-			padding: 15px;
-			border-radius: 15px;
-			box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-			background-color: rgba(255, 255, 255, 0.85);
-		}
-		#controls {
-			position: sticky;
-			width: 850px;
-			height: fit-content;
-			box-sizing: border-box;
-			margin: 0 auto;
-			transform: translate(0, 10vh);
-		}
-		#controls h1 {
-			text-align: center;
-		}
-		#drop-target {
-			width: 500px;
-			margin: 15px auto;
-			padding: 0 15px;
-			border: 2px dashed #ffa500;
-			border-radius: 6px;
-			background: #ffa50020;
-			cursor: pointer;
-		}
-		#drop-target-status {
-			font-style: italic;
-			text-align: center;
-		}
-		#drop-target:hover, #drop-target[drop-active=true] {
-			background: #ffa50035;
-		}
-		#launch-button {
-			position: relative;
-			display: block;
-			width: 250px;
-			margin: 0 auto;
-			z-index: 1;
-		}
-		#launch-button-progress {
-			position: absolute;
-			left: 0;
-			top: 0;
-			width: 0%;
-			height: 100%;
-			border-radius: 6px;
-			transition: width 0.3s linear;
-			background: #ffa500;
-			z-index: -1;
-		}
-		#canvas {
-			position: absolute;
-			top: 0px;
-			left: 0px;
-			border: 0;
-			overflow: hidden;
-			display: block;
-		}
-		#output {
-			position: sticky;
-			width: 90%;
-			height: 90%;
-			inset: 0px;
-			margin: 0 auto;
-			box-sizing: border-box;
-			transform: translate(0, 5vh);
-			display: flex;
-			flex-direction: column;
-		}
-		#outputcontent {
-			overflow: hidden scroll;
-			flex: 1;
-		}
-		#outputcontent .line {
-			border-left: 5px solid;
-			padding-left: 10px;
-		}
-		</style>
-	</head>
-	<body>
-		<div id="controls">
-			<h1>Neon Relay Web</h1>
-			<p>This is an experimental version of the <a href="https://github.com/Leo88q/neon-relay">Neon Relay client</a> running in a web browser.</p>
-			<p>Connecting to most servers is currently not possible. Servers must be compiled with support for WebSockets.</p>
-			<div id="drop-target">
-				<p>You can drop a <code>.demo</code> file, <code>.map</code> file or a <code>neonrelay://</code> link here, or click to select a file.
-				You can also drop files and links directly into the window after starting the client.</p>
-				<p id="drop-target-status">No file or link selected</p>
-				<input id="drop-target-file-input" type="file" accept=".demo,.map" hidden>
-			</div>
-			<button id="launch-button" disabled>
-				<span id="launch-button-progress"></span>
-				<span id="launch-button-label">Loading…</span>
-			</button>
-			<noscript><p><b>You need to allow JavaScript in your browser to use this website.</b></p></noscript>
-		</div>
-		<div id="output" style="display: none">
-			<h2>Console log</h2>
-			<div id="outputcontent"></div>
-		</div>
-		<canvas id="canvas" style="display: none">Canvas not supported.</canvas>
-		<script>
-			const homePath = "/home/web_user/.local/share/neonrelay";
-			const output = document.getElementById('output');
-			const outputContent = document.getElementById('outputcontent');
-			const launchButton = document.getElementById('launch-button');
-			const launchButtonProgress = document.getElementById('launch-button-progress');
-			const launchButtonLabel = document.getElementById('launch-button-label');
-			const dropTarget = document.getElementById('drop-target');
-			const dropTargetStatus = document.getElementById('drop-target-status');
-			const dropTargetFileInput = document.getElementById('drop-target-file-input');
-			function appendOutput(message, bold, textColor, borderColor) {
-				const span = document.createElement("span");
-				span.textContent = message;
-				span.className = "line";
-				if (textColor) {
-					span.style.color = textColor;
-				}
-				if (borderColor) {
-					span.style.borderColor = borderColor;
-				}
-				if (bold) {
-					span.style.fontWeight = "bold";
-				}
-				outputContent.appendChild(span);
-				outputContent.appendChild(document.createElement("br"));
-				outputContent.scrollTop = outputContent.scrollHeight;
-			}
-			function parseAnsiColorRgb(line) {
-				// Only handles RGB format because our logging system only uses that.
-				const match = line.match(/^\x1b\[38;2;(\d+);(\d+);(\d+)m([\s\S]*?)\x1b\[0m$/);
-				if (!match) {
-					return { color: "black", message: line };
-				}
-				const [, r, g, b, message] = match;
-				return { color: `rgb(${r}, ${g}, ${b})`, message: message };
-			}
-			function sanitizeFilename(filename) {
-				return filename.replace(/[\/\\\?\|\*<>:"]/g, "_");
-			}
-			var loadOnLaunch = { file: null, path: null, link: null };
-			var Module = {
-				noInitialRun: true,
-				arguments: [],
-				print: function(text) {
-					const parsedLine = parseAnsiColorRgb(text);
-					console.log(parsedLine.message);
-					appendOutput(parsedLine.message, false, undefined, parsedLine.color);
-				},
-				printErr: function(text) {
-					console.error(text);
-					appendOutput(text, false, "red");
-				},
-				onRuntimeInitialized: function() {
-					const oldTransition = launchButton.style.transition;
-					launchButton.style.transition = "none";
-					launchButton.disabled = false;
-					launchButtonLabel.textContent = "Start Neon Relay client";
-					launchButtonProgress.style.display = "none";
-					launchButton.offsetHeight; // Force reflow to avoid transition
-					launchButton.style.transition = oldTransition;
-					// For testing when compiled with emrun support, allow launching automatically by specifying URL parameter.
-					if (typeof emrun_register_handlers === "function" && document.location.hash === "#__emrun_autostart__") {
-						launchButton.click();
-					}
-				},
-				onExit: function() {
-					FS.syncfs(error => {
-						if (error) {
-							appendOutput(`Failed to synchronize filesystem with IndexedDB: ${error}`, true, "red");
-							return;
-						}
-					});
-					// After client quits, hide the canvas and reset the cursor, as the canvas
-					// will be entirely black, also blocking the view of the console output.
-					Module['canvas'].style.display = "none";
-					// Make sure to reset cursor because it sometimes does not become visible.
-					Module['canvas'].style.cursor = "default";
-					// Also reset cursor of body because the cursor sometimes does not become
-					// visible until being moved.
-					document.body.style.cursor = "default";
-					appendOutput("Client closed. Reload the page to restart.", true);
-					const restartButton = document.createElement("button");
-					restartButton.textContent = "Reload page";
-					restartButton.style.marginTop = "10px";
-					restartButton.addEventListener('click', e => location.reload());
-					outputContent.appendChild(restartButton);
-					outputContent.scrollTop = outputContent.scrollHeight;
-				},
-				totalDependencies: 0,
-				monitorRunDependencies(left) {
-					this.totalDependencies = Math.max(this.totalDependencies, left);
-					const value = this.totalDependencies - left;
-					launchButtonLabel.textContent = this.totalDependencies == 1 ? "Loading…" : `Loading… (${value}/${this.totalDependencies})`;
-					launchButtonProgress.style.width = `${value * 100.0 / this.totalDependencies}%`;
-				},
-				canvas: document.getElementById('canvas')
-			};
-			window.onerror = function(message, url, line, column, error) {
-				appendOutput(message, true, "red");
-				if (error && error.stack) {
-					for (const line of error.stack.split("\n")) {
-						if (line.length > 0) {
-							appendOutput(line, false, "red");
-						}
-					}
-				}
-				// Force stop audio processing because the client does not do so when force quit on
-				// assertion errors and segmentation faults. This would otherwise cause many error
-				// messages to be emitted when audio processing continues after the runtime exited.
-				var SDL2 = Module['SDL2'];
-				if (SDL2.audio !== undefined) {
-					if (SDL2.audio.scriptProcessorNode !== undefined) {
-						SDL2.audio.scriptProcessorNode.disconnect();
-					}
-					if (SDL2.audio.silenceTimer !== undefined) {
-						clearInterval(SDL2.audio.silenceTimer);
-					}
-					SDL2.audio = undefined;
-				}
-				if (SDL2.audioContext !== undefined) {
-					SDL2.audioContext.close();
-					SDL2.audioContext = undefined;
-				}
-				// Force quit the client on errors, because the runtime does not exit otherwise, which
-				// would cause tests using `emrun` to time out and prevent `onExit` from being invoked.
-				if (!ABORT) {
-					Module.ccall('EmscriptenCallbackQuitForce', null, [], []);
-				}
-			};
-			document.addEventListener('keydown', e => {
-				// Always use default browser actions for Ctrl+F5 (refresh), F11 (fullscreen), F12 (developer console).
-				if ((e.ctrlKey && e.key === 'F5') || e.key === 'F11' || e.key == 'F12') {
-					e.stopPropagation();
-				}
-			}, true);
-			Module['canvas'].addEventListener('contextmenu', e => e.preventDefault());
-			Module['canvas'].addEventListener('webglcontextcreationerror', e => {
-				appendOutput(`Failed to create WebGL context: ${e.statusMessage || "Unknown error"}`, true, "red");
-			});
-			Module['canvas'].addEventListener('webglcontextlost', e => {
-				// The client cannot currently recover from GL context loss, because it
-				// would require reloading all textures, framebuffers etc.
-				appendOutput(`The WebGL context was lost: ${e.statusMessage || "Unknown error"}`, true, "red");
-				Module.ccall('EmscriptenCallbackQuit', null, [], []);
-			});
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Neon Relay in the browser: the full client compiled to WebAssembly.">
+<title>Neon Relay Web</title>
+<link rel="icon" type="image/x-icon" href="NeonRelay.ico">
+<style>
+:root {
+  --neon-cyan: #4de3f7;
+  --neon-pink: #ff2e88;
+  --panel: rgba(8, 12, 28, 0.92);
+  --ink: #d8f6ff;
+  --dim: #8fa3c8;
+}
+* { box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: #05070f url('background.png') center center / cover;
+  color: var(--ink);
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+a { color: var(--neon-cyan); }
+#lobby, #console {
+  background: var(--panel);
+  border: 1px solid rgba(77, 227, 247, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 0 28px rgba(77, 227, 247, 0.18);
+  backdrop-filter: blur(2px);
+}
+#lobby {
+  width: min(880px, 94vw);
+  margin: 8vh auto 0;
+  padding: 26px 30px 30px;
+}
+#lobby h1 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 30px;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 0 0 18px rgba(77, 227, 247, 0.65);
+}
+#lobby p { color: var(--dim); line-height: 1.5; }
+#dropzone {
+  max-width: 560px;
+  margin: 18px auto;
+  padding: 6px 18px;
+  border: 2px dashed rgba(77, 227, 247, 0.6);
+  border-radius: 10px;
+  background: rgba(77, 227, 247, 0.06);
+  cursor: pointer;
+  text-align: center;
+}
+#dropzone:hover, #dropzone.armed { background: rgba(77, 227, 247, 0.14); }
+#dropzone-status { font-style: italic; }
+#start {
+  position: relative;
+  display: block;
+  width: 260px;
+  height: 40px;
+  margin: 8px auto 0;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #123;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+#start:disabled { cursor: wait; color: var(--dim); }
+#start:not(:disabled) { background: linear-gradient(90deg, #0e7490, #a21caf); }
+#start:not(:disabled):hover { filter: brightness(1.15); }
+#start-fill {
+  position: absolute;
+  left: 0; top: 0;
+  width: 0%;
+  height: 100%;
+  background: rgba(77, 227, 247, 0.35);
+  transition: width 0.3s linear;
+}
+#start-label { position: relative; }
+#canvas {
+  position: absolute;
+  top: 0; left: 0;
+  display: none;
+  border: 0;
+}
+#console {
+  display: none;
+  width: 92%;
+  height: 92%;
+  margin: 4vh auto 0;
+  padding: 18px 22px;
+  flex-direction: column;
+}
+#console h2 { margin: 0 0 8px; font-size: 18px; color: var(--neon-cyan); }
+#console-body { flex: 1; overflow-y: auto; font: 13px/1.55 monospace; }
+#console-body .entry { display: block; border-left: 4px solid transparent; padding-left: 10px; }
+#console button {
+  align-self: flex-start;
+  margin-top: 12px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: var(--neon-pink);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div id="lobby">
+  <h1>NEON RELAY WEB</h1>
+  <p>This page runs an experimental browser build of the
+  <a href="https://github.com/Leo88q/neon-relay">Neon Relay client</a>.
+  Most public servers stay unreachable from here: a server must be built with
+  WebSocket support to accept browser clients.</p>
+  <div id="dropzone">
+    <p>Drop a <code>.demo</code> replay, a <code>.map</code> file or a
+    <code>neonrelay://</code> link here (or click to pick a file) to open it
+    on launch. Drops also work on the game window itself once running.</p>
+    <p id="dropzone-status">Nothing selected yet</p>
+    <input id="dropzone-picker" type="file" accept=".demo,.map" hidden>
+  </div>
+  <button id="start" disabled>
+    <span id="start-fill"></span>
+    <span id="start-label">Loading…</span>
+  </button>
+  <noscript><p><b>This page needs JavaScript to run the client.</b></p></noscript>
+</div>
+<div id="console">
+  <h2>Console log</h2>
+  <div id="console-body"></div>
+</div>
+<canvas id="canvas">Canvas not supported.</canvas>
+<script>
+'use strict';
+// Persistent client directory inside the Emscripten virtual filesystem.
+// Must stay in sync with the storage path used by the native client code.
+const HOME_DIR = '/home/web_user/.local/share/neonrelay';
 
-			// Launch button
-			launchButton.addEventListener('click', async e => {
-				document.getElementById('controls').style.display = "none";
-				output.style.display = "flex";
-				appendOutput("Synchronizing filesystem with IndexedDB…")
-				FS.mkdirTree(homePath);
-				FS.mount(IDBFS, {}, homePath);
-				FS.syncfs(true, async error => {
-					if (error) {
-						appendOutput(`Failed to synchronize filesystem with IndexedDB: ${error}`, true, "red");
-						return;
-					}
-					Module['canvas'].style.display = "block";
-					var arguments = Module.arguments;
-					if (loadOnLaunch.file != null) {
-						const buffer = await loadOnLaunch.file.arrayBuffer();
-						const data = new Uint8Array(buffer);
-						FS.mkdirTree(`${loadOnLaunch.path}/upload`);
-						const filePath = `${loadOnLaunch.path}/upload/${sanitizeFilename(loadOnLaunch.file.name)}`;
-						FS.writeFile(filePath, data);
-						arguments.push(filePath);
-					} else if (loadOnLaunch.link != null) {
-						arguments.push(loadOnLaunch.link);
-					}
-					Module.callMain(arguments);
-				});
-			});
+const lobby = document.getElementById('lobby');
+const consoleBox = document.getElementById('console');
+const consoleBody = document.getElementById('console-body');
+const startButton = document.getElementById('start');
+const startFill = document.getElementById('start-fill');
+const startLabel = document.getElementById('start-label');
+const dropzone = document.getElementById('dropzone');
+const dropzoneStatus = document.getElementById('dropzone-status');
+const dropzonePicker = document.getElementById('dropzone-picker');
 
-			// Handlers for pre-launch drop target
-			function getDropFilePath(file) {
-				if (file.name.endsWith(".demo")) {
-					return `${homePath}/demos`;
-				} else if (file.name.endsWith(".map")) {
-					return `${homePath}/maps`;
-				} else {
-					return null;
-				}
-			}
-			function getDroppedItemFromDataTransfer(dataTransfer) {
-				var result = { file: null, path: null, link: null};
-				if (!dataTransfer.items) {
-					return result;
-				}
-				for (const item of dataTransfer.items) {
-					if (item.kind == 'file') {
-						const file = item.getAsFile();
-						const path = getDropFilePath(file);
-						if (path == null) {
-							continue;
-						}
-						if (result.link != null) {
-							alert("You cannot drop files and links at the same time.");
-							break;
-						}
-						if (result.file != null) {
-							alert("You cannot open multiple files at the same time. Only the first file will be opened.");
-							break;
-						}
-						result.file = file;
-						result.path = path;
-					} else if (item.kind == 'string') {
-						const string = dataTransfer.getData(item.type);
-						if (string.startsWith('neonrelay://') || string.startsWith('ddnet://')) {
-							if (result.file != null) {
-								alert("You cannot drop files and links at the same time.");
-								break;
-							}
-							if (result.link != null && result.link != string) {
-								alert("You cannot connect to multiple URLs at the same time. You will be connected to the first URL.");
-								break;
-							}
-							result.link = string;
-						}
-					}
-				}
-				return result;
-			}
-			document.addEventListener('dragover', e => {
-				if (e.target != dropTarget && e.target != Module['canvas']) {
-					// Prevent items from being dropped outside of the designated drop target and canvas.
-					e.preventDefault();
-					e.dataTransfer.dropEffect = "none";
-				}
-			}, true);
-			document.addEventListener('drop', e => {
-				if (e.target != dropTarget && e.target != Module['canvas']) {
-					e.preventDefault();
-				}
-			}, true);
-			dropTarget.addEventListener('dragover', e => {
-				e.preventDefault();
-				e.dataTransfer.dropEffect = "none";
-				if (!e.dataTransfer.items) {
-					return;
-				}
-				for (const item of e.dataTransfer.items) {
-					if (item.kind == 'file' || item.kind == 'string') {
-						e.dataTransfer.dropEffect = "copy";
-						dropTarget.setAttribute("drop-active", true);
-						return;
-					}
-				}
-			});
-			dropTarget.addEventListener('dragleave', e => {
-				dropTarget.removeAttribute("drop-active");
-			});
-			dropTarget.addEventListener('drop', async e => {
-				e.preventDefault();
-				const droppedItem = getDroppedItemFromDataTransfer(e.dataTransfer);
-				if (droppedItem.file != null) {
-					loadOnLaunch.file = droppedItem.file;
-					loadOnLaunch.path = droppedItem.path;
-					loadOnLaunch.link = null;
-					dropTargetStatus.textContent = `Selected file: ${droppedItem.file.name}`;
-				} else if (droppedItem.link != null) {
-					loadOnLaunch.file = null;
-					loadOnLaunch.path = null;
-					loadOnLaunch.link = droppedItem.link;
-					dropTargetStatus.textContent = `Selected link: ${droppedItem.link}`;
-				} else {
-					alert("The items you dropped are not supported. You can drop .demo and .map files, as well as neonrelay:// links.");
-				}
-				dropTarget.removeAttribute("drop-active");
-			});
+// File or link the user queued before launch.
+const pending = { file: null, folder: null, link: null };
 
-			// Event handlers for pre-launch drop target file input
-			dropTarget.addEventListener('click', e => {
-				dropTargetFileInput.click();
-			})
-			dropTargetFileInput.addEventListener('change', e => {
-				if (e.target.files.length == 0) {
-					return;
-				}
-				const path = getDropFilePath(e.target.files[0]);
-				if (path == null) {
-					alert("The file you selected is not supported. You can select .demo and .map files.");
-					return;
-				}
-				loadOnLaunch.file = e.target.files[0];
-				loadOnLaunch.path = path;
-				loadOnLaunch.link = null;
-				dropTargetStatus.textContent = `Selected file: ${loadOnLaunch.file.name}`;
-			});
+function logLine(text, opts) {
+  opts = opts || {};
+  const row = document.createElement('span');
+  row.className = 'entry';
+  row.textContent = text;
+  if(opts.color) {
+    row.style.color = opts.color;
+  }
+  if(opts.marker) {
+    row.style.borderColor = opts.marker;
+  }
+  if(opts.bold) {
+    row.style.fontWeight = 'bold';
+  }
+  consoleBody.appendChild(row);
+  consoleBody.scrollTop = consoleBody.scrollHeight;
+}
 
-			// Event handlers for canvas drop target
-			Module['canvas'].addEventListener('dragover', e => {
-				e.preventDefault();
-				e.dataTransfer.dropEffect = "none";
-				if (!e.dataTransfer.items) {
-					return;
-				}
-				for (const item of e.dataTransfer.items) {
-					if (item.kind == 'file' || item.kind == 'string') {
-						e.dataTransfer.dropEffect = "copy";
-						return;
-					}
-				}
-			});
-			Module['canvas'].addEventListener('drop', async e => {
-				e.preventDefault();
-				const droppedItem = getDroppedItemFromDataTransfer(e.dataTransfer);
-				if (droppedItem.file != null) {
-					const buffer = await droppedItem.file.arrayBuffer();
-					const data = new Uint8Array(buffer);
-					FS.mkdirTree(`${droppedItem.path}/upload`);
-					const filePath = `${droppedItem.path}/upload/${sanitizeFilename(droppedItem.file.name)}`;
-					FS.writeFile(filePath, data);
-					Module.ccall('EmscriptenCallbackDropFile', null, ['string'], [filePath]);
-				} else if (droppedItem.link != null) {
-					Module.ccall('EmscriptenCallbackDropFile', null, ['string'], [droppedItem.link]);
-				} else {
-					alert("The items you dropped are not supported. You can drop .demo and .map files, as well as neonrelay:// links.");
-				}
-			});
-		</script>
-		<script async src="neonrelay.js"></script>
-	</body>
-</html> 
+// The engine logs with 24-bit ANSI colors; map them onto the log panel.
+function splitAnsi(line) {
+  const found = line.match(/^\x1b\[38;2;(\d+);(\d+);(\d+)m([\s\S]*?)\x1b\[0m$/);
+  if(!found) {
+    return { text: line, color: null };
+  }
+  return { text: found[4], color: `rgb(${found[1]}, ${found[2]}, ${found[3]})` };
+}
+
+function safeName(name) {
+  return name.replace(/[\\/\\?|*<>":]/g, '_');
+}
+
+var Module = {
+  noInitialRun: true,
+  arguments: [],
+  print(text) {
+    const parsed = splitAnsi(text);
+    console.log(parsed.text);
+    logLine(parsed.text, { marker: parsed.color || 'transparent' });
+  },
+  printErr(text) {
+    console.error(text);
+    logLine(text, { color: '#ff8080' });
+  },
+  onRuntimeInitialized() {
+    // Swap the progress bar for a live button without animating the swap.
+    const transition = startButton.style.transition;
+    startButton.style.transition = 'none';
+    startButton.disabled = false;
+    startLabel.textContent = 'Start Neon Relay client';
+    startFill.style.display = 'none';
+    startButton.offsetHeight; // force reflow while transitions are off
+    startButton.style.transition = transition;
+    // Allows emrun-driven tests to boot straight into the client.
+    if(typeof emrun_register_handlers === 'function' &&
+        document.location.hash === '#__emrun_autostart__') {
+      startButton.click();
+    }
+  },
+  onExit() {
+    FS.syncfs(writeError => {
+      if(writeError) {
+        logLine(`Could not save the filesystem to IndexedDB: ${writeError}`,
+          { bold: true, color: '#ff8080' });
+      }
+    });
+    // The canvas keeps a dead black frame after quit, hiding the log, so put
+    // it away and make sure the cursor comes back on every layer.
+    Module['canvas'].style.display = 'none';
+    Module['canvas'].style.cursor = 'default';
+    document.body.style.cursor = 'default';
+    logLine('Client closed. Reload the page to run it again.', { bold: true });
+    const reload = document.createElement('button');
+    reload.textContent = 'Reload page';
+    reload.addEventListener('click', () => location.reload());
+    consoleBody.appendChild(reload);
+    consoleBody.scrollTop = consoleBody.scrollHeight;
+  },
+  totalDependencies: 0,
+  monitorRunDependencies(left) {
+    this.totalDependencies = Math.max(this.totalDependencies, left);
+    const done = this.totalDependencies - left;
+    startLabel.textContent = this.totalDependencies <= 1
+      ? 'Loading…'
+      : `Loading… (${done}/${this.totalDependencies})`;
+    startFill.style.width = `${done * 100.0 / this.totalDependencies}%`;
+  },
+  canvas: document.getElementById('canvas')
+};
+
+function teardownAudio() {
+  // On crashes the client never stops its own audio graph, which would keep
+  // throwing once the runtime is gone, so cut it here.
+  const sdl = Module['SDL2'];
+  if(sdl.audio !== undefined) {
+    if(sdl.audio.scriptProcessorNode !== undefined) {
+      sdl.audio.scriptProcessorNode.disconnect();
+    }
+    if(sdl.audio.silenceTimer !== undefined) {
+      clearInterval(sdl.audio.silenceTimer);
+    }
+    sdl.audio = undefined;
+  }
+  if(sdl.audioContext !== undefined) {
+    sdl.audioContext.close();
+    sdl.audioContext = undefined;
+  }
+}
+
+window.onerror = function(message, url, line, column, error) {
+  logLine(message, { bold: true, color: '#ff8080' });
+  if(error && error.stack) {
+    for(const frame of error.stack.split('\n')) {
+      if(frame.length > 0) {
+        logLine(frame, { color: '#ff8080' });
+      }
+    }
+  }
+  teardownAudio();
+  // Errors do not stop the runtime by themselves; without a forced quit the
+  // onExit hook never runs and emrun tests hang until they time out.
+  if(!ABORT) {
+    Module.ccall('EmscriptenCallbackQuitForce', null, [], []);
+  }
+};
+
+// Let the browser keep its own bindings for refresh, fullscreen and devtools.
+document.addEventListener('keydown', event => {
+  const wantsBrowser = (event.ctrlKey && event.key === 'F5') ||
+    event.key === 'F11' || event.key === 'F12';
+  if(wantsBrowser) {
+    event.stopPropagation();
+  }
+}, true);
+
+Module['canvas'].addEventListener('contextmenu', event => event.preventDefault());
+Module['canvas'].addEventListener('webglcontextcreationerror', event => {
+  logLine(`WebGL context creation failed: ${event.statusMessage || 'unknown error'}`,
+    { bold: true, color: '#ff8080' });
+});
+Module['canvas'].addEventListener('webglcontextlost', event => {
+  // Recovery would mean re-uploading every texture and framebuffer, which the
+  // client cannot do, so report and quit instead.
+  logLine(`WebGL context lost: ${event.statusMessage || 'unknown error'}`,
+    { bold: true, color: '#ff8080' });
+  Module.ccall('EmscriptenCallbackQuit', null, [], []);
+});
+
+function folderFor(file) {
+  if(file.name.endsWith('.demo')) {
+    return `${HOME_DIR}/demos`;
+  }
+  if(file.name.endsWith('.map')) {
+    return `${HOME_DIR}/maps`;
+  }
+  return null;
+}
+
+// Exactly one file or one connect link is usable; anything else is rejected
+// with an explanation instead of guessing.
+function pickDrop(dataTransfer) {
+  const picked = { file: null, folder: null, link: null };
+  if(!dataTransfer.items) {
+    return picked;
+  }
+  for(const item of dataTransfer.items) {
+    if(item.kind === 'file') {
+      const file = item.getAsFile();
+      const folder = folderFor(file);
+      if(folder === null) {
+        continue;
+      }
+      if(picked.link !== null) {
+        alert('Drop either files or a link, not both at once.');
+        break;
+      }
+      if(picked.file !== null) {
+        alert('Only one file can be opened at a time; keeping the first one.');
+        break;
+      }
+      picked.file = file;
+      picked.folder = folder;
+    } else if(item.kind === 'string') {
+      const text = dataTransfer.getData(item.type);
+      if(text.startsWith('neonrelay://') || text.startsWith('ddnet://')) {
+        if(picked.file !== null) {
+          alert('Drop either files or a link, not both at once.');
+          break;
+        }
+        if(picked.link !== null && picked.link !== text) {
+          alert('Only one link can be opened at a time; keeping the first one.');
+          break;
+        }
+        picked.link = text;
+      }
+    }
+  }
+  return picked;
+}
+
+function showCopyCursor(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'none';
+  if(!event.dataTransfer.items) {
+    return false;
+  }
+  for(const item of event.dataTransfer.items) {
+    if(item.kind === 'file' || item.kind === 'string') {
+      event.dataTransfer.dropEffect = 'copy';
+      return true;
+    }
+  }
+  return false;
+}
+
+// Drops anywhere else on the page would navigate away, so refuse them.
+document.addEventListener('dragover', event => {
+  if(event.target !== dropzone && event.target !== Module['canvas']) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'none';
+  }
+}, true);
+document.addEventListener('drop', event => {
+  if(event.target !== dropzone && event.target !== Module['canvas']) {
+    event.preventDefault();
+  }
+}, true);
+
+dropzone.addEventListener('dragover', event => {
+  if(showCopyCursor(event)) {
+    dropzone.classList.add('armed');
+  }
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('armed'));
+dropzone.addEventListener('drop', event => {
+  event.preventDefault();
+  dropzone.classList.remove('armed');
+  const picked = pickDrop(event.dataTransfer);
+  if(picked.file !== null) {
+    pending.file = picked.file;
+    pending.folder = picked.folder;
+    pending.link = null;
+    dropzoneStatus.textContent = `Selected file: ${picked.file.name}`;
+  } else if(picked.link !== null) {
+    pending.file = null;
+    pending.folder = null;
+    pending.link = picked.link;
+    dropzoneStatus.textContent = `Selected link: ${picked.link}`;
+  } else {
+    alert('Unsupported drop. Use .demo and .map files or neonrelay:// links.');
+  }
+});
+dropzone.addEventListener('click', () => dropzonePicker.click());
+dropzonePicker.addEventListener('change', event => {
+  if(event.target.files.length === 0) {
+    return;
+  }
+  const folder = folderFor(event.target.files[0]);
+  if(folder === null) {
+    alert('Unsupported file. Pick a .demo or .map file.');
+    return;
+  }
+  pending.file = event.target.files[0];
+  pending.folder = folder;
+  pending.link = null;
+  dropzoneStatus.textContent = `Selected file: ${pending.file.name}`;
+});
+
+Module['canvas'].addEventListener('dragover', showCopyCursor);
+Module['canvas'].addEventListener('drop', async event => {
+  event.preventDefault();
+  const picked = pickDrop(event.dataTransfer);
+  if(picked.file !== null) {
+    const bytes = new Uint8Array(await picked.file.arrayBuffer());
+    const target = `${picked.folder}/upload`;
+    FS.mkdirTree(target);
+    const path = `${target}/${safeName(picked.file.name)}`;
+    FS.writeFile(path, bytes);
+    Module.ccall('EmscriptenCallbackDropFile', null, ['string'], [path]);
+  } else if(picked.link !== null) {
+    Module.ccall('EmscriptenCallbackDropFile', null, ['string'], [picked.link]);
+  } else {
+    alert('Unsupported drop. Use .demo and .map files or neonrelay:// links.');
+  }
+});
+
+startButton.addEventListener('click', () => {
+  lobby.style.display = 'none';
+  consoleBox.style.display = 'flex';
+  logLine('Loading the saved filesystem from IndexedDB…');
+  FS.mkdirTree(HOME_DIR);
+  FS.mount(IDBFS, {}, HOME_DIR);
+  FS.syncfs(true, async readError => {
+    if(readError) {
+      logLine(`Could not load the filesystem from IndexedDB: ${readError}`,
+        { bold: true, color: '#ff8080' });
+      return;
+    }
+    Module['canvas'].style.display = 'block';
+    const args = Module.arguments;
+    if(pending.file !== null) {
+      const bytes = new Uint8Array(await pending.file.arrayBuffer());
+      const target = `${pending.folder}/upload`;
+      FS.mkdirTree(target);
+      const path = `${target}/${safeName(pending.file.name)}`;
+      FS.writeFile(path, bytes);
+      args.push(path);
+    } else if(pending.link !== null) {
+      args.push(pending.link);
+    }
+    Module.callMain(args);
+  });
+});
+</script>
+<script async src="neonrelay.js"></script>
+</body>
+</html>

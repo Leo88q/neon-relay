@@ -1212,7 +1212,6 @@ set(EXPECTED_DATA
   arrow.png
   assets/entities/comfort/ddnet.png
   assets/entities/license.txt
-  assets/game/game_06.png
   audio/foley_body_impact-01.wav
   audio/foley_body_impact-02.wav
   audio/foley_body_impact-03.wav
@@ -1754,25 +1753,12 @@ set(EXPECTED_DATA
   skins/potato_legend_girl.png
   skins/potato_legend_guy.png
   strong_weak.png
-  themes/autumn.png
-  themes/autumn_day.map
-  themes/autumn_night.map
-  themes/heavens.png
-  themes/heavens_day.map
-  themes/heavens_night.map
-  themes/jungle.png
-  themes/jungle_day.map
-  themes/jungle_night.map
-  themes/newyear.map
-  themes/newyear.png
+  themes/auto.png
   themes/nightdrive.png
   themes/nightdrive_day.map
   themes/nightdrive_night.map
   themes/none.png
   themes/rand.png
-  themes/winter.png
-  themes/winter_day.map
-  themes/winter_night.map
   touch_controls.json
   wordlist.txt
   # tidy-alphabetical-end

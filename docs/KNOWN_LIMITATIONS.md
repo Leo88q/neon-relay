@@ -59,19 +59,20 @@ template was planned with the stage-10 CI rework, but that CI has no Android job
 blocks any execution anyway), so the removal awaits a verified Android build pipeline that
 no longer needs the template.
 
-### BL-05 — 250 vendored assets are `block-release`
-Upstream applies CC-BY-SA 3.0 to `data/audio/*.wv`, `data/shader/*`, `data/themes/*`,
-unreplaced `data/mapres/*` (54 sheets), unreplaced historical `data/maps*`, the
-DDNet `data/fonts/index.json`, `data/wordlist.txt`, `data/censorlist.txt`,
-`data/announcement.txt`, `data/autoexec_server.cfg`, `data/touch_controls.json`,
-`data/debug_font.png`, `data/gui_buttons.png` and `other/emscripten/*` **without
-naming authors**, so the attribution required by CC-BY-SA 3.0 §4(b) cannot be
+### BL-05 — 48 vendored assets are `block-release`
+The original-art pass cut the gated set from 250 to 48: 173 files deleted,
+the rest repainted or regenerated as originals (full account in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7). What remains is
+unattributed CC-BY-SA 3.0 content — `data/shader/*` (32 files),
+`data/maps/ctf*.map`, `data/maps/dm*.map`, `data/maps/coverage.map` (14 maps
+with no author named anywhere in the tree) and the `warm-workshops` prototype
+(2 files) — so the attribution required by CC-BY-SA 3.0 §4(b) cannot be
 produced from the tree. They are vendored for development and gated by
 `./scripts/check_assets.sh --release`, which fails until the rights review in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7 chooses: obtain authors,
 replace the assets, or ship a good-faith attribution page plus the full license
-text. The previous number (698) reflected a manifest that did not enumerate the
-`.wv` audio mirrors; those are now correctly counted (131 of the 250).
+text. (The audit also corrected 14 classic maps that the manifest had
+mislabeled as BL-14 originals; they were never part of the 250.)
 
 ### BL-08 — upstream developer docs kept as reference
 `docs/BUILDING*.md`, `docs/DEBUGGING.md`, `docs/CONTRIBUTING.md`, `docs/DATABASE.md` and
@@ -175,8 +176,9 @@ was redrawn with unique procedural silhouettes and per-name hue shifts; the 0.7 
 tree (17 body silhouettes + 5 eye sets + 50 marking compositions + 7 decorations +
 hands/feet mitts + bot chassis + xmas hat + 49 descriptors) was rebuilt as well.
 `docs/ASSET_MANIFEST.csv` lists all 235 skin pixels as `ship` (Zlib), and BL-05
-no longer mentions skins. Theme `.map` files remain the only art-side blocker on
-this branch — see §7 in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+no longer mentions skins. The theme `.map` files are deleted; the remaining
+art-side blockers are the shader tree and the 14 unattributed classic maps —
+see §7 in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ### BL-13 — features program has no gameplay producer yet; badge metadata is off-chain
 The stage-11 `neonrelay-features` program (achievements, badges, leaderboards, tournaments)

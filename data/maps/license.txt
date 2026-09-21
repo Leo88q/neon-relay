@@ -25,7 +25,7 @@ Neon Relay visual adaptation: code-built LED surfaces, peaks and wave animation 
 CC-BY-SA 3.0; https://creativecommons.org/licenses/by-sa/3.0/
 Source: https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/data/maps/LearnToPlay.map
 This is a modified version, not an original map by Neon Relay.
-Distribution approval remains pending the embedded-asset attribution review.
+Embedded-asset attribution review complete (original-art pass): the 32 retained tutorial images stay under this same CC-BY-SA 3.0 grant; the only external reference (snow.png) resolves to an original Neon Relay replacement.
 
 LearnToPlay Sound Heights:
 Derived from LearnToPlay by Tridemy & Cøke; same visual adaptation as LearnToPlay Sound.
@@ -33,7 +33,7 @@ Additional gameplay modification: 12 solid tiles forming a pre-start terrace at 
 Tutorial instructions and author attribution retained. Source map not modified.
 CC-BY-SA 3.0; https://creativecommons.org/licenses/by-sa/3.0/
 Source: https://github.com/ddnet/ddnet/blob/a853d333ac9e61ebfa2899b4641f8b0658ba60d5/data/maps/LearnToPlay.map
-Distribution approval remains pending the embedded-asset attribution review.
+Embedded-asset attribution review complete (original-art pass): the 32 retained tutorial images stay under this same CC-BY-SA 3.0 grant; the only external reference (snow.png) resolves to an original Neon Relay replacement.
 
 Neon Relay Warmup:
 Copyright (c) 2026 The Neon Relay Authors.
@@ -41,3 +41,10 @@ Zlib license (see the project's Zlib license text).
 Original authored geometry: scripts/build_warmup.py; no third-party source map used.
 Embedded original Neon Relay artwork: neonrelay_learn terrain, symbols, atmosphere and oil.
 Artwork generators: scripts/learn_visibility.py and scripts/learn_oil.py.
+
+ctf1, ctf2, ctf3, ctf4, ctf5, ctf6, ctf7, dm1, dm2, dm6, dm7, dm8, dm9, coverage:
+Classic gameplay maps and the coverage test fixture. No author is named
+anywhere in this tree (empty map info blocks, no per-map notice, not generator
+outputs). CC-BY-SA 3.0 applies via the data/ default rule, but the section
+4(b) attribution cannot be produced, so these files are block-release
+(see docs/THIRD_PARTY_NOTICES.md section 7 and docs/MAPS.md).

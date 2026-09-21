@@ -37,23 +37,25 @@ DIM = (96, 116, 148)
 SUN_TOP = (255, 95, 109)
 SUN_BOTTOM = (255, 176, 32)
 
+# NOTE: only sheets that still ship are listed. Unreferenced upstream sheets
+# (ddnet_*, freeze, _0.7 variants, spare backgrounds, water, round/mixed
+# tiles, legacy entities/font sheets) were deleted from data/mapres during
+# the original-art pass; see docs/THIRD_PARTY_NOTICES.md.
 TILE_FILES = [
-	"desert_main.png", "ddnet_tiles.png", "round_tiles.png", "snow.png",
+	"desert_main.png", "snow.png",
 	"jungle_unhookables.png", "generic_unhookable.png",
 ]
 BG_FILES = [
 	"bg_cloud1.png", "bg_cloud2.png", "bg_cloud3.png", "desert_doodads.png",
 	"jungle_midground.png", "grass_doodads.png", "stars.png",
 ]
-FREEZE_FILES = ["basic_freeze.png"]
+FREEZE_FILES = []
 EXTRA_BG_FILES = [
-	"desert_background.png", "desert_mountains.png", "desert_mountains2.png",
-	"desert_mountains_new_background.png", "desert_mountains_new_foreground.png",
-	"mountains.png", "jungle_background.png", "snow_mountain.png",
+	"desert_mountains.png", "desert_mountains2.png",
+	"mountains.png", "jungle_background.png",
 	"winter_mountains.png", "winter_mountains2.png", "winter_mountains3.png",
-	"water.png",
 ]
-SUN_FILES = ["sun.png", "desert_sun.png"]
+SUN_FILES = ["sun.png"]
 MOON_FILES = ["moon.png"]
 SUN_FILES = []  # no shipped mapres sun discs; embedded ones wait for BL-14
 
@@ -128,6 +130,9 @@ def remap_freeze_pixel(r, g, b):
 
 def process(name, kind):
 	path = MAPRES / name
+	if not path.exists():
+		print(f"  skip {name}: not shipped anymore")
+		return
 	img = Image.open(path).convert("RGBA")
 	w, h = img.size
 	px = img.load()
@@ -187,6 +192,12 @@ def process(name, kind):
 
 
 def main():
+	print("stage 19 mapres pass is RETIRED: data/mapres now ships original")
+	print("Neon Relay artwork (see scripts/build_neon_backgrounds.py,")
+	print("scripts/build_neon_tilesets.py, scripts/build_neon_font_buttons.py).")
+	print("Refusing to remap the originals in place. Nothing was modified.")
+	return 2
+	# Historical stage-19 body, kept for the record (unreachable):
 	for n in TILE_FILES:
 		process(n, "tile")
 	for n in BG_FILES:

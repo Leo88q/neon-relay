@@ -89,12 +89,16 @@ enforced by `scripts/check_assets.sh --release`.
    `docs/REBRANDING.md` §"Binary artwork".
 2. **`other/icons/`** — author named (Ravie) but **no license grant** in the file. Not safe
    to redistribute commercially. Replaced.
-3. **CC-BY-SA 3.0 content with no named author** (`data/audio/`, `data/countryflags/`,
-   `data/mapres/`, `data/themes/`, `data/editor/`, `data/shader/`, `data/menuimages/`).
+3. **CC-BY-SA 3.0 content with no named author** (`data/shader/`;
+   `data/maps/ctf*.map`, `data/maps/dm*.map`, `data/maps/coverage.map`;
+   `assets-src/maps/warm-workshops/`).
    CC-BY-SA 3.0 §4(b) requires attribution of the original author and a copy of the license;
    upstream does not name these authors. Either (a) obtain the author list from upstream
    contributors, (b) replace the assets, or (c) ship with a good-faith attribution page +
-   the full CC-BY-SA 3.0 text. Gated until decided.
+   the full CC-BY-SA 3.0 text. Gated until decided. (The original-art pass cleared the
+   rest of this item's former scope — `data/audio/*.wv`, `data/mapres/`, `data/themes/`,
+   the config/wordlist/font-index files and the emscripten shell — by deletion or by
+   original replacement; `data/editor/` is gone with the editor itself.)
 4. **CC-BY / CC-BY-SA skins and maps** — usable commercially *if* attribution and license
    text ship with the product and derivatives stay CC-BY-SA. Note the share-alike clause
    applies to the assets, not to the program; do not remix them into proprietary artwork.
