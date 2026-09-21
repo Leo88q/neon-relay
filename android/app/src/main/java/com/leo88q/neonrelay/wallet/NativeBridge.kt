@@ -33,9 +33,9 @@ object NativeBridge {
     }
 
     /**
-     * Economy flows (SKR entry payments / prize claims, docs/PLAY_ECONOMY.md).
-     * The MWA transaction builder lands in stage 17 (BL-17); until then the
-     * request is logged and surfaced as a user-safe wallet error event.
+     * Economy flows (SKR entry payments / prize claims, docs/PLAY_ECONOMY.md
+     * stage 17): runEconomy builds the transaction fully on-device and sends
+     * it via signAndSendTransactions; the result arrives as EVENT_ECONOMY.
      */
     @JvmStatic
     fun requestEconomy(json: String) {
@@ -45,11 +45,12 @@ object NativeBridge {
     }
 
     /**
-     * Rewards claim flow (DEVNET_RUNBOOK §7): the game passes the
-     * chain-relevant claim-intent fields (program id, epoch, amount, leaf
-     * index, proof) as JSON — never the backend session token. The result
-     * arrives as EVENT_REWARDS_CLAIM carrying the public transaction
-     * signature for claim-confirmation.
+     * Rewards claim flow (DEVNET_RUNBOOK §7): the game passes operator
+     * configuration only (rewards program id, RPC URL, backend URL) as JSON.
+     * runRewardsClaim owns auth + sealed-epoch discovery + intent + send +
+     * the single claim-confirmation internally, so no session token crosses
+     * JNI. The result arrives as EVENT_REWARDS_CLAIM carrying the public
+     * transaction signature.
      */
     @JvmStatic
     fun requestRewardsClaim(json: String) {

@@ -184,8 +184,10 @@ binding+epoch.
 Body `{ "intent_id", "transaction_id", "status": "submitted|confirmed|failed" }`.
 `409 intent-already-confirmed` on repeat confirmation. The mobile client sends
 the transaction via MWA (`RewardsTxBuilder` pre-verifies the proof against the
-on-chain epoch root first) and receives the base58 `transaction_id` back
-through the `NEONRELAY_WALLET_EVENT_REWARDS_CLAIM` bridge event.
+on-chain epoch root first), polls `getSignatureStatuses` (≤30s), and posts
+exactly one confirmation with the observed outcome (`submitted` when finality
+times out). The base58 `transaction_id` also comes back through the
+`NEONRELAY_WALLET_EVENT_REWARDS_CLAIM` bridge event.
 
 ### GET /v1/rewards/intents  (bearer)
 All intents of the session's wallet binding. Optional `?limit=&offset=`

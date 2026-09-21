@@ -169,6 +169,12 @@ void neonrelay_wallet_request_economy(const char *json)
 
 void neonrelay_wallet_request_rewards_claim(const char *json)
 {
+	{
+		std::lock_guard<std::mutex> lock(s_mutex);
+		s_info.requesting = 1;
+		s_info.error_message[0] = '\0';
+		s_info.transaction_signature[0] = '\0';
+	}
 	neonrelay_wallet_platform_rewards_claim(json ? json : "{}");
 }
 

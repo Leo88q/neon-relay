@@ -115,8 +115,10 @@ with RFC 8032 on-curve test, ATA derivation, Anchor Borsh payloads, legacy
 message compilation) plus the match-intent channel and public proof route.
 The rewards `claim` builder followed the same pattern (RewardsTxBuilder.kt:
 rewards PDAs with big-endian epoch seeds, config/epoch parsing, client-side
-proof pre-verification, 9-account claim message; `runRewardsClaim` sends via
-`signAndSendTransactions` and returns the signature for claim-confirmation).
+proof pre-verification, 9-account claim message; `runRewardsClaim` owns the
+backend session, sealed-epoch discovery, intent fetch, send, finality poll and
+the single claim-confirmation internally, fired by the in-game Wallet screen
+Claim button through `neonrelay_wallet_request_rewards_claim`).
 Its contract is pinned offline against the program source
 (`onchain/test/rewards_claim.test.ts`, `backend/test/rewards_pda.test.ts`),
 and the `signAndSendTransactions` call shape was corrected to the pinned

@@ -97,6 +97,43 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 	Paragraph(Localize("The wallet is optional — you can play Neon Relay without connecting one."));
 	Paragraph(Localize("Neon Relay never asks for your seed phrase or private key, and the game never sees them."));
 	MainView.HSplitTop(12.0f, nullptr, &MainView);
+	Paragraph("Reward claims", 22.0f);
+	// Configuration alone must never enable a money-moving action: a claim
+	// needs a connected wallet, full service configuration, and an explicit tap.
+	const bool ClaimConfigured = g_Config.m_ClNeonrelayBackendUrl[0] && g_Config.m_ClNeonrelayRpcUrl[0] &&
+		g_Config.m_ClNeonrelayRewardsProgram[0];
+	if(!pInfo->connected)
+		Paragraph(Localize("Connect a wallet to claim sealed epoch rewards."));
+	else if(!ClaimConfigured)
+		Paragraph(Localize("Reward claims are not configured (backend URL, RPC URL, rewards program)."));
+	else if(pInfo->requesting)
+		Paragraph(Localize("Claim in progress — waiting for the wallet app…"));
+	else
+	{
+		if(pInfo->transaction_signature[0])
+		{
+			char aClaim[192];
+			str_format(aClaim, sizeof(aClaim), Localize("Last claim: %.16s…"), pInfo->transaction_signature);
+			Paragraph(aClaim);
+		}
+		MainView.HSplitTop(44.0f, &Line, &MainView);
+		s_WalletScroll.AddRect(Line);
+		static CButtonContainer s_Claim;
+		if(DoButton_Menu(&s_Claim, Localize("Claim rewards"), 0, &Line))
+		{
+			// Operator configuration only — authentication and the claim
+			// intent stay inside the wallet layer, so no session token
+			// crosses this call (src/neonrelay/wallet_bridge.h). The config
+			// strings are operator-provided; a hostile quote breaks JSON
+			// parsing in Kotlin, which fails safe with a user-facing error.
+			char aJson[512];
+			str_format(aJson, sizeof(aJson), "{\"programId\": \"%s\", \"rpcUrl\": \"%s\", \"backendUrl\": \"%s\"}",
+				g_Config.m_ClNeonrelayRewardsProgram, g_Config.m_ClNeonrelayRpcUrl, g_Config.m_ClNeonrelayBackendUrl);
+			neonrelay_wallet_request_rewards_claim(aJson);
+		}
+		Paragraph(Localize("Claims send a Solana transaction from your wallet; network fees apply. Rewards are never guaranteed."));
+	}
+	MainView.HSplitTop(12.0f, nullptr, &MainView);
 	Paragraph("SKR / POTATO", 22.0f);
 	Paragraph(Localize("Payments, prize claims and NFT purchases are unavailable in this build."));
 	// Configuration alone must never enable a money-moving action.

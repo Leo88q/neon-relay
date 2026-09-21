@@ -224,6 +224,7 @@ MACRO_CONFIG_STR(ClNeonrelayBackendUrl, cl_neonrelay_backend_url, 128, "", CFGFL
 MACRO_CONFIG_STR(ClNeonrelayRpcUrl, cl_neonrelay_rpc_url, 128, "https://api.devnet.solana.com", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Solana RPC endpoint used by on-device economy transaction building (devnet default)")
 MACRO_CONFIG_STR(ClNeonrelayEconomyProgram, cl_neonrelay_economy_program, 64, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "neonrelay-economy program id (base58); operator configuration, never hardcoded in the build")
 MACRO_CONFIG_STR(ClNeonrelaySkrMint, cl_neonrelay_skr_mint, 64, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "SKR payment mint (base58) for display/validation; operator configuration (docs/PLAY_ECONOMY.md)")
+MACRO_CONFIG_STR(ClNeonrelayRewardsProgram, cl_neonrelay_rewards_program, 64, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "neonrelay-rewards program id (base58) for in-game reward claims; operator configuration, never hardcoded in the build")
 
 MACRO_CONFIG_INT(UiColorizePing, ui_colorize_ping, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight ping")
 MACRO_CONFIG_INT(UiColorizeGametype, ui_colorize_gametype, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight gametype")

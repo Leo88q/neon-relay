@@ -139,22 +139,32 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 ## 7. Player claim ⛓️
 
 1. Player: Settings → Wallet → Connect (MWA on Solana Mobile), then
-   `POST /v1/wallet/link` (`docs/WALLET_AUTH.md`).
-2. `POST /v1/rewards/claim-intent {epoch_id}` →
-   `{amount_micro, leaf_hash, leaf_index, merkle_proof}`.
+   `POST /v1/wallet/link` (`docs/WALLET_AUTH.md`), then tap **Claim
+   rewards** (needs the backend URL, RPC URL and rewards program id
+   configured; config alone never moves money).
+2. The wallet layer owns the whole flow (`WalletManager.runRewardsClaim`,
+   fed operator configuration only through
+   `neonrelay_wallet_request_rewards_claim` — no session token crosses
+   JNI): backend session (challenge → wallet signs → verify, cached in
+   memory with a 60s expiry skew), sealed-epoch discovery over the public
+   `GET /v1/rewards/epochs` list (recent first, at most 8 intent attempts,
+   skipping epochs with no allocation for the wallet), then
+   `POST /v1/rewards/claim-intent {epoch_id}` for the first claimable
+   epoch.
 3. The mobile client pre-verifies before signing anything:
    `RewardsTxBuilder.verifyClaim` (paused flag, exact proof depth and index
    bound from the on-chain leaf count, indexed Merkle fold against the epoch
    root — the same rule `onchain/src/merkle.ts` and the program enforce)
    plus a best-effort already-claimed check; then it submits
-   `claim(epochId, amountMicro, leafIndex, proof)` via MWA
-   (`WalletManager.runRewardsClaim`, fed by the game through
-   `neonrelay_wallet_request_rewards_claim`). The base58 transaction
-   signature comes back in the `NEONRELAY_WALLET_EVENT_REWARDS_CLAIM`
-   bridge event.
-4. `POST /v1/rewards/claim-confirmation {intent_id, transaction_id,
-   status: "confirmed"}` for audit. A replayed claim fails on-chain (claim PDA
-   exists) — that is the guarantee, not the confirmation call.
+   `claim(epochId, amountMicro, leafIndex, proof)` via MWA. The base58
+   transaction signature comes back in the
+   `NEONRELAY_WALLET_EVENT_REWARDS_CLAIM` bridge event.
+4. The wallet layer polls `getSignatureStatuses` (≤30s) and posts exactly
+   one `POST /v1/rewards/claim-confirmation {intent_id, transaction_id,
+   status}` for audit with the observed outcome (`confirmed`/`failed`, or
+   `submitted` when finality times out so the backend watches it). A
+   replayed claim fails on-chain (claim PDA exists) — that is the
+   guarantee, not the confirmation call.
 
 ## 8. Operations
 
@@ -202,13 +212,13 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 * No automated e2e test spans backend→chain (BL-03); the pipeline is covered
   segment-wise: backend e2e (✅ 30/30), Merkle parity backend↔client↔program
   source (✅ 12/12), signer C++↔node:crypto (✅ harness).
-* The mobile `claim` transaction builder is implemented
+* The mobile `claim` flow is implemented end to end in the client
   (`RewardsTxBuilder.kt` + `runRewardsClaim`, spec-pinned by
   `onchain/test/rewards_claim.test.ts` and `backend/test/rewards_pda.test.ts`
-  against the program source) but, like the rest of the Kotlin layer, awaits
-  the first Gradle build and an on-device dry run (BL-17). The in-game Wallet
-  screen button that fetches the intent and fires
-  `neonrelay_wallet_request_rewards_claim` is still to be built.
+  against the program source) and the in-game Wallet screen has the Claim
+  button firing `neonrelay_wallet_request_rewards_claim`; like the rest of
+  the Kotlin layer, it awaits the first Gradle build and an on-device dry
+  run (BL-17).
 * Upgrade authority of the deployed program remains the deploy keypair on
   devnet; hardening is a release-checklist item.
 

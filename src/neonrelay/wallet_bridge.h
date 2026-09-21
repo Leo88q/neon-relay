@@ -39,12 +39,14 @@ typedef struct NeonRelayWalletInfo
 	char account_label[64];
 	char public_key_base64[64];
 	char error_message[128];
-	/* Base58 transaction signature (public chain data), set only on
-	 * NEONRELAY_WALLET_EVENT_REWARDS_CLAIM success; empty otherwise. */
+	/* Base58 transaction signature (public chain data), set on
+	 * NEONRELAY_WALLET_EVENT_REWARDS_CLAIM when a transaction reached the
+	 * wallet: on success, or together with `error_message` when the
+	 * transaction failed on-chain. Empty otherwise. */
 	char transaction_signature[128];
 	int connected;
-	/* 1 while a connect/disconnect request is waiting for the wallet layer to
-	 * answer with an event; reset by every pushed event. */
+	/* 1 while a connect/disconnect/rewards-claim request is waiting for the
+	 * wallet layer to answer with an event; reset by every pushed event. */
 	int requesting;
 } NeonRelayWalletInfo;
 
@@ -77,12 +79,14 @@ void neonrelay_wallet_request_economy(const char *json);
 
 /**
  * Ask the platform wallet layer to run a rewards claim (DEVNET_RUNBOOK §7)
- * described by a sanitized JSON payload: {"programId": "<base58>",
- * "rpcUrl": "<https>", "epoch": N, "amountMicro": M, "leafIndex": I,
- * "proof": ["<hex>", ...]}. The game fetches the claim intent over its own
- * authenticated backend channel first; the session token never crosses this
- * boundary. The result arrives as NEONRELAY_WALLET_EVENT_REWARDS_CLAIM with
- * `transaction_signature` set on success.
+ * described by operator configuration only: {"programId": "<base58>",
+ * "rpcUrl": "<https>", "backendUrl": "<https>"}. The Android layer owns the
+ * whole flow — backend session (challenge → wallet signs → verify),
+ * sealed-epoch discovery, intent fetch, transaction build + send, finality
+ * poll, and the single claim-confirmation — so no session token or key
+ * material crosses this boundary. The result arrives as
+ * NEONRELAY_WALLET_EVENT_REWARDS_CLAIM with `transaction_signature` set on
+ * success (also present when an on-chain failure carries an error message).
  */
 void neonrelay_wallet_request_rewards_claim(const char *json);
 
