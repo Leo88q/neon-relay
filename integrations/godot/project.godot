@@ -1,0 +1,18 @@
+; Neon Relay Watchtower OS v3 Godot 4 integration sample.
+; This is an adapter sample, not a bundled wallet or chain credential.
+config_version=5
+
+[application]
+config/name="Neon Relay Watchtower"
+run/main_scene="res://neonrelay_demo.tscn"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[autoload]
+NeonRelay="*res://neonrelay_client.gd"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

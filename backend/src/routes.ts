@@ -49,6 +49,10 @@ import {
 } from "./economy.ts";
 import { createRpcPool } from "./rpc.ts";
 import { buildTree, leafHash, proofFor } from "./merkle.ts";
+import {
+  WATCHTOWER_GAME_ID, gameSignalsConfig, ingestContract, ingestWatchtowerEvent,
+  normalizeSolanaEvent, routeL2, sdkConfig, watchtowerConfig, type TelemetryInput,
+} from "./watchtower.ts";
 
 const str = (value: unknown, field: string, max = 512): string => {
   if (typeof value !== "string" || value.length === 0 || value.length > max) {
@@ -148,6 +152,130 @@ export function buildRouter(deps: {
     version: config.version,
     migrations: migrationCount(db),
   }));
+
+  // ------------------------------------------------------------ Watchtower OS v3
+  // These routes are intentionally provider-neutral. They expose the selected
+  // adapter contracts and telemetry shape, not credentials or unverified
+  // promises from third-party services.
+  router.add("GET", "/api/os/config", () => watchtowerConfig(config));
+
+  router.add("GET", "/api/l2/router", (ctx) => {
+    const gameId = ctx.url.searchParams.get("gameId") ?? WATCHTOWER_GAME_ID;
+    const tps = ctx.url.searchParams.get("tps") ?? "standard";
+    const ux = ctx.url.searchParams.get("ux") ?? "signed";
+    if (gameId !== WATCHTOWER_GAME_ID) {
+      throw new HttpError(400, "unknown-game", `gameId must be ${WATCHTOWER_GAME_ID}`);
+    }
+    if (!["standard", "high", "very_high"].includes(tps)) {
+      throw new HttpError(400, "bad-tps", "tps must be standard, high or very_high");
+    }
+    if (!["signed", "gasless"].includes(ux)) {
+      throw new HttpError(400, "bad-ux", "ux must be signed or gasless");
+    }
+    return routeL2(gameId, tps, ux);
+  });
+
+  const sdkNames = [
+    "godot-solana", "gamba", "preset", "ritarena", "xandeum", "pst",
+    "core-attributes", "access-protocol", "idosgames-wallet",
+    "security-auditing-skill", "sentio-cli", "solguard", "solana-slam", "arcium",
+  ];
+  for (const sdkName of sdkNames) {
+    router.add("GET", `/api/sdk/${sdkName}`, (ctx) => {
+      const gameId = ctx.url.searchParams.get("gameId") ?? WATCHTOWER_GAME_ID;
+      if (gameId !== WATCHTOWER_GAME_ID) {
+        throw new HttpError(400, "unknown-game", `gameId must be ${WATCHTOWER_GAME_ID}`);
+      }
+      return sdkConfig(sdkName, gameId);
+    });
+  }
+
+  router.add("GET", "/api/game-signals/config", (ctx) => {
+    const gameId = ctx.url.searchParams.get("gameId") ?? WATCHTOWER_GAME_ID;
+    if (gameId !== WATCHTOWER_GAME_ID) {
+      throw new HttpError(400, "unknown-game", `gameId must be ${WATCHTOWER_GAME_ID}`);
+    }
+    return gameSignalsConfig(gameId);
+  });
+
+  const fromTelemetryQuery = (ctx: RequestContext): TelemetryInput | null => {
+    const eventType = ctx.url.searchParams.get("event_type");
+    if (!eventType) return null;
+    let result: unknown = undefined;
+    const resultText = ctx.url.searchParams.get("result");
+    if (resultText !== null) {
+      try { result = JSON.parse(resultText); } catch {
+        throw new HttpError(400, "bad-telemetry", "result must be valid JSON");
+      }
+    }
+    return {
+      event_type: eventType as TelemetryInput["event_type"],
+      external_id: ctx.url.searchParams.get("external_id"),
+      solana_wallet: ctx.url.searchParams.get("solana_wallet"),
+      wallet_id: ctx.url.searchParams.get("wallet_id"),
+      session_id: ctx.url.searchParams.get("session_id"),
+      match_id: ctx.url.searchParams.get("match_id"),
+      mode: ctx.url.searchParams.get("mode"),
+      result,
+      metadata: (() => {
+        const metadataText = ctx.url.searchParams.get("metadata");
+        if (!metadataText) return undefined;
+        try { return JSON.parse(metadataText); } catch {
+          throw new HttpError(400, "bad-telemetry", "metadata must be valid JSON");
+        }
+      })(),
+      occurred_at: ctx.url.searchParams.get("occurred_at")
+        ? Number(ctx.url.searchParams.get("occurred_at")) : undefined,
+    };
+  };
+
+  const ingestTelemetry = (input: unknown): ReturnType<typeof ingestWatchtowerEvent> => {
+    try {
+      return ingestWatchtowerEvent(db, normalizeSolanaEvent(input));
+    } catch (err) {
+      throw new HttpError(400, "bad-telemetry", (err as Error).message);
+    }
+  };
+
+  router.add("GET", "/api/ingest/solana", (ctx) => {
+    const input = fromTelemetryQuery(ctx);
+    if (!input) return { ...ingestContract(), accepted: 0, results: [] };
+    const result = ingestTelemetry(input);
+    return { ...ingestContract(), accepted: result.status === "accepted" ? 1 : 0, results: [result] };
+  });
+
+  router.add("POST", "/api/ingest/solana", (ctx) => {
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const rawEvents = Array.isArray(body.events) ? body.events : [body];
+    if (rawEvents.length < 1 || rawEvents.length > 500) {
+      throw new HttpError(400, "bad-telemetry", "events must contain 1..500 items");
+    }
+    db.raw.exec("BEGIN");
+    try {
+      const results = rawEvents.map((event) => ingestTelemetry(event));
+      db.raw.exec("COMMIT");
+      return { ...ingestContract(), accepted: results.filter((r) => r.status === "accepted").length, results };
+    } catch (err) {
+      db.raw.exec("ROLLBACK");
+      throw err;
+    }
+  });
+
+  router.add("POST", "/api/campaigns/proposals", (ctx) => {
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const risk = Number(body.churn_risk ?? body.risk ?? 0);
+    if (!Number.isFinite(risk) || risk < 0 || risk > 1) {
+      throw new HttpError(400, "bad-campaign-proposal", "churn_risk must be between 0 and 1");
+    }
+    return {
+      game_id: WATCHTOWER_GAME_ID,
+      proposal_id: randomUUID(),
+      status: risk > 0.7 ? "human-review" : "below-threshold",
+      churn_risk: risk,
+      campaign_id: optStr(body.campaign_id),
+      human_review_required: true,
+    };
+  });
 
   router.add("POST", "/v1/auth/challenge", (ctx) => {
     guard(ctx, "challenge");

@@ -76,6 +76,18 @@ Everything that could not be built or executed in this environment is recorded h
 and the reason (missing Rust toolchain, Android SDK, no route to crates.io, etc.). Nothing
 in the documentation is presented as verified when it was not run.
 
+## Watchtower OS v3
+
+The v3 high-frequency racing integration is documented in
+[`WATCHTOWER_INTEGRATION.md`](WATCHTOWER_INTEGRATION.md). It adds a tenant-scoped
+33-component adapter catalog, the HyperGrid/Arcium/PST/Xandeum L2 decision API,
+Godot 4 client boundaries, and idempotent session telemetry with Solana wallet
+late ID binding. Verification routes are served by the Node 22 backend:
+`/api/os/config`, `/api/l2/router`, `/api/sdk/*`, `/api/game-signals/config`,
+and `/api/ingest/solana`. Provider SDKs, wallet keys and mainnet credentials
+remain deployment concerns; the checked-in Godot wallet/session-key adapters
+fail closed until installed.
+
 ## Repository layout
 
 | Path | Contents |
