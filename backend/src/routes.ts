@@ -51,7 +51,7 @@ import { createRpcPool } from "./rpc.ts";
 import { buildTree, leafHash, proofFor } from "./merkle.ts";
 import {
   WATCHTOWER_GAME_ID, gameSignalsConfig, ingestContract, ingestWatchtowerEvent,
-  routeL2, sdkConfig, watchtowerConfig, type TelemetryInput,
+  normalizeSolanaEvent, routeL2, sdkConfig, watchtowerConfig, type TelemetryInput,
 } from "./watchtower.ts";
 
 const str = (value: unknown, field: string, max = 512): string => {
@@ -231,7 +231,7 @@ export function buildRouter(deps: {
 
   const ingestTelemetry = (input: unknown): ReturnType<typeof ingestWatchtowerEvent> => {
     try {
-      return ingestWatchtowerEvent(db, input as TelemetryInput);
+      return ingestWatchtowerEvent(db, normalizeSolanaEvent(input));
     } catch (err) {
       throw new HttpError(400, "bad-telemetry", (err as Error).message);
     }

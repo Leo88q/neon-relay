@@ -110,6 +110,50 @@ export interface TelemetryInput {
   metadata?: unknown;
 }
 
+/**
+ * Accept the indexer envelope used by LaserStream/Shyft smoke tests as well as
+ * the normalized analytics event shape. Indexer fields are retained in bounded
+ * metadata, while eventType is mapped into the telemetry vocabulary.
+ */
+export function normalizeSolanaEvent(input: unknown): TelemetryInput {
+  if (!input || typeof input !== "object") throw new Error("event must be an object");
+  const value = input as Record<string, unknown>;
+  if (typeof value.event_type === "string") return value as unknown as TelemetryInput;
+  if (typeof value.eventType !== "string") throw new Error("event_type or eventType is required");
+  const eventMap: Record<string, WatchtowerTelemetryType> = {
+    RaceStarted: "match_start",
+    MatchStarted: "match_start",
+    RaceFinished: "match_end",
+    MatchFinished: "match_end",
+    Disconnected: "disconnect",
+    FirstFinish: "first_finish",
+    FirstClaim: "first_claim",
+    ClientCrash: "client_crash",
+  };
+  const eventType = eventMap[value.eventType] ?? "race";
+  const payload = value.payload && typeof value.payload === "object"
+    ? value.payload as Record<string, unknown> : {};
+  const metadata = {
+    source: "solana-indexer",
+    cluster: value.cluster ?? "unknown",
+    slot: value.slot ?? null,
+    signature: value.signature ?? null,
+    program_id: value.programId ?? null,
+    payload,
+  };
+  return {
+    event_type: eventType,
+    external_id: typeof payload.playerKey === "string" ? payload.playerKey : null,
+    solana_wallet: typeof payload.solana_wallet === "string" ? payload.solana_wallet : null,
+    session_id: typeof payload.sessionId === "string" ? payload.sessionId : null,
+    match_id: typeof payload.matchId === "string" ? payload.matchId : null,
+    mode: typeof payload.mode === "string" ? payload.mode : null,
+    result: payload.result ?? payload,
+    occurred_at: typeof payload.occurredAt === "number" ? payload.occurredAt : undefined,
+    metadata,
+  };
+}
+
 const MAX_TEXT = 256;
 const text = (value: unknown, field: string, optional = true): string | null => {
   if (value === undefined || value === null || value === "") {
@@ -338,6 +382,8 @@ export function ingestContract(): Record<string, unknown> {
     late_id_binding: true,
     bounded_batch: 500,
     event_types: TELEMETRY_EVENT_TYPES,
+    accepted_envelopes: ["normalized analytics event", "LaserStream/Shyft Solana event"],
     example: { event_type: "match_end", external_id: "player-session-1", solana_wallet: "<public-key>", mode: "race", result: { place: 1, fastest_lap_ms: 4210 } },
+    solana_example: { cluster: "devnet", slot: 1, signature: "test-neon-1", programId: "NEONRELAY_REWARDS_PROGRAM_ID", eventType: "RaceStarted", payload: { gameId: "neonrelay", playerKey: "test" } },
   };
 }

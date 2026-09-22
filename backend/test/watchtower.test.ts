@@ -76,6 +76,22 @@ test("telemetry is idempotent and late-binds earlier external events", () =>
     assert.equal(retry.json.results[0].status, "duplicate");
   }));
 
+test("Solana indexer envelopes map into session telemetry", () =>
+  withApp(async (base, db) => {
+    const response = await postJson(base, "/api/ingest/solana", {
+      cluster: "devnet", slot: 1, signature: "test-neon-1",
+      programId: "NEONRELAY_REWARDS_PROGRAM_ID", eventType: "RaceStarted",
+      payload: { gameId: "neonrelay", playerKey: "test" },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.accepted, 1);
+    assert.equal(response.json.results[0].status, "accepted");
+    const row = db.get<{ event_type: string; metadata_json: string }>(
+      "SELECT event_type, metadata_json FROM watchtower_events WHERE id = ?", response.json.results[0].id);
+    assert.equal(row?.event_type, "match_start");
+    assert.match(row?.metadata_json ?? "", /test-neon-1/);
+  }));
+
 test("telemetry rejects unknown event types and reports the full contract", () =>
   withApp(async (base) => {
     const contract = await getJson(base, "/api/ingest/solana");

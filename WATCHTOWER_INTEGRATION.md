@@ -35,8 +35,29 @@ curl -s 'http://127.0.0.1:8787/api/ingest/solana' | jq
 
 The high-frequency decision must be `HyperGrid`, with `Arcium` privacy,
 `PST` private verification, `Xandeum` state, `Sorada` reads, MagicBlock ER for
-the gasless path, and Solana mainnet as the fallback. No client should hardcode
-`localhost` for a remote service; use the deployment URL or a same-origin proxy.
+the gasless path, and Solana mainnet as the fallback. The rewards authority is
+`NEONRELAY_REWARDS_PROGRAM_ID` under tenant `neonrelay`. No client should
+hardcode `localhost` for a remote service; use the deployment URL or a
+same-origin proxy.
+
+The exact Bash smoke checks are:
+
+```sh
+curl http://127.0.0.1:8787/api/l2/router?gameId=neonrelay\&tps=high\&ux=gasless
+curl http://127.0.0.1:8787/api/sdk/godot-solana?gameId=neonrelay
+curl http://127.0.0.1:8787/api/sdk/gamba?gameId=neonrelay
+curl http://127.0.0.1:8787/api/sdk/ritarena?gameId=neonrelay
+curl http://127.0.0.1:8787/api/game-signals/config?gameId=neonrelay
+curl http://127.0.0.1:8787/api/ingest/solana -X POST -H "Content-Type: application/json" \\
+  -d '{"cluster":"devnet","slot":1,"signature":"test-neon-1","programId":"NEONRELAY_REWARDS_PROGRAM_ID","eventType":"RaceStarted","payload":{"gameId":"neonrelay","playerKey":"test"}}'
+```
+
+The ingest route accepts both the normalized `event_type` telemetry envelope
+and the LaserStream/Shyft `eventType` Solana envelope. `RaceStarted` is mapped
+to `match_start` and the indexer envelope is retained as bounded metadata.
+Session telemetry includes `match_start`, `match_end`, `mode`, `result`,
+`disconnect`, `first_finish`, `first_claim`, and `client_crash` (plus the
+anti-cheat, checkpoint, payment and reward-pipeline signals listed below).
 
 ## 2. The 33 deduplicated components
 
