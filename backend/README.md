@@ -60,9 +60,19 @@ model, [`docs/API.md`](../docs/API.md) for the HTTP contract.
 * parameterized SQL only; per-IP token bucket on the auth routes;
 * reward routes (stage 7) will reference `wallet_binding_id`, never raw keys.
 
+## Watchtower OS v3
+
+The v3 integration contract is documented in [`../WATCHTOWER_INTEGRATION.md`](../WATCHTOWER_INTEGRATION.md).
+The dependency-free API exposes the requested verification surfaces:
+
+* `GET /api/os/config` — tenant `neonrelay`, game id, program references and exactly 33 deduplicated components;
+* `GET /api/l2/router?gameId=neonrelay&tps=high&ux=gasless` — HyperGrid routing with Arcium, PST, Xandeum, Sorada and MagicBlock ER contracts;
+* `GET /api/sdk/<name>?gameId=neonrelay` — adapter contracts for Godot, Gamba, Preset, RitArena, Xandeum, PST, Core Attributes, Access Protocol, idosgames, security tooling and Arcium;
+* `GET /api/game-signals/config?gameId=neonrelay` — attribution/ML contract with human-reviewed campaign proposals;
+* `GET` or `POST /api/ingest/solana` — bounded, idempotent session telemetry with `solana_wallet` late ID binding.
+
+These routes report adapter boundaries, not provisioned credentials or third-party SLAs. The Godot 4 sample is in `../integrations/godot/`; wallet and session-key providers are deliberately stubs until the operator installs the real SDKs.
+
 ## Test evidence
 
-`npm test` → **20/20 passing** (Node v22.22.3, this repository, commit that
-introduced stage 6): crypto round-trips, nonce replay/expiry, session
-sliding/revocation, and the full HTTP flow including replay (409), cross-domain
-(422), expiry (410), bad signature (401) and canonical-form tamper (400).
+`npm test` runs the full Node v22 suite, including Watchtower v3 route, 33-component, high-frequency router, telemetry idempotency and late-binding checks. The older authentication, reward, economy, admin, RPC and reconciliation suites remain covered as well.

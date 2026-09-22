@@ -18,6 +18,7 @@ import {
   type RequestContext,
 } from "./http.ts";
 import { authFailureStatus, buildRouter } from "./routes.ts";
+import { ensureWatchtowerSchema } from "./watchtower.ts";
 
 export interface App {
   server: Server;
@@ -30,6 +31,7 @@ export interface App {
 export function createApp(config: Config = loadConfig()): App {
   const db = new Db(config.dbPath);
   migrate(db);
+  ensureWatchtowerSchema(db);
   const wallets = new WalletStore(db);
   const sessions = new SessionStore(db, config.sessionTtlMs);
   const auth = new AuthService(config, wallets, sessions);

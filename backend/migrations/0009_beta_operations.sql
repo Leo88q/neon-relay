@@ -73,3 +73,33 @@ CREATE TRIGGER treasury_no_delete BEFORE DELETE ON treasury_snapshots
 BEGIN
   SELECT RAISE(ABORT, 'treasury history is append-only');
 END;
+
+-- Watchtower OS v3 telemetry and late identity binding. Public wallet keys are
+-- identifiers, never authentication secrets. Payloads are bounded by the
+-- adapter before insertion and retries collapse by digest.
+CREATE TABLE watchtower_events (
+  id               TEXT PRIMARY KEY,
+  idempotency_hash TEXT NOT NULL UNIQUE,
+  event_type       TEXT NOT NULL,
+  external_id      TEXT,
+  solana_wallet    TEXT,
+  wallet_id        TEXT,
+  session_id       TEXT,
+  match_id         TEXT,
+  mode             TEXT,
+  result_json      TEXT,
+  metadata_json    TEXT,
+  occurred_at      INTEGER NOT NULL,
+  received_at      INTEGER NOT NULL
+) STRICT;
+CREATE INDEX watchtower_events_time ON watchtower_events (event_type, occurred_at);
+CREATE INDEX watchtower_events_external ON watchtower_events (external_id, occurred_at);
+CREATE INDEX watchtower_events_wallet ON watchtower_events (solana_wallet, occurred_at);
+
+CREATE TABLE watchtower_identity_links (
+  external_id   TEXT PRIMARY KEY,
+  solana_wallet TEXT,
+  wallet_id     TEXT,
+  first_seen_at INTEGER NOT NULL,
+  last_seen_at  INTEGER NOT NULL
+) STRICT;
