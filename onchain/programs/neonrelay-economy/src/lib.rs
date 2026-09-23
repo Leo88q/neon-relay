@@ -92,6 +92,7 @@ pub mod neonrelay_economy {
 	/// Emergency stop: while paused no new entries can be paid.
 	pub fn set_paused(ctx: Context<Admin>, paused: bool) -> Result<()> {
 		ctx.accounts.config.paused = paused;
+		emit!(AdminPaused { authority: ctx.accounts.authority.key(), paused });
 		Ok(())
 	}
 
@@ -255,7 +256,13 @@ pub mod neonrelay_economy {
 				signer_seeds,
 			),
 			amount,
-		)
+		)?;
+		emit!(PrizeClaimed {
+			player: ctx.accounts.player.key(),
+			epoch,
+			amount,
+		});
+		Ok(())
 	}
 	/// Create one isolated market for a mint. Bootstrap requires the existing
 	/// legacy operator, so an arbitrary first caller cannot seize a v2 market.
@@ -277,6 +284,7 @@ pub mod neonrelay_economy {
 
 	pub fn set_paused_v2(ctx: Context<AdminV2>, paused: bool) -> Result<()> {
 		ctx.accounts.config.paused = paused;
+		emit!(AdminPausedV2 { authority: ctx.accounts.authority.key(), paused });
 		Ok(())
 	}
 
@@ -454,11 +462,15 @@ pub struct PayEntry<'info> {
 	#[account(
 		mut,
 		constraint = vault_ata.key() == config.vault_ata @ EconomyError::WrongVault,
+		token::mint = config.mint,
+		token::authority = config,
 	)]
 	pub vault_ata: Account<'info, TokenAccount>,
 	#[account(
 		mut,
 		constraint = treasury_ata.key() == config.treasury_ata @ EconomyError::WrongTreasury,
+		token::mint = config.mint,
+		token::authority = config.authority,
 	)]
 	pub treasury_ata: Account<'info, TokenAccount>,
 	#[account(
@@ -485,6 +497,8 @@ pub struct PublishPrizes<'info> {
 	pub config: Account<'info, EconomyConfig>,
 	#[account(
 		constraint = vault_ata.key() == config.vault_ata @ EconomyError::WrongVault,
+		token::mint = config.mint,
+		token::authority = config,
 	)]
 	pub vault_ata: Account<'info, TokenAccount>,
 	#[account(
@@ -514,6 +528,8 @@ pub struct ClaimPrize<'info> {
 	#[account(
 		mut,
 		constraint = vault_ata.key() == config.vault_ata @ EconomyError::WrongVault,
+		token::mint = config.mint,
+		token::authority = config,
 	)]
 	pub vault_ata: Account<'info, TokenAccount>,
 	#[account(
@@ -532,6 +548,31 @@ pub struct ClaimPrize<'info> {
 	pub claim: Account<'info, PrizeClaim>,
 	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
+}
+
+// -------------------------------------------------------------------- events
+// SW027: set_paused / set_paused_v2 / claim_prize mutated state with no
+// observable log, so the Watchtower and attribution stack (Helika, GameSight,
+// Game Signals) could not track admin toggles or prize claims. These events
+// close that gap without changing account layout.
+
+#[event]
+pub struct AdminPaused {
+	pub authority: Pubkey,
+	pub paused: bool,
+}
+
+#[event]
+pub struct AdminPausedV2 {
+	pub authority: Pubkey,
+	pub paused: bool,
+}
+
+#[event]
+pub struct PrizeClaimed {
+	pub player: Pubkey,
+	pub epoch: u64,
+	pub amount: u64,
 }
 
 // -------------------------------------------------------------------- state

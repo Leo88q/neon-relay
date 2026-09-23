@@ -123,8 +123,13 @@ pub mod neonrelay_features {
 			FeaturesError::AchievementNotRecorded
 		);
 
-		let config = &ctx.accounts.config;
+		// SW008: effects-before-interactions. Bump the counter BEFORE the mint
+		// CPI so no program-owned state is written after an external call.
+		let config = &mut ctx.accounts.config;
+		config.badges_minted = config.badges_minted.checked_add(1).ok_or(FeaturesError::Overflow)?;
 		let config_bump = config.bump;
+
+		let config = &ctx.accounts.config;
 		let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &[config_bump]]];
 		let cpi_ctx = CpiContext::new_with_signer(
 			ctx.accounts.token_program.to_account_info(),
@@ -137,8 +142,6 @@ pub mod neonrelay_features {
 		);
 		token::mint_to(cpi_ctx, 1)?;
 
-		let config = &mut ctx.accounts.config;
-		config.badges_minted = config.badges_minted.checked_add(1).ok_or(FeaturesError::Overflow)?;
 		emit!(BadgeMinted {
 			player: ctx.accounts.player.key(),
 			achievement_id,
