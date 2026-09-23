@@ -59,6 +59,59 @@ Session telemetry includes `match_start`, `match_end`, `mode`, `result`,
 `disconnect`, `first_finish`, `first_claim`, and `client_crash` (plus the
 anti-cheat, checkpoint, payment and reward-pipeline signals listed below).
 
+## 1b. Canonical `/watchtower/*` exporter surface
+
+The backend now also exposes the hub-facing read-only exporter routes. Every
+response includes `dataQuality`, `parserVersion`, `network`, `stage`, and
+`lastVerifiedAt`; `GET /watchtower/health` reports `writes: false`.
+
+```text
+GET /watchtower/health
+GET /watchtower/readyz
+GET /watchtower/config
+GET /watchtower/events
+GET /watchtower/events/:signature
+GET /watchtower/metrics/daily
+GET /watchtower/players/cohorts
+GET /watchtower/players/retention
+GET /watchtower/players/cross-game
+GET /watchtower/economy
+GET /watchtower/treasury
+GET /watchtower/security
+GET /watchtower/alerts
+GET /watchtower/funnels
+GET /watchtower/forecast
+```
+
+Hub acceptance alias:
+
+```text
+GET  /api/games/neonrelay/ingestion
+POST /api/games/neonrelay/ingestion
+```
+
+`POST /api/games/neonrelay/ingestion` returns `accepted: true` for a fresh
+single event and `duplicate: true` on a replayed single event, while preserving
+`accepted_count`, `duplicate_count` and the detailed result rows.
+
+Route mapping summary:
+
+| Existing route | Canonical surface |
+| --- | --- |
+| `/api/os/config` | `/watchtower/config` |
+| `/api/ingest/solana` | `/watchtower/events` |
+| `/api/games/neonrelay/ingestion` | acceptance alias for hub smoke checks |
+
+Availability matrix (facts only):
+
+| Surface | State | Notes |
+| --- | --- | --- |
+| `/watchtower/*` exporter | ✅ implemented | read-only, backed by SQLite projections |
+| `dataQuality/network/stage/parserVersion/lastVerifiedAt` | ✅ implemented | carried in every exporter response |
+| Duplicate-safe hub ingestion alias | ✅ implemented | booleans for fresh vs replayed single-event checks |
+| Cross-game warehouse projections | ⛔ unavailable | this repo exposes identity edges only, not the studio-wide warehouse |
+| Forecasting | ⛔ unavailable | returns `dataQuality: unavailable`, `confidence: 0.0` by design |
+
 ## 2. The 33 deduplicated components
 
 The API returns this same list from `GET /api/os/config`. A component is a

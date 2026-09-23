@@ -14,6 +14,10 @@ import type { Db } from "./db.ts";
 export const WATCHTOWER_VERSION = "v3";
 export const WATCHTOWER_GAME_ID = "neonrelay";
 export const WATCHTOWER_TENANT = "neonrelay";
+export const WATCHTOWER_NETWORK = "solana";
+export const WATCHTOWER_STAGE = "prototype";
+export const WATCHTOWER_SOURCE = "neonrelay-backend";
+export const WATCHTOWER_PARSER_VERSION = "neonrelay-watchtower-v1";
 
 /** Exactly 33 runtime components. Providers in one row are intentionally
  * deduplicated where they serve the same boundary (for example DAS/Sorada

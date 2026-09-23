@@ -18,6 +18,46 @@ Codes per route are listed in [`WALLET_AUTH.md`](WALLET_AUTH.md) §2.3.
 
 ## Routes
 
+## Watchtower exporter (read-only)
+
+These routes are exposed at the backend root, not under `/v1`. They are
+intended for the Games Watchtower pull model and always report read-only state.
+Every response includes `dataQuality`, `parserVersion`, `network`, `stage`, and
+`lastVerifiedAt`.
+
+```text
+GET /watchtower/health
+GET /watchtower/readyz
+GET /watchtower/config
+GET /watchtower/events
+GET /watchtower/events/:signature
+GET /watchtower/metrics/daily
+GET /watchtower/players/cohorts
+GET /watchtower/players/retention
+GET /watchtower/players/cross-game
+GET /watchtower/economy
+GET /watchtower/treasury
+GET /watchtower/security
+GET /watchtower/alerts
+GET /watchtower/funnels
+GET /watchtower/forecast
+```
+
+Hub compatibility alias:
+
+```text
+GET  /api/games/neonrelay/ingestion
+POST /api/games/neonrelay/ingestion
+```
+
+Single-event acceptance checks on the alias behave as follows:
+
+- fresh event → `accepted: true`, `duplicate: false`
+- replayed event → `accepted: false`, `duplicate: true`
+
+The canonical event feed is `/watchtower/events`; `/api/ingest/solana` remains
+as the native ingestion endpoint and maps to the same telemetry store.
+
 ### GET /v1/health
 Liveness and migration state. No auth.
 

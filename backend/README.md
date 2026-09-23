@@ -42,9 +42,10 @@ backend/
 ## Commands
 
 ```sh
-npm run migrate     # apply migrations to $NEONRELAY_DB (default var/neonrelay.db)
-npm start           # serve on $PORT (default 8787)
-npm test            # node --test over test/**/*.test.ts
+npm run migrate          # apply migrations to $NEONRELAY_DB (default var/neonrelay.db)
+npm start                # serve on $PORT (default 8787)
+npm test                 # node --test over test/**/*.test.ts
+npm run watchtower:smoke # local exporter acceptance smoke for /watchtower/*
 ```
 
 Environment: `PORT`, `NEONRELAY_DB`, `NEONRELAY_AUTH_DOMAIN`,
@@ -63,15 +64,20 @@ model, [`docs/API.md`](../docs/API.md) for the HTTP contract.
 ## Watchtower OS v3
 
 The v3 integration contract is documented in [`../WATCHTOWER_INTEGRATION.md`](../WATCHTOWER_INTEGRATION.md).
-The dependency-free API exposes the requested verification surfaces:
+The dependency-free API now exposes both the original `/api/*` surfaces and the
+canonical read-only `/watchtower/*` exporter expected by the hub:
 
+* `GET /watchtower/health`, `/watchtower/readyz`, `/watchtower/config` — exporter health, read-only status (`writes: false`) and route/catalog metadata;
+* `GET /watchtower/events` and `/watchtower/events/:signature` — cursor/replay event feed plus direct lookup for indexed signatures;
+* `GET /watchtower/metrics/daily`, `/watchtower/players/*`, `/watchtower/economy`, `/watchtower/treasury`, `/watchtower/security`, `/watchtower/alerts`, `/watchtower/funnels`, `/watchtower/forecast` — read models with `dataQuality`, `parserVersion`, `network`, `stage` and `lastVerifiedAt`;
 * `GET /api/os/config` — tenant `neonrelay`, game id, program references and exactly 33 deduplicated components;
 * `GET /api/l2/router?gameId=neonrelay&tps=high&ux=gasless` — HyperGrid routing with Arcium, PST, Xandeum, Sorada and MagicBlock ER contracts;
 * `GET /api/sdk/<name>?gameId=neonrelay` — adapter contracts for Godot, Gamba, Preset, RitArena, Xandeum, PST, Core Attributes, Access Protocol, idosgames, security tooling and Arcium;
 * `GET /api/game-signals/config?gameId=neonrelay` — attribution/ML contract with human-reviewed campaign proposals;
-* `GET` or `POST /api/ingest/solana` — bounded, idempotent session telemetry with `solana_wallet` late ID binding.
+* `GET` or `POST /api/ingest/solana` — bounded, idempotent session telemetry with `solana_wallet` late ID binding;
+* `GET` or `POST /api/games/neonrelay/ingestion` — hub-friendly alias returning `accepted` / `duplicate` booleans for single-event acceptance checks.
 
-These routes report adapter boundaries, not provisioned credentials or third-party SLAs. The Godot 4 sample is in `../integrations/godot/`; wallet and session-key providers are deliberately stubs until the operator installs the real SDKs.
+These routes report adapter boundaries, not provisioned credentials or third-party SLAs. The Godot 4 sample is in `../integrations/godot/`; wallet and session-key providers are deliberately stubs until the operator installs the real SDKs, and the sample now requires an explicit deployment URL or same-origin proxy instead of hardcoding localhost.
 
 ## Test evidence
 

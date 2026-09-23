@@ -21,6 +21,20 @@ test("Watchtower config is v3, tenant-scoped, and exactly 33 components", () =>
     assert.deepEqual(response.json.identity.session_key_actions, ["move", "boost", "finish", "race_session"]);
   }));
 
+test("canonical /watchtower exporter routes are read-only and metadata-rich", () =>
+  withApp(async (base) => {
+    const health = await getJson(base, "/watchtower/health");
+    assert.equal(health.status, 200);
+    assert.equal(health.json.network, "solana");
+    assert.equal(health.json.stage, "prototype");
+    assert.equal(health.json.data.writes, false);
+    assert.equal(health.json.data.health.writes, false);
+    const config = await getJson(base, "/watchtower/config");
+    assert.equal(config.status, 200);
+    assert.equal(config.json.parserVersion, "neonrelay-watchtower-v1");
+    assert.ok((config.json.data.routes as { path: string }[]).some((route) => route.path === "/watchtower/events"));
+  }));
+
 test("high frequency gasless routing selects HyperGrid plus privacy and fallback", () =>
   withApp(async (base) => {
     const response = await getJson(base, "/api/l2/router?gameId=neonrelay&tps=high&ux=gasless");
@@ -90,6 +104,33 @@ test("Solana indexer envelopes map into session telemetry", () =>
       "SELECT event_type, metadata_json FROM watchtower_events WHERE id = ?", response.json.results[0].id);
     assert.equal(row?.event_type, "match_start");
     assert.match(row?.metadata_json ?? "", /test-neon-1/);
+    const canonical = await getJson(base, "/watchtower/events/test-neon-1");
+    assert.equal(canonical.status, 200);
+    assert.equal(canonical.json.data.signature, "test-neon-1");
+    assert.equal(canonical.json.data.telemetryType, "match_start");
+  }));
+
+test("hub ingestion alias reports accepted then duplicate for a replayed single event", () =>
+  withApp(async (base) => {
+    const first = await postJson(base, "/api/games/neonrelay/ingestion", {
+      cluster: "devnet", slot: 7, signature: "hub-ingest-1",
+      programId: "NEONRELAY_REWARDS_PROGRAM_ID", eventType: "RaceStarted",
+      payload: { gameId: "neonrelay", playerKey: "hub-player" },
+    });
+    assert.equal(first.status, 200);
+    assert.equal(first.json.accepted, true);
+    assert.equal(first.json.duplicate, false);
+    const second = await postJson(base, "/api/games/neonrelay/ingestion", {
+      cluster: "devnet", slot: 7, signature: "hub-ingest-1",
+      programId: "NEONRELAY_REWARDS_PROGRAM_ID", eventType: "RaceStarted",
+      payload: { gameId: "neonrelay", playerKey: "hub-player" },
+    });
+    assert.equal(second.status, 200);
+    assert.equal(second.json.accepted, false);
+    assert.equal(second.json.duplicate, true);
+    const contract = await getJson(base, "/api/games/neonrelay/ingestion");
+    assert.equal(contract.status, 200);
+    assert.equal(contract.json.endpoint, "/api/ingest/solana");
   }));
 
 test("telemetry rejects unknown event types and reports the full contract", () =>

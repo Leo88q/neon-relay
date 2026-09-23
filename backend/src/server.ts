@@ -46,8 +46,8 @@ export function createApp(config: Config = loadConfig()): App {
     const url = new URL(req.url ?? "/", "http://localhost");
     const path = url.pathname.replace(/\/+$/, "") || "/";
     try {
-      const handler = router.resolve(req.method ?? "GET", path);
-      if (!handler) {
+      const resolved = router.resolve(req.method ?? "GET", path);
+      if (!resolved) {
         throw new HttpError(404, "not-found", `no route for ${req.method} ${path}`);
       }
       const ctx: RequestContext = {
@@ -59,8 +59,9 @@ export function createApp(config: Config = loadConfig()): App {
           ? null
           : await readJsonBody(req),
         bearer: bearerToken(req),
+        params: resolved.params,
       };
-      const result = await handler(ctx);
+      const result = await resolved.handler(ctx);
       sendJson(res, 200, result);
     } catch (err) {
       if (err instanceof HttpError) {

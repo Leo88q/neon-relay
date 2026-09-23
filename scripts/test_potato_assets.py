@@ -12,6 +12,7 @@ from PIL import Image
 from build_potato_skins import POTATOES
 from build_potato_weapon_sheet import RECTS
 from build_potato_effects import EFFECT_RECTS
+from build_neon_skins import SPECS, GHOST
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -56,6 +57,8 @@ class Assets(unittest.TestCase):
 
     def test_no_legacy_runtime_skins(self):
         expected = {f'potato_{name}.png' for name in POTATOES}
+        expected |= {f'{spec.name}.png' for spec in SPECS}
+        expected.add(f'{GHOST.name}.png')
         self.assertEqual({p.name for p in (ROOT/'data/skins').glob('*.png')}, expected)
         self.assertFalse(list((ROOT/'data/skins7').rglob('*.png')))
         for name in POTATOES:
@@ -91,11 +94,13 @@ class Assets(unittest.TestCase):
         paths = list((ROOT / 'assets-src/potato').rglob('*.png'))
         paths += list((ROOT / 'assets-src/weapons').rglob('*.png'))
         paths += list((ROOT / 'data/skins').glob('potato_*.png'))
+        paths += [ROOT / 'data/skins' / f'{spec.name}.png' for spec in SPECS]
+        paths += [ROOT / 'data/skins' / f'{GHOST.name}.png']
         paths += [ROOT / 'data/game.png', ROOT / 'src/game/client/potato_catalog.h']
         def hashes():
             return {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
         before = hashes()
-        for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'build_potato_effects.py', 'gen_potato_catalog.py']:
+        for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'build_potato_effects.py', 'gen_potato_catalog.py', 'build_neon_skins.py']:
             subprocess.run([sys.executable, str(ROOT / 'scripts' / script)], check=True, stdout=subprocess.DEVNULL)
         self.assertEqual(before, hashes())
 

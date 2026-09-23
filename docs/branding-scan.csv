@@ -51,7 +51,7 @@ Dockerfile,56,code/api-identifier,identifier kept for protocol/build compatibili
 README.md,4,historical-documentation,document that describes the upstream derivation,vendored snapshot of [DDRaceNetwork (DDNet)](https://github.com/ddnet/ddnet) and extended
 README.md,20,historical-documentation,document that describes the upstream derivation,| Upstream base | `ddnet/ddnet` @ [`a853d33`](https://github.com/ddnet/ddnet/commit/a853d333ac9e61ebfa2899b4641f8b0658ba60d5) |
 README.md,42,historical-documentation,document that describes the upstream derivation,* **This is not a drop-in replacement for DDNet.** The network protocol version is
-README.md,177,historical-documentation,document that describes the upstream derivation,"* DDNet, DDRaceNetwork and Teeworlds are the names of the upstream projects from which this"
+README.md,189,historical-documentation,document that describes the upstream derivation,"* DDNet, DDRaceNetwork and Teeworlds are the names of the upstream projects from which this"
 UPSTREAM_BASE.md,3,historical-documentation,document that describes the upstream derivation,This repository is a **standalone derivative work** of DDNet. It is not a GitHub
 UPSTREAM_BASE.md,9,historical-documentation,document that describes the upstream derivation,| Upstream repository | https://github.com/ddnet/ddnet |
 UPSTREAM_BASE.md,18,historical-documentation,document that describes the upstream derivation,"| Upstream submodule | `ddnet-libs` → https://github.com/ddnet/ddnet-libs @ `c0e6703fbcdbe03df2f26875427ec3951ce4ec21` (gitlink preserved, content **not** vendored) |"

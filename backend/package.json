@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node --experimental-strip-types src/server.ts",
     "migrate": "node --experimental-strip-types scripts/migrate.ts",
-    "test": "node --experimental-strip-types --test \"test/**/*.test.ts\""
+    "test": "node --experimental-strip-types --test \"test/**/*.test.ts\"",
+    "watchtower:smoke": "node --experimental-strip-types scripts/watchtower_smoke.ts"
   }
 }
