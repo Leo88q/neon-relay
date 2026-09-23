@@ -1,0 +1,13 @@
+{
+  "findings": [],
+  "files_scanned": 8,
+  "files_parsed": 8,
+  "parse_failures": [],
+  "engine": "local-static-audit",
+  "generated_at": "2026-09-23T17:38:52.335Z",
+  "rules_checked": 6,
+  "notes": [
+    "This report is a repository-local structural audit that emits the Watchtower-compatible schema.",
+    "External vendor CLIs (Sentio / SolGuard / SLAM) were not available in this sandbox, so their runtimes were not executed here."
+  ]
+}

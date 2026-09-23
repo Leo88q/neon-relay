@@ -12,7 +12,7 @@ signal authenticated(session_token: String)
 signal race_event(event: Dictionary)
 signal request_failed(code: String, message: String)
 
-@export var backend_url := "http://127.0.0.1:8787"
+@export var backend_url := "" ## Deployment URL or same-origin proxy; never hardcode localhost for remote play.
 @export var game_id := "neonrelay"
 
 var wallet_adapter: WalletAdapter
@@ -131,6 +131,12 @@ class SolanaClient extends RefCounted:
         return await _request(HTTPClient.METHOD_POST, path, payload)
 
     func _request(method: int, path: String, payload: Dictionary) -> Dictionary:
+        if base_url.is_empty():
+            return {
+                "ok": false,
+                "code": "backend-url-not-configured",
+                "message": "set backend_url to a deployment URL or same-origin proxy before sending requests",
+            }
         var request := HTTPRequest.new()
         owner.add_child(request)
         var headers := PackedStringArray(["Content-Type: application/json"])

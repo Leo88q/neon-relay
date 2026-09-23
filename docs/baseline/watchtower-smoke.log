@@ -1,0 +1,14 @@
+
+> neonrelay-backend@0.1.0 watchtower:smoke
+> node --experimental-strip-types scripts/watchtower_smoke.ts
+
+# Watchtower smoke
+base=http://127.0.0.1:42687
+accepted_fresh=true
+duplicate_replay=true
+health_writes=false
+parser_version=neonrelay-watchtower-v1
+events_items=1
+signature_lookup=watchtower-smoke-1
+metrics_quality=partial
+RESULT: PASS

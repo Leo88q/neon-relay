@@ -24,6 +24,7 @@ export interface RequestContext {
   ip: string;
   body: unknown;
   bearer: string | null;
+  params: Record<string, string>;
 }
 
 export async function readJsonBody(req: IncomingMessage, limitBytes = 64 * 1024):
@@ -87,15 +88,46 @@ export function clientIp(req: IncomingMessage): string {
 
 export type Handler = (ctx: RequestContext) => Promise<unknown> | unknown;
 
+interface PatternRoute {
+  method: string;
+  parts: string[];
+  handler: Handler;
+}
+
 export class Router {
   private readonly routes = new Map<string, Handler>();
+  private readonly patternRoutes: PatternRoute[] = [];
 
   add(method: string, path: string, handler: Handler): void {
+    if (path.includes(":")) {
+      const parts = path.split("/").filter(Boolean);
+      this.patternRoutes.push({ method, parts, handler });
+      return;
+    }
     this.routes.set(`${method} ${path}`, handler);
   }
 
-  resolve(method: string, path: string): Handler | undefined {
-    return this.routes.get(`${method} ${path}`);
+  resolve(method: string, path: string): { handler: Handler; params: Record<string, string> } | undefined {
+    const exact = this.routes.get(`${method} ${path}`);
+    if (exact) return { handler: exact, params: {} };
+    const pathParts = path.split("/").filter(Boolean);
+    for (const route of this.patternRoutes) {
+      if (route.method !== method || route.parts.length !== pathParts.length) continue;
+      const params: Record<string, string> = {};
+      let matched = true;
+      for (let i = 0; i < route.parts.length; i += 1) {
+        const expected = route.parts[i] as string;
+        const actual = pathParts[i] as string;
+        if (expected.startsWith(":")) {
+          params[expected.slice(1)] = decodeURIComponent(actual);
+        } else if (expected !== actual) {
+          matched = false;
+          break;
+        }
+      }
+      if (matched) return { handler: route.handler, params };
+    }
+    return undefined;
   }
 }
 

@@ -30,7 +30,7 @@ import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
 import { RewardService, RewardsError } from "./rewards.ts";
 import { GameEventService, GameEventsError } from "./game_events.ts";
-import { collectStuck, computeMetrics } from "./metrics.ts";
+import { collectStuck, computeMetrics, STUCK_SUBMITTED_MS } from "./metrics.ts";
 import { alertSinks, formatDigest, sendAlertText } from "./alerts.ts";
 import {
   ReconcileError, readTreasuryState, reconcilePrizeEpoch,
@@ -50,8 +50,10 @@ import {
 import { createRpcPool } from "./rpc.ts";
 import { buildTree, leafHash, proofFor } from "./merkle.ts";
 import {
-  WATCHTOWER_GAME_ID, gameSignalsConfig, ingestContract, ingestWatchtowerEvent,
-  normalizeSolanaEvent, routeL2, sdkConfig, watchtowerConfig, type TelemetryInput,
+  WATCHTOWER_GAME_ID, WATCHTOWER_NETWORK, WATCHTOWER_PARSER_VERSION,
+  WATCHTOWER_SOURCE, WATCHTOWER_STAGE, gameSignalsConfig, ingestContract,
+  ingestWatchtowerEvent, normalizeSolanaEvent, routeL2, sdkConfig,
+  watchtowerConfig, type TelemetryInput,
 } from "./watchtower.ts";
 
 const str = (value: unknown, field: string, max = 512): string => {
@@ -83,6 +85,136 @@ const parsePagination = (ctx: RequestContext, defaultLimit: number, maxLimit: nu
   return { limit, offset, present: true };
 };
 
+type WatchtowerDataQuality = "complete" | "partial" | "unavailable";
+
+const isoOrNull = (value: number | null | undefined): string | null =>
+  typeof value === "number" && Number.isFinite(value) ? new Date(value).toISOString() : null;
+
+const parseJsonCell = (value: string | null): unknown => {
+  if (value === null || value === "") return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return { _raw: value, _parse_error: true };
+  }
+};
+
+const intQuery = (ctx: RequestContext, name: string, fallback: number, min: number, max: number): number => {
+  const raw = ctx.url.searchParams.get(name);
+  if (raw === null || raw === "") return fallback;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new HttpError(400, "bad-query", `${name} must be an integer within ${min}..${max}`);
+  }
+  return parsed;
+};
+
+const parseSinceMs = (value: string | null): number | null => {
+  if (value === null || value === "") return null;
+  if (/^\d+$/.test(value)) {
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed < 0) {
+      throw new HttpError(400, "bad-query", "since must be a non-negative epoch millisecond value");
+    }
+    return parsed;
+  }
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) {
+    throw new HttpError(400, "bad-query", "since must be an ISO timestamp, YYYY-MM-DD, or epoch ms");
+  }
+  return parsed;
+};
+
+const encodeCursor = (occurredAt: number, id: string): string =>
+  Buffer.from(JSON.stringify({ occurredAt, id })).toString("base64url");
+
+const decodeCursor = (cursor: string | null): { occurredAt: number; id: string } | null => {
+  if (cursor === null || cursor === "") return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Record<string, unknown>;
+    if (!Number.isSafeInteger(parsed.occurredAt) || typeof parsed.id !== "string" || parsed.id.length === 0) {
+      throw new Error("cursor shape");
+    }
+    return { occurredAt: parsed.occurredAt, id: parsed.id };
+  } catch {
+    throw new HttpError(400, "bad-cursor", "cursor is invalid");
+  }
+};
+
+interface WatchtowerEventRow {
+  id: string;
+  idempotency_hash: string;
+  event_type: string;
+  external_id: string | null;
+  solana_wallet: string | null;
+  wallet_id: string | null;
+  session_id: string | null;
+  match_id: string | null;
+  mode: string | null;
+  result_json: string | null;
+  metadata_json: string | null;
+  occurred_at: number;
+  received_at: number;
+}
+
+const normalizeWatchtowerEventRow = (row: WatchtowerEventRow, config: Config): Record<string, unknown> => {
+  const metadataValue = parseJsonCell(row.metadata_json);
+  const metadata = metadataValue && typeof metadataValue === "object" && !Array.isArray(metadataValue)
+    ? metadataValue as Record<string, unknown>
+    : {};
+  const payload = metadata.payload && typeof metadata.payload === "object" && !Array.isArray(metadata.payload)
+    ? metadata.payload as Record<string, unknown>
+    : {};
+  return {
+    chain: WATCHTOWER_NETWORK,
+    cluster: typeof metadata.cluster === "string" ? metadata.cluster : "unknown",
+    slot: Number.isSafeInteger(metadata.slot) ? metadata.slot : null,
+    blockTime: new Date(row.occurred_at).toISOString(),
+    signature: typeof metadata.signature === "string" ? metadata.signature : `watchtower-${row.id}`,
+    programId: typeof metadata.program_id === "string"
+      ? metadata.program_id
+      : config.rewardsProgramId,
+    instructionIndex: 0,
+    innerIndex: 0,
+    eventType: typeof metadata.eventType === "string" ? metadata.eventType : row.event_type,
+    telemetryType: row.event_type,
+    commitment: metadata.source === "solana-indexer" ? "finalized" : "offchain",
+    success: true,
+    accounts: [],
+    payload: Object.keys(payload).length > 0 ? payload : (parseJsonCell(row.result_json) ?? {}),
+    source: typeof metadata.source === "string" ? metadata.source : WATCHTOWER_SOURCE,
+    parserVersion: WATCHTOWER_PARSER_VERSION,
+    observedAt: new Date(row.received_at).toISOString(),
+    dataQuality: "partial",
+    externalId: row.external_id,
+    solanaWallet: row.solana_wallet,
+    walletId: row.wallet_id,
+    sessionId: row.session_id,
+    matchId: row.match_id,
+    mode: row.mode,
+    idempotencyHash: row.idempotency_hash,
+  };
+};
+
+const watchtowerEnvelope = <T>(data: T, options: {
+  period?: string;
+  source?: string;
+  dataQuality?: WatchtowerDataQuality;
+  confidence?: number;
+  lastVerifiedAt?: string | null;
+} = {}) => ({
+  data,
+  generatedAt: new Date().toISOString(),
+  period: options.period ?? "point-in-time UTC",
+  source: options.source ?? WATCHTOWER_SOURCE,
+  dataQuality: options.dataQuality ?? "partial",
+  confidence: options.confidence ?? 0.8,
+  parserVersion: WATCHTOWER_PARSER_VERSION,
+  network: WATCHTOWER_NETWORK,
+  stage: WATCHTOWER_STAGE,
+  lastVerifiedAt: options.lastVerifiedAt ?? null,
+});
+
 export function buildRouter(deps: {
   config: Config;
   db: Db;
@@ -108,6 +240,81 @@ export function buildRouter(deps: {
     expectedGenesis: config.expectedGenesisHash,
   });
   const rpc = rpcPool.call;
+
+  const latestObservedAt = (...values: (number | null | undefined)[]): string | null => {
+    const filtered = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+    return filtered.length === 0 ? null : new Date(Math.max(...filtered)).toISOString();
+  };
+
+  const latestValue = (sql: string, ...args: (string | number | null)[]): number | null => {
+    const row = db.get<{ t: number | null }>(sql, ...args);
+    return row?.t ?? null;
+  };
+
+  const rewardsConfigured = (): boolean => config.rewardsProgramId !== null;
+
+  const buildWatchtowerAlerts = (): { alerts: Record<string, unknown>[]; lastVerifiedAt: string | null } => {
+    const now = Date.now();
+    const alerts: Record<string, unknown>[] = [];
+    if (!rewardsConfigured()) {
+      alerts.push({
+        id: "program-ids-unverified",
+        severity: "critical",
+        type: "ProgramIdsUnverified",
+        detectedAt: new Date(now).toISOString(),
+        payload: { missing: ["NEONRELAY_REWARDS_PROGRAM_ID"] },
+        acknowledged: false,
+      });
+    }
+    if (config.serverSigningPublicKey === null) {
+      alerts.push({
+        id: "reward-signing-disabled",
+        severity: "high",
+        type: "MissingEventStream",
+        detectedAt: new Date(now).toISOString(),
+        payload: { missing: ["NEONRELAY_SERVER_SIGNING_PUBLIC_KEY"], note: "signed reward ingestion is disabled" },
+        acknowledged: false,
+      });
+    }
+    const stuck = collectStuck(db, STUCK_SUBMITTED_MS, now);
+    if (stuck.intents.length > 0) {
+      alerts.push({
+        id: "reward-stuck",
+        severity: "high",
+        type: "RewardStuck",
+        detectedAt: new Date(now).toISOString(),
+        payload: { stale_intents: stuck.intents.length, oldest_age_ms: stuck.intents[0]?.age_ms ?? null },
+        acknowledged: false,
+      });
+    }
+    if (stuck.unreconciled_prize_epochs.length > 0) {
+      alerts.push({
+        id: "prize-reconcile-gap",
+        severity: "high",
+        type: "MissingEventStream",
+        detectedAt: new Date(now).toISOString(),
+        payload: { unreconciled_prize_epochs: stuck.unreconciled_prize_epochs },
+        acknowledged: false,
+      });
+    }
+    const rpcStatus = rpcPool.getStatus();
+    if (rpcStatus.failovers_total > 0 || rpcStatus.endpoints.primary.chain_rejected || rpcStatus.endpoints.fallback?.chain_rejected) {
+      alerts.push({
+        id: "rpc-degraded",
+        severity: "medium",
+        type: "RpcDegraded",
+        detectedAt: new Date(now).toISOString(),
+        payload: rpcStatus,
+        acknowledged: false,
+      });
+    }
+    const lastVerifiedAt = latestObservedAt(
+      latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
+      latestValue("SELECT MAX(created_at) AS t FROM reconcile_snapshots"),
+      latestValue("SELECT MAX(created_at) AS t FROM treasury_snapshots"),
+    );
+    return { alerts, lastVerifiedAt };
+  };
 
   const guard = (ctx: RequestContext, bucket: string) => {
     if (!limiter.allow(`${bucket}:${ctx.ip}`)) {
@@ -198,6 +405,405 @@ export function buildRouter(deps: {
     return gameSignalsConfig(gameId);
   });
 
+  const watchtowerRoutes = [
+    "/watchtower/health",
+    "/watchtower/readyz",
+    "/watchtower/config",
+    "/watchtower/events",
+    "/watchtower/events/:signature",
+    "/watchtower/metrics/daily",
+    "/watchtower/players/cohorts",
+    "/watchtower/players/retention",
+    "/watchtower/players/cross-game",
+    "/watchtower/economy",
+    "/watchtower/treasury",
+    "/watchtower/security",
+    "/watchtower/alerts",
+    "/watchtower/funnels",
+    "/watchtower/forecast",
+  ];
+
+  router.add("GET", "/watchtower/health", () => {
+    const watchtowerEvents = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM watchtower_events")?.n ?? 0;
+    const gameEvents = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM game_events")?.n ?? 0;
+    const rewardEvents = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM reward_events")?.n ?? 0;
+    const lastVerifiedAt = latestObservedAt(
+      latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
+      latestValue("SELECT MAX(ingested_at) AS t FROM game_events"),
+      latestValue("SELECT MAX(ingested_at) AS t FROM reward_events"),
+    );
+    return watchtowerEnvelope({
+      gameId: WATCHTOWER_GAME_ID,
+      tenant: WATCHTOWER_GAME_ID,
+      readOnly: true,
+      writes: false,
+      routeCount: watchtowerRoutes.length,
+      health: {
+        backendOk: true,
+        writes: false,
+        migrations: migrationCount(db),
+        rewardsProgramConfigured: rewardsConfigured(),
+        rewardSigningConfigured: config.serverSigningPublicKey !== null,
+      },
+      counters: { watchtowerEvents, gameEvents, rewardEvents },
+    }, {
+      dataQuality: watchtowerEvents > 0 || gameEvents > 0 || rewardEvents > 0 ? "partial" : "unavailable",
+      confidence: 0.93,
+      lastVerifiedAt,
+    });
+  });
+
+  router.add("GET", "/watchtower/readyz", () => {
+    const blockers: string[] = [];
+    if (!rewardsConfigured()) blockers.push("NEONRELAY_REWARDS_PROGRAM_ID is not set");
+    if (config.serverSigningPublicKey === null) blockers.push("NEONRELAY_SERVER_SIGNING_PUBLIC_KEY is not set");
+    const lastVerifiedAt = latestObservedAt(
+      latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
+      latestValue("SELECT MAX(ingested_at) AS t FROM reward_events"),
+    );
+    return watchtowerEnvelope({
+      gameId: WATCHTOWER_GAME_ID,
+      ready: blockers.length === 0,
+      readOnlyReady: true,
+      productionReady: blockers.length === 0,
+      writes: false,
+      blockers,
+    }, {
+      dataQuality: blockers.length === 0 ? "partial" : "unavailable",
+      confidence: blockers.length === 0 ? 0.78 : 0.99,
+      lastVerifiedAt,
+    });
+  });
+
+  router.add("GET", "/watchtower/config", () => watchtowerEnvelope({
+    gameId: WATCHTOWER_GAME_ID,
+    tenant: WATCHTOWER_GAME_ID,
+    readOnly: true,
+    writes: false,
+    routes: watchtowerRoutes.map((path) => ({ method: "GET", path })),
+    aliases: {
+      "/api/os/config": "/watchtower/config",
+      "/api/ingest/solana": "/watchtower/events",
+      "/api/games/neonrelay/ingestion": "/api/ingest/solana",
+    },
+    programIds: watchtowerConfig(config).program_ids,
+    environment: "unknown",
+  }, {
+    dataQuality: "partial",
+    confidence: 0.9,
+    lastVerifiedAt: latestObservedAt(latestValue("SELECT MAX(received_at) AS t FROM watchtower_events")),
+  }));
+
+  router.add("GET", "/watchtower/events", (ctx) => {
+    const limit = intQuery(ctx, "limit", 100, 1, 500);
+    const cursor = decodeCursor(ctx.url.searchParams.get("cursor"));
+    const since = parseSinceMs(ctx.url.searchParams.get("since"));
+    const eventType = ctx.url.searchParams.get("eventType");
+    const args: (string | number | null)[] = [];
+    let sql = `SELECT id, idempotency_hash, event_type, external_id, solana_wallet, wallet_id,
+      session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at
+      FROM watchtower_events WHERE 1 = 1`;
+    if (since !== null) {
+      sql += " AND occurred_at >= ?";
+      args.push(since);
+    }
+    if (eventType !== null && eventType !== "") {
+      sql += " AND event_type = ?";
+      args.push(eventType);
+    }
+    if (cursor !== null) {
+      sql += " AND (occurred_at > ? OR (occurred_at = ? AND id > ?))";
+      args.push(cursor.occurredAt, cursor.occurredAt, cursor.id);
+    }
+    sql += " ORDER BY occurred_at, id LIMIT ?";
+    args.push(limit + 1);
+    const rows = db.all<WatchtowerEventRow>(sql, ...args);
+    const page = rows.slice(0, limit);
+    const next = rows.length > limit ? rows[limit] : undefined;
+    const lastVerifiedAt = page.length === 0 ? null : isoOrNull(page[page.length - 1]?.received_at ?? null);
+    return watchtowerEnvelope({
+      items: page.map((row) => normalizeWatchtowerEventRow(row, config)),
+      nextCursor: next ? encodeCursor(next.occurred_at, next.id) : null,
+      replayable: true,
+      backfill: true,
+      deduplicated: true,
+    }, {
+      period: since === null ? "all-time UTC" : `since ${new Date(since).toISOString()} UTC`,
+      dataQuality: page.length === 0 ? "unavailable" : "partial",
+      confidence: 0.84,
+      lastVerifiedAt,
+    });
+  });
+
+  router.add("GET", "/watchtower/events/:signature", (ctx) => {
+    const signature = ctx.params.signature;
+    const row = db.get<WatchtowerEventRow>(`SELECT id, idempotency_hash, event_type, external_id, solana_wallet, wallet_id,
+      session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at
+      FROM watchtower_events WHERE metadata_json LIKE ? ORDER BY received_at DESC LIMIT 1`,
+    `%\"signature\":\"${signature}\"%`);
+    if (!row) throw new HttpError(404, "not-found", `no watchtower event for signature ${signature}`);
+    return watchtowerEnvelope(normalizeWatchtowerEventRow(row, config), {
+      dataQuality: "partial",
+      confidence: 0.85,
+      lastVerifiedAt: isoOrNull(row.received_at),
+    });
+  });
+
+  router.add("GET", "/watchtower/metrics/daily", (ctx) => {
+    const days = intQuery(ctx, "days", 7, 1, 90);
+    const now = Date.now();
+    const metrics = computeMetrics(db, days, now, rpcPool.getStatus());
+    const telemetry = db.all<{ day: string; event_type: string; n: number }>(
+      `SELECT strftime('%Y-%m-%d', occurred_at / 1000, 'unixepoch') AS day,
+              event_type, COUNT(*) AS n
+       FROM watchtower_events WHERE occurred_at >= ?
+       GROUP BY day, event_type ORDER BY day, event_type`,
+      metrics.since);
+    return watchtowerEnvelope({
+      windowDays: days,
+      activity: metrics.activity,
+      finish: metrics.finish,
+      claims: metrics.claims,
+      pipeline: metrics.pipeline,
+      telemetry,
+    }, {
+      period: `${days}d UTC`,
+      dataQuality: telemetry.length > 0 || metrics.activity.length > 0 ? "partial" : "unavailable",
+      confidence: 0.86,
+      lastVerifiedAt: latestObservedAt(
+        latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
+        latestValue("SELECT MAX(ingested_at) AS t FROM game_events"),
+      ),
+    });
+  });
+
+  router.add("GET", "/watchtower/players/cohorts", (ctx) => {
+    const days = intQuery(ctx, "days", 30, 1, 180);
+    const since = Date.now() - days * 86_400_000;
+    const cohorts = db.all<{ day: string; walletBindings: number; linkedPlayers: number }>(
+      `SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch') AS day,
+              COUNT(*) AS walletBindings,
+              SUM(CASE WHEN player_id IS NOT NULL THEN 1 ELSE 0 END) AS linkedPlayers
+       FROM wallet_bindings WHERE created_at >= ?
+       GROUP BY day ORDER BY day`,
+      since);
+    return watchtowerEnvelope({
+      windowDays: days,
+      cohorts,
+      note: "wallet-binding cohorts only; acquisition source is unavailable in this repository",
+    }, {
+      period: `${days}d UTC`,
+      dataQuality: cohorts.length > 0 ? "partial" : "unavailable",
+      confidence: 0.8,
+      lastVerifiedAt: latestObservedAt(latestValue("SELECT MAX(created_at) AS t FROM wallet_bindings")),
+    });
+  });
+
+  router.add("GET", "/watchtower/players/retention", (ctx) => {
+    const requested = ctx.url.searchParams.get("days");
+    const horizons = (requested ?? "1,3,7,14,30").split(",")
+      .map((value) => Number(value.trim()))
+      .filter((value, index, array) => Number.isInteger(value) && value > 0 && value <= 60 && array.indexOf(value) === index)
+      .sort((a, b) => a - b);
+    if (horizons.length === 0) {
+      throw new HttpError(400, "bad-query", "days must contain at least one retention horizon");
+    }
+    const since = parseSinceMs(ctx.url.searchParams.get("since")) ?? (Date.now() - 35 * 86_400_000);
+    const rows = db.all<{ player_id: string; day: string }>(
+      `SELECT player_id, strftime('%Y-%m-%d', occurred_at / 1000, 'unixepoch') AS day
+       FROM game_events
+       WHERE event_type = 'session_start' AND status = 'accepted'
+         AND player_id IS NOT NULL AND occurred_at >= ?`,
+      since);
+    const playersByDay = new Map<string, Set<string>>();
+    for (const row of rows) {
+      const set = playersByDay.get(row.day) ?? new Set<string>();
+      set.add(row.player_id);
+      playersByDay.set(row.day, set);
+    }
+    const daysSorted = [...playersByDay.keys()].sort();
+    const retention = horizons.map((horizon) => {
+      let base = 0;
+      let retained = 0;
+      for (const day of daysSorted) {
+        const cohort = playersByDay.get(day) ?? new Set<string>();
+        if (cohort.size === 0) continue;
+        const targetDate = new Date(`${day}T00:00:00.000Z`);
+        targetDate.setUTCDate(targetDate.getUTCDate() + horizon);
+        const target = playersByDay.get(targetDate.toISOString().slice(0, 10));
+        if (!target) continue;
+        base += cohort.size;
+        for (const player of cohort) {
+          if (target.has(player)) retained += 1;
+        }
+      }
+      return {
+        days: horizon,
+        cohortPlayers: base,
+        retainedPlayers: retained,
+        rate: base === 0 ? null : Math.round((retained / base) * 10000) / 10000,
+      };
+    });
+    const quality: WatchtowerDataQuality = retention.some((row) => row.cohortPlayers > 0) ? "partial" : "unavailable";
+    return watchtowerEnvelope({ horizons: retention }, {
+      period: `since ${new Date(since).toISOString()} UTC`,
+      dataQuality: quality,
+      confidence: quality === "partial" ? 0.72 : 0.99,
+      lastVerifiedAt: latestObservedAt(latestValue("SELECT MAX(occurred_at) AS t FROM game_events")),
+    });
+  });
+
+  router.add("GET", "/watchtower/players/cross-game", () => {
+    const gameAccounts = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM game_accounts WHERE enabled = 1")?.n ?? 0;
+    const grants = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM game_identity_grants")?.n ?? 0;
+    const pairings = db.get<{ n: number }>("SELECT COUNT(*) AS n FROM game_pairings")?.n ?? 0;
+    return watchtowerEnvelope({
+      compatibleStudioProfileKey: "studio_profile",
+      localGameAccounts: gameAccounts,
+      activeIdentityGrants: grants,
+      issuedPairings: pairings,
+      crossGameWarehouseAvailable: false,
+      note: "this repository exposes identity edges only; studio-wide cross-game projections are unavailable here",
+    }, {
+      dataQuality: gameAccounts > 0 || grants > 0 || pairings > 0 ? "partial" : "unavailable",
+      confidence: 0.78,
+      lastVerifiedAt: latestObservedAt(
+        latestValue("SELECT MAX(expires_at) AS t FROM game_identity_grants"),
+        latestValue("SELECT MAX(expires_at) AS t FROM game_pairings"),
+      ),
+    });
+  });
+
+  router.add("GET", "/watchtower/economy", (ctx) => {
+    const days = intQuery(ctx, "days", 7, 1, 90);
+    const since = Date.now() - days * 86_400_000;
+    const rewards = db.all<{ day: string; accepted_micro: number }>(
+      `SELECT strftime('%Y-%m-%d', ingested_at / 1000, 'unixepoch') AS day,
+              COALESCE(SUM(amount_micro), 0) AS accepted_micro
+       FROM reward_events
+       WHERE status = 'accepted' AND ingested_at >= ?
+       GROUP BY day ORDER BY day`,
+      since);
+    const claims = db.all<{ day: string; confirmed_claims: number }>(
+      `SELECT strftime('%Y-%m-%d', updated_at / 1000, 'unixepoch') AS day,
+              COUNT(*) AS confirmed_claims
+       FROM claim_intents
+       WHERE status = 'confirmed' AND updated_at >= ?
+       GROUP BY day ORDER BY day`,
+      since);
+    const prizeEpochs = db.all<{ epoch: number; total_micro: number; created_at: number }>(
+      `SELECT epoch, total_micro, created_at FROM economy_epochs
+       WHERE created_at >= ? ORDER BY epoch DESC LIMIT 20`,
+      since);
+    const v2 = {
+      openEpochs: db.get<{ n: number }>("SELECT COUNT(*) AS n FROM economy_v2_epochs WHERE state = 'OPEN'")?.n ?? 0,
+      sealedEpochs: db.get<{ n: number }>("SELECT COUNT(*) AS n FROM economy_v2_epochs WHERE state = 'SEALED'")?.n ?? 0,
+      intents: db.get<{ n: number }>("SELECT COUNT(*) AS n FROM economy_v2_intents")?.n ?? 0,
+    };
+    return watchtowerEnvelope({ rewards, claims, prizeEpochs, economyV2: v2 }, {
+      period: `${days}d UTC`,
+      dataQuality: rewards.length > 0 || claims.length > 0 || prizeEpochs.length > 0 || v2.intents > 0 ? "partial" : "unavailable",
+      confidence: 0.82,
+      lastVerifiedAt: latestObservedAt(
+        latestValue("SELECT MAX(ingested_at) AS t FROM reward_events"),
+        latestValue("SELECT MAX(updated_at) AS t FROM claim_intents"),
+        latestValue("SELECT MAX(created_at) AS t FROM economy_epochs"),
+      ),
+    });
+  });
+
+  router.add("GET", "/watchtower/treasury", () => {
+    const row = db.get<{
+      created_at: number; program: string; mint: string; vault: string; treasury: string;
+      vault_balance: string; treasury_balance: string; reserved: string;
+    }>(`SELECT created_at, program, mint, vault, treasury, vault_balance, treasury_balance, reserved
+        FROM treasury_snapshots ORDER BY created_at DESC LIMIT 1`);
+    return watchtowerEnvelope({
+      latest: row ?? null,
+      note: row ? null : "treasury snapshots have not been recorded yet",
+    }, {
+      dataQuality: row ? "partial" : "unavailable",
+      confidence: row ? 0.82 : 0.99,
+      lastVerifiedAt: isoOrNull(row?.created_at),
+    });
+  });
+
+  router.add("GET", "/watchtower/security", () => {
+    const reconcile = db.all<{ kind: string; status: string; n: number }>(
+      `SELECT kind, status, COUNT(*) AS n FROM reconcile_snapshots GROUP BY kind, status ORDER BY kind, status`);
+    const adminActions = db.all<{ action: string; n: number }>(
+      `SELECT action, COUNT(*) AS n FROM admin_audit GROUP BY action ORDER BY action`);
+    const { alerts, lastVerifiedAt } = buildWatchtowerAlerts();
+    return watchtowerEnvelope({
+      serverAuthoritative: true,
+      rewardSigningConfigured: config.serverSigningPublicKey !== null,
+      rewardsProgramConfigured: rewardsConfigured(),
+      reconcile,
+      adminActions,
+      openAlerts: alerts.length,
+      auditReport: "reports/neon-relay-audit.json",
+    }, {
+      dataQuality: reconcile.length > 0 || adminActions.length > 0 ? "partial" : "unavailable",
+      confidence: 0.88,
+      lastVerifiedAt,
+    });
+  });
+
+  router.add("GET", "/watchtower/alerts", () => {
+    const { alerts, lastVerifiedAt } = buildWatchtowerAlerts();
+    return watchtowerEnvelope({
+      open: alerts,
+      total: alerts.length,
+      acknowledgement: "read-only exporter; acknowledgement happens in Watchtower, not in Neon Relay",
+    }, {
+      dataQuality: alerts.length > 0 ? "partial" : "unavailable",
+      confidence: 0.92,
+      lastVerifiedAt,
+    });
+  });
+
+  router.add("GET", "/watchtower/funnels", () => {
+    const sessions = db.get<{ n: number }>(
+      "SELECT COUNT(DISTINCT session_id) AS n FROM game_events WHERE event_type = 'session_start' AND status = 'accepted'")?.n ?? 0;
+    const matches = db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM watchtower_events WHERE event_type = 'match_start'")?.n ?? 0;
+    const firstFinishes = db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM watchtower_events WHERE event_type = 'first_finish'")?.n ?? 0;
+    const firstClaims = db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM watchtower_events WHERE event_type = 'first_claim'")?.n ?? 0;
+    const confirmedClaims = db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM claim_intents WHERE status = 'confirmed'")?.n ?? 0;
+    const linkedWallets = db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM wallet_bindings WHERE revoked_at IS NULL")?.n ?? 0;
+    return watchtowerEnvelope({
+      stages: [
+        { id: "wallet_linked", count: linkedWallets },
+        { id: "session_start", count: sessions },
+        { id: "match_start", count: matches },
+        { id: "first_finish", count: firstFinishes },
+        { id: "first_claim", count: firstClaims },
+        { id: "claim_confirmed", count: confirmedClaims },
+      ],
+    }, {
+      dataQuality: linkedWallets > 0 || sessions > 0 || matches > 0 ? "partial" : "unavailable",
+      confidence: 0.76,
+      lastVerifiedAt: latestObservedAt(
+        latestValue("SELECT MAX(created_at) AS t FROM wallet_bindings"),
+        latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
+        latestValue("SELECT MAX(updated_at) AS t FROM claim_intents"),
+      ),
+    });
+  });
+
+  router.add("GET", "/watchtower/forecast", () => watchtowerEnvelope({
+    forecast: null,
+    note: "forecasting is intentionally unavailable until a verified production data stream exists",
+  }, {
+    dataQuality: "unavailable",
+    confidence: 0,
+    lastVerifiedAt: null,
+  }));
+
   const fromTelemetryQuery = (ctx: RequestContext): TelemetryInput | null => {
     const eventType = ctx.url.searchParams.get("event_type");
     if (!eventType) return null;
@@ -237,9 +843,20 @@ export function buildRouter(deps: {
     }
   };
 
+  const contractOnlyIngestion = () => ({ ...ingestContract(), accepted: 0, results: [] });
+
+  const hubIngestionPayload = (results: ReturnType<typeof ingestWatchtowerEvent>[]) => ({
+    ...ingestContract(),
+    accepted: results.some((result) => result.status === "accepted"),
+    duplicate: results.length === 1 && results[0]?.status === "duplicate",
+    accepted_count: results.filter((result) => result.status === "accepted").length,
+    duplicate_count: results.filter((result) => result.status === "duplicate").length,
+    results,
+  });
+
   router.add("GET", "/api/ingest/solana", (ctx) => {
     const input = fromTelemetryQuery(ctx);
-    if (!input) return { ...ingestContract(), accepted: 0, results: [] };
+    if (!input) return contractOnlyIngestion();
     const result = ingestTelemetry(input);
     return { ...ingestContract(), accepted: result.status === "accepted" ? 1 : 0, results: [result] };
   });
@@ -255,6 +872,30 @@ export function buildRouter(deps: {
       const results = rawEvents.map((event) => ingestTelemetry(event));
       db.raw.exec("COMMIT");
       return { ...ingestContract(), accepted: results.filter((r) => r.status === "accepted").length, results };
+    } catch (err) {
+      db.raw.exec("ROLLBACK");
+      throw err;
+    }
+  });
+
+  router.add("GET", "/api/games/neonrelay/ingestion", (ctx) => {
+    const input = fromTelemetryQuery(ctx);
+    if (!input) return hubIngestionPayload([]);
+    const result = ingestTelemetry(input);
+    return hubIngestionPayload([result]);
+  });
+
+  router.add("POST", "/api/games/neonrelay/ingestion", (ctx) => {
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const rawEvents = Array.isArray(body.events) ? body.events : [body];
+    if (rawEvents.length < 1 || rawEvents.length > 500) {
+      throw new HttpError(400, "bad-telemetry", "events must contain 1..500 items");
+    }
+    db.raw.exec("BEGIN");
+    try {
+      const results = rawEvents.map((event) => ingestTelemetry(event));
+      db.raw.exec("COMMIT");
+      return hubIngestionPayload(results);
     } catch (err) {
       db.raw.exec("ROLLBACK");
       throw err;
