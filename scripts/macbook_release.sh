@@ -157,9 +157,10 @@ stage_lockfile() {
     # spl-token-2022 ^6 and the whole step is atomic — on a registry where 0.31.1
     # is unresolvable the lock simply stays 0.31.2 and we report it.
     local pkg
-    for pkg in anchor-spl anchor-lang anchor-syn anchor-attribute-access-control anchor-attribute-account \
-               anchor-attribute-constant anchor-attribute-error anchor-attribute-event anchor-attribute-program \
-               anchor-derive-accounts anchor-derive-serde anchor-derive-space; do
+    for pkg in anchor-attribute-access-control anchor-attribute-account anchor-attribute-constant \
+               anchor-attribute-error anchor-attribute-event anchor-attribute-program \
+               anchor-derive-accounts anchor-derive-serde anchor-derive-space \
+               anchor-syn anchor-lang anchor-spl; do
       if grep -A1 "^name = \"$pkg\"$" Cargo.lock | grep -q 'version = "0.31.2"'; then
         echo "  -- downgrading $pkg 0.31.2 -> 0.31.1"
         cargo update -p "$pkg@0.31.2" --precise 0.31.1 \
