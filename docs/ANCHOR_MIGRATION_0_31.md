@@ -34,7 +34,11 @@ anchor test --provider.cluster devnet
 - `anchor_spl::token_interface` стабилизирован — можно мигрировать `Program<'info, Token>` → `Interface<'info, TokenInterface>` где нужен Token-2022.
 - `idl-build` feature теперь требует `anchor-lang/idl-build` (уже в `idl-build` feature).
 
-**Оффлайн sandbox:** остаётся 0.30.1 до появления toolchain в CI (BL-03). `npm test` не зависит от версии Anchor (только TS). `cargo test -p neonrelay-assets` на девелоп-машине должен уже использовать 0.31.1.
+**Текущий checkout:** source `Cargo.toml` и `Anchor.toml` уже переведены на
+0.31.1, но checked-in `Cargo.lock` пока содержит 0.30.1. Без Rust/crates
+network этот lockfile нельзя честно перегенерировать; release gate блокирует
+locked build до выполнения `cargo update`/`cargo test --locked` на release
+machine. `npm test` не зависит от версии Anchor.
 
 **Проверка после миграции:**
 

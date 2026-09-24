@@ -1,6 +1,17 @@
-# Solana 2026: полный ресерч для продакшн-деплоя смарт-контрактов Neon Relay
+# Solana 2026: исторический ресерч (не evidence для production)
 
-**Дата:** 20 сентября 2026 UTC  
+> **SUPERSEDED / UNVERIFIED (24 сентября 2026):** этот документ сохранён как
+> историческая исследовательская заметка. Числовые оценки rent/CU/SOL/USD,
+> vendor free-tier/SLA и statements о Bubblegum/MPL Core не подтверждены в
+> текущем checkout и не являются release approval. Текущий default build
+> держит внешний asset CPI fail-closed; authoritative status находится в
+> `docs/PRODUCTION_READY_SUMMARY_RU.md` и `docs/PRODUCTION_DEPLOY_GATE.md`.
+>
+> **Причина:** pinned ABI, validator rehearsal, live RPC и measurement
+> artifacts отсутствуют; расходы зависят от версии программ, параметров дерева,
+> cluster и момента измерения.
+
+**Дата исходной заметки:** 20 сентября 2026 UTC
 **База проекта:** `Leo88q/neon-relay` @ `92f43ac`, ветка `arena/01a0bfeb`  
 **Статус до ресерча:** 3 программы Anchor 0.30.1 (rewards / features / economy v1+v2), оффлайн-тесты 32/32, без деплоя, без дешёвой чеканки (badge = SPL 0-decimal mint, ~0.022 SOL/шт), без ZK-compression.
 

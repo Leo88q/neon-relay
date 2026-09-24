@@ -21,9 +21,13 @@ export function v2Fixture(wallet = Buffer.alloc(32, 7), reference = Buffer.alloc
     bytes.writeBigUInt64LE(100000000000n, 64); bytes[108] = 1; return bytes;
   }
   const vaultData = token(configPda.address), treasuryData = token(authority);
-  const ticketData = Buffer.alloc(123); anchorDiscriminator("EntryTicketV2").copy(ticketData);
+  const ticketData = Buffer.alloc(139); anchorDiscriminator("EntryTicketV2").copy(ticketData);
   mint.copy(ticketData, 8); wallet.copy(ticketData, 40); reference.copy(ticketData, 72);
-  ticketData.writeBigUInt64LE(fees[0]!, 106); ticketData.writeBigInt64LE(1700000000n, 114); ticketData[122] = ticketPda.bump;
+  ticketData.writeBigUInt64LE(fees[0]!, 106);
+  const ticketRake = fees[0]! / 10n;
+  ticketData.writeBigUInt64LE(ticketRake, 114);
+  ticketData.writeBigUInt64LE(fees[0]! - ticketRake, 122);
+  ticketData.writeBigInt64LE(1700000000n, 130); ticketData[138] = ticketPda.bump;
   const envelope = (bytes: Buffer, owner = base58Encode(program)) => ({ owner, executable: false, data: [bytes.toString("base64"), "base64"] });
   let calls = 0;
   const rpc: RpcCaller = async (method, params) => {

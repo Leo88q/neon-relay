@@ -16,9 +16,17 @@ Tests re-run: backend 97 pass (3386ms), onchain 39 pass (681ms) — economy.test
 
 ---
 
-# Полный аудит Neon Relay — смартконтракты, бэкенд, фронтенд, экономика
+# Исторический аудит Neon Relay (superseded; не production evidence)
 
-**Дата:** 20 сентября 2026 · **Ветка:** `arena/01a0bfeb-neon-relay` · **Коммит базы:** `b9c630e` (prod cheap-minting)  
+> **SUPERSEDED / UNVERIFIED (24 сентября 2026):** этот коммитированный
+> исторический patch log/audit не описывает текущий checkout и не подтверждает
+> исправление findings или live deployment. В частности, заявления о готовом
+> Bubblegum/MPL Core CPI, стоимости/rent и vendor/runtime verification считать
+> недействительными без нового внешнего audit report, ABI review, validator
+> rehearsal и finalized RPC evidence. Используйте текущий production-gate
+> документ вместо этого текста.
+
+**Дата исходного аудита:** 20 сентября 2026 · **Ветка:** `arena/01a0bfeb-neon-relay` · **Коммит базы:** `b9c630e` (prod cheap-minting)
 **Аудиторы:** внутренний продакшн-аудит (ручной + статический + offline тесты 39/39 onchain, 97/97 backend)  
 **Цель:** выйти на `paymentsEnabled: true` без дыр в контракте/экономике/фронте.
 

@@ -16,15 +16,15 @@
  * paths answer 410 with migration guidance. List routes accept optional
  * ?limit=&offset= pagination.
  */
-import { createHash, randomUUID } from "node:crypto";
-import { mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { lstatSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { basename, join, relative, resolve } from "node:path";
 import { raceLobby, parseRaceCurrency, RACE_TIERS } from "./race_catalog.ts";
 import { readMarketV2, readTicketV2, V2AccountError } from "./economy_v2_rpc.ts";
 import { issueSealedPairing } from "./game_pairing_seal.ts";
 import { GamePairing } from "./game_pairing.ts";
 import { GameIdentity } from "./game_identity.ts";
-import { EconomyV2Store } from "./economy_v2_store.ts";
+import { DEFAULT_MAX_INTENTS_PER_PLAYER_EPOCH, EconomyV2Store } from "./economy_v2_store.ts";
 import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
@@ -42,9 +42,9 @@ import {
 import { HttpError, RateLimiter, Router, type RequestContext } from "./http.ts";
 import type { SessionStore } from "./sessions.ts";
 import type { WalletStore } from "./wallets.ts";
-import { migrationCount, type Db } from "./db.ts";
+import { inspectBackup, migrationCount, type Db } from "./db.ts";
 import {
-  base58Decode, base58Encode, closeEpochPrizes, entryReference,
+  base58Decode, base58Encode, closeEpochPrizes, entryReference, findProgramAddress,
   readVaultPool, ticketStatus, VaultReadError,
 } from "./economy.ts";
 import { createRpcPool } from "./rpc.ts";
@@ -196,24 +196,32 @@ const normalizeWatchtowerEventRow = (row: WatchtowerEventRow, config: Config): R
   };
 };
 
+const confidenceForQuality = (quality: WatchtowerDataQuality): number => {
+  // Confidence is a consequence of the declared evidence quality, not a
+  // hardcoded optimism score. `partial` means locally observed but not
+  // independently verified; `unavailable` is never presented as evidence.
+  return quality === "complete" ? 1 : quality === "partial" ? 0.5 : 0;
+};
+
 const watchtowerEnvelope = <T>(data: T, options: {
   period?: string;
   source?: string;
   dataQuality?: WatchtowerDataQuality;
-  confidence?: number;
   lastVerifiedAt?: string | null;
-} = {}) => ({
-  data,
-  generatedAt: new Date().toISOString(),
-  period: options.period ?? "point-in-time UTC",
-  source: options.source ?? WATCHTOWER_SOURCE,
-  dataQuality: options.dataQuality ?? "partial",
-  confidence: options.confidence ?? 0.8,
-  parserVersion: WATCHTOWER_PARSER_VERSION,
-  network: WATCHTOWER_NETWORK,
-  stage: WATCHTOWER_STAGE,
-  lastVerifiedAt: options.lastVerifiedAt ?? null,
-});
+} = {}) => {
+  const dataQuality = options.dataQuality ?? "partial";
+  return {
+    data,
+    generatedAt: new Date().toISOString(),
+    period: options.period ?? "point-in-time UTC",
+    source: options.source ?? WATCHTOWER_SOURCE,
+    dataQuality,
+    parserVersion: WATCHTOWER_PARSER_VERSION,
+    network: WATCHTOWER_NETWORK,
+    stage: WATCHTOWER_STAGE,
+    lastVerifiedAt: options.lastVerifiedAt ?? null,
+  };
+};
 
 export function buildRouter(deps: {
   config: Config;
@@ -238,8 +246,252 @@ export function buildRouter(deps: {
     timeoutMs: config.rpcTimeoutMs,
     cooldownMs: config.rpcCooldownMs,
     expectedGenesis: config.expectedGenesisHash,
+    requireGenesis: config.environment === "production",
   });
   const rpc = rpcPool.call;
+  const BPF_LOADER_UPGRADEABLE = "BPFLoaderUpgradeab1e11111111111111111111111";
+  const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+  let productionGate: {
+    checkedAt: number | null;
+    ready: boolean;
+    blockers: string[];
+  } = { checkedAt: null, ready: false, blockers: ["production-chain-verification-required"] };
+
+  const canonicalPublicKey = (value: string | null): boolean => {
+    if (!value) return false;
+    try {
+      const raw = base58Decode(value);
+      return raw.length === 32 && raw.some((byte) => byte !== 0) && base58Encode(raw) === value;
+    } catch {
+      return false;
+    }
+  };
+
+  const readManifest = (): Record<string, unknown> => {
+    if (!config.deploymentManifestPath) throw new Error("NEONRELAY_DEPLOYMENT_MANIFEST is not configured");
+    const parsed: unknown = JSON.parse(readFileSync(config.deploymentManifestPath, "utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("deployment manifest must be an object");
+    return parsed as Record<string, unknown>;
+  };
+
+  type RpcAccount = { owner?: unknown; executable?: unknown; data?: unknown };
+  const readAccount = async (address: string): Promise<RpcAccount> => {
+    const reply = await rpc("getAccountInfo", [address, { encoding: "base64", commitment: "finalized" }]) as {
+      value?: RpcAccount | null;
+    };
+    const account = reply?.value;
+    if (!account || typeof account.executable !== "boolean" || !Array.isArray(account.data) ||
+        account.data[1] !== "base64" || typeof account.data[0] !== "string" || account.data[0].length === 0) {
+      throw new Error("account-missing-or-invalid");
+    }
+    const encoded = account.data[0] as string;
+    const bytes = Buffer.from(encoded, "base64");
+    if (bytes.length === 0 || bytes.toString("base64") !== encoded) {
+      throw new Error("account-data-noncanonical");
+    }
+    return account;
+  };
+  const readTokenAccount = async (address: string, expectedMint: Buffer, expectedOwner: Buffer): Promise<bigint> => {
+    const account = await readAccount(address);
+    if (account.owner !== TOKEN_PROGRAM || account.executable !== false) throw new Error("token-account-owner-invalid");
+    const data = account.data as [string, string];
+    const bytes = Buffer.from(data[0], "base64");
+    // Classic SPL TokenAccount layout: reject frozen/uninitialized accounts,
+    // delegates, native-token wrappers and close authorities. A production
+    // money path must not trust an account that can be drained by another key.
+    if (bytes.length !== 165 || bytes.toString("base64") !== data[0] || bytes[108] !== 1 ||
+        bytes.readUInt32LE(72) !== 0 || bytes.readUInt32LE(109) !== 0 || bytes.readUInt32LE(129) !== 0) {
+      throw new Error("token-account-layout-invalid");
+    }
+    if (!bytes.subarray(0, 32).equals(expectedMint) || !bytes.subarray(32, 64).equals(expectedOwner)) {
+      throw new Error("token-account-binding-invalid");
+    }
+    return bytes.readBigUInt64LE(64);
+  };
+
+  const verifyProductionGate = async (): Promise<typeof productionGate> => {
+    if (config.environment !== "production") {
+      productionGate = { checkedAt: Date.now(), ready: false, blockers: ["NODE_ENV=production is required"] };
+      return productionGate;
+    }
+    const blockers: string[] = [];
+    if (!canonicalPublicKey(config.rewardsProgramId)) blockers.push("rewards-program-id-invalid");
+    if (!canonicalPublicKey(config.economyProgramId)) blockers.push("economy-program-id-invalid");
+    if (!canonicalPublicKey(config.featuresProgramId)) blockers.push("features-program-id-invalid");
+    if (!canonicalPublicKey(config.assetsProgramId)) blockers.push("assets-program-id-invalid");
+    if (!canonicalPublicKey(config.skrMint)) blockers.push("skr-mint-invalid");
+    if (!canonicalPublicKey(config.rewardMint)) blockers.push("reward-mint-invalid");
+    if (!canonicalPublicKey(config.expectedGenesisHash)) blockers.push("expected-genesis-invalid");
+    if (!config.monetizationEnabled) blockers.push("monetization-disabled");
+    if (!config.watchtowerIngestToken) blockers.push("watchtower-ingest-token-missing");
+    if (!config.serverSigningPublicKey) blockers.push("server-signing-key-missing");
+    let manifest: Record<string, unknown> | null = null;
+    if (blockers.length === 0) {
+      try { manifest = readManifest(); } catch { blockers.push("deployment-manifest-unreadable"); }
+    }
+    const programs = manifest?.["programs"];
+    const manifestAuthority = manifest?.["upgrade_authority"];
+    const manifestCluster = manifest?.["cluster"];
+    const manifestGenesis = manifest?.["genesis_hash"];
+    const manifestMints = manifest?.["mints"];
+    if (manifestCluster !== config.cluster) blockers.push("manifest-cluster-mismatch");
+    if (manifestGenesis !== config.expectedGenesisHash) blockers.push("manifest-genesis-mismatch");
+    if (!manifestMints || typeof manifestMints !== "object" || Array.isArray(manifestMints) ||
+        (manifestMints as Record<string, unknown>).skr !== config.skrMint) blockers.push("manifest-skr-mint-mismatch");
+    if (!manifestMints || typeof manifestMints !== "object" || Array.isArray(manifestMints) ||
+        (manifestMints as Record<string, unknown>).reward !== config.rewardMint) blockers.push("manifest-reward-mint-mismatch");
+    if (!programs || typeof programs !== "object" || Array.isArray(programs)) blockers.push("deployment-programs-missing");
+    if (typeof manifestAuthority !== "string" ||
+        (manifestAuthority !== "none" && !canonicalPublicKey(manifestAuthority))) {
+      blockers.push("upgrade-authority-invalid");
+    }
+    if (blockers.length === 0) {
+      const expected = {
+        neonrelay_rewards: config.rewardsProgramId,
+        neonrelay_features: config.featuresProgramId,
+        neonrelay_economy: config.economyProgramId,
+        neonrelay_assets: config.assetsProgramId,
+      } as const;
+      const manifestPrograms = programs as Record<string, unknown>;
+      for (const [name, id] of Object.entries(expected)) {
+        if (manifestPrograms[name] !== id) blockers.push(`manifest-${name}-mismatch`);
+      }
+    }
+    const checkProgram = async (address: string, expectedAuthority: string): Promise<void> => {
+      const account = await readAccount(address);
+      if (account.owner !== BPF_LOADER_UPGRADEABLE || account.executable !== true) {
+        throw new Error("program-owner-or-executable-invalid");
+      }
+      const programDataEncoded = (account.data as [string, string])[0];
+      const programDataBytes = Buffer.from(programDataEncoded, "base64");
+      if (programDataBytes.toString("base64") !== programDataEncoded) throw new Error("program-data-noncanonical");
+      // UpgradeableLoaderState::Program is bincode variant 2 (u32) + Pubkey.
+      if (programDataBytes.length < 36 || programDataBytes.readUInt32LE(0) !== 2) {
+        throw new Error("program-loader-state-invalid");
+      }
+      const programDataKey = programDataBytes.subarray(4, 36);
+      const expectedProgramData = findProgramAddress(
+        [base58Decode(address)], base58Decode(BPF_LOADER_UPGRADEABLE),
+      ).address;
+      if (!programDataKey.equals(expectedProgramData)) throw new Error("programdata-pda-invalid");
+      const programData = base58Encode(programDataKey);
+      const dataAccount = await readAccount(programData);
+      if (dataAccount.owner !== BPF_LOADER_UPGRADEABLE || dataAccount.executable !== false) {
+        throw new Error("programdata-owner-invalid");
+      }
+      const programDataAccountEncoded = (dataAccount.data as [string, string])[0];
+      const bytes = Buffer.from(programDataAccountEncoded, "base64");
+      if (bytes.toString("base64") !== programDataAccountEncoded) throw new Error("programdata-noncanonical");
+      // ProgramData is variant 3, slot u64, then Option<Pubkey>.
+      if (bytes.length < 13 || bytes.readUInt32LE(0) !== 3) throw new Error("programdata-loader-state-invalid");
+      const authorityOption = bytes[12];
+      if (authorityOption !== 0 && authorityOption !== 1) throw new Error("programdata-authority-option-invalid");
+      if (authorityOption === 1 && bytes.length < 45) throw new Error("programdata-authority-truncated");
+      const authority = authorityOption === 1 ? base58Encode(bytes.subarray(13, 45)) : "none";
+      if (authority !== expectedAuthority) throw new Error("upgrade-authority-drift");
+    };
+    const checkMint = async (address: string, expectedDecimals?: number): Promise<number> => {
+      const account = await readAccount(address);
+      if (account.owner !== TOKEN_PROGRAM || account.executable !== false) throw new Error("mint-owner-invalid");
+      const data = account.data as [string, string];
+      const bytes = Buffer.from(data[0], "base64");
+      if (bytes.toString("base64") !== data[0]) throw new Error("mint-data-noncanonical");
+      // Rewards/economy boot gates deliberately accept only the classic SPL
+      // Mint ABI. Unknown Token-2022 extensions (PermanentDelegate,
+      // TransferHook, TransferFee) are not safe to infer from an RPC snapshot.
+      if (bytes.length !== 82 || bytes[45] !== 1 || bytes.readUInt32LE(0) !== 0 || bytes.readUInt32LE(46) !== 0) {
+        throw new Error("mint-authority-or-extension-invalid");
+      }
+      if (expectedDecimals !== undefined && bytes[44] !== expectedDecimals) {
+        throw new Error("reward-mint-decimals-invalid");
+      }
+      return bytes[44]!;
+    };
+    const accountDiscriminator = (name: string): Buffer =>
+      createHash("sha256").update(`account:${name}`, "utf8").digest().subarray(0, 8);
+    const readState = async (address: string, owner: string, name: string, size: number, pausedOffset: number): Promise<Buffer> => {
+      const account = await readAccount(address);
+      if (account.owner !== owner || account.executable !== false) throw new Error(`${name}-owner-invalid`);
+      const data = account.data as [string, string];
+      const bytes = Buffer.from(data[0], "base64");
+      if (bytes.length !== size || bytes.toString("base64") !== data[0]) throw new Error(`${name}-layout-invalid`);
+      if (!bytes.subarray(0, 8).equals(accountDiscriminator(name))) throw new Error(`${name}-discriminator-invalid`);
+      if (bytes.subarray(8, 40).equals(Buffer.alloc(32))) throw new Error(`${name}-authority-invalid`);
+      if (bytes[pausedOffset] !== 0) throw new Error(`${name}-paused`);
+      return bytes;
+    };
+    if (blockers.length === 0) {
+      try {
+        const genesis = await rpc("getGenesisHash", []);
+        if (genesis !== config.expectedGenesisHash) throw new Error("genesis-hash-mismatch");
+        await checkProgram(config.rewardsProgramId as string, manifestAuthority as string);
+        await checkProgram(config.featuresProgramId as string, manifestAuthority as string);
+        await checkProgram(config.economyProgramId as string, manifestAuthority as string);
+        await checkProgram(config.assetsProgramId as string, manifestAuthority as string);
+        const paymentDecimals = await checkMint(config.skrMint as string);
+        await checkMint(config.rewardMint as string, 6);
+
+        const rewardsProgram = base58Decode(config.rewardsProgramId as string);
+        const economyProgram = base58Decode(config.economyProgramId as string);
+        const featuresProgram = base58Decode(config.featuresProgramId as string);
+        const assetsProgram = base58Decode(config.assetsProgramId as string);
+        const rewardMint = base58Decode(config.rewardMint as string);
+        const paymentMint = base58Decode(config.skrMint as string);
+        const rewardsConfigPda = findProgramAddress([Buffer.from("neonrelay_config")], rewardsProgram);
+        const rewardsConfig = rewardsConfigPda.address;
+        const rewardsConfigBytes = await readState(
+          base58Encode(rewardsConfig), config.rewardsProgramId as string, "Config", 131, 72,
+        );
+        if (rewardsConfigBytes[81] !== rewardsConfigPda.bump) throw new Error("rewards-config-bump-mismatch");
+        if (!rewardsConfigBytes.subarray(40, 72).equals(rewardMint)) throw new Error("rewards-config-mint-mismatch");
+        const rewardsVault = findProgramAddress([Buffer.from("neonrelay_vault")], rewardsProgram).address;
+        const rewardsVaultBalance = await readTokenAccount(base58Encode(rewardsVault), rewardMint, rewardsConfig);
+        const rewardsReserved = rewardsConfigBytes.readBigUInt64LE(123);
+        if (rewardsReserved > rewardsVaultBalance) throw new Error("rewards-vault-underfunded");
+
+        const featuresConfigPda = findProgramAddress([Buffer.from("neonrelay_features_config")], featuresProgram);
+        const featuresConfigBytes = await readState(
+          base58Encode(featuresConfigPda.address), config.featuresProgramId as string, "FeaturesConfig", 98, 40,
+        );
+        if (featuresConfigBytes[57] !== featuresConfigPda.bump) throw new Error("features-config-bump-mismatch");
+        const assetsConfigPda = findProgramAddress([Buffer.from("neonrelay_assets_config")], assetsProgram);
+        const assetsConfigBytes = await readState(
+          base58Encode(assetsConfigPda.address), config.assetsProgramId as string, "AssetsConfig", 106, 80,
+        );
+        if (assetsConfigBytes[105] !== assetsConfigPda.bump) throw new Error("assets-config-bump-mismatch");
+
+        const economyConfigPda = findProgramAddress(
+          [Buffer.from("neonrelay_economy_v2"), paymentMint], economyProgram,
+        );
+        const economyConfig = economyConfigPda.address;
+        const economyConfigBytes = await readState(
+          base58Encode(economyConfig), config.economyProgramId as string, "EconomyConfigV2", 180, 178,
+        );
+        if (economyConfigBytes[179] !== economyConfigPda.bump) throw new Error("economy-config-bump-mismatch");
+        if (!economyConfigBytes.subarray(40, 72).equals(paymentMint)) throw new Error("economy-config-mint-mismatch");
+        const treasury = economyConfigBytes.subarray(72, 104);
+        const vault = economyConfigBytes.subarray(104, 136);
+        if (treasury.equals(vault)) throw new Error("economy-treasury-vault-alias");
+        const vaultBalance = await readTokenAccount(base58Encode(vault), paymentMint, economyConfig);
+        await readTokenAccount(base58Encode(treasury), paymentMint, economyConfigBytes.subarray(8, 40));
+        const rakeBps = economyConfigBytes.readUInt16LE(168);
+        if (rakeBps > 2000) throw new Error("economy-rake-invalid");
+        const scale = 10n ** BigInt(paymentDecimals);
+        const expectedFees = [50n, 100n, 500n, 2000n].map((tokens) => tokens * scale);
+        for (let index = 0; index < expectedFees.length; index += 1) {
+          if (economyConfigBytes.readBigUInt64LE(136 + index * 8) !== expectedFees[index]) {
+            throw new Error("economy-fees-invalid");
+          }
+        }
+        const reserved = economyConfigBytes.readBigUInt64LE(170);
+        if (reserved > vaultBalance) throw new Error("economy-vault-underfunded");
+      } catch (error) {
+        blockers.push(error instanceof Error ? error.message : "production-chain-verification-failed");
+      }
+    }
+    productionGate = { checkedAt: Date.now(), ready: blockers.length === 0, blockers };
+    return productionGate;
+  };
 
   const latestObservedAt = (...values: (number | null | undefined)[]): string | null => {
     const filtered = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
@@ -319,6 +571,26 @@ export function buildRouter(deps: {
   const guard = (ctx: RequestContext, bucket: string) => {
     if (!limiter.allow(`${bucket}:${ctx.ip}`)) {
       throw new HttpError(429, "rate-limited", "too many requests, slow down");
+    }
+  };
+
+  const requireWatchtowerIngest = (ctx: RequestContext): void => {
+    guard(ctx, "watchtower-ingest");
+    const configured = config.watchtowerIngestToken;
+    if (configured === null) {
+      if (config.environment === "production") {
+        throw new HttpError(503, "watchtower-ingest-disabled", "production ingestion credential is not configured");
+      }
+      return;
+    }
+    const presented = ctx.bearer;
+    if (presented === null) {
+      throw new HttpError(401, "watchtower-auth-required", "Watchtower ingestion requires a service bearer token");
+    }
+    const expectedHash = createHash("sha256").update(configured, "utf8").digest();
+    const presentedHash = createHash("sha256").update(presented, "utf8").digest();
+    if (!timingSafeEqual(expectedHash, presentedHash)) {
+      throw new HttpError(401, "watchtower-auth-invalid", "invalid Watchtower ingestion credential");
     }
   };
 
@@ -448,29 +720,36 @@ export function buildRouter(deps: {
       counters: { watchtowerEvents, gameEvents, rewardEvents },
     }, {
       dataQuality: watchtowerEvents > 0 || gameEvents > 0 || rewardEvents > 0 ? "partial" : "unavailable",
-      confidence: 0.93,
       lastVerifiedAt,
     });
   });
 
-  router.add("GET", "/watchtower/readyz", () => {
-    const blockers: string[] = [];
-    if (!rewardsConfigured()) blockers.push("NEONRELAY_REWARDS_PROGRAM_ID is not set");
-    if (config.serverSigningPublicKey === null) blockers.push("NEONRELAY_SERVER_SIGNING_PUBLIC_KEY is not set");
+  router.add("GET", "/watchtower/readyz", async () => {
+    const basicBlockers: string[] = [];
+    if (!rewardsConfigured()) basicBlockers.push("NEONRELAY_REWARDS_PROGRAM_ID is not set");
+    if (config.serverSigningPublicKey === null) basicBlockers.push("NEONRELAY_SERVER_SIGNING_PUBLIC_KEY is not set");
+    const gate = await verifyProductionGate();
+    const blockers = [...new Set([...basicBlockers, ...gate.blockers])];
     const lastVerifiedAt = latestObservedAt(
       latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
       latestValue("SELECT MAX(ingested_at) AS t FROM reward_events"),
     );
     return watchtowerEnvelope({
       gameId: WATCHTOWER_GAME_ID,
-      ready: blockers.length === 0,
-      readOnlyReady: true,
-      productionReady: blockers.length === 0,
+      // Readiness is a deployment gate, not a liveness signal. Do not report
+      // ready merely because the SQLite process is alive while RPC, manifest,
+      // program authority, mint, or signed-ingest checks are unverified.
+      ready: gate.ready && blockers.length === 0,
+      readOnlyReady: gate.ready && blockers.length === 0,
+      productionReady: gate.ready && blockers.length === 0,
       writes: false,
       blockers,
+      productionVerification: {
+        checkedAt: gate.checkedAt,
+        status: gate.ready && blockers.length === 0 ? "verified" : "blocked",
+      },
     }, {
-      dataQuality: blockers.length === 0 ? "partial" : "unavailable",
-      confidence: blockers.length === 0 ? 0.78 : 0.99,
+      dataQuality: blockers.length === 0 ? "complete" : "unavailable",
       lastVerifiedAt,
     });
   });
@@ -490,7 +769,6 @@ export function buildRouter(deps: {
     environment: "unknown",
   }, {
     dataQuality: "partial",
-    confidence: 0.9,
     lastVerifiedAt: latestObservedAt(latestValue("SELECT MAX(received_at) AS t FROM watchtower_events")),
   }));
 
@@ -530,7 +808,6 @@ export function buildRouter(deps: {
     }, {
       period: since === null ? "all-time UTC" : `since ${new Date(since).toISOString()} UTC`,
       dataQuality: page.length === 0 ? "unavailable" : "partial",
-      confidence: 0.84,
       lastVerifiedAt,
     });
   });
@@ -544,7 +821,6 @@ export function buildRouter(deps: {
     if (!row) throw new HttpError(404, "not-found", `no watchtower event for signature ${signature}`);
     return watchtowerEnvelope(normalizeWatchtowerEventRow(row, config), {
       dataQuality: "partial",
-      confidence: 0.85,
       lastVerifiedAt: isoOrNull(row.received_at),
     });
   });
@@ -569,7 +845,6 @@ export function buildRouter(deps: {
     }, {
       period: `${days}d UTC`,
       dataQuality: telemetry.length > 0 || metrics.activity.length > 0 ? "partial" : "unavailable",
-      confidence: 0.86,
       lastVerifiedAt: latestObservedAt(
         latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
         latestValue("SELECT MAX(ingested_at) AS t FROM game_events"),
@@ -594,7 +869,6 @@ export function buildRouter(deps: {
     }, {
       period: `${days}d UTC`,
       dataQuality: cohorts.length > 0 ? "partial" : "unavailable",
-      confidence: 0.8,
       lastVerifiedAt: latestObservedAt(latestValue("SELECT MAX(created_at) AS t FROM wallet_bindings")),
     });
   });
@@ -648,7 +922,6 @@ export function buildRouter(deps: {
     return watchtowerEnvelope({ horizons: retention }, {
       period: `since ${new Date(since).toISOString()} UTC`,
       dataQuality: quality,
-      confidence: quality === "partial" ? 0.72 : 0.99,
       lastVerifiedAt: latestObservedAt(latestValue("SELECT MAX(occurred_at) AS t FROM game_events")),
     });
   });
@@ -666,7 +939,6 @@ export function buildRouter(deps: {
       note: "this repository exposes identity edges only; studio-wide cross-game projections are unavailable here",
     }, {
       dataQuality: gameAccounts > 0 || grants > 0 || pairings > 0 ? "partial" : "unavailable",
-      confidence: 0.78,
       lastVerifiedAt: latestObservedAt(
         latestValue("SELECT MAX(expires_at) AS t FROM game_identity_grants"),
         latestValue("SELECT MAX(expires_at) AS t FROM game_pairings"),
@@ -703,7 +975,6 @@ export function buildRouter(deps: {
     return watchtowerEnvelope({ rewards, claims, prizeEpochs, economyV2: v2 }, {
       period: `${days}d UTC`,
       dataQuality: rewards.length > 0 || claims.length > 0 || prizeEpochs.length > 0 || v2.intents > 0 ? "partial" : "unavailable",
-      confidence: 0.82,
       lastVerifiedAt: latestObservedAt(
         latestValue("SELECT MAX(ingested_at) AS t FROM reward_events"),
         latestValue("SELECT MAX(updated_at) AS t FROM claim_intents"),
@@ -723,7 +994,6 @@ export function buildRouter(deps: {
       note: row ? null : "treasury snapshots have not been recorded yet",
     }, {
       dataQuality: row ? "partial" : "unavailable",
-      confidence: row ? 0.82 : 0.99,
       lastVerifiedAt: isoOrNull(row?.created_at),
     });
   });
@@ -741,10 +1011,9 @@ export function buildRouter(deps: {
       reconcile,
       adminActions,
       openAlerts: alerts.length,
-      auditReport: "reports/neon-relay-audit.json",
+      auditReport: "external AUDIT_REPORT_PATH required; committed reports are not release evidence",
     }, {
       dataQuality: reconcile.length > 0 || adminActions.length > 0 ? "partial" : "unavailable",
-      confidence: 0.88,
       lastVerifiedAt,
     });
   });
@@ -757,7 +1026,6 @@ export function buildRouter(deps: {
       acknowledgement: "read-only exporter; acknowledgement happens in Watchtower, not in Neon Relay",
     }, {
       dataQuality: alerts.length > 0 ? "partial" : "unavailable",
-      confidence: 0.92,
       lastVerifiedAt,
     });
   });
@@ -786,7 +1054,6 @@ export function buildRouter(deps: {
       ],
     }, {
       dataQuality: linkedWallets > 0 || sessions > 0 || matches > 0 ? "partial" : "unavailable",
-      confidence: 0.76,
       lastVerifiedAt: latestObservedAt(
         latestValue("SELECT MAX(created_at) AS t FROM wallet_bindings"),
         latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
@@ -800,7 +1067,6 @@ export function buildRouter(deps: {
     note: "forecasting is intentionally unavailable until a verified production data stream exists",
   }, {
     dataQuality: "unavailable",
-    confidence: 0,
     lastVerifiedAt: null,
   }));
 
@@ -857,11 +1123,13 @@ export function buildRouter(deps: {
   router.add("GET", "/api/ingest/solana", (ctx) => {
     const input = fromTelemetryQuery(ctx);
     if (!input) return contractOnlyIngestion();
+    requireWatchtowerIngest(ctx);
     const result = ingestTelemetry(input);
     return { ...ingestContract(), accepted: result.status === "accepted" ? 1 : 0, results: [result] };
   });
 
   router.add("POST", "/api/ingest/solana", (ctx) => {
+    requireWatchtowerIngest(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const rawEvents = Array.isArray(body.events) ? body.events : [body];
     if (rawEvents.length < 1 || rawEvents.length > 500) {
@@ -881,11 +1149,13 @@ export function buildRouter(deps: {
   router.add("GET", "/api/games/neonrelay/ingestion", (ctx) => {
     const input = fromTelemetryQuery(ctx);
     if (!input) return hubIngestionPayload([]);
+    requireWatchtowerIngest(ctx);
     const result = ingestTelemetry(input);
     return hubIngestionPayload([result]);
   });
 
   router.add("POST", "/api/games/neonrelay/ingestion", (ctx) => {
+    requireWatchtowerIngest(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const rawEvents = Array.isArray(body.events) ? body.events : [body];
     if (rawEvents.length < 1 || rawEvents.length > 500) {
@@ -903,6 +1173,7 @@ export function buildRouter(deps: {
   });
 
   router.add("POST", "/api/campaigns/proposals", (ctx) => {
+    requireWatchtowerIngest(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const risk = Number(body.churn_risk ?? body.risk ?? 0);
     if (!Number.isFinite(risk) || risk < 0 || risk > 1) {
@@ -954,14 +1225,23 @@ export function buildRouter(deps: {
   });
 
   router.add("POST", "/v1/wallet/link", (ctx) => {
+    guard(ctx, "wallet-link");
     const { binding } = requireSession(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const playerId = str(body["player_id"], "player_id", 128);
-    wallets.setPlayerLink(binding.id, playerId);
+    try {
+      wallets.setPlayerLink(binding.id, playerId);
+    } catch (error) {
+      if (String((error as Error).message).includes("UNIQUE")) {
+        throw new HttpError(409, "player-already-linked", "player identity is already linked to another active wallet");
+      }
+      throw error;
+    }
     return { wallet_binding_id: binding.id, player_id: playerId };
   });
 
   router.add("POST", "/v1/wallet/unlink", (ctx) => {
+    guard(ctx, "wallet-unlink");
     const { binding } = requireSession(ctx);
     wallets.setPlayerLink(binding.id, null);
     wallets.revokeBinding(binding.id);
@@ -1103,7 +1383,8 @@ export function buildRouter(deps: {
     db.exec(`VACUUM INTO '${full.replace(/'/g, "''")}'`);
     const bytes = statSync(full).size;
     const sha256 = createHash("sha256").update(readFileSync(full)).digest("hex");
-    const result = { file, bytes, sha256, created_at: Date.now() };
+    const inspection = inspectBackup(full, sha256);
+    const result = { file, bytes, sha256, integrity: inspection.integrity, migration_count: inspection.migration_count, created_at: Date.now() };
     admin.audit({
       actorRole: identity.role, actorHash: identity.fingerprint,
       action: "backup-created", result, ip: ctx.ip,
@@ -1125,7 +1406,8 @@ export function buildRouter(deps: {
       .sort().reverse().slice(0, 200)
       .map((f) => {
         try {
-          const st = statSync(join(config.backupDir, f));
+          const st = lstatSync(join(config.backupDir, f));
+          if (!st.isFile() || st.isSymbolicLink()) return null;
           return { file: f, bytes: st.size, modified_at: Math.floor(st.mtimeMs) };
         } catch {
           return null;
@@ -1133,6 +1415,39 @@ export function buildRouter(deps: {
       })
       .filter((row): row is { file: string; bytes: number; modified_at: number } => row !== null);
     return { backups };
+  });
+
+  router.add("POST", "/v1/admin/restore/verify", (ctx) => {
+    guard(ctx, "admin-restore");
+    const identity = requireAdmin(ctx, "superadmin");
+    const body = (ctx.body ?? {}) as Record<string, unknown>;
+    const file = str(body["file"], "file", 255);
+    if (basename(file) !== file || !/^neonrelay-[A-Za-z0-9_.-]+\.db$/.test(file)) {
+      throw new HttpError(400, "bad-backup-file", "file must be a server-generated backup basename");
+    }
+    const root = resolve(config.backupDir);
+    const full = resolve(root, file);
+    if (relative(root, full).startsWith("..") || resolve(root, relative(root, full)) !== full) {
+      throw new HttpError(400, "bad-backup-file", "backup path escapes the configured backup directory");
+    }
+    const checksum = body["sha256"] === undefined ? null : str(body["sha256"], "sha256", 64);
+    if (checksum !== null && !/^[0-9a-f]{64}$/.test(checksum)) {
+      throw new HttpError(400, "bad-checksum", "sha256 must be 64 lowercase hexadecimal characters");
+    }
+    try {
+      const inspection = inspectBackup(full, checksum);
+      admin.audit({
+        actorRole: identity.role, actorHash: identity.fingerprint,
+        action: "backup-restore-verified", result: inspection, ip: ctx.ip,
+      });
+      return {
+        ...inspection,
+        restore: "verified-only",
+        note: "stop the backend and run backend/scripts/restore_backup.ts for atomic replacement",
+      };
+    } catch (error) {
+      throw new HttpError(409, "backup-invalid", error instanceof Error ? error.message : "backup verification failed");
+    }
   });
 
   const LEDGER_TABLES = [
@@ -1191,20 +1506,147 @@ export function buildRouter(deps: {
       throw new HttpError(400, "bad-request",
         "status must be one of submitted|confirmed|failed");
     }
-    if (status === "confirmed" && process.env.NODE_ENV === "production") {
-      if (!/^[1-9A-HJ-NP-Za-km-z]{87,88}$/.test(transactionId)) {
-        throw new HttpError(400, "bad-transaction-signature", "transaction_id must be a valid base58 Solana signature");
+    if (config.environment === "production" &&
+        !/^[1-9A-HJ-NP-Za-km-z]{87,88}$/.test(transactionId)) {
+      throw new HttpError(400, "bad-transaction-signature", "transaction_id must be a valid base58 Solana signature");
+    }
+    if (status === "confirmed" && config.environment === "production") {
+      const gate = await verifyProductionGate();
+      if (!gate.ready) {
+        throw new HttpError(503, "production-gate-blocked", "claim confirmation is disabled until the finalized deployment gate passes");
       }
       try {
-        const statuses = await rpcPool.call<{ value: ({ confirmationStatus?: string; err?: unknown } | null)[] }>(
-          "getSignatureStatuses", [[transactionId]],
-        );
+        const statuses = await rpcPool.call(
+          "getSignatureStatuses", [[transactionId], { searchTransactionHistory: true, commitment: "finalized" }],
+        ) as { value?: ({ confirmationStatus?: string; err?: unknown } | null)[] };
         const entry = statuses?.value?.[0];
-        if (entry && entry.err) {
+        if (!entry) {
+          throw new HttpError(409, "transaction-not-found", "the claim transaction is not visible at finalized commitment");
+        }
+        // Solana returns `err: null` for success. Missing `err` is not
+        // equivalent to success; reject incomplete RPC envelopes.
+        if (entry.err !== null) {
           throw new HttpError(400, "transaction-failed-onchain", "transaction failed on-chain");
         }
+        if (entry.confirmationStatus !== "finalized") {
+          throw new HttpError(409, "transaction-not-finalized", "the claim transaction is not finalized");
+        }
+
+        const intent = db.get<{
+          wallet_binding_id: string; epoch_id: number; amount_micro: number;
+          leaf_index: number; merkle_proof: string;
+        }>(
+          `SELECT i.wallet_binding_id, i.epoch_id, i.amount_micro,
+                  l.leaf_index, i.merkle_proof
+             FROM claim_intents i
+             JOIN reward_leaves l ON l.epoch_id = i.epoch_id
+                                  AND l.wallet_binding_id = i.wallet_binding_id
+            WHERE i.id = ? AND i.wallet_binding_id = ?`,
+          intentId, binding.id);
+        if (!intent) throw new HttpError(404, "intent-not-found", "claim intent not found");
+        if (!config.rewardsProgramId || !config.rewardMint) {
+          throw new HttpError(503, "claim-verification-unavailable", "rewards program and reward mint are not configured");
+        }
+        const transaction = await rpcPool.call(
+          "getTransaction", [transactionId, {
+            encoding: "jsonParsed", commitment: "finalized", maxSupportedTransactionVersion: 0,
+          }],
+        ) as {
+          meta?: { err?: unknown } | null;
+          transaction?: { message?: { accountKeys?: unknown[]; instructions?: unknown[] } };
+        } | null;
+        if (!transaction || !transaction.meta || transaction.meta.err !== null || !transaction.transaction?.message) {
+          throw new HttpError(400, "transaction-not-claim", "finalized transaction is not a successful claim");
+        }
+        const message = transaction.transaction.message;
+        const keyName = (key: unknown): string | null => {
+          if (typeof key === "string") return key;
+          if (key && typeof key === "object" && typeof (key as { pubkey?: unknown }).pubkey === "string") {
+            return (key as { pubkey: string }).pubkey;
+          }
+          return null;
+        };
+        const accountKeyEntries = (message.accountKeys ?? []).map((raw) => {
+          const pubkey = keyName(raw);
+          const signer = raw !== null && typeof raw === "object" &&
+            (raw as { signer?: unknown }).signer === true;
+          return { pubkey, signer };
+        });
+        const accountKeys = accountKeyEntries.map((entry) => entry.pubkey);
+        const playerKey = base58Encode(Buffer.from(binding.public_key, "base64url"));
+        const playerAccount = accountKeyEntries.find((entry) => entry.pubkey === playerKey);
+        if (!playerAccount?.signer) {
+          throw new HttpError(400, "transaction-claim-mismatch", "claim transaction does not prove this wallet signed");
+        }
+        const claimDiscriminator = createHash("sha256").update("global:claim", "utf8").digest().subarray(0, 8);
+        const claimInstruction = (message.instructions ?? []).find((raw) => {
+          if (!raw || typeof raw !== "object") return false;
+          const instruction = raw as { programId?: unknown; data?: unknown };
+          return instruction.programId === config.rewardsProgramId && typeof instruction.data === "string";
+        }) as { accounts?: unknown[]; data?: string } | undefined;
+        if (!claimInstruction?.data) {
+          throw new HttpError(400, "transaction-not-claim", "finalized transaction has no rewards claim instruction");
+        }
+        const instructionData = Buffer.from(base58Decode(claimInstruction.data));
+        // Anchor Borsh layout: discriminator (8), epoch (u64 LE), amount
+        // (u64 LE), leaf index (u32 LE), proof length (u32 LE), proof hashes.
+        // Parse and bind every argument to the server-created intent; matching
+        // only epoch and amount would permit a valid leaf from another index.
+        if (base58Encode(instructionData) !== claimInstruction.data || instructionData.length < 32 ||
+            !instructionData.subarray(0, 8).equals(claimDiscriminator)) {
+          throw new HttpError(400, "transaction-not-claim", "rewards instruction discriminator does not match claim");
+        }
+        const epochValue = instructionData.readBigUInt64LE(8);
+        const amountValue = instructionData.readBigUInt64LE(16);
+        const leafIndex = instructionData.readUInt32LE(24);
+        const proofLength = instructionData.readUInt32LE(28);
+        if (proofLength > 32 || instructionData.length !== 32 + proofLength * 32) {
+          throw new HttpError(400, "transaction-claim-mismatch", "on-chain claim proof encoding is invalid");
+        }
+        if (epochValue !== BigInt(intent.epoch_id) || amountValue !== BigInt(intent.amount_micro) ||
+            leafIndex !== intent.leaf_index) {
+          throw new HttpError(400, "transaction-claim-mismatch", "on-chain claim does not match the claim intent");
+        }
+        let storedProof: unknown;
+        try { storedProof = JSON.parse(intent.merkle_proof); } catch {
+          throw new HttpError(503, "claim-verification-unavailable", "stored claim proof is invalid");
+        }
+        if (!Array.isArray(storedProof) || storedProof.length !== proofLength ||
+            storedProof.some((hash, index) => typeof hash !== "string" ||
+              !/^[0-9a-f]{64}$/.test(hash) ||
+              !Buffer.from(hash, "hex").equals(instructionData.subarray(32 + index * 32, 64 + index * 32)))) {
+          throw new HttpError(400, "transaction-claim-mismatch", "on-chain claim proof does not match the claim intent");
+        }
+        const claimAccounts = (claimInstruction.accounts ?? []).map((account) =>
+          typeof account === "number" ? accountKeys[account] ?? null : keyName(account));
+        if (!claimAccounts.includes(playerKey)) {
+          throw new HttpError(400, "transaction-claim-mismatch", "on-chain claim is not signed for this wallet");
+        }
+        const program = base58Decode(config.rewardsProgramId as string);
+        const wallet = Buffer.from(binding.public_key, "base64url");
+        const epochBytes = Buffer.alloc(8);
+        epochBytes.writeBigUInt64BE(BigInt(epoch));
+        const expectedConfig = findProgramAddress([Buffer.from("neonrelay_config")], program).address;
+        const expectedEpoch = findProgramAddress([Buffer.from("neonrelay_epoch"), epochBytes], program).address;
+        const expectedClaim = findProgramAddress([Buffer.from("neonrelay_claim"), epochBytes, wallet], program).address;
+        const expectedVault = findProgramAddress([Buffer.from("neonrelay_vault")], program).address;
+        const expected = [
+          base58Encode(expectedConfig), base58Encode(expectedEpoch), base58Encode(expectedClaim),
+          playerKey, null, config.rewardMint,
+          base58Encode(expectedVault), TOKEN_PROGRAM, "11111111111111111111111111111111",
+        ];
+        for (let index = 0; index < expected.length; index += 1) {
+          const value = expected[index];
+          if (value !== null && claimAccounts[index] !== value) {
+            throw new HttpError(400, "transaction-claim-mismatch", `claim account ${index} does not match the intent`);
+          }
+        }
+        const playerToken = claimAccounts[4];
+        if (!playerToken) throw new HttpError(400, "transaction-claim-mismatch", "claim token account is missing");
+        await readTokenAccount(playerToken, base58Decode(config.rewardMint as string), wallet);
       } catch (err) {
         if (err instanceof HttpError) throw err;
+        throw new HttpError(503, "claim-verification-unavailable", "claim confirmation is unavailable while RPC verification is failing");
       }
     }
     const intent = rewards.claimConfirmation(binding, intentId, transactionId, status);
@@ -1234,7 +1676,9 @@ export function buildRouter(deps: {
     }
   });
 
-  const v2Store = new EconomyV2Store(db);
+  // Bound paid-intent fan-out per player/epoch; idempotent retries are still
+  // allowed, but a wallet cannot manufacture an unbounded admission queue.
+  const v2Store = new EconomyV2Store(db, DEFAULT_MAX_INTENTS_PER_PLAYER_EPOCH);
   const configuredV2Market = (ctx: RequestContext) => {
     const values = ctx.url.searchParams.getAll("currency");
     if (values.length !== 1 || !["SKR", "POTATO"].includes(values[0]!)) {
@@ -1289,6 +1733,13 @@ export function buildRouter(deps: {
   router.add("POST", "/v2/economy/intent", async (ctx) => {
     guard(ctx, "economy-v2-write");
     const { binding } = requireSession(ctx);
+    if (!config.monetizationEnabled) {
+      throw new HttpError(503, "monetization-disabled", "paid admission is disabled until the operator enables the production gate");
+    }
+    if (config.environment === "production") {
+      const gate = await verifyProductionGate();
+      if (!gate.ready) throw new HttpError(503, "production-gate-blocked", "paid admission is unavailable while deployment verification is incomplete");
+    }
     if (!binding.player_id) throw new HttpError(403, "player-link-required", "link a player before creating an entry intent");
     const { program, mint } = configuredV2Market(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
@@ -1300,7 +1751,10 @@ export function buildRouter(deps: {
     if (kind !== 0 && kind !== 1) throw new HttpError(400, "bad-kind", "kind must be 0 (match) or 1 (tournament)");
     const epoch = BigInt(Math.floor(Date.now() / config.epochMs));
     const wallet = Buffer.from(binding.public_key, "base64url");
-    const market = await v2Read(() => readMarketV2(rpc, program, mint));
+    const market = await v2Read(() => readMarketV2(rpc, program, mint, { allowPayments: true }));
+    if (!market.paymentsEnabled || market.paused) {
+      throw new HttpError(503, "market-paused", "on-chain economy market is not unpaused and verified");
+    }
     const feeBase = BigInt(market.feesBase[tierIndex]!);
     const result = v2Store.createIntent({
       mint,

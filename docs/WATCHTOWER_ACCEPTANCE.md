@@ -28,6 +28,9 @@ POST /api/games/neonrelay/ingestion
 Facts:
 
 - `GET /watchtower/health` returns `writes: false`.
+- `GET /watchtower/readyz` returns HTTP `503` while any production blocker
+  remains and HTTP `200` only when the strict gate is verified; it is not a
+  liveness endpoint.
 - Every `/watchtower/*` response includes `dataQuality`, `parserVersion`,
   `network`, `stage`, and `lastVerifiedAt`.
 - `POST /api/games/neonrelay/ingestion` returns `accepted: true` for a fresh

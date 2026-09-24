@@ -42,10 +42,10 @@ object RewardsTxBuilder {
     const val MAX_PROOF_LEN = 32
 
     /** 8-byte discriminator + Borsh Config layout (see lib.rs). */
-    const val CONFIG_SIZE = 8 + 32 + 32 + 1 + 8 + 1 + 1 + 32 + 8
+    const val CONFIG_SIZE = 8 + 32 + 32 + 1 + 8 + 1 + 1 + 32 + 8 + 8
 
     /** 8-byte discriminator + Borsh EpochState layout (see lib.rs). */
-    const val EPOCH_STATE_SIZE = 8 + 8 + 32 + 8 + 1 + 4
+    const val EPOCH_STATE_SIZE = 8 + 8 + 32 + 8 + 1 + 4 + 8 + 8
 
     fun configAddress(programId: ByteArray): ByteArray =
         EconomyTxBuilder.findProgramAddress(listOf(CONFIG_SEED.toByteArray()), programId).first
@@ -74,6 +74,7 @@ object RewardsTxBuilder {
         val mint: ByteArray,
         val paused: Boolean,
         val epochCount: Long,
+        val reserved: Long = 0L,
     )
 
     fun parseConfig(data: ByteArray): RewardsConfig {
@@ -86,14 +87,17 @@ object RewardsTxBuilder {
         val paused = data[8 + 64].toInt() != 0
         val epochCount = ByteBufferLe.u64At(data, 8 + 65)
         require(epochCount >= 0) { "invalid epoch count" }
-        return RewardsConfig(mint, paused, epochCount)
+        val reserved = ByteBufferLe.u64At(data, 123)
+        return RewardsConfig(mint, paused, epochCount, reserved)
     }
 
-    /** Rewards EpochState subset the claim flow needs (id, root, leaf_count). */
+    /** Rewards EpochState subset the claim flow needs (id, root, leaf_count, payout ceiling). */
     data class RewardsEpoch(
         val id: Long,
         val root: ByteArray,
         val leafCount: Int,
+        val total: Long = Long.MAX_VALUE,
+        val remaining: Long = Long.MAX_VALUE,
     )
 
     fun parseEpochState(data: ByteArray, epoch: Long): RewardsEpoch {
@@ -106,7 +110,10 @@ object RewardsTxBuilder {
         val root = data.copyOfRange(16, 48)
         val leafCount = ByteBufferLe.u32At(data, 57)
         require(leafCount > 0) { "epoch has no leaves" }
-        return RewardsEpoch(id, root, leafCount)
+        val total = ByteBufferLe.u64At(data, 61)
+        val remaining = ByteBufferLe.u64At(data, 69)
+        require(remaining <= total) { "epoch remaining exceeds total ceiling" }
+        return RewardsEpoch(id, root, leafCount, total, remaining)
     }
 
     // ------------------------------------------------------------------- merkle
@@ -168,6 +175,7 @@ object RewardsTxBuilder {
         require(!config.paused) { "rewards program is paused" }
         require(epochState.id == epoch) { "epoch state does not match the claim epoch" }
         require(amount > 0) { "claim amount must be greater than zero" }
+        require(amount <= epochState.remaining) { "claim exceeds the remaining epoch payout ceiling" }
         require(leafIndex >= 0 && leafIndex < epochState.leafCount) { "leaf index out of range" }
         require(proof.size == exactDepth(epochState.leafCount)) {
             "proof length does not match the epoch depth"

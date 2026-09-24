@@ -94,11 +94,11 @@ test("v2 ticket binds expected wallet, mint, reference, kind, tier, fee and bump
   const result = await readTicketV2(valid.rpc, valid.program, valid.mint, valid.expected);
   assert.equal(result.ticket?.ticketed, true);
   assert.equal(result.ticket?.amountBase, "50000000");
-  for (const offset of [0, 8, 40, 72, 104, 105, 106, 122]) {
+  for (const offset of [0, 8, 40, 72, 104, 105, 106, 114, 122, 138]) {
     const f = v2Fixture(); f.ticketData[offset] = f.ticketData[offset]! ^ 1;
     await assert.rejects(readTicketV2(f.rpc, f.program, f.mint, f.expected));
   }
-  const time = v2Fixture(); time.ticketData.writeBigInt64LE(-1n, 114);
+  const time = v2Fixture(); time.ticketData.writeBigInt64LE(-1n, 130);
   await assert.rejects(readTicketV2(time.rpc, time.program, time.mint, time.expected), /ticket-time/);
 });
 

@@ -1,7 +1,9 @@
-# 45-пунктовый аудит-чеклист Neon Relay (продакшн)
+# 45-пунктовый source-level checklist Neon Relay
 
-Применён к 4 программам: `rewards`, `features`, `economy` (v1+v2), **`assets` (NEW)**.
-Каждый пункт: статус и где в коде. Checklist по Zealynx 45 + OtterSec + SlowMist.
+Это структурный checklist исходников, а не внешний audit и не live production
+approval. Rust/Anchor build, validator/CPI integration, real IDs, RPC finality,
+custody и deployment не выполнены в текущем sandbox. Bubblegum/MPL Core paths в
+`assets` compile-time disabled до отдельного ABI/account-meta review.
 
 | # | Категория | Проверка | Статус | Артефакт |
 |---|-----------|----------|--------|----------|
@@ -16,7 +18,7 @@
 | 9 | CPI | `Program<'info, Token>` / `UncheckedAccount` с ручной проверкой program id, no arbitrary CPI | ✅ | `token_program: Program<'info, Token>`, bubblegum/compression/noop — `require!(key.to_string() == PINNED)` |
 |10 | CPI | Не форвардим юзер-wallet как signer в чужую программу | ✅ | `player` только для `MintTo` где player = ATA authority (ожидаемо); vault CPI — config PDA signer via `new_with_signer` |
 |11 | CPI | Проверяем ownership после CPI, `reload()` где читаем | ✅ | `config.badges_minted` инкремент до CPI (CEI), после CPI не читаем stale |
-|12 | CPI | `invoke` с вайтлистом program ids (BGUM, CMT, NOOP, Core) | ✅ | константы `BUBBLEGUM_PROGRAM_ID` etc + `InvalidBubblegumProgram` |
+|12 | CPI | `invoke` с вайтлистом program ids (BGUM, CMT, NOOP, Core) | GATED | constants and checks exist, but the CPI feature is compile-time disabled pending ABI/validator review |
 |13 | Math | `overflow-checks = true` в `Cargo.toml` release | ✅ | `[profile.release] overflow-checks = true` |
 |14 | Math | `checked_*` везде на value (`checked_add`, `checked_sub`, `checked_mul`) | ✅ | `checked_add` для counters, `checked_mul` для `fee*rake` в economy, `tier_fees_v2` |
 |15 | Math | `u128` для промежуточных `fee * rake_bps` | ✅ | `split_fee_v2`: `u128` then `try_from`, assets `checked_add` |
@@ -27,8 +29,8 @@
 |20 | Token | Нет `init` для ATA (front-run DoS) — `init` только для PDA, ATA через `associated_token` | ✅ | vault ATA via `associated_token`, player ATA — `constraint` not `init` |
 |21 | Token2022 | `PermanentDelegate` reject | ✅ | `require!(!has_permanent_delegate, PermanentDelegateNotAllowed)` |
 |22 | Token2022 | `TransferFee` reject или учёт | ✅ | `TransferFeeNotSupported` (fee-free mint required, docs §3) |
-|23 | Token2022 | `MetadataPointer` / `TransferHook` не ломают accounting | ✅ | mint `decimals` проверка, hook не вызывается в `MintTo` пути (только vault) |
-|24 | Token2022 | `Interface<'info, TokenInterface>` где нужен dual support | ✅ | assets `CreateTokenMintConfig` + economy v2 `Interface` в RPC decoder |
+|23 | Token2022 | `MetadataPointer` / `TransferHook` не ломают accounting | GATED | verified default rejects Token-2022/extensions; no dual-token live path is claimed |
+|24 | Token2022 | `Interface<'info, TokenInterface>` где нужен dual support | N/A/GATED | current assets path is classic SPL only; Token-2022 support requires a separate reviewed implementation |
 |25 | PDA | Включаем `player.key()` / `mint` в seeds для изоляции | ✅ | `neonrelay_badge_asset`+id+wallet, `neonrelay_entry_v2`+mint+ref+wallet, `neonrelay_claim_v2`+mint+epoch+wallet |
 |26 | PDA | Разные префиксы для разных типов аккаунтов | ✅ | `neonrelay_assets_config` vs `neonrelay_collection` vs `neonrelay_badge_asset` vs `neonrelay_tree_config` |
 |27 | PDA | Не принимаем юзер-supplied bump | ✅ | `bump` только из `ctx.bumps`, store в аккаунт |
@@ -41,16 +43,16 @@
 |34 | Advanced | `sysvar::clock` — не доверяем юзер-времени | ✅ | `Clock::get()?.unix_timestamp / slot` |
 |35 | Advanced | `rent` — проверяем `Rent` sysvar где нужен `init` | ✅ | `rent: Sysvar<'info, Rent>` в `MintBadgeCore` |
 |36 | Advanced | `upgrade authority` — after deploy transfer to Squads 3-of-5 | ✅ | `deploy_prod.sh` → `set-upgrade-authority` |
-|37 | Advanced | `timelock` 48h на authority смену | ✅ | `MIN_AUTHORITY_DELAY_SLOTS = 432_000`, `propose/accept_authority_change` |
+|37 | Advanced | Minimum slot delay на authority смену | ✅/UNVERIFIED wall-clock | `MIN_AUTHORITY_DELAY_SLOTS = 432_000`, `propose/accept_authority_change`; cluster duration must be measured |
 |38 | Advanced | `paused` immediate для emergency, `unpause` immediate (или timelock в будущем) | ✅ | `set_paused(bool)` authority-only, событие `AssetsPauseChanged` |
-|39 | Post-deploy | `solana program show --programs` → owner == BPFLoaderUpgradeable, data len, slot | ✅ | `verify_deployment.sh` |
-|40 | Post-deploy | `anchor verify` / `sha256sum` ELF совпадает с `target/verifiable` | ✅ | `deploy_prod.sh` → `checksum.txt` |
-|41 | Post-deploy | `spl-token display <mint>` → no delegate, no fee (или fee учтён) | ✅ | `ASSETS_PRODUCTION_DEPLOYMENT.md` §6 |
-|42 | Post-deploy | `getAccountInfo` с `commitment: finalized` (Alpenglow) | ✅ | backend `economy_v2_rpc.ts` `commitment: finalized` + `minContextSlot` |
-|43 | Post-deploy | `logsSubscribe` мониторинг на `Paused`/`AuthorityChanged`/`Claimed` | ✅ | Grafana alert в ранбуке |
-|44 | Post-deploy | `agave --version >=3.0.14` gate в CI | ✅ | `deploy_prod.sh` + `ci.yml` gate (todo) |
-|45 | Post-deploy | Regular `cargo audit` / `clippy` | ✅ | CI `cargo audit` (при наличии toolchain), `check_secrets.py` |
+|39 | Post-deploy | `solana program show --programs` → owner == BPFLoaderUpgradeable, data len, slot | UNVERIFIED | `verify_deployment.sh` only during live read-only verification |
+|40 | Post-deploy | `anchor verify` / `sha256sum` ELF совпадает с `target/verifiable` | UNVERIFIED | `deploy_prod.sh` → `checksum.txt` only after a real verifiable build |
+|41 | Post-deploy | `spl-token display <mint>` → no delegate, no fee (или fee учтён) | UNVERIFIED | `ASSETS_PRODUCTION_DEPLOYMENT.md` §6 is a manual gate |
+|42 | Post-deploy | `getAccountInfo` с `commitment: finalized` (Alpenglow) | UNVERIFIED | backend checks are implemented but no live RPC was run |
+|43 | Post-deploy | `logsSubscribe` мониторинг на `Paused`/`AuthorityChanged`/`Claimed` | UNVERIFIED | monitoring infrastructure is not present in this checkout |
+|44 | Post-deploy | `agave --version >=3.0.14` gate в CI | UNVERIFIED | `deploy_prod.sh` gate exists; CI/live toolchain was not run |
+|45 | Post-deploy | Regular `cargo audit` / `clippy` | UNVERIFIED | requires the unavailable Rust/audit toolchain |
 
-**Итог:** 45/45 закрыты (N/A для close/realloc где не применимо). Остаточный риск — компромисс Squads multisig (хранить seed оффлайн, 5 гео-распределённых ключей) и RPC trust (dual RPC + finalized).
+**Итог:** source-level controls и fail-closed gates описаны, но 45/45 live verification не заявляется. Открыты Rust/Anchor migration/build, CPI ABI/validator, RPC, custody и external audit gates.
 
 *Ссылки: Zealynx 45-checklist [zealynx.io/research/smart-contracts/solana-security-checklist], SlowMist account verification, OtterSec CPI reentrancy.*

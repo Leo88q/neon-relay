@@ -62,7 +62,13 @@ export function createApp(config: Config = loadConfig()): App {
         params: resolved.params,
       };
       const result = await resolved.handler(ctx);
-      sendJson(res, 200, result);
+      // Kubernetes-style readiness must be non-2xx while blocked. Liveness
+      // remains a separate endpoint (`/watchtower/health`).
+      const readinessBlocked = path === "/watchtower/readyz" &&
+        typeof result === "object" && result !== null &&
+        typeof (result as { data?: { ready?: unknown } }).data?.ready === "boolean" &&
+        (result as { data: { ready: boolean } }).data.ready === false;
+      sendJson(res, readinessBlocked ? 503 : 200, result);
     } catch (err) {
       if (err instanceof HttpError) {
         sendJson(res, err.status, { error: { code: err.code, message: err.message } });

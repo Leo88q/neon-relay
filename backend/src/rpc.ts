@@ -24,10 +24,9 @@
  *   when set — is rejected exactly like a failed endpoint, so a provider
  *   pointed at the wrong cluster can never silently feed money-path
  *   reads. Identity is pinned for the process lifetime (a restart
- *   re-verifies). A genesis read that itself fails (transport/parse)
- *   leaves identity *unknown* and does not block the call: downstream
- *   readers validate account owners and encodings, so cross-chain data
- *   still fails closed at the application layer.
+ *   re-verifies). When an expected genesis is configured (mandatory in
+ *   production), a genesis read that fails or is malformed fails the call
+ *   closed; development-only pools may remain identity-unknown.
  * - With no fallback configured the pool behaves like the legacy
  *   single-shot caller plus timeout/status plumbing.
  *
@@ -64,6 +63,8 @@ export interface RpcPoolOptions {
   timeoutMs?: number;
   cooldownMs?: number;
   expectedGenesis?: string | null;
+  /** Require a successful genesis read before any money-path RPC call. */
+  requireGenesis?: boolean;
   fetchFn?: typeof fetch;
   nowFn?: () => number;
 }
@@ -129,6 +130,7 @@ export function createRpcPool(options: RpcPoolOptions): {
   const fetchFn = options.fetchFn ?? fetch;
   const nowFn = options.nowFn ?? Date.now;
   const expectedGenesis = options.expectedGenesis ?? null;
+  const requireGenesis = options.requireGenesis ?? expectedGenesis !== null;
 
   const endpoints: EndpointState[] = [{
     role: "primary", url: options.primary,
@@ -198,17 +200,34 @@ export function createRpcPool(options: RpcPoolOptions): {
   /** Resolve and enforce the endpoint's chain identity (cached once known). */
   const ensureChain = async (ep: EndpointState, now: number): Promise<void> => {
     if (ep.genesis !== null) return;
-    // Throttle re-discovery: a provider that cannot answer getGenesisHash
-    // must not double the cost of every call.
-    if (now - ep.genesisCheckedAt < cooldownMs && ep.genesisCheckedAt !== 0) return;
+    // Throttle re-discovery: a development provider that cannot answer
+    // getGenesisHash must not double the cost of every call. Production is
+    // different: an unverified endpoint must remain unusable during the
+    // cooldown, rather than falling through to the money-path RPC method.
+    if (now - ep.genesisCheckedAt < cooldownMs && ep.genesisCheckedAt !== 0) {
+      if (requireGenesis) {
+        throw new RpcError("chain-identity-unavailable",
+          `cannot verify ${ep.role} genesis before trusting the endpoint`);
+      }
+      return;
+    }
     ep.genesisCheckedAt = now;
     let result: unknown;
     try {
       result = await rawCall(ep, "getGenesisHash", []);
-    } catch {
-      return; // unknown identity never blocks reads (see module doc)
+    } catch (error) {
+      if (requireGenesis) {
+        throw new RpcError("chain-identity-unavailable",
+          `cannot verify ${ep.role} genesis before trusting the endpoint`);
+      }
+      return;
     }
-    if (typeof result !== "string" || result.length === 0) return;
+    if (typeof result !== "string" || result.length === 0) {
+      if (requireGenesis) {
+        throw new RpcError("chain-identity-invalid", `${ep.role} returned an invalid genesis hash`);
+      }
+      return;
+    }
     if (expectedGenesis !== null && result !== expectedGenesis) {
       ep.chainRejected = true;
       throw new RpcError("chain-mismatch",

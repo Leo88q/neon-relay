@@ -71,6 +71,7 @@ test("authority gating, uniqueness and pause guards are present", () => {
 	assert.match(libRs, /seeds = \[BADGE_SEED, &achievement_id\.to_be_bytes\(\), player\.key\(\)\.as_ref\(\)\]/);
 	// badge only after the achievement bit is set
 	assert.match(libRs, /FeaturesError::AchievementNotRecorded/);
+	assert.match(libRs, /account\.state == anchor_spl::token::spl_token::state::AccountState::Initialized/);
 	// supply-1 collectible: 0 decimals, mint exactly one
 	assert.match(libRs, /mint::decimals = 0/);
 	assert.match(libRs, /token::mint_to\(cpi_ctx, 1\)\?/);
@@ -82,6 +83,10 @@ test("authority gating, uniqueness and pause guards are present", () => {
 	assert.match(libRs, /FeaturesError::TournamentNotStarted/);
 	assert.match(libRs, /FeaturesError::TournamentAlreadyOver/);
 	assert.match(libRs, /tournament\.registered < tournament\.capacity/);
+	// Anti-sybil admission requires a minimum wallet balance in addition to the
+	// one-registration PDA and tournament capacity.
+	assert.match(libRs, /MIN_SYBIL_PLAYER_LAMPORTS: u64 = 10_000_000/);
+	assert.match(libRs, /player\.lamports\(\) >= MIN_SYBIL_PLAYER_LAMPORTS/);
 	// pause blocks player actions
 	const pauseChecks = libRs.match(/require!\(!ctx\.accounts\.config\.paused, FeaturesError::Paused\)/g);
 	assert.ok(pauseChecks && pauseChecks.length >= 2, "badge minting and registration must check paused");
@@ -92,10 +97,14 @@ test("authority gating, uniqueness and pause guards are present", () => {
 test("no external NFT dependency, no SKR, no hardcoded mint", () => {
 	// metadata stays off-chain (BL-13): no metaplex/token-metadata crate pinned
 	assert.ok(!/metaplex|token-metadata/i.test(cargoToml), "no metaplex dependency allowed (unverifiable offline)");
-	// only the two pinned anchor crates
+	// Bootstrap authority parsing uses the pinned, audited bincode crate; no
+	// unreviewed CPI/NFT dependency is permitted.
 	const deps = cargoToml.split("[dependencies]")[1] ?? "";
-	assert.ok(!/^\s*[a-z0-9_-]+\s*=/im.test(deps.split("\n").filter((l) => !l.startsWith("#") && !l.startsWith("anchor-")).join("\n")),
-		"dependencies must stay anchor-lang + anchor-spl only");
+	const dependencyNames = deps.split("\n")
+		.map((line) => line.match(/^\s*([a-z0-9_-]+)\s*=/i)?.[1])
+		.filter((name): name is string => name !== undefined);
+	assert.deepEqual(dependencyNames.sort(), ["anchor-lang", "anchor-spl", "bincode"].sort(),
+		"dependencies must stay anchor-lang + anchor-spl + pinned bincode only");
 	assert.ok(!/skr/i.test(libRs) && !/skr/i.test(cargoToml));
 	// the only pubkey-shaped literal is the declare_id placeholder
 	const candidates = libRs.match(/"[1-9A-HJ-NP-Za-km-z]{32,44}"/g) ?? [];

@@ -31,14 +31,18 @@ const SUPERADMIN = "sup-recon";
 const epochDisc = createHash("sha256").update("account:EpochState").digest().subarray(0, 8);
 const prizeDisc = createHash("sha256").update("account:PrizeEpoch").digest().subarray(0, 8);
 
-function rewardsEpochBytes(id: number, root: string, leafCount: number): Buffer {
-  const data = Buffer.alloc(61);
+function rewardsEpochBytes(
+  id: number, root: string, leafCount: number, total: bigint = 100n, remaining: bigint = total,
+): Buffer {
+  const data = Buffer.alloc(77);
   epochDisc.copy(data, 0);
   data.writeBigUInt64LE(BigInt(id), 8);
   Buffer.from(root, "hex").copy(data, 16);
   data.writeBigInt64LE(1_700_000_000n, 48);
   data[56] = 255;
   data.writeUInt32LE(leafCount, 57);
+  data.writeBigUInt64LE(total, 61);
+  data.writeBigUInt64LE(remaining, 69);
   return data;
 }
 
@@ -83,13 +87,13 @@ test("epoch PDAs are deterministic, off-curve and endian-sensitive", () => {
 
 test("account parsers accept exact layouts and reject impostors", () => {
   const root = createHash("sha256").update("root").digest("hex");
-  assert.deepEqual(parseRewardsEpoch(rewardsEpochBytes(9, root, 3)),
-    { id: "9", root, publishedAt: "1700000000", leafCount: 3 });
+  assert.deepEqual(parseRewardsEpoch(rewardsEpochBytes(9, root, 3, 900n, 700n)),
+    { id: "9", root, publishedAt: "1700000000", leafCount: 3, total: "900", remaining: "700" });
   assert.deepEqual(parsePrizeEpochV1(prizeEpochBytes(4, root, 500n, 2)),
     { epoch: "4", root, total: "500", leafCount: 2, publishedAt: "1700000000" });
-  assert.throws(() => parseRewardsEpoch(Buffer.alloc(61)),
+  assert.throws(() => parseRewardsEpoch(Buffer.alloc(77)),
     (e: Error) => e instanceof ReconcileError && e.code === "bad-account");
-  assert.throws(() => parseRewardsEpoch(rewardsEpochBytes(1, root, 1).subarray(0, 60)),
+  assert.throws(() => parseRewardsEpoch(rewardsEpochBytes(1, root, 1).subarray(0, 76)),
     (e: Error) => e instanceof ReconcileError && e.code === "bad-account");
   assert.throws(() => parsePrizeEpochV1(Buffer.alloc(69)),
     (e: Error) => e instanceof ReconcileError && e.code === "bad-account");
@@ -100,7 +104,9 @@ test("account parsers accept exact layouts and reject impostors", () => {
 
 test("rewards comparison matrix", () => {
   const sealed = { id: 44, state: "sealed", merkle_root: "ab".repeat(32), total_micro: 100, leaf_count: 2 };
-  const onchain = { id: "44", root: "ab".repeat(32), leafCount: 2, publishedAt: "1" };
+  const onchain = {
+    id: "44", root: "ab".repeat(32), leafCount: 2, total: "100", remaining: "100", publishedAt: "1",
+  };
   assert.equal(compareRewardsEpoch(undefined, null).status, "missing-both");
   assert.equal(compareRewardsEpoch(undefined, onchain).status, "missing-backend");
   assert.equal(compareRewardsEpoch({ ...sealed, state: "open" }, null).status, "not-sealed");
@@ -111,6 +117,10 @@ test("rewards comparison matrix", () => {
   assert.equal(badRoot.status, "mismatch:root");
   const badCount = compareRewardsEpoch(sealed, { ...onchain, leafCount: 5 });
   assert.equal(badCount.status, "mismatch:leaf-count");
+  const badTotal = compareRewardsEpoch(sealed, { ...onchain, total: "99" });
+  assert.equal(badTotal.status, "mismatch:total");
+  assert.throws(() => parseRewardsEpoch(rewardsEpochBytes(9, "aa".repeat(32), 1, 10n, 11n)),
+    (e: Error) => e instanceof ReconcileError && e.code === "bad-account");
 });
 
 test("prize comparison tolerates claimed lag but never a leading total", () => {
@@ -444,7 +454,7 @@ test("reward epoch reads reject accounts with an unexpected size", async () => {
 test("reward epoch reads reject non-canonical account encoding", async () => {
   const root = createHash("sha256").update("root").digest("hex");
   const encoded = rewardsEpochBytes(9, root, 3).toString("base64");
-  assert.equal(encoded.length, 84);
+  assert.equal(encoded.length, 104);
   const tampered = encoded.slice(0, 40) + "\n" + encoded.slice(41);
   const rpc: RpcCaller = async (method) => {
     assert.equal(method, "getAccountInfo");

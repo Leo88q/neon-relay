@@ -30,7 +30,7 @@ only be paid once because the claim record PDA is created at payout.
 | Account (PDA) | Seeds | Contents | Written by |
 | --- | --- | --- | --- |
 | `Config` | `neonrelay_config` | operator `authority`, reward `mint`, `paused`, `epoch_count`, bumps | `initialize` (once) |
-| `EpochState` | `neonrelay_epoch` ‖ `epoch_id` (u64be) | published Merkle `root`, `leaf_count`, `published_at` | `publish_epoch` (once per epoch) |
+| `EpochState` | `neonrelay_epoch` ‖ `epoch_id` (u64be) | published Merkle `root`, `leaf_count`, `total_micro`, `remaining_micro`, `published_at` | `publish_epoch` (once per epoch) |
 | `ClaimRecord` | `neonrelay_claim` ‖ `epoch_id` (u64be) ‖ wallet pubkey | `amount_micro`, `claimed_at` | `claim` (once per epoch+wallet) |
 | vault (`TokenAccount`) | `neonrelay_vault` | reward-mint balance, authority = `Config` | funded by the operator |
 
@@ -39,7 +39,7 @@ Instructions:
 | Instruction | Signer | Effect |
 | --- | --- | --- |
 | `initialize` | operator (becomes `authority`) | records mint (must have 6 decimals ⇒ `amount_micro` = SPL base units), creates vault; not repeatable |
-| `publish_epoch(epoch_id, root, leaf_count)` | `authority` only | stores the root + sealed leaf total (Tranche A; `leaf_count > 0` required); **one-way** — re-publish fails because the PDA exists; all-zero root rejected |
+| `publish_epoch(epoch_id, root, leaf_count, total_micro)` | `authority` only | stores the root, exact leaf count and payout ceiling; atomically requires `config.reserved + total_micro <= vault.amount`; **one-way** — re-publish fails because the PDA exists; all-zero root rejected |
 | `set_paused(bool)` | `authority` only | emergency stop for `claim` |
 | `claim(epoch_id, amount_micro, leaf_index, proof)` | the player's wallet | enforces the **exact proof depth** derived from `leaf_count` (`proof.len() == depth`, unconditional) plus `leaf_index < leaf_count`, verifies leaf `SHA256(wallet_pubkey ‖ u64be amount)` against the root, creates the claim PDA (⇒ **no double claims**), transfers from the vault |
 
@@ -71,7 +71,7 @@ on a connected machine).
    Adapter on Solana Mobile (`android/`, `docs/ANDROID_SEEKER.md`) and links it
    to the backend (`POST /v1/wallet/link`, `docs/WALLET_AUTH.md`).
 2. Backend seals an epoch via the proposal workflow (operator proposes, superadmin approves): per-binding sums → leaves → root + `leaf_count`.
-3. Operator publishes on-chain: `publish_epoch(epoch_id, root, leaf_count)`.
+3. Operator publishes on-chain: `publish_epoch(epoch_id, root, leaf_count, total_micro)`; the program reserves the declared ceiling against the rewards vault.
 4. Player requests `POST /v1/rewards/claim-intent {epoch_id}` →
    `{amount_micro, leaf_hash, leaf_index, merkle_proof}`.
 5. The client pre-verifies the proof locally (`onchain/src/merkle.ts`) before

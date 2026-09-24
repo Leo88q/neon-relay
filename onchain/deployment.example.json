@@ -1,7 +1,14 @@
 {
-  "_comment": "Copy to deployment.<cluster>.json, fill in real program ids and the Squads vault, never commit mainnet keys. Verified with onchain/scripts/verify_deployment.sh (docs/DEPLOYMENT_POLICY.md).",
+  "_comment": "Example only: program ids are source constants, not live deployment evidence. Copy to deployment.<cluster>.json and fill finalized genesis, real mints and custody authority; never commit keys. verify_deployment.sh is read-only.",
+  "manifest_kind": "example-not-live",
   "cluster": "devnet",
+  "genesis_hash": "GENESIS_HASH_REQUIRED",
   "upgrade_authority": "SQUADS_VAULT_PUBKEY_HERE",
+  "mints": {
+    "reward": "REWARD_MINT_REQUIRED",
+    "skr": "PAYMENT_MINT_REQUIRED",
+    "potato": "POTATO_MINT_OPTIONAL"
+  },
   "programs": {
     "neonrelay_rewards": "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
     "neonrelay_features": "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP",

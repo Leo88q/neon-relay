@@ -24,8 +24,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 
-// PLACEHOLDER program id: replace with the real one from `anchor keys list`
-// before the first deployment (onchain/README.md, docs/DEVNET_RUNBOOK.md).
+// Source ID is pinned in Anchor.toml and checked against the TS/backend
+// manifests. A live deployment still requires finalized RPC verification.
 declare_id!("4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP");
 
 /// PDA seeds. Mirrored by `onchain/src/constants.ts` (FEATURES_SEEDS) and
@@ -46,15 +46,44 @@ pub const MAX_TOURNAMENT_CAPACITY: u32 = 65_535;
 /// Anti-sybil minimum player balance required to register (0.01 SOL).
 pub const MIN_SYBIL_PLAYER_LAMPORTS: u64 = 10_000_000;
 
+fn require_safe_token_account(account: &TokenAccount) -> Result<()> {
+	require!(
+		account.state == anchor_spl::token::spl_token::state::AccountState::Initialized &&
+		account.delegate.is_none() && account.is_native.is_none() && account.close_authority.is_none(),
+		FeaturesError::UnsafeTokenAccount
+	);
+	Ok(())
+}
+
+fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey) -> Result<()> {
+	let expected = Pubkey::find_program_address(
+		&[crate::ID.as_ref()],
+		&anchor_lang::solana_program::bpf_loader_upgradeable::id(),
+	).0;
+	require_keys_eq!(program_data.key(), expected, FeaturesError::BootstrapAuthorityInvalid);
+	require_keys_eq!(*program_data.owner, anchor_lang::solana_program::bpf_loader_upgradeable::id(), FeaturesError::BootstrapAuthorityInvalid);
+	let state: anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState =
+		bincode::deserialize(&program_data.try_borrow_data()?).map_err(|_| error!(FeaturesError::BootstrapAuthorityInvalid))?;
+	match state {
+		anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
+			upgrade_authority_address: Some(current), ..
+		} => require_keys_eq!(current, *authority, FeaturesError::BootstrapAuthorityInvalid),
+		_ => Err(error!(FeaturesError::BootstrapAuthorityInvalid)),
+	}
+}
+
 #[program]
 pub mod neonrelay_features {
 	use super::*;
 
 	/// One-time setup; the signer becomes the operator `authority`.
 	pub fn initialize(ctx: Context<FeaturesInitialize>) -> Result<()> {
+		verify_bootstrap_authority(&ctx.accounts.program_data.to_account_info(), &ctx.accounts.authority.key())?;
 		let config = &mut ctx.accounts.config;
 		config.authority = ctx.accounts.authority.key();
-		config.paused = false;
+		// Boot locked: achievement recording/minting is enabled only after the
+		// operator verifies the deployment and the backend anti-sybil gate.
+		config.paused = true;
 		config.achievements_recorded = 0;
 		config.badges_minted = 0;
 		config.bump = ctx.bumps.config;
@@ -123,6 +152,7 @@ pub mod neonrelay_features {
 			FeaturesError::AchievementNotRecorded
 		);
 
+		require_safe_token_account(&ctx.accounts.player_badge_account)?;
 		// SW008: effects-before-interactions. Bump the counter BEFORE the mint
 		// CPI so no program-owned state is written after an external call.
 		let config = &mut ctx.accounts.config;
@@ -261,7 +291,10 @@ pub mod neonrelay_features {
 		let config = &mut ctx.accounts.config;
 		require!(config.pending_authority != Pubkey::default(), FeaturesError::NoPendingAuthority);
 		let current_slot = Clock::get()?.slot;
-		require!(current_slot >= config.authority_change_slot + MIN_AUTHORITY_DELAY_SLOTS, FeaturesError::TimelockNotExpired);
+			let deadline = config.authority_change_slot
+				.checked_add(MIN_AUTHORITY_DELAY_SLOTS)
+				.ok_or(FeaturesError::Overflow)?;
+			require!(current_slot >= deadline, FeaturesError::TimelockNotExpired);
 		let old = config.authority;
 		config.authority = config.pending_authority;
 		config.pending_authority = Pubkey::default();
@@ -285,7 +318,8 @@ pub struct FeaturesConfig {
 	pub authority_change_slot: u64,
 }
 
-/// 48h timelock for authority change (CRITICAL-02 fix)
+/// Minimum slot-delay policy for authority change. Wall-clock duration is
+/// cluster-dependent and must be measured before operational approval.
 pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
 
 #[account]
@@ -357,6 +391,8 @@ pub struct FeaturesInitialize<'info> {
 	)]
 	pub config: Account<'info, FeaturesConfig>,
 	pub authority: Signer<'info>,
+	/// CHECK: verified against the upgradeable-loader ProgramData account in the handler.
+	pub program_data: UncheckedAccount<'info>,
 	#[account(mut)]
 	pub payer: Signer<'info>,
 	pub system_program: Program<'info, System>,
@@ -637,7 +673,7 @@ pub enum FeaturesError {
 	InvalidAuthority,
 	#[msg("no pending authority")]
 	NoPendingAuthority,
-	#[msg("timelock not expired (48h)")]
+	#[msg("authority slot delay has not expired")]
 	TimelockNotExpired,
 	#[msg("achievement id must be below the bitmap size")]
 	AchievementIdOutOfRange,
@@ -661,6 +697,10 @@ pub enum FeaturesError {
 	InsufficientPlayerBalance,
 	#[msg("arithmetic overflow")]
 	Overflow,
+	#[msg("bootstrap signer is not the program upgrade authority")]
+	BootstrapAuthorityInvalid,
+	#[msg("token account has unsupported delegate, native wrapper, or close authority")]
+	UnsafeTokenAccount,
 }
 
 // ---------------------------------------------------------------- unit tests

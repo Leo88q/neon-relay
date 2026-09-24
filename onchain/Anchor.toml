@@ -5,15 +5,15 @@
 # devnet test mint (onchain/scripts/create_test_mint.sh). No mainnet mint is
 # configured anywhere in this repository.
 [toolchain]
-anchor_version = "0.30.1"
+anchor_version = "0.31.1"
 
 [features]
 seeds = false
 skip-lint = false
 
 [programs.devnet]
-# PLACEHOLDERS — replace with the output of `anchor keys list` before deploying.
-# See docs/SOLANA_2026_PRODUCTION_RESEARCH.md §4.3 and docs/ASSETS_PRODUCTION_DEPLOYMENT.md.
+# Source IDs are pinned and checked by verify_source_ids.mjs. A live manifest,
+# finalized RPC read and upgrade-authority verification are still required.
 neonrelay_rewards = "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj"
 neonrelay_features = "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP"
 neonrelay_economy = "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9"

@@ -1,6 +1,9 @@
 # Release checklist
 
 Gating list for the first public release of Neon Relay (Android/Solana Mobile).
+The source IDs are pinned and drift-checked; they are not live deployment
+proof. Use `docs/PRODUCTION_DEPLOY_GATE.md` and a concrete external manifest for
+current source/toolchain/RPC evidence.
 Every item is either **verified now** (with the command that proves it),
 **blocked** (with the blocker id from
 [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md)), or **pending operator action**.
@@ -59,7 +62,7 @@ limitation.
       (134 clean / 1 skip / 0 fail).
 - [ ] ✅ Signer cross-verification: `./scripts/neonrelay_signer_test.sh`
       (log: `docs/baseline/neonrelay-signer-test.log`).
-- [ ] ✅ Backend: `cd backend && npm test` (240/240 incl. Tranche-B
+- [ ] ✅ Backend: `cd backend && npm test` (257/257 incl. Tranche-B
       reconcile/stuck/game-events/metrics/alerts suites + dual-RPC
       failover (10 rpc + 2 config) + rewards PDA goldens (4), Node 22).
 - [ ] ✅ On-chain offline suite: `cd onchain && npm test` (50/50 incl.
@@ -78,9 +81,10 @@ limitation.
       without network verification).
 - [ ] ⛔ Anchor program (BL-03): `cd onchain && cargo test -p
       neonrelay-rewards && anchor build && anchor test --provider.cluster
-      devnet`; replace the PLACEHOLDER program id in `Anchor.toml`,
-      `lib.rs` and `src/constants.ts` with `anchor keys list` output (the
-      conformance test enforces agreement).
+      devnet`; compare the live program accounts with the pinned IDs in
+      `Anchor.toml`, `lib.rs` and `src/constants.ts`, then record the finalized
+      result in an external deployment manifest (the conformance test enforces
+      source agreement).
 
 ## 5. CI
 
@@ -96,7 +100,7 @@ limitation.
       mint (`onchain/scripts/create_test_mint.sh`): ingest → caps → seal →
       publish → claim → confirmation, plus a pause/resume drill and a key
       rotation drill.
-- [ ] ✅ Segment-wise pipeline evidence already in-repo: backend 240/240
+- [ ] ✅ Segment-wise pipeline evidence already in-repo: backend 257/257
       (incl. 26 reconcile + 14 game-events + 5 metrics + 4 alerts = 49
       Tranche-B tests + 12 dual-RPC failover tests + 4 rewards PDA goldens),
       Merkle parity backend↔client↔program-source plus the 8-test

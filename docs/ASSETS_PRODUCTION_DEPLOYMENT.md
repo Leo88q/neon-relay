@@ -1,6 +1,10 @@
-# Продакшн-деплой Neon Relay: дешёвая чеканка + защита от взлома (уровень продакт-деплоя)
+# Source-gated deployment runbook Neon Relay: assets and custody
 
-**Цель этого ранбука:** поднять контракты так, чтобы чеканка стоила <$0.01/юзер и взлом/кража контракта/средств были невозможны без физического компромисса multisig. Основан на ресерче `SOLANA_2026_PRODUCTION_RESEARCH.md`.
+Этот файл описывает порядок проверки, а не подтверждённый production deploy.
+В текущем checkout Bubblegum/MPL Core CPI paths compile-time disabled до pinning
+upstream ABI/account metas и validator coverage. Ниже не следует считать
+доказательством цены, совместимости или безопасности live-контракта. Основан
+на ресерче `SOLANA_2026_PRODUCTION_RESEARCH.md`.
 
 ---
 
@@ -8,14 +12,16 @@
 
 4 программы (workspace `onchain`):
 
-| Программа | ID placeholder | Назначение | Дешевизна |
+| Программа | Source ID (live status unverified) | Назначение | Дешевизна |
 |-----------|----------------|------------|-----------|
 | `neonrelay-rewards` | `2RaaXKU...tmj` | epoch Merkle → claim | — (SPL vault) |
 | `neonrelay-features` | `4PH1dHV...qYP` | badges/leaderboards/tournaments | — |
 | `neonrelay-economy` (v1+v2) | `FZcLDdU...CV9` | pay_entry / publish_prizes / claim_prize (SKR/POTATO, 5/45 split, rake 10%) | — |
-| **`neonrelay-assets` (NEW)** | `F5VhZx...q3oc` | **MPL Core + Bubblegum v2 cNFT бейджи (0.00001 SOL) + Token-2022 конфиг + timelock** | **10k бейджей 0.27 SOL vs 220 SOL (815× дешевле)** |
+| **`neonrelay-assets` (source-gated)** | `F5VhZx...q3oc` | **classic SPL badge fallback and achievement proof in source; Bubblegum/MPL Core CPI disabled by default** | **live cost/compatibility unverified** |
 
-Все — devnet-only до BL-16 sign-off. Код — `onchain/programs/*/src/lib.rs`, TS-зеркала `onchain/src/*.ts`.
+Все четыре программы остаются непроверенными до Rust/Anchor build, validator run,
+real IDs, custody approval и finalized RPC verification. Код —
+`onchain/programs/*/src/lib.rs`, TS-зеркала `onchain/src/*.ts`.
 
 ---
 
@@ -23,7 +29,7 @@
 
 ```
 Rust 1.89 (rustup toolchain install 1.89.0)
-Anchor 0.31.1 (было 0.30.1 — см. docs/ANCHOR_MIGRATION_0_31.md)
+Anchor 0.31.1 (checked-in lockfile refresh remains a connected release gate; см. docs/ANCHOR_MIGRATION_0_31.md)
 Agave validator >=3.0.14  (критический патч Jan 2026, иначе delegation Foundation снимается)
 Firedancer mainnet 26.08.2 или Frankendancer 0.808.30014 (dual-RPC fallback обязателен)
 Node 22, docker (для --verifiable)
@@ -42,19 +48,17 @@ solana config get  # url = https://api.devnet.solana.com (пока)
 
 ## 2. Дешёвая чеканка — как выбрать путь
 
-| Юзкейс | Путь A (дорого) | Путь B (дёшево, рекомендован) | Когда какой |
-|--------|-----------------|------------------------------|-------------|
-| Бейдж достижения (soulbound, 256 id, supply-1) | `mint_badge_core`: SPL 0-decimal PDA mint, 1 акк, 0.0029 SOL + rent | `mint_badge_compressed`: CPI Bubblegum `BGUMAp9...`, лист в дереве, 0.00001 SOL | B сжатый для массовых сезонов (>1k юзеров), A для премиум 1/1 + листинг на Magic Eden (Bubblegum v2 пока не везде отображается) |
-| Коллекция | Token Metadata (4 акка, 0.022 SOL) | MPL Core (`CoREEN...`, 1 акк, 17k CU) | Всегда Core + `BubblegumV2` plugin |
-| Монеты (prize pool) | SPL Token | Light Compressed Token (90% дешевле при 100k холдеров) | Сейчас SPL/Token-2022 (топ-10 не нужен сжатый), Light — feature-flag для будущих loyalty дропов 1M |
+| Юзкейс | Verified default build | Статус production path |
+|--------|-----------------------|------------------------|
+| Бейдж достижения (supply-1) | `mint_badge_core` с classic SPL и on-chain achievement registry proof | Доступность коллекции и runtime CPI не подтверждены; `create_collection`/Bubblegum path fail-closed |
+| Коллекция / cNFT | Нет enabled CPI path | MPL Core/Bubblegum ABI, account metas и validator coverage не проверены |
+| Монеты (prize pool) | Classic SPL only; Token-2022 extensions rejected | Light Compressed Token не реализован и не является release evidence |
 
-**Дерево Bubblegum:** создаётся один раз `create_tree(depth, buffer, canopy)`. Rent:
-
-- 16 384 cNFT (14/64/8) ~0.34 SOL
-- 1 048 576 cNFT (20/256/13) ~8.5 SOL
-- 16 777 216 cNFT (24/512/15) ~26 SOL
-
-См. `onchain/scripts/create_compressed_tree.sh`.
+**Дерево Bubblegum:** в verified default build этот путь не включён. Размер
+дерева, rent и фактическая стоимость должны быть измерены отдельным
+validator/CPI rehearsal после pinning upstream ABI; `create_tree` не является
+доказательством этих параметров. См. `onchain/scripts/create_compressed_tree.sh`
+только как внешний экспериментальный helper.
 
 ---
 
@@ -62,7 +66,10 @@ solana config get  # url = https://api.devnet.solana.com (пока)
 
 ### 3.1 До деплоя — код
 
-Все 45 чеков Zealynx/SlowMist/OtterSec применены (см. `docs/ASSETS_SECURITY_AUDIT_CHECKLIST.md`):
+Часть source-level controls из checklist Zealynx/SlowMist/OtterSec
+зафиксирована в default build; post-deploy, CPI ABI, validator и custody
+пункты остаются gated/unverified (см.
+`docs/ASSETS_SECURITY_AUDIT_CHECKLIST.md`):
 
 - `overflow-checks = true`, `checked_*`, `u128` для `fee*mul(rake)`.
 - Нет `init_if_needed` — только `init` (reinit невозможен).
@@ -70,19 +77,28 @@ solana config get  # url = https://api.devnet.solana.com (пока)
 - `has_one = authority`, `Signer<'info>`, `Account<'info,T>` (типизированные), `Program<'info, Token>` — никакого `UncheckedAccount` без `/// CHECK`.
 - CPI: вайтлист программ (`BGUMAp9...`, `cmtDvX...`, `CoREEN...`, `Tokenkeg...`), CEI (счётчики ++ до CPI), `reload()` после CPI где читаем.
 - Token-2022: `PermanentDelegate` → `require!(!has_permanent_delegate)`, `TransferFee` → reject (или учёт fee), `Mint::decimals` проверка.
-- Таймлок смены authority: `propose_authority_change` → `accept_authority_change` после 432 000 слотов (48h). `paused` — immediate.
+- Authority change uses a 432,000-slot minimum delay. Wall-clock duration is
+  cluster-dependent and unverified here; `paused` is immediate.
 - События Anchor на всё (`AssetsInitialized`, `BadgeMintedCompressed`, `AuthorityChanged`) для мониторинга.
 
 ### 3.2 При деплое — ключи и апгрейд
 
 - `solana-keygen new` для operator authority — оффлайн, hardware (Ledger) или Squads.
-- **Squads multisig 3-of-5** для `upgrade_authority`: `solana program set-upgrade-authority <id> --new-upgrade-authority <SQUADS_VAULT>` после деплоя. 48h timelock в Squads. После аудита — опционально `... --final` (renounce, immutable).
-- `anchor keys list` → заменить placeholder в `Anchor.toml`, всех `lib.rs declare_id!`, `src/constants.ts`. `onchain/test/*.test.ts` упадёт если не совпадают.
+- Для `upgrade_authority` оператор должен предоставить concrete custody
+  policy (например, внешний multisig) и проверить её отдельным read-only gate.
+  В этом checkout custody, signer quorum и wall-clock timelock не
+  подтверждены; `--final`/renounce не выполнять без отдельного approval.
+- `anchor keys list` → compare live program accounts with the pinned
+  `Anchor.toml`, `lib.rs declare_id!` and `src/constants.ts` IDs; record the
+  finalized comparison in the external deployment manifest. The conformance
+  tests fail if source files drift.
 - `anchor build --verifiable` (docker) → `sha256sum target/verifiable/*.so` → записать в релиз-ноты. Никогда не деплоить `target/deploy/*.so` без верификации.
 
 ### 3.3 После деплоя — мониторинг и операции
 
-- RPC `commitment: finalized` (Alpenglow 150ms, но reorg окно ещё есть) для `publish_*`/`claim_*`. Бекенд уже делает `minContextSlot` + `finalized`.
+- RPC `commitment: finalized` для `publish_*`/`claim_*`; latency and reorg
+  behavior remain live measurements. Backend requests finalized snapshots where
+  the money-path verifier requires them.
 - Dual RPC: primary Helius DAS, fallback Triton. Healthcheck `solana --version` + `getHealth`.
 - `logsSubscribe` на `BadgeMinted*`, `Claimed`, `Paused`, `AuthorityChanged` → Grafana/Slack alert.
 - `set_paused(true)` — emergency stop claims/mints без остановки `publish_*` (история не копится).
@@ -101,12 +117,13 @@ npm --version # 22
 # 1. Оффлайн гейты (должны пройти до деплоя)
 ./scripts/local_syntax_probe.sh
 ./scripts/neonrelay_signer_test.sh
-(cd backend && npm test)   # 80/80
-(cd onchain && npm test)   # 32/32 + новый assets (6/6)
+(cd backend && npm test)   # 257/257
+(cd onchain && npm test)   # 50/50
 
 # 2. Генерите ключи программ (один раз)
 cd onchain
-anchor keys list  # покажет 4 placeholder — сгенерите новые: solana-keygen new --outfile target/deploy/<prog>.json && anchor keys sync
+anchor keys list  # сравнить live accounts с pinned source IDs; не считать
+                    # список ключей доказательством deploy
 
 # 3. Обновите Anchor.toml + lib.rs + constants.ts (anchor keys sync помогает)
 
@@ -118,12 +135,15 @@ CLUSTER=devnet ./scripts/deploy_prod.sh
 # или mainnet только после BL-16:
 # CLUSTER=mainnet-beta UPGRADE_AUTHORITY=<SQUADS_VAULT_PDA> ./scripts/deploy_prod.sh
 
-# 6. Инициализация (anchor shell)
+# 6. Инициализация (только после успешной миграции и отдельного live gate)
 # rewards: initialize(mint=NEONRELAY_TEST_MINT)
 # features: initialize()
 # economy: initialize(rake_bps=1000, fee_match=50*dec, fee_tournament=100*dec)
 # economy v2: initialize_v2(rake_bps=1000) для каждого mint (SKR/POTATO)
-# assets: initialize() -> create_collection("Neon Relay Badges","NRB","https://neonrelay.example/meta/") -> create_tree(14,64,5)
+# assets: initialize() starts paused; create_collection records the internal
+# bounded collection descriptor. create_tree/mint_badge_compressed return
+# AssetPathNotConfigured in the verified default build and must not be enabled
+# without a separately reviewed upstream CPI implementation.
 
 # 7. Фандинг vault (devnet!)
 spl-token mint $NEONRELAY_TEST_MINT 1000000 <vaultATA>  # или через Token-2022
@@ -131,12 +151,16 @@ spl-token mint $NEONRELAY_TEST_MINT 1000000 <vaultATA>  # или через Toke
 
 ---
 
-## 5. Дешёвая чеканка в действии (devnet dry-run)
+## 5. Непроверенные внешние примеры (не часть enabled default build)
+
+Следующие команды требуют отдельного внешнего Metaplex/Bubblegum проекта и
+DAS/validator verification; они не доказывают работоспособность CPI в
+`neonrelay-assets`.
 
 ### Bubblegum бейджи
 
 ```bash
-# Создать дерево 16k (~0.34 SOL)
+# Экспериментальный helper; размер дерева и rent должны быть измерены отдельно.
 ./onchain/scripts/create_compressed_tree.sh devnet 14 64 5
 
 # Mint сжатого бейджа (TS, Umi)
@@ -186,25 +210,24 @@ spl-token --program-2022 display <mint> | grep -i delegate  # должен бы�
 - [ ] `spl-token display <vaultMint>` → `PermanentDelegate: None`, `TransferFee: None` (или fee BPS учтён).
 - [ ] `GET /v2/economy/market?currency=SKR` → `paused:false`, `reserved <= balance`, `feesBase` = ["50000000",...] для 6 decimals.
 - [ ] Попытка `mint_badge_compressed` с левым `BGUM` program id → `InvalidBubblegumProgram`.
-- [ ] `propose_authority_change(new)` → `accept` до 48h → `TimelockNotExpired`.
+- [ ] `propose_authority_change(new)` → `accept` до configured slot delay
+  → `TimelockNotExpired`; measure wall-clock delay separately.
 - [ ] `set_paused(true)` → `mint_badge_core/compressed/pay_entry` → `Paused`.
 - [ ] `solana --version` на RPC >=3.0.14, иначе — не деплоить.
-- [ ] Helius DAS `getAssetProof` отвечает <500ms, fallback RPC green.
+- [ ] Operator-supplied asset proof/indexer latency and fallback RPC health
+  are measured against the pinned deployment; no <500ms SLA is asserted here.
 
 ---
 
-## 7. Сколько стоит эксплуатация
+## 7. Стоимость и эксплуатационные измерения
 
-| Операция | CU | SOL (при 1000 lamports/CU) | Примечание |
-|----------|----|----------------------------|------------|
-| `create_collection` | ~25k | 0.000025 | 1 раз |
-| `create_tree` (14/64/8) | ~50k | 0.00005 + 0.34 rent | 1 раз на 16k |
-| `mint_badge_compressed` | ~35k | 0.000035 | vs 0.0029 Core, vs 0.022 Metadata |
-| `mint_badge_core` | ~45k | 0.000045 + 0.0014 rent | fallback |
-| `pay_entry_v2` | ~60k | 0.00006 | + token transfer |
-| `claim_prize_v2` (proof 1) | ~25k | 0.000025 | capped 32 |
-
-При 100k активных юзеров/месяц экономия на бейджах vs Metadata: ~2 200 SOL (~$300k по $150/SOL) — окупает аудит.
+В checkout нет подтверждённых CU, rent, SOL/USD или эксплуатационных
+расчётов для assets CPI: Bubblegum/MPL Core paths compile-time disabled, а
+validator и live RPC не запускались. Перед включением внешнего CPI оператор
+должен получить measurements из pinned verifiable build и validator rehearsal,
+сохранить их во внешнем release storage и повторно пройти ABI/custody review.
+Эти значения нельзя выводить из этого runbook или считать частью release
+approval.
 
 ---
 

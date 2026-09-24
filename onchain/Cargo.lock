@@ -2627,6 +2627,7 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 name = "neonrelay-assets"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "anchor-lang",
  "anchor-spl",
 ]
@@ -2635,6 +2636,7 @@ dependencies = [
 name = "neonrelay-economy"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "anchor-lang",
  "anchor-spl",
  "serde_json",
@@ -2648,6 +2650,7 @@ dependencies = [
 name = "neonrelay-features"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "anchor-lang",
  "anchor-spl",
 ]
@@ -2656,6 +2659,7 @@ dependencies = [
 name = "neonrelay-rewards"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "anchor-lang",
  "anchor-spl",
 ]

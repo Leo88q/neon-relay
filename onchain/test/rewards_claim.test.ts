@@ -58,6 +58,7 @@ test("Claim constraints: init/payer, signer, mut, token bindings, BE seeds", () 
 	assert.match(libRs, /seeds = \[EPOCH_SEED, &epoch_id\.to_be_bytes\(\)\]/);
 	// Player signs and pays; both token legs are writable with strict bindings.
 	assert.match(libRs, /pub player: Signer<'info>/);
+	assert.match(libRs, /account\.state == anchor_spl::token::spl_token::state::AccountState::Initialized/);
 	assert.match(libRs, /token::mint = mint,\s*token::authority = player,/);
 	assert.match(libRs, /seeds = \[VAULT_SEED\][\s\S]{0,120}?token::authority = config,/);
 	// Config and mint must match; program is mint-agnostic otherwise.
@@ -89,7 +90,7 @@ test("account sizes derive from the struct layouts", () => {
 	assert.deepEqual(order.slice(0, 4), ["authority", "mint", "paused", "epoch_count"]);
 	const epoch = /pub struct EpochState \{([\s\S]*?)\n\}/.exec(libRs)![1];
 	assert.deepEqual([...epoch.matchAll(/pub (\w+):/g)].map((m) => m[1]),
-		["id", "root", "published_at", "bump", "leaf_count"]);
+		["id", "root", "published_at", "bump", "leaf_count", "total_micro", "remaining_micro"]);
 });
 
 test("proof rules: max length and exact depth bound at publish", () => {
@@ -97,7 +98,9 @@ test("proof rules: max length and exact depth bound at publish", () => {
 	assert.match(libRs, /require!\(proof\.len\(\) <= MAX_PROOF_LEN, NeonRelayError::ProofTooLong\)/);
 	// Tranche A: the proof must match the padded-tree depth exactly, and the
 	// leaf index must be in range — the client mirrors both before signing.
-	assert.match(libRs, /leaf_count\.next_power_of_two\(\)\.trailing_zeros\(\)/);
+	assert.match(libRs, /fn proof_depth\(leaf_count: u32\) -> Result<usize>/);
+	assert.match(libRs, /checked_next_power_of_two\(\)/);
+	assert.match(libRs, /let depth = proof_depth\(ctx\.accounts\.epoch\.leaf_count\)\?;/);
 	assert.match(libRs, /require!\(proof\.len\(\) == depth, NeonRelayError::ProofInvalid\)/);
 	assert.match(libRs, /require!\(leaf_index < .*?\.leaf_count, NeonRelayError::ProofInvalid\)/);
 	// Epoch PDA seeds mirror the TS constants (already covered for programs

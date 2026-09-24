@@ -21,6 +21,19 @@ test("Watchtower config is v3, tenant-scoped, and exactly 33 components", () =>
     assert.deepEqual(response.json.identity.session_key_actions, ["move", "boost", "finish", "race_session"]);
   }));
 
+test("readyz stays blocked until the production manifest and chain checks pass", async () => {
+  const { app, base } = await startTestApp({ environment: "production", monetizationEnabled: true });
+  try {
+    const response = await getJson(base, "/watchtower/readyz");
+    assert.equal(response.status, 503);
+    assert.equal(response.json.data.ready, false);
+    assert.ok((response.json.data.blockers as string[]).length > 0);
+    assert.equal(response.json.data.productionReady, false);
+  } finally {
+    await app.close();
+  }
+});
+
 test("canonical /watchtower exporter routes are read-only and metadata-rich", () =>
   withApp(async (base) => {
     const health = await getJson(base, "/watchtower/health");
@@ -61,6 +74,25 @@ test("all SDK verification endpoints expose an adapter contract", () =>
       assert.equal(response.json.secrets_client_only, true);
     }
   }));
+
+test("configured Watchtower ingestion requires a constant-time bearer credential", async () => {
+  const token = "watchtower-test-token-0123456789abcdef";
+  const { app, base } = await startTestApp({ watchtowerIngestToken: token });
+  try {
+    const body = { event_type: "match_start", external_id: "auth-1", mode: "race" };
+    const missing = await postJson(base, "/api/ingest/solana", body);
+    assert.equal(missing.status, 401);
+    assert.equal(missing.json.error.code, "watchtower-auth-required");
+    const wrong = await postJson(base, "/api/ingest/solana", body, "wrong-token");
+    assert.equal(wrong.status, 401);
+    assert.equal(wrong.json.error.code, "watchtower-auth-invalid");
+    const accepted = await postJson(base, "/api/ingest/solana", body, token);
+    assert.equal(accepted.status, 200);
+    assert.equal(accepted.json.accepted, 1);
+  } finally {
+    await app.close();
+  }
+});
 
 test("telemetry is idempotent and late-binds earlier external events", () =>
   withApp(async (base, db) => {

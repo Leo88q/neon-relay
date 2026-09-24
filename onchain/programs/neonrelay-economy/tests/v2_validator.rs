@@ -57,8 +57,12 @@ fn rpc_lifecycle() {
     }
     // Exercise real legacy bootstrap, not a genesis account fixture.
     let legacy = pda(&[b"neonrelay_economy_config"]);
+    let program_data = Pubkey::find_program_address(
+        &[neonrelay_economy::id().as_ref()],
+        &solana_sdk::bpf_loader_upgradeable::id(),
+    ).0;
     let old_vault = ata::get_associated_token_address(&legacy, &mints[0].pubkey());
-    send(&rpc, &admin, &[], vec![ix(accounts::Initialize { authority: admin.pubkey(), config: legacy,
+    send(&rpc, &admin, &[], vec![ix(accounts::Initialize { authority: admin.pubkey(), program_data, config: legacy,
         mint: mints[0].pubkey(), treasury_ata: treasury[0], vault_ata: old_vault,
         token_program: spl_token::id(), associated_token_program: ata::id(), system_program: system_program::id() },
         instruction::Initialize { rake_bps: 1000, fee_match: 50, fee_tournament: 100 })], true);
