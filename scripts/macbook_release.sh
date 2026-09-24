@@ -228,7 +228,7 @@ stage_deploy() {
     solana-keygen new
     ok "created operator wallet ~/.config/solana/id.json"
   fi
-  solana config set "$CLUSTER"
+  solana config set --url "$CLUSTER"
   [ -n "$(solana address)" ] || die "solana address returned nothing — check the wallet config"
   ok "operator wallet: $(solana address)"
 
