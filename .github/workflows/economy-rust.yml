@@ -54,6 +54,11 @@ jobs:
             say '```'
             tail -n 80 "$LOG"
             say '```'
+            # Also surface the tail as a check-run annotation: unlike the step
+            # summary and raw logs, annotations are readable via the Checks
+            # API (this sandbox cannot reach results-receiver / blob hosts).
+            esc=$(tail -n 60 "$LOG" | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
+            echo "::error title=Pin-gate: $1::${esc}"
             exit 1
           }
           lock_version() {
