@@ -177,9 +177,22 @@ stage_lockfile() {
 }
 
 # -------------------------------------------------------------------- test --
+# The repo intentionally ships no node_modules; the tsc type gate needs
+# @types/node (tsconfig "types": ["node"]). Install it locally without saving
+# to package.json so the source tree stays untouched.
+ensure_node_types() {
+  if command -v tsc >/dev/null 2>&1 && [ ! -d "$1/node_modules/@types/node" ]; then
+    echo "  -- $(basename "$1"): installing @types/node (npm --no-save, source untouched)"
+    (cd "$1" && npm install --no-save --no-package-lock --no-audit --no-fund @types/node >/dev/null) \
+      || warn "@types/node install failed in $1 — the typecheck gate will report TS2688"
+  fi
+}
+
 stage_test() {
   log "test — backend + onchain + cargo (this is the long part on first run)"
   cd "$ROOT"
+  ensure_node_types "$ROOT/backend"
+  ensure_node_types "$ROOT/onchain"
   (cd backend && npm test && npm run typecheck)
   ok "backend: npm test + typecheck"
   (cd onchain && npm test && npm run typecheck && npm run verify:ids && npm run verify:toolchain)
