@@ -236,8 +236,13 @@ stage_deploy() {
     solana airdrop 2 || warn "airdrop failed (faucet rate limit?) — if deploy fails on fees, fund the wallet manually"
   fi
 
-  # Mints (devnet rehearsal only: throwaway test mints, labelled as such)
+  # Mints (devnet rehearsal only: throwaway test mints, labelled as such).
+  # On re-runs reuse the manifest's mints so funding/revocation stays consistent.
   local reward_mint="${NEONRELAY_TEST_MINT:-}" payment_mint="${NEONRELAY_PAYMENT_TEST_MINT:-}"
+  if [ -f "$ROOT/$MANIFEST" ]; then
+    reward_mint="${reward_mint:-$(jq -r '.mints.reward // empty' "$ROOT/$MANIFEST" 2>/dev/null || true)}"
+    payment_mint="${payment_mint:-$(jq -r '.mints.skr // empty' "$ROOT/$MANIFEST" 2>/dev/null || true)}"
+  fi
   create_test_mint() { # -> stdout: the new mint address
     ./onchain/scripts/create_test_mint.sh | sed -n 's/^NEONRELAY_TEST_MINT=//p' | head -n1
   }
@@ -245,13 +250,31 @@ stage_deploy() {
     warn "creating devnet reward test mint (throwaway, 6 decimals — NOT an official token)"
     reward_mint="$(create_test_mint)"; [ -n "$reward_mint" ] || die "could not create the reward test mint"
     ok "reward test mint: $reward_mint"
+  else
+    ok "reward test mint: $reward_mint (reused from manifest/env)"
   fi
   if [ -z "$payment_mint" ]; then
     warn "creating devnet payment-slot test mint (throwaway — NOT an official token, no SKR exists)"
     payment_mint="$(create_test_mint)"; [ -n "$payment_mint" ] || die "could not create the payment test mint"
     ok "payment test mint: $payment_mint"
+  else
+    ok "payment test mint: $payment_mint (reused from manifest/env)"
   fi
   [ "$reward_mint" != "$payment_mint" ] || die "reward and payment mints must be distinct"
+
+  # The final read-only step of deploy_prod.sh (verify_deployment.sh) requires the
+  # classic SPL mints to have mint/freeze authority REVOKED. Fund the operator
+  # wallet first, then revoke: vault funding afterwards is a plain transfer.
+  local m
+  for m in "$reward_mint" "$payment_mint"; do
+    spl-token mint --url "$RPC_URL" "$m" 1000000 >/dev/null \
+      || warn "could not fund test mint $m (final verify_deployment will flag it)"
+    spl-token disable-mint --url "$RPC_URL" "$m" >/dev/null \
+      || warn "test mint $m: mint authority revoke failed or was already revoked"
+    spl-token disable-freeze --url "$RPC_URL" "$m" >/dev/null \
+      || warn "test mint $m: freeze authority revoke failed or was already revoked"
+  done
+  ok "test mints funded (1_000_000 base units each) and authority-revoked"
 
   local genesis auth manifest="$ROOT/$MANIFEST"
   genesis="$(solana genesis-hash --url "$RPC_URL")"; [ -n "$genesis" ] || die "could not read the genesis hash from $CLUSTER"
