@@ -71,15 +71,30 @@ export interface Config {
    */
   expectedGenesisHash: string | null;
   economyProgramId: string | null;
+  /** Features/assets program ids used by the deployment and custody gate. */
+  featuresProgramId: string | null;
+  assetsProgramId: string | null;
   /** Rewards program id for on-chain epoch reconciliation (Tranche B). */
   rewardsProgramId: string | null;
   skrMint: string | null;
+  /** Reward mint bound into the rewards Config account and claim verifier. */
+  rewardMint: string | null;
   potatoMint: string | null;
   /** Generic JSON webhook for alert digests (optional, Tranche B). */
   alertWebhookUrl: string | null;
   /** Telegram alert sink (optional; both must be set to enable). */
   telegramBotToken: string | null;
   telegramChatId: string | null;
+  /** Process environment used for fail-closed production gates. */
+  environment: "production" | "development" | "test";
+  /** Service credential required by production Watchtower ingestion. */
+  watchtowerIngestToken: string | null;
+  /** Canonical Solana cluster recorded in the deployment manifest. */
+  cluster: "devnet" | "testnet" | "mainnet-beta";
+  /** Explicit second gate for paid entry; default is disabled. */
+  monetizationEnabled: boolean;
+  /** Operator-supplied deployment manifest used by the production gate. */
+  deploymentManifestPath: string | null;
 }
 
 const num = (value: string | undefined, fallback: number): number => {
@@ -103,13 +118,48 @@ function mintAddress(value: string | undefined, name: string, noun = "public key
   return value;
 }
 
+function serverSigningKey(value: string | undefined): string | null {
+  if (value === undefined || value === "") return null;
+  try {
+    const raw = Buffer.from(value, "base64url");
+    if (raw.length !== 32 || raw.toString("base64url") !== value) throw new Error();
+  } catch {
+    throw new Error("NEONRELAY_SERVER_SIGNING_PUBLIC_KEY must be canonical base64url Ed25519 raw public key");
+  }
+  return value;
+}
+
+function productionRpcUrl(value: string | undefined, name: string): string {
+  if (!value) throw new Error(`${name} must be an explicit https URL in production`);
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" || parsed.hostname === "") throw new Error();
+  } catch {
+    throw new Error(`${name} must be an explicit https URL in production`);
+  }
+  return value;
+}
+
+function rpcEndpointIdentity(value: string): string {
+  const parsed = new URL(value);
+  // A different API-key path on the same host is not independent
+  // infrastructure; production failover must cross an origin boundary.
+  return `${parsed.protocol}//${parsed.host}`;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const skrMint = mintAddress(env.NEONRELAY_SKR_MINT, "NEONRELAY_SKR_MINT");
+  const rewardMint = mintAddress(env.NEONRELAY_REWARD_MINT, "NEONRELAY_REWARD_MINT", "reward mint");
   const potatoMint = mintAddress(env.NEONRELAY_POTATO_MINT, "NEONRELAY_POTATO_MINT");
   if (skrMint !== null && skrMint === potatoMint) throw new Error("SKR and POTATO must use distinct mints");
+  if (rewardMint !== null && ((skrMint !== null && rewardMint === skrMint) ||
+      (potatoMint !== null && rewardMint === potatoMint))) {
+    throw new Error("reward and payment mints must use distinct mints");
+  }
   // Tranche-A fail-fast: the .example placeholder domain must never authenticate
   // real wallets. Production refuses to boot without an explicit domain.
   const production = env.NODE_ENV === "production";
+  const environment = production ? "production" : env.NODE_ENV === "test" ? "test" : "development";
   const authDomain = env.NEONRELAY_AUTH_DOMAIN;
   if (authDomain === undefined || authDomain === "") {
     if (production) {
@@ -118,6 +168,47 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   } else if (production && authDomain.endsWith(".example")) {
     throw new Error("NEONRELAY_AUTH_DOMAIN must not use the .example placeholder in production");
   }
+  const economyProgramId = mintAddress(env.NEONRELAY_ECONOMY_PROGRAM_ID, "NEONRELAY_ECONOMY_PROGRAM_ID", "program id");
+  const featuresProgramId = mintAddress(env.NEONRELAY_FEATURES_PROGRAM_ID, "NEONRELAY_FEATURES_PROGRAM_ID", "program id");
+  const assetsProgramId = mintAddress(env.NEONRELAY_ASSETS_PROGRAM_ID, "NEONRELAY_ASSETS_PROGRAM_ID", "program id");
+  const rewardsProgramId = mintAddress(env.NEONRELAY_REWARDS_PROGRAM_ID, "NEONRELAY_REWARDS_PROGRAM_ID", "program id");
+  const expectedGenesisHash = mintAddress(env.NEONRELAY_EXPECTED_GENESIS_HASH, "NEONRELAY_EXPECTED_GENESIS_HASH", "genesis hash");
+  const watchtowerIngestToken = env.NEONRELAY_WATCHTOWER_INGEST_TOKEN ?? null;
+  if (production && watchtowerIngestToken !== null && watchtowerIngestToken.length < 32) {
+    throw new Error("NEONRELAY_WATCHTOWER_INGEST_TOKEN must be at least 32 characters in production");
+  }
+  const deploymentManifestPath = env.NEONRELAY_DEPLOYMENT_MANIFEST ?? null;
+  if (production) {
+    const primaryRpc = productionRpcUrl(env.NEONRELAY_RPC_URL, "NEONRELAY_RPC_URL");
+    const fallbackRpc = productionRpcUrl(env.NEONRELAY_RPC_FALLBACK_URL, "NEONRELAY_RPC_FALLBACK_URL");
+    if (rpcEndpointIdentity(primaryRpc) === rpcEndpointIdentity(fallbackRpc)) {
+      throw new Error("NEONRELAY_RPC_FALLBACK_URL must identify distinct RPC infrastructure in production");
+    }
+  }
+  if (production && !env.NEONRELAY_CLUSTER) {
+    throw new Error("NEONRELAY_CLUSTER must be explicit in production");
+  }
+  const clusterValue = env.NEONRELAY_CLUSTER ?? "devnet";
+  if (clusterValue !== "devnet" && clusterValue !== "testnet" && clusterValue !== "mainnet-beta") {
+    throw new Error("NEONRELAY_CLUSTER must be devnet, testnet, or mainnet-beta");
+  }
+  const cluster = clusterValue as "devnet" | "testnet" | "mainnet-beta";
+  const monetizationEnabled = env.NEONRELAY_MONETIZATION_ENABLED === "1";
+  if (production) {
+    const missing: string[] = [];
+    if (!watchtowerIngestToken) missing.push("NEONRELAY_WATCHTOWER_INGEST_TOKEN");
+    if (!serverSigningKey(env.NEONRELAY_SERVER_SIGNING_PUBLIC_KEY)) missing.push("NEONRELAY_SERVER_SIGNING_PUBLIC_KEY");
+    if (!economyProgramId) missing.push("NEONRELAY_ECONOMY_PROGRAM_ID");
+    if (!featuresProgramId) missing.push("NEONRELAY_FEATURES_PROGRAM_ID");
+    if (!assetsProgramId) missing.push("NEONRELAY_ASSETS_PROGRAM_ID");
+    if (!rewardsProgramId) missing.push("NEONRELAY_REWARDS_PROGRAM_ID");
+    if (!skrMint) missing.push("NEONRELAY_SKR_MINT");
+    if (!rewardMint) missing.push("NEONRELAY_REWARD_MINT");
+    if (!expectedGenesisHash) missing.push("NEONRELAY_EXPECTED_GENESIS_HASH");
+    if (!deploymentManifestPath) missing.push("NEONRELAY_DEPLOYMENT_MANIFEST");
+    if (!monetizationEnabled) missing.push("NEONRELAY_MONETIZATION_ENABLED=1");
+    if (missing.length > 0) throw new Error(`production configuration is incomplete: ${missing.join(", ")}`);
+  }
   return {
     port: num(env.PORT, 8787),
     dbPath: env.NEONRELAY_DB ?? "var/neonrelay.db",
@@ -125,7 +216,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     challengeTtlMs: num(env.NEONRELAY_CHALLENGE_TTL_MS, 120_000),
     sessionTtlMs: num(env.NEONRELAY_SESSION_TTL_MS, 12 * 60 * 60 * 1000),
     version: env.npm_package_version ?? "0.1.0",
-    serverSigningPublicKey: env.NEONRELAY_SERVER_SIGNING_PUBLIC_KEY ?? null,
+    serverSigningPublicKey: serverSigningKey(env.NEONRELAY_SERVER_SIGNING_PUBLIC_KEY),
     gameIdentityPublicKey: env.NEONRELAY_GAME_IDENTITY_PUBLIC_KEY ?? null,
     adminToken: env.NEONRELAY_ADMIN_TOKEN ?? null,
     operatorToken: env.NEONRELAY_OPERATOR_TOKEN ?? null,
@@ -141,15 +232,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     rpcFallbackUrl: env.NEONRELAY_RPC_FALLBACK_URL ?? null,
     rpcTimeoutMs: num(env.NEONRELAY_RPC_TIMEOUT_MS, 10_000),
     rpcCooldownMs: num(env.NEONRELAY_RPC_COOLDOWN_MS, 30_000),
-    expectedGenesisHash: mintAddress(env.NEONRELAY_EXPECTED_GENESIS_HASH, "NEONRELAY_EXPECTED_GENESIS_HASH", "genesis hash"),
-    economyProgramId: env.NEONRELAY_ECONOMY_PROGRAM_ID ?? null,
-    rewardsProgramId: env.NEONRELAY_REWARDS_PROGRAM_ID ?? null,
+    expectedGenesisHash,
+    economyProgramId,
+    featuresProgramId,
+    assetsProgramId,
+    rewardsProgramId,
     // Operator-set SKR mint (Solana Mobile Seeker token). Never hardcoded;
     // devnet runs use a labelled test mint (BL-16).
     skrMint,
+    rewardMint,
     potatoMint,
     alertWebhookUrl: env.NEONRELAY_ALERT_WEBHOOK_URL ?? null,
     telegramBotToken: env.NEONRELAY_TELEGRAM_BOT_TOKEN ?? null,
     telegramChatId: env.NEONRELAY_TELEGRAM_CHAT_ID ?? null,
+    environment,
+    watchtowerIngestToken,
+    cluster,
+    monetizationEnabled,
+    deploymentManifestPath,
   };
 }

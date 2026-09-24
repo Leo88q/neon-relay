@@ -1,89 +1,107 @@
 #!/usr/bin/env bash
-# Neon Relay — продакшн деплой (devnet/mainnet) c проверками Agave≥3.0.14 и verifiable build.
-# Использование:
-#   CLUSTER=devnet ./onchain/scripts/deploy_prod.sh            # devnet throwaway mint
-#   CLUSTER=mainnet-beta UPGRADE_AUTHORITY=<SQUADS> ./onchain/scripts/deploy_prod.sh  # mainnet только после BL-16 sign-off
+# Neon Relay live deployment. This script is intentionally fail-closed: it
+# performs no RPC transaction unless ALLOW_LIVE_DEPLOY=1 is set explicitly.
+# Source-only validation is available as release_validate.sh.
 set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CLUSTER="${CLUSTER:-devnet}"
-PROGRAMS=(neonrelay-rewards neonrelay-features neonrelay-economy neonrelay-assets)
+MANIFEST="${DEPLOYMENT_MANIFEST:-$ROOT/onchain/deployment.${CLUSTER}.json}"
+case "$MANIFEST" in /*) ;; *) MANIFEST="$ROOT/$MANIFEST" ;; esac
 MIN_AGAVE="3.0.14"
 MIN_ANCHOR="0.31.1"
+PROGRAMS=(neonrelay-rewards neonrelay-features neonrelay-economy neonrelay-assets)
 
-echo "== Neon Relay prod deploy — cluster=$CLUSTER =="
+if [ "${ALLOW_LIVE_DEPLOY:-0}" != "1" ]; then
+  echo "live deployment is disabled by default; run release_validate.sh for offline gates" >&2
+  echo "to intentionally deploy, set ALLOW_LIVE_DEPLOY=1 and provide DEPLOYMENT_MANIFEST" >&2
+  exit 2
+fi
+[ -f "$MANIFEST" ] || { echo "deployment manifest not found: $MANIFEST" >&2; exit 2; }
+command -v jq >/dev/null || { echo "jq not found" >&2; exit 2; }
 
-# 1. Версии
-echo "-- checking toolchain --"
-if ! command -v solana >/dev/null; then echo "solana CLI not found" >&2; exit 1; fi
-if ! command -v anchor >/dev/null; then echo "anchor CLI not found" >&2; exit 1; fi
+cd "$ROOT"
+echo "== Neon Relay live deploy — cluster=$CLUSTER =="
+
+# The project pin must agree with the production toolchain requirement before
+# any build or RPC action is attempted.
+node onchain/scripts/verify_toolchain_pin.mjs
+
+# Offline identity gate before any toolchain or network action.
+node onchain/scripts/verify_source_ids.mjs --manifest "$MANIFEST" --cluster "$CLUSTER" --strict-manifest
+[ -n "${AUDIT_REPORT_PATH:-}" ] || { echo "AUDIT_REPORT_PATH is required for live deployment" >&2; exit 2; }
+AUDIT_REPORT_PATH="$AUDIT_REPORT_PATH" onchain/scripts/release_validate.sh
+
+# Toolchain gates are hard failures; a lower Anchor version is not a warning.
+command -v solana >/dev/null || { echo "solana CLI not found" >&2; exit 2; }
+command -v anchor >/dev/null || { echo "anchor CLI not found" >&2; exit 2; }
+command -v cargo >/dev/null || { echo "cargo not found" >&2; exit 2; }
+command -v rustc >/dev/null || { echo "rustc not found" >&2; exit 2; }
+command -v tsc >/dev/null || { echo "tsc not found; deploy requires verified type safety" >&2; exit 2; }
 SOLANA_VER="$(solana --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
-echo "solana $SOLANA_VER (need >= $MIN_AGAVE)"
-# semver compare via sort -V
-if [ "$(printf '%s\n' "$MIN_AGAVE" "$SOLANA_VER" | sort -V | head -n1)" != "$MIN_AGAVE" ]; then
-  echo "ERROR: Agave $SOLANA_VER < $MIN_AGAVE — обновите (критический патч 6Tbps, Jan 2026)" >&2
-  exit 1
-fi
 ANCHOR_VER="$(anchor --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
-echo "anchor $ANCHOR_VER (need >= $MIN_ANCHOR for prod) — warn if lower"
-if [ "$(printf '%s\n' "$MIN_ANCHOR" "$ANCHOR_VER" | sort -V | head -n1)" != "$MIN_ANCHOR" ]; then
-  echo "WARN: anchor $ANCHOR_VER < $MIN_ANCHOR — деплой продолжится, но обновите до 0.31.1 (фикс init_if_needed)" >&2
+[ "$(printf '%s\n' "$MIN_AGAVE" "$SOLANA_VER" | sort -V | head -n1)" = "$MIN_AGAVE" ] || {
+  echo "Agave/Solana $SOLANA_VER < required $MIN_AGAVE" >&2; exit 2;
+}
+[ "$(printf '%s\n' "$MIN_ANCHOR" "$ANCHOR_VER" | sort -V | head -n1)" = "$MIN_ANCHOR" ] || {
+  echo "Anchor $ANCHOR_VER < required $MIN_ANCHOR" >&2; exit 2;
+}
+
+# Local tests and type/syntax gates must pass before build/deploy.
+(cd "$ROOT/backend" && npm test && REQUIRE_TSC=1 npm run typecheck)
+(cd "$ROOT/onchain" && npm test && npm run typecheck && npm run verify:ids)
+
+[ -f "$HOME/.config/solana/id.json" ] || { echo "operator wallet not found" >&2; exit 2; }
+[ "$(jq -r '.cluster // empty' "$MANIFEST")" = "$CLUSTER" ] || {
+  echo "manifest cluster does not match CLUSTER" >&2; exit 2;
+}
+
+# The manifest authority must be concrete before a live deploy. The first
+# `anchor deploy` uses the operator wallet, then the script transfers every
+# program to this authority before the final read-only verification.
+MANIFEST_AUTH="$(jq -r '.upgrade_authority // empty' "$MANIFEST")"
+AUTH="${UPGRADE_AUTHORITY:-$MANIFEST_AUTH}"
+[ -n "$AUTH" ] && [ "$AUTH" != "none" ] || { echo "manifest upgrade_authority must be concrete" >&2; exit 2; }
+[ "$AUTH" = "$MANIFEST_AUTH" ] || {
+  echo "UPGRADE_AUTHORITY must equal manifest upgrade_authority" >&2; exit 2;
+}
+if [ "$CLUSTER" = "mainnet-beta" ] && [ "${CONFIRM_MAINNET:-}" != "YES" ]; then
+  echo "mainnet requires CONFIRM_MAINNET=YES" >&2; exit 2
 fi
+case "$CLUSTER" in
+  devnet) RPC_URL="https://api.devnet.solana.com" ;;
+  testnet) RPC_URL="https://api.testnet.solana.com" ;;
+  mainnet-beta) RPC_URL="https://api.mainnet-beta.solana.com" ;;
+  *) echo "unsupported deployment cluster: $CLUSTER" >&2; exit 2 ;;
+esac
 
-# 2. Ключи
-if [ ! -f "$HOME/.config/solana/id.json" ]; then echo "wallet not found at ~/.config/solana/id.json" >&2; exit 1; fi
-echo "wallet: $(solana address)  cluster: $(solana config get | grep 'RPC URL' || true)"
-
-# 3. Оффлайн-гейты (без цепи)
-echo "-- offline gates --"
-(cd backend && npm test)
-(cd onchain && npm test)
-
-# 4. Сборка verifiable (требует docker)
-echo "-- building verifiable ELFs --"
+cd "$ROOT/onchain"
 if command -v docker >/dev/null && docker info >/dev/null 2>&1; then
   anchor build --verifiable
-  echo "verifiable ELFs in target/verifiable/"
-  sha256sum target/verifiable/*.so | tee onchain/target/checksum.txt
+  mkdir -p target
+  sha256sum target/verifiable/*.so | tee target/checksum.txt
 else
-  echo "docker not available — fallback to anchor build"
-  anchor build
-  sha256sum target/deploy/*.so | tee onchain/target/checksum.txt
-fi
-
-# 5. Placeholder замена
-echo "-- checking program ids are not placeholders --"
-for prog in "${PROGRAMS[@]}"; do
-  id="$(grep -E "$prog" Anchor.toml | grep -oE '[1-9A-HJ-NP-Za-km-z]{32,44}' || true)"
-  if [[ "$id" == "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj" || "$id" == "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP" || "$id" == "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9" || "$id" == "As5T3pX47J2kU8KQYq3vN2FhF4b5c6d7e8f9g0h1i2j3k4l5m6n7o8p9q0r" ]]; then
-    echo "WARN: $prog still uses placeholder $id — run: anchor keys list && update Anchor.toml/lib.rs/constants.ts" >&2
-  fi
-done
-
-# 6. Деплой
-echo "-- deploying to $CLUSTER --"
-if [ "$CLUSTER" = "mainnet-beta" ]; then
-  if [ -z "${UPGRADE_AUTHORITY:-}" ]; then
-    echo "ERROR: mainnet требует UPGRADE_AUTHORITY=<SQUADS multisig>" >&2
-    exit 1
-  fi
-  echo "MAINNET gate: убедитесь BL-16 signed-off, ToS geo-restrict, Squads 3-of-5"
-  read -p "Подтвердите mainnet деплой (yes/no): " ok
-  [ "$ok" = "yes" ] || exit 1
+  echo "docker unavailable; verifiable build cannot be claimed" >&2
+  exit 2
 fi
 
 anchor deploy --provider.cluster "$CLUSTER"
-echo "deploy done — verifying..."
 
-# 7. Пост-верификация
-./onchain/scripts/verify_deployment.sh "$CLUSTER"
+# Transfer every upgrade authority only when the manifest gives a concrete,
+# canonical authority. Never continue after a failed transfer. This happens
+# before verification because the manifest records the post-transfer owner.
+for name in "${PROGRAMS[@]}"; do
+  pid="$(jq -r --arg name "$name" '.programs[$name] // empty' "$MANIFEST")"
+  [ -n "$pid" ] || { echo "manifest missing $name" >&2; exit 2; }
+  solana program set-upgrade-authority "$pid" --new-upgrade-authority "$AUTH" --url "$RPC_URL"
+done
 
-# 8. Upgrade authority -> Squads multisig (если задан)
-if [ -n "${UPGRADE_AUTHORITY:-}" ]; then
-  for prog in "${PROGRAMS[@]}"; do
-    pid="$(anchor keys list 2>/dev/null | grep "$prog" | grep -oE '[1-9A-HJ-NP-Za-km-z]{32,44}' || grep -E "$prog" Anchor.toml | grep -oE '[1-9A-HJ-NP-Za-km-z]{32,44}' | head -1)"
-    echo "setting upgrade authority for $prog ($pid) -> $UPGRADE_AUTHORITY"
-    solana program set-upgrade-authority "$pid" --new-upgrade-authority "$UPGRADE_AUTHORITY" --provider.cluster "$CLUSTER" || true
-  done
-fi
-
-echo "== DEPLOY OK — зафиксируйте в релиз-ноутах: program ids, mint, slot, checksum ==" 
-cat onchain/target/checksum.txt
+# Reproducible-build verification is read-only but mandatory before declaring
+# the deployment complete.
+for name in "${PROGRAMS[@]}"; do
+  pid="$(jq -r --arg name "$name" '.programs[$name] // empty' "$MANIFEST")"
+  anchor verify "$pid" --provider.cluster "$CLUSTER"
+done
+"$ROOT/onchain/scripts/verify_deployment.sh" --cluster "$CLUSTER" --manifest "$MANIFEST"
+echo "DEPLOY OK — record manifest, finalized slot, and target/checksum.txt outside the audited source tree"
+cat target/checksum.txt

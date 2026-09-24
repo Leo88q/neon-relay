@@ -13,8 +13,9 @@
 //!   * Only `config.authority` (the operator) can publish an epoch root or
 //!     pause the program. A published root can never be replaced (the epoch
 //!     PDA `init` fails if it already exists).
-//!   * The program never trusts the backend beyond a root: a payout requires a
-//!     valid proof for the claimed wallet + amount against that root.
+//!   * The program never trusts the backend for an individual payout: every
+//!     amount requires a valid proof and is bounded by the published aggregate
+//!     `total_micro` ceiling.
 //!   * Double claims are impossible: the claim record PDA is keyed by
 //!     (epoch, wallet) and `init` fails when it already exists.
 //!   * No mint is hardcoded. The reward mint is provided at `initialize` and
@@ -27,8 +28,8 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hashv;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-// PLACEHOLDER program id: replace with the real one from `anchor keys list`
-// before the first deployment (recorded in onchain/README.md).
+// Source ID is pinned in Anchor.toml and checked against the TS/backend
+// manifests. A live deployment still requires finalized RPC verification.
 declare_id!("2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj");
 
 /// PDA seeds. Mirrored by `onchain/src/pda.ts` and asserted equal by
@@ -46,8 +47,48 @@ pub const MAX_PROOF_LEN: usize = 32;
 /// (1e-6 units) equals the SPL token's base units.
 pub const EXPECTED_DECIMALS: u8 = 6;
 
-/// 48h timelock for authority change (HIGH-04 fix, 432k slots @0.4s/slot)
+/// Minimum slot-delay policy for authority change. Wall-clock duration is
+/// cluster-dependent and must be measured before operational approval.
 pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
+
+/// Only the current upgrade authority may perform the one-time bootstrap.
+/// The program-data account is derived from this program id and owned by the
+/// upgradeable loader, so an arbitrary first caller cannot seize config.
+fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey) -> Result<()> {
+	let expected = Pubkey::find_program_address(
+		&[crate::ID.as_ref()],
+		&anchor_lang::solana_program::bpf_loader_upgradeable::id(),
+	).0;
+	require_keys_eq!(program_data.key(), expected, NeonRelayError::BootstrapAuthorityInvalid);
+	require_keys_eq!(*program_data.owner, anchor_lang::solana_program::bpf_loader_upgradeable::id(), NeonRelayError::BootstrapAuthorityInvalid);
+	let state: anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState =
+		bincode::deserialize(&program_data.try_borrow_data()?).map_err(|_| error!(NeonRelayError::BootstrapAuthorityInvalid))?;
+	match state {
+		anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
+			upgrade_authority_address: Some(current), ..
+		} => require_keys_eq!(current, *authority, NeonRelayError::BootstrapAuthorityInvalid),
+		_ => Err(error!(NeonRelayError::BootstrapAuthorityInvalid)),
+    }
+}
+
+/// Return the exact padded-tree depth without allowing `next_power_of_two`
+/// overflow to turn a malformed leaf count into a zero-depth proof.
+fn proof_depth(leaf_count: u32) -> Result<usize> {
+    require!(leaf_count > 0, NeonRelayError::InvalidLeafCount);
+    let rounded = leaf_count.checked_next_power_of_two().ok_or(NeonRelayError::InvalidLeafCount)?;
+    let depth = rounded.trailing_zeros() as usize;
+    require!(depth <= MAX_PROOF_LEN, NeonRelayError::InvalidLeafCount);
+    Ok(depth)
+}
+
+fn require_safe_token_account(account: &TokenAccount) -> Result<()> {
+	require!(
+		account.state == anchor_spl::token::spl_token::state::AccountState::Initialized &&
+		account.delegate.is_none() && account.is_native.is_none() && account.close_authority.is_none(),
+		NeonRelayError::UnsafeTokenAccount
+	);
+	Ok(())
+}
 
 #[program]
 pub mod neonrelay_rewards {
@@ -57,19 +98,25 @@ pub mod neonrelay_rewards {
 	/// creates the program-owned token vault. Not pausable, not repeatable
 	/// (the config PDA `init` fails on a second call).
 	pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+		verify_bootstrap_authority(&ctx.accounts.program_data.to_account_info(), &ctx.accounts.authority.key())?;
 		require!(
 			ctx.accounts.mint.decimals == EXPECTED_DECIMALS,
 			NeonRelayError::UnexpectedDecimals
 		);
+		require!(ctx.accounts.mint.mint_authority.is_none(), NeonRelayError::MintAuthorityNotRevoked);
+		require!(ctx.accounts.mint.freeze_authority.is_none(), NeonRelayError::FreezeAuthorityNotRevoked);
 		let config = &mut ctx.accounts.config;
 		config.authority = ctx.accounts.authority.key();
 		config.mint = ctx.accounts.mint.key();
-		config.paused = false;
+		// Boot locked: the operator must explicitly unpause after funding and
+		// finalized deployment checks have passed.
+		config.paused = true;
 		config.epoch_count = 0;
 		config.bump = ctx.bumps.config;
 		config.vault_bump = ctx.bumps.vault;
 		config.pending_authority = Pubkey::default();
 		config.authority_change_slot = 0;
+		config.reserved = 0;
 		emit!(Initialized {
 			authority: config.authority,
 			mint: config.mint,
@@ -84,18 +131,31 @@ pub mod neonrelay_rewards {
 	/// Tranche A: `leaf_count` (the sealed backend leaf total) is bound into
 	/// the epoch so `claim` enforces the exact proof depth derived from it —
 	/// short proofs on the padded tree can never verify.
-	pub fn publish_epoch(ctx: Context<PublishEpoch>, epoch_id: u64, root: [u8; 32], leaf_count: u32) -> Result<()> {
+	pub fn publish_epoch(
+		ctx: Context<PublishEpoch>,
+		epoch_id: u64,
+		root: [u8; 32],
+		leaf_count: u32,
+		total_micro: u64,
+	) -> Result<()> {
 		require!(root != [0u8; 32], NeonRelayError::EmptyRoot);
 		require!(leaf_count > 0, NeonRelayError::InvalidLeafCount);
+		require!(total_micro > 0, NeonRelayError::ZeroAmount);
+		require_safe_token_account(&ctx.accounts.vault)?;
+		let config = &mut ctx.accounts.config;
+		let new_reserved = config.reserved.checked_add(total_micro).ok_or(NeonRelayError::Overflow)?;
+		require!(ctx.accounts.vault.amount >= new_reserved, NeonRelayError::InsufficientVaultFunds);
 		let epoch = &mut ctx.accounts.epoch;
 		epoch.id = epoch_id;
 		epoch.root = root;
 		epoch.published_at = Clock::get()?.unix_timestamp;
 		epoch.bump = ctx.bumps.epoch;
 		epoch.leaf_count = leaf_count;
-		let config = &mut ctx.accounts.config;
+		epoch.total_micro = total_micro;
+		epoch.remaining_micro = total_micro;
+		config.reserved = new_reserved;
 		config.epoch_count = config.epoch_count.checked_add(1).ok_or(NeonRelayError::Overflow)?;
-		emit!(EpochPublished { epoch_id, root, leaf_count });
+		emit!(EpochPublished { epoch_id, root, leaf_count, total_micro });
 		Ok(())
 	}
 
@@ -108,7 +168,7 @@ pub mod neonrelay_rewards {
 		Ok(())
 	}
 
-	/// Propose authority change with 48h timelock (CRITICAL-02 fix)
+	/// Propose authority change with the configured slot-delay policy.
 	pub fn propose_authority_change(ctx: Context<AdminOnly>, new_authority: Pubkey) -> Result<()> {
 		require!(new_authority != Pubkey::default(), NeonRelayError::InvalidAuthority);
 		let config = &mut ctx.accounts.config;
@@ -123,7 +183,10 @@ pub mod neonrelay_rewards {
 		let config = &mut ctx.accounts.config;
 		require!(config.pending_authority != Pubkey::default(), NeonRelayError::NoPendingAuthority);
 		let current_slot = Clock::get()?.slot;
-		require!(current_slot >= config.authority_change_slot + MIN_AUTHORITY_DELAY_SLOTS, NeonRelayError::TimelockNotExpired);
+			let deadline = config.authority_change_slot
+				.checked_add(MIN_AUTHORITY_DELAY_SLOTS)
+				.ok_or(NeonRelayError::Overflow)?;
+			require!(current_slot >= deadline, NeonRelayError::TimelockNotExpired);
 		let old = config.authority;
 		config.authority = config.pending_authority;
 		config.pending_authority = Pubkey::default();
@@ -143,7 +206,7 @@ pub mod neonrelay_rewards {
 		leaf_index: u32,
 		proof: Vec<[u8; 32]>,
 	) -> Result<()> {
-		let config = &ctx.accounts.config;
+		let config = &mut ctx.accounts.config;
 		require!(!config.paused, NeonRelayError::Paused);
 		require!(amount_micro > 0, NeonRelayError::ZeroAmount);
 		require!(proof.len() <= MAX_PROOF_LEN, NeonRelayError::ProofTooLong);
@@ -151,21 +214,28 @@ pub mod neonrelay_rewards {
 		require!(ctx.accounts.vault.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
 		require!(ctx.accounts.player_token_account.state == anchor_spl::token::spl_token::state::AccountState::Initialized, NeonRelayError::VaultFrozen);
 		require!(ctx.accounts.vault.amount >= amount_micro, NeonRelayError::InsufficientVaultFunds);
+		require_safe_token_account(&ctx.accounts.vault)?;
+		require_safe_token_account(&ctx.accounts.player_token_account)?;
 		// Tranche A: exact depth + index bound, unconditional. leaf_count is
 		// always bound at publish time, so a short proof on the padded tree
 		// (or an out-of-range leaf index) can never verify.
-		let depth = ctx.accounts.epoch.leaf_count.next_power_of_two().trailing_zeros() as usize;
-		require!(proof.len() == depth, NeonRelayError::ProofInvalid);
+			let depth = proof_depth(ctx.accounts.epoch.leaf_count)?;
+			require!(proof.len() == depth, NeonRelayError::ProofInvalid);
 		require!(leaf_index < ctx.accounts.epoch.leaf_count, NeonRelayError::ProofInvalid);
 
-		let epoch = &ctx.accounts.epoch;
+		let epoch = &mut ctx.accounts.epoch;
 		require!(epoch.id == epoch_id, NeonRelayError::EpochMismatch);
+		require!(epoch.remaining_micro >= amount_micro, NeonRelayError::EpochAmountExceeded);
+		require!(config.reserved >= amount_micro, NeonRelayError::ReservedUnderflow);
 
 		let leaf = merkle_leaf(&ctx.accounts.player.key().to_bytes(), amount_micro);
 		require!(
 			verify_proof_indexed(&leaf, leaf_index, &proof, &epoch.root),
 			NeonRelayError::ProofInvalid
 		);
+
+		epoch.remaining_micro = epoch.remaining_micro.checked_sub(amount_micro).ok_or(NeonRelayError::ReservedUnderflow)?;
+		config.reserved = config.reserved.checked_sub(amount_micro).ok_or(NeonRelayError::ReservedUnderflow)?;
 
 		let claim_record = &mut ctx.accounts.claim;
 		claim_record.epoch_id = epoch_id;
@@ -209,6 +279,8 @@ pub struct Config {
 	pub vault_bump: u8,
 	pub pending_authority: Pubkey,
 	pub authority_change_slot: u64,
+	/// Aggregate payout reservation across all published epochs.
+	pub reserved: u64,
 }
 
 #[account]
@@ -219,6 +291,10 @@ pub struct EpochState {
 	pub published_at: i64,
 	pub bump: u8,
 	pub leaf_count: u32,
+	/// Declared upper ceiling for all leaves in this root.
+	pub total_micro: u64,
+	/// Decremented atomically on each successful claim.
+	pub remaining_micro: u64,
 }
 
 #[account]
@@ -258,6 +334,8 @@ pub struct Initialize<'info> {
 	pub mint: Account<'info, Mint>,
 	/// Becomes `config.authority` (the operator key that publishes roots).
 	pub authority: Signer<'info>,
+	/// CHECK: verified against the upgradeable-loader ProgramData account in the handler.
+	pub program_data: UncheckedAccount<'info>,
 	#[account(mut)]
 	pub payer: Signer<'info>,
 	pub token_program: Program<'info, Token>,
@@ -308,6 +386,17 @@ pub struct PublishEpoch<'info> {
 		bump,
 	)]
 	pub epoch: Account<'info, EpochState>,
+	#[account(
+		mut,
+		seeds = [VAULT_SEED],
+		bump = config.vault_bump,
+		token::mint = mint,
+		token::authority = config,
+	)]
+	pub vault: Account<'info, TokenAccount>,
+	#[account(address = config.mint @ NeonRelayError::MintMismatch)]
+	pub mint: Account<'info, Mint>,
+	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
 }
 
@@ -315,16 +404,18 @@ pub struct PublishEpoch<'info> {
 #[instruction(epoch_id: u64, amount_micro: u64)]
 pub struct Claim<'info> {
 	#[account(
+		mut,
 		seeds = [CONFIG_SEED],
 		bump = config.bump,
 		has_one = mint @ NeonRelayError::MintMismatch,
 	)]
 	pub config: Account<'info, Config>,
 	#[account(
-		seeds = [EPOCH_SEED, &epoch_id.to_be_bytes()],
-		bump = epoch.bump,
-	)]
-	pub epoch: Account<'info, EpochState>,
+		mut,
+			seeds = [EPOCH_SEED, &epoch_id.to_be_bytes()],
+			bump = epoch.bump,
+		)]
+		pub epoch: Account<'info, EpochState>,
 	/// Existence == already claimed. `init` fails on the second attempt for
 	/// the same (epoch, wallet) pair — the no-double-claim guarantee.
 	#[account(
@@ -402,6 +493,7 @@ pub struct EpochPublished {
 	pub epoch_id: u64,
 	pub root: [u8; 32],
 	pub leaf_count: u32,
+	pub total_micro: u64,
 }
 
 #[event]
@@ -457,7 +549,7 @@ pub enum NeonRelayError {
 	InvalidAuthority,
 	#[msg("no pending authority")]
 	NoPendingAuthority,
-	#[msg("timelock not expired (48h)")]
+	#[msg("authority slot delay has not expired")]
 	TimelockNotExpired,
 	#[msg("vault is frozen")]
 	VaultFrozen,
@@ -466,6 +558,18 @@ pub enum NeonRelayError {
 	InvalidLeafCount,
 	#[msg("vault has insufficient funds for claim")]
 	InsufficientVaultFunds,
+	#[msg("bootstrap signer is not the program upgrade authority")]
+	BootstrapAuthorityInvalid,
+	#[msg("reward mint authority must be revoked")]
+	MintAuthorityNotRevoked,
+	#[msg("reward mint freeze authority must be revoked")]
+	FreezeAuthorityNotRevoked,
+	#[msg("token account has unsupported delegate, native wrapper, or close authority")]
+	UnsafeTokenAccount,
+	#[msg("claim exceeds the remaining epoch payout ceiling")]
+	EpochAmountExceeded,
+	#[msg("reward reservation accounting underflow")]
+	ReservedUnderflow,
 }
 
 // ---------------------------------------------------------------- unit tests
@@ -500,7 +604,8 @@ mod tests {
 		// depth = trailing zeros of next_power_of_two(leaf_count):
 		// 1 leaf -> empty proof, 2 -> 1 sibling, 3..4 -> 2, 5..8 -> 3, 9..16 -> 4.
 		for (leaves, depth) in [(1u32, 0usize), (2, 1), (3, 2), (4, 2), (7, 3), (8, 3), (10, 4)] {
-			assert_eq!(leaves.next_power_of_two().trailing_zeros() as usize, depth);
+			let rounded = leaves.checked_next_power_of_two().expect("test leaf count");
+			assert_eq!(rounded.trailing_zeros() as usize, depth);
 		}
 	}
 

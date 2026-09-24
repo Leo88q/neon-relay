@@ -1,55 +1,53 @@
 #!/usr/bin/env bash
-# Создаёт Merkle-дерево для Bubblegum cNFT (дешёвые бейджи) и выводит стоимость rent.
-# Требует: solana CLI, funded wallet, Anchor.
-# Использование:
-#   ./onchain/scripts/create_compressed_tree.sh devnet 14 64 5   # 16k capacity ~0.34 SOL
-#   ./onchain/scripts/create_compressed_tree.sh devnet 20 256 13 # 1M capacity ~8.5 SOL
+# Experimental helper only. It does not prove a production asset path or quote
+# rent/CU/SOL/USD values: Bubblegum/MPL Core CPI is disabled in the default build.
+# Before running, obtain a separate ABI/validator review and set the explicit
+# acknowledgement below. No on-chain instruction is sent by this helper.
+# Requires: solana CLI and a deliberately funded throwaway wallet.
+# Usage:
+#   NEONRELAY_EXTERNAL_ASSET_EXPERIMENT=1 \
+#     ./onchain/scripts/create_compressed_tree.sh devnet 14 64 5
 set -euo pipefail
+
+if [[ "${NEONRELAY_EXTERNAL_ASSET_EXPERIMENT:-}" != "1" ]]; then
+  echo "external asset experiment is disabled; default build is fail-closed" >&2
+  echo "set NEONRELAY_EXTERNAL_ASSET_EXPERIMENT=1 only after ABI/validator review" >&2
+  exit 1
+fi
+
 CLUSTER="${1:-devnet}"
 MAX_DEPTH="${2:-14}"
 MAX_BUFFER="${3:-64}"
 CANOPY="${4:-5}"
-echo "== create compressed tree on $CLUSTER depth=$MAX_DEPTH buffer=$MAX_BUFFER canopy=$CANOPY =="
-echo "Rent ориентир (Metaplex docs 20.09.26):"
-echo "  14/64/8  ~0.34 SOL  (16k cNFT)"
-echo "  20/256/13 ~8.5 SOL (1M cNFT)"
-echo "  24/512/15 ~26 SOL (16M cNFT)"
-echo "Требует DAS RPC (Helius) для getAssetProof в mint_badge_compressed."
+echo "== prepare external asset experiment on $CLUSTER depth=$MAX_DEPTH buffer=$MAX_BUFFER canopy=$CANOPY =="
+echo "Rent, compute, throughput and SOL/USD values are unverified and must be measured"
+echo "against the pinned program build and validator; this helper emits no production approval."
+echo "The default neonrelay-assets build returns AssetPathNotConfigured for tree creation."
 
-# Проверка кошелька
-if ! solana address >/dev/null 2>&1; then echo "solana wallet not configured" >&2; exit 1; fi
+if ! solana address >/dev/null 2>&1; then
+  echo "solana wallet not configured" >&2
+  exit 1
+fi
 solana config set --url "$CLUSTER" >/dev/null
 
-# В реале: вызвать `create_tree` инструкцию neonrelay-assets:
-# anchor shell:
-#   await program.methods.createTree(new BN(maxDepth), new BN(maxBuffer), new BN(canopy))
-#     .accounts({ merkleTree: treeKeypair.publicKey(), collection: collectionPda })
-#     .signers([treeKeypair]).rpc()
-#
-# Упрощённый dry-run: генерируем keypair дерева и показываем команду.
+# This is a dry-run keypair/command preparation step only. It deliberately does
+# not invoke Anchor, Bubblegum, compression, or any transaction-producing CLI.
 TREE_KEYPAIR="$(mktemp)"
-solana-keygen new --no-outfile --silent || true
-# Генерим новый keypair для дерева
+trap 'rm -f "$TREE_KEYPAIR"' EXIT
 solana-keygen new --outfile "$TREE_KEYPAIR" --force --silent 2>/dev/null || solana-keygen new --outfile "$TREE_KEYPAIR" --force
-TREE_PUB="$(solana-keygen verify $(solana-keygen pubkey "$TREE_KEYPAIR") "$TREE_KEYPAIR" 2>/dev/null | grep -oE '[1-9A-HJ-NP-Za-km-z]{32,44}' | head -1 || solana address -k "$TREE_KEYPAIR")"
-echo "tree keypair: $TREE_KEYPAIR  pubkey: $TREE_PUB"
+TREE_PUB="$(solana-keygen pubkey "$TREE_KEYPAIR")"
+echo "throwaway tree keypair prepared at: $TREE_KEYPAIR"
+echo "tree pubkey: $TREE_PUB"
 echo ""
-echo "Далее выполните (anchor shell):"
+echo "External review must provide the exact ABI/account metas before any invocation."
 cat <<TS
-import { PublicKey } from "@solana/web3.js";
-const treeKeypair = /* load $TREE_KEYPAIR */;
+// Review-only sketch; do not run until external CPI gates are approved.
 await program.methods
   .createTree(new BN($MAX_DEPTH), new BN($MAX_BUFFER), new BN($CANOPY))
-  .accounts({
-    merkleTree: treeKeypair.publicKey,
-    collection: collectionPda, // из create_collection
-  })
+  .accounts({ merkleTree: treeKeypair.publicKey, collection: collectionPda })
   .signers([treeKeypair])
   .rpc();
-console.log("tree", treeKeypair.publicKey.toBase58());
 TS
 echo ""
-echo "После создания проверьте: solana account $TREE_PUB --url $CLUSTER"
-echo "И проиндексируйте DAS: curl -X POST https://your-helius-rpc -d '{\"method\":\"getAsset\",\"params\":[\"<cNFT>\"]}'"
-rm -f "$TREE_KEYPAIR"
-echo "== done =="
+echo "Read-only inspection, if separately approved: solana account $TREE_PUB --url $CLUSTER"
+echo "== dry-run preparation complete; no transaction sent =="

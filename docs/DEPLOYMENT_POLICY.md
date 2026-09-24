@@ -19,21 +19,22 @@ mainnet; skipping staging is not allowed.
 
 ## 2. Program identities
 
-`Anchor.toml` and every `declare_id!` in this repository hold PLACEHOLDER ids
-until the first real deployment (BL-03). Replacing them is a mechanical,
-reviewed step:
+`Anchor.toml`, each `declare_id!` and the TS/backend source constants now hold
+one pinned source ID per program. `verify_source_ids.mjs` and the conformance
+suite fail on drift. These IDs are **not** proof that a program is live on any
+cluster; a concrete environment manifest and finalized RPC verification remain
+mandatory:
 
-1. `anchor keys list` (or `solana-keygen new` for fresh keypairs) produces
-   one program id per program: rewards, features, economy, assets.
-2. Update in one commit: `declare_id!` in each `lib.rs`, the
-   `[programs.<cluster>]` table in `Anchor.toml`, and the
-   `*_PROGRAM_ID_PLACEHOLDER` constants in `onchain/src/constants.ts`.
-   `cd onchain && npm test` fails loudly on any drift (program/economy/
-   features/assets conformance suites).
-3. Record the ids in `onchain/deployment.<cluster>.json` (copy
-   `deployment.example.json`), together with the Squads vault from §4.
+1. On a connected operator machine, compare `anchor keys list` / the live
+   program accounts with the pinned IDs. Do not rewrite source IDs to match an
+   unverified deployment.
+2. Record the live IDs in `deployment.<cluster>.json` (copy
+   `deployment.example.json`), together with genesis hash, real mints and the
+   custody authority from §4.
+3. Run `verify_source_ids.mjs --strict-manifest` and then the read-only
+   `verify_deployment.sh` against that manifest.
 
-Program ids are never invented by hand and never reused across clusters.
+Program IDs are never invented by hand and never reused across clusters.
 
 ## 3. Promotion gates
 
@@ -57,23 +58,26 @@ A release moves forward only when all of these hold:
       (`POST /v1/admin/alerts/test` delivered), on-call roster staffed
       (`docs/INCIDENT_RESPONSE.md`).
 
-## 4. Upgrade authority: Squads + 48h timelock
+## 4. Upgrade authority: custody plus slot-delay policy
 
 No hot wallet may hold a program upgrade authority past the initial devnet
-deploy:
+deploy. Custody, signer quorum and wall-clock timelock are operational gates;
+this repository does not verify them:
 
-1. Create a Squads multisig (3-of-5 recommended) per environment.
+1. Create and approve a concrete multisig or immutable custody policy per environment.
 2. `solana program set-upgrade-authority <program-id> --new-upgrade-authority
    <SQUADS_VAULT> --url <cluster> --keypair <current-authority.json>`
    for all four programs.
-3. Record the vault in the deployment manifest and re-run
-   `verify_deployment.sh` — every program must now report the vault.
-4. In-program authority changes additionally respect the 48h timelock
-   (`propose_authority_change` → wait 432,000 slots → `accept_authority_change`).
+3. Record the resulting authority in the deployment manifest and re-run
+   `verify_deployment.sh` — every program must now report the same expected owner.
+4. In-program authority changes additionally respect the configured minimum
+   delay of 432,000 slots (`propose_authority_change` → wait for the slot
+   condition → `accept_authority_change`). A slot count is not asserted to be
+   a fixed number of hours across clusters.
 
-Emergency path: if an upgrade must land faster than the timelock allows, the
-incident commander pauses the affected program first (`set_paused`, Squads
-proposal), then upgrades. Speed never bypasses the multisig.
+Emergency path: pause the affected program first (`set_paused`, Squads
+proposal), then follow the approved upgrade policy. Speed never bypasses the
+multisig/custody gate.
 
 ## 5. Rollback
 

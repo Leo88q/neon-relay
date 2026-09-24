@@ -64,6 +64,7 @@ test("money safety: no init_if_needed, pause gate, double-claim and proof caps",
 	assert.match(libRs, /require!\(proof\.len\(\) <= MAX_PROOF_LEN, EconomyError::ProofTooLong\)/);
 	// prize publication is one-way and vault-covered
 	assert.match(libRs, /ctx\.accounts\.vault_ata\.amount >= total/);
+	assert.match(libRs, /account\.state == anchor_spl::token::spl_token::state::AccountState::Initialized/);
 	assert.equal(libRs.includes("pub fn update_prizes"), false);
 });
 
@@ -80,8 +81,8 @@ test("no hardcoded payment mint: SKR arrives only via initialize()", () => {
 });
 
 test("economy crate pins the same Anchor version as the other programs", () => {
-	assert.match(cargoToml, /anchor-lang = "0\.30\.1"/);
-	assert.match(cargoToml, /anchor-spl = "0\.30\.1"/);
+  assert.match(cargoToml, /anchor-lang = "0\.31\.1"/);
+  assert.match(cargoToml, /anchor-spl = "0\.31\.1"/);
 });
 
 test("Tranche A: v1 prizes bind leaf_count and v1 claims enforce exact depth", () => {

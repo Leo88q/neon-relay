@@ -40,8 +40,50 @@ pub const ENTRY_KIND_MATCH: u8 = 0;
 pub const ENTRY_KIND_TOURNAMENT: u8 = 1;
 /// Maximum Merkle proof length accepted by `claim_prize`.
 pub const MAX_PROOF_LEN: usize = 32;
-/// 48h timelock for authority change (CRITICAL-02 fix)
+/// Minimum slot-delay policy for authority change. Wall-clock duration is
+/// cluster-dependent and must be measured before operational approval.
 pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
+/// Unclaimed prize balances can be swept only after a full seven-day expiry.
+pub const PRIZE_SWEEP_DELAY_SECONDS: i64 = 7 * 24 * 60 * 60;
+
+fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey) -> Result<()> {
+	let expected = Pubkey::find_program_address(
+		&[crate::ID.as_ref()],
+		&anchor_lang::solana_program::bpf_loader_upgradeable::id(),
+	).0;
+	require_keys_eq!(program_data.key(), expected, EconomyError::BootstrapAuthorityInvalid);
+	require_keys_eq!(*program_data.owner, anchor_lang::solana_program::bpf_loader_upgradeable::id(), EconomyError::BootstrapAuthorityInvalid);
+	let state: anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState =
+		bincode::deserialize(&program_data.try_borrow_data()?).map_err(|_| error!(EconomyError::BootstrapAuthorityInvalid))?;
+	match state {
+		anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
+			upgrade_authority_address: Some(current), ..
+		} => require_keys_eq!(current, *authority, EconomyError::BootstrapAuthorityInvalid),
+		_ => Err(error!(EconomyError::BootstrapAuthorityInvalid)),
+	}
+}
+
+/// Compute the padded Merkle depth without allowing malformed u32 leaf counts
+/// to overflow `next_power_of_two` and accidentally admit a short proof.
+fn proof_depth(leaf_count: u32) -> Result<usize> {
+	require!(leaf_count > 0, EconomyError::InvalidLeafCount);
+	let rounded = leaf_count.checked_next_power_of_two().ok_or(EconomyError::InvalidLeafCount)?;
+	let depth = rounded.trailing_zeros() as usize;
+	require!(depth <= MAX_PROOF_LEN, EconomyError::InvalidLeafCount);
+	Ok(depth)
+}
+
+/// Only plain initialized classic-SPL accounts participate in the verified
+/// payment/refund path. Token-2022 extensions and delegated/closeable/native
+/// accounts need a separate accounting review and therefore fail closed.
+fn require_safe_token_account(account: &TokenAccount) -> Result<()> {
+	require!(
+		account.state == anchor_spl::token::spl_token::state::AccountState::Initialized &&
+		account.delegate.is_none() && account.is_native.is_none() && account.close_authority.is_none(),
+		EconomyError::UnsafeTokenAccount
+	);
+	Ok(())
+}
 
 #[program]
 pub mod neonrelay_economy {
@@ -55,8 +97,11 @@ pub mod neonrelay_economy {
 		fee_match: u64,
 		fee_tournament: u64,
 	) -> Result<()> {
+		verify_bootstrap_authority(&ctx.accounts.program_data.to_account_info(), &ctx.accounts.authority.key())?;
 		require!(rake_bps <= MAX_RAKE_BPS, EconomyError::InvalidRake);
 		require!(fee_match > 0 && fee_tournament > 0, EconomyError::InvalidFee);
+		require!(ctx.accounts.mint.mint_authority.is_none(), EconomyError::MintAuthorityNotRevoked);
+		require!(ctx.accounts.mint.freeze_authority.is_none(), EconomyError::FreezeAuthorityNotRevoked);
 		let config = &mut ctx.accounts.config;
 		config.authority = ctx.accounts.authority.key();
 		config.mint = ctx.accounts.mint.key();
@@ -65,7 +110,8 @@ pub mod neonrelay_economy {
 		config.rake_bps = rake_bps;
 		config.fee_match = fee_match;
 		config.fee_tournament = fee_tournament;
-		config.paused = false;
+		// Boot locked until finalized deployment and treasury gates pass.
+		config.paused = true;
 		config.bump = ctx.bumps.config;
 		config.reserved = 0;
 		config.pending_authority = Pubkey::default();
@@ -108,8 +154,12 @@ pub mod neonrelay_economy {
 		let config = &mut ctx.accounts.config;
 		require!(config.pending_authority != Pubkey::default(), EconomyError::NoPendingAuthority);
 		let current_slot = Clock::get()?.slot;
-		require!(current_slot >= config.authority_change_slot + MIN_AUTHORITY_DELAY_SLOTS, EconomyError::TimelockNotExpired);
+			let deadline = config.authority_change_slot
+				.checked_add(MIN_AUTHORITY_DELAY_SLOTS)
+				.ok_or(EconomyError::Overflow)?;
+			require!(current_slot >= deadline, EconomyError::TimelockNotExpired);
 		config.authority = config.pending_authority;
+		config.treasury_ata = ctx.accounts.new_treasury_ata.key();
 		config.pending_authority = Pubkey::default();
 		config.authority_change_slot = 0;
 		Ok(())
@@ -126,6 +176,9 @@ pub mod neonrelay_economy {
 		require!(ctx.accounts.player_ata.key() != config.treasury_ata, EconomyError::WrongTreasury);
 		require!(ctx.accounts.vault_ata.mint == config.mint, EconomyError::WrongMint);
 		require!(ctx.accounts.vault_ata.owner == config.key(), EconomyError::WrongVault);
+		require_safe_token_account(&ctx.accounts.player_ata)?;
+		require_safe_token_account(&ctx.accounts.vault_ata)?;
+		require_safe_token_account(&ctx.accounts.treasury_ata)?;
 		let fee = match kind {
 			ENTRY_KIND_MATCH => config.fee_match,
 			ENTRY_KIND_TOURNAMENT => config.fee_tournament,
@@ -220,9 +273,11 @@ pub mod neonrelay_economy {
 		require!(!ctx.accounts.config.paused, EconomyError::Paused);
 		require!(amount > 0, EconomyError::ZeroAmount);
 		require!(proof.len() <= MAX_PROOF_LEN, EconomyError::ProofTooLong);
+		require_safe_token_account(&ctx.accounts.player_ata)?;
+		require_safe_token_account(&ctx.accounts.vault_ata)?;
 		// Tranche A: exact depth + index bound, unconditional (mirrors v2).
-		let depth = ctx.accounts.prizes.leaf_count.next_power_of_two().trailing_zeros() as usize;
-		require!(proof.len() == depth, EconomyError::ProofInvalid);
+			let depth = proof_depth(ctx.accounts.prizes.leaf_count)?;
+			require!(proof.len() == depth, EconomyError::ProofInvalid);
 		require!(leaf_index < ctx.accounts.prizes.leaf_count, EconomyError::ProofInvalid);
 		let prizes = &ctx.accounts.prizes;
 		require!(prizes.epoch == epoch, EconomyError::EpochMismatch);
@@ -232,9 +287,12 @@ pub mod neonrelay_economy {
 			EconomyError::ProofInvalid
 		);
 
-		// CRITICAL-01: decrement aggregate reservation (mirrors v2)
-		ctx.accounts.config.reserved = ctx.accounts.config.reserved.checked_sub(amount).ok_or(EconomyError::VaultUnderfunded)?;
-		ctx.accounts.prizes.total = ctx.accounts.prizes.total.checked_sub(amount).unwrap_or(ctx.accounts.prizes.total);
+			// CRITICAL-01: consume both the per-epoch and aggregate reservation.
+			// A proof for an amount larger than this epoch's remaining budget must
+			// never be able to consume another epoch's reservation.
+			require!(amount <= ctx.accounts.prizes.total, EconomyError::InvalidTotal);
+			ctx.accounts.config.reserved = ctx.accounts.config.reserved.checked_sub(amount).ok_or(EconomyError::VaultUnderfunded)?;
+			ctx.accounts.prizes.total = ctx.accounts.prizes.total.checked_sub(amount).ok_or(EconomyError::InvalidTotal)?;
 
 		let claim = &mut ctx.accounts.claim;
 		claim.epoch = epoch;
@@ -263,12 +321,45 @@ pub mod neonrelay_economy {
 			amount,
 		});
 		Ok(())
+		}
+
+	/// Release the unclaimed remainder of an expired epoch to the configured
+	/// treasury. This is the only recovery path for abandoned reservations and
+	/// is deliberately time-gated; it cannot sweep an active epoch.
+	pub fn sweep_expired_prizes(ctx: Context<SweepPrizes>, epoch: u64) -> Result<()> {
+		let now = Clock::get()?.unix_timestamp;
+		require!(
+			now >= ctx.accounts.prizes.published_at.checked_add(PRIZE_SWEEP_DELAY_SECONDS).ok_or(EconomyError::Overflow)?,
+			EconomyError::PrizeNotExpired
+		);
+		let amount = ctx.accounts.prizes.total;
+		require!(amount > 0, EconomyError::NothingToSweep);
+		ctx.accounts.config.reserved = ctx.accounts.config.reserved.checked_sub(amount).ok_or(EconomyError::VaultUnderfunded)?;
+		ctx.accounts.prizes.total = 0;
+		let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_SEED, &[ctx.accounts.config.bump]]];
+		token::transfer(
+			CpiContext::new_with_signer(
+				ctx.accounts.token_program.to_account_info(),
+				Transfer {
+					from: ctx.accounts.vault_ata.to_account_info(),
+					to: ctx.accounts.treasury_ata.to_account_info(),
+					authority: ctx.accounts.config.to_account_info(),
+				},
+				signer_seeds,
+			),
+			amount,
+		)?;
+		emit!(PrizeSwept { authority: ctx.accounts.authority.key(), epoch, amount });
+		Ok(())
 	}
+
 	/// Create one isolated market for a mint. Bootstrap requires the existing
 	/// legacy operator, so an arbitrary first caller cannot seize a v2 market.
 	pub fn initialize_v2(ctx: Context<InitializeV2>, rake_bps: u16) -> Result<()> {
 		require!(rake_bps <= MAX_RAKE_BPS, EconomyError::InvalidRake);
 		let fees = tier_fees_v2(ctx.accounts.mint.decimals)?;
+		require!(ctx.accounts.mint.mint_authority.is_none(), EconomyError::MintAuthorityNotRevoked);
+		require!(ctx.accounts.mint.freeze_authority.is_none(), EconomyError::FreezeAuthorityNotRevoked);
 		let config = &mut ctx.accounts.config;
 		config.authority = ctx.accounts.authority.key();
 		config.mint = ctx.accounts.mint.key();
@@ -277,7 +368,9 @@ pub mod neonrelay_economy {
 		config.fees = fees;
 		config.rake_bps = rake_bps;
 		config.reserved = 0;
-		config.paused = false;
+		// Every isolated market also starts closed; unpause is an explicit
+		// post-deploy operator action.
+		config.paused = true;
 		config.bump = ctx.bumps.config;
 		Ok(())
 	}
@@ -294,6 +387,9 @@ pub mod neonrelay_economy {
 		let config = &ctx.accounts.config;
 		require!(!config.paused, EconomyError::Paused);
 		require!(kind == ENTRY_KIND_MATCH || kind == ENTRY_KIND_TOURNAMENT, EconomyError::InvalidKind);
+		require_safe_token_account(&ctx.accounts.player_ata)?;
+		require_safe_token_account(&ctx.accounts.vault_ata)?;
+		require_safe_token_account(&ctx.accounts.treasury_ata)?;
 		let fee = *config.fees.get(usize::from(tier)).ok_or(EconomyError::InvalidFee)?;
 		let (rake, prize) = split_fee_v2(fee, config.rake_bps)?;
 		let ticket = &mut ctx.accounts.ticket;
@@ -303,6 +399,8 @@ pub mod neonrelay_economy {
 		ticket.kind = kind;
 		ticket.tier = tier;
 		ticket.amount = fee;
+		ticket.rake = rake;
+		ticket.prize = prize;
 		ticket.paid_at = Clock::get()?.unix_timestamp;
 		ticket.bump = ctx.bumps.ticket;
 		if rake > 0 {
@@ -317,6 +415,40 @@ pub mod neonrelay_economy {
 			to: ctx.accounts.vault_ata.to_account_info(),
 			authority: ctx.accounts.player.to_account_info(),
 		}), prize)
+	}
+
+	/// Refund a cancelled v2 entry exactly once. The ticket PDA is closed only
+	/// after both the rake and prize portions are returned; treasury and vault
+	/// balances therefore remain the source of truth and an underfunded refund
+	/// fails atomically. This is an authority-approved operational path, not a
+	/// client-controlled withdrawal.
+	pub fn refund_entry_v2(ctx: Context<RefundEntryV2>, reference: [u8; 32]) -> Result<()> {
+		let config = &ctx.accounts.config;
+		require_safe_token_account(&ctx.accounts.player_ata)?;
+		require_safe_token_account(&ctx.accounts.vault_ata)?;
+		require_safe_token_account(&ctx.accounts.treasury_ata)?;
+		// Refund the split recorded at payment time. Recomputing from the
+		// mutable current rake would under/over-refund old tickets.
+		let rake = ctx.accounts.ticket.rake;
+		let prize = ctx.accounts.ticket.prize;
+		require!(rake.checked_add(prize) == Some(ctx.accounts.ticket.amount), EconomyError::InvalidAmount);
+		if rake > 0 {
+			token::transfer(CpiContext::new(ctx.accounts.token_program.to_account_info(), Transfer {
+				from: ctx.accounts.treasury_ata.to_account_info(),
+				to: ctx.accounts.player_ata.to_account_info(),
+				authority: ctx.accounts.authority.to_account_info(),
+			}), rake)?;
+		}
+		if prize > 0 {
+			let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_V2_SEED, config.mint.as_ref(), &[config.bump]]];
+			token::transfer(CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), Transfer {
+				from: ctx.accounts.vault_ata.to_account_info(),
+				to: ctx.accounts.player_ata.to_account_info(),
+				authority: config.to_account_info(),
+			}, signer_seeds), prize)?;
+		}
+		emit!(EntryRefundedV2 { authority: ctx.accounts.authority.key(), player: ctx.accounts.player.key(), reference, amount: ctx.accounts.ticket.amount });
+		Ok(())
 	}
 
 	/// init makes publication one-way; aggregate reservations prevent multiple
@@ -343,11 +475,13 @@ pub mod neonrelay_economy {
 		require!(!config.paused, EconomyError::Paused);
 		require!(amount > 0, EconomyError::ZeroAmount);
 		require!(proof.len() <= MAX_PROOF_LEN, EconomyError::ProofTooLong);
+		require_safe_token_account(&ctx.accounts.player_ata)?;
+		require_safe_token_account(&ctx.accounts.vault_ata)?;
 		let prizes = &mut ctx.accounts.prizes;
 		require!(prizes.epoch == epoch, EconomyError::EpochMismatch);
 		require!(leaf_index < prizes.leaf_count, EconomyError::ProofInvalid);
-		let depth = prizes.leaf_count.next_power_of_two().trailing_zeros() as usize;
-		require!(proof.len() == depth, EconomyError::ProofInvalid);
+		let depth = proof_depth(prizes.leaf_count)?;
+			require!(proof.len() == depth, EconomyError::ProofInvalid);
 		let leaf = merkle_leaf_v2(&ctx.accounts.player.key().to_bytes(), amount, &config.mint.to_bytes());
 		require!(verify_proof_v2(&leaf, leaf_index, &proof, &prizes.root), EconomyError::ProofInvalid);
 		prizes.remaining = prizes.remaining.checked_sub(amount).ok_or(EconomyError::InvalidTotal)?;
@@ -367,7 +501,27 @@ pub mod neonrelay_economy {
 		}, signer_seeds), amount)
 	}
 
-	pub fn set_params_v2(ctx: Context<AdminV2>, rake_bps: u16) -> Result<()> {
+		pub fn sweep_expired_prizes_v2(ctx: Context<SweepPrizesV2>, epoch: u64) -> Result<()> {
+			let now = Clock::get()?.unix_timestamp;
+			require!(
+				now >= ctx.accounts.prizes.published_at.checked_add(PRIZE_SWEEP_DELAY_SECONDS).ok_or(EconomyError::Overflow)?,
+				EconomyError::PrizeNotExpired
+			);
+			let amount = ctx.accounts.prizes.remaining;
+			require!(amount > 0, EconomyError::NothingToSweep);
+			ctx.accounts.config.reserved = ctx.accounts.config.reserved.checked_sub(amount).ok_or(EconomyError::VaultUnderfunded)?;
+			ctx.accounts.prizes.remaining = 0;
+			let signer_seeds: &[&[&[u8]]] = &[&[CONFIG_V2_SEED, ctx.accounts.config.mint.as_ref(), &[ctx.accounts.config.bump]]];
+			token::transfer(CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), Transfer {
+				from: ctx.accounts.vault_ata.to_account_info(),
+				to: ctx.accounts.treasury_ata.to_account_info(),
+				authority: ctx.accounts.config.to_account_info(),
+			}, signer_seeds), amount)?;
+			emit!(PrizeSwept { authority: ctx.accounts.authority.key(), epoch, amount });
+			Ok(())
+		}
+
+		pub fn set_params_v2(ctx: Context<AdminV2>, rake_bps: u16) -> Result<()> {
 		require!(rake_bps <= MAX_RAKE_BPS, EconomyError::InvalidRake);
 		let config = &mut ctx.accounts.config;
 		config.rake_bps = rake_bps;
@@ -387,9 +541,14 @@ pub mod neonrelay_economy {
 	pub fn accept_authority_change_v2(ctx: Context<AcceptAuthorityV2>) -> Result<()> {
 		let current_slot = Clock::get()?.slot;
 		let pending = &ctx.accounts.pending_authority;
-		require!(current_slot >= pending.change_slot + MIN_AUTHORITY_DELAY_SLOTS, EconomyError::TimelockNotExpired);
+			let deadline = pending
+				.change_slot
+				.checked_add(MIN_AUTHORITY_DELAY_SLOTS)
+				.ok_or(EconomyError::Overflow)?;
+			require!(current_slot >= deadline, EconomyError::TimelockNotExpired);
 		let config = &mut ctx.accounts.config;
 		config.authority = pending.new_authority;
+		config.treasury_ata = ctx.accounts.new_treasury_ata.key();
 		Ok(())
 	}
 
@@ -401,6 +560,8 @@ pub mod neonrelay_economy {
 pub struct Initialize<'info> {
 	#[account(mut)]
 	pub authority: Signer<'info>,
+	/// CHECK: verified against the upgradeable-loader ProgramData account in the handler.
+	pub program_data: UncheckedAccount<'info>,
 	#[account(
 		init,
 		payer = authority,
@@ -444,6 +605,12 @@ pub struct AcceptAuthorityV1<'info> {
 		constraint = config.pending_authority == pending_authority.key() @ EconomyError::Unauthorized)]
 	pub config: Account<'info, EconomyConfig>,
 	pub pending_authority: Signer<'info>,
+	#[account(
+		constraint = new_treasury_ata.mint == config.mint @ EconomyError::InvalidTreasuryMint,
+		constraint = new_treasury_ata.owner == pending_authority.key() @ EconomyError::WrongTreasury,
+		constraint = new_treasury_ata.key() != config.vault_ata @ EconomyError::WrongTreasury,
+	)]
+	pub new_treasury_ata: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]
@@ -536,6 +703,7 @@ pub struct ClaimPrize<'info> {
 		mut,
 		seeds = [PRIZES_SEED, epoch.to_le_bytes().as_ref()],
 		bump = prizes.bump,
+		constraint = prizes.epoch == epoch @ EconomyError::EpochMismatch,
 	)]
 	pub prizes: Account<'info, PrizeEpoch>,
 	#[account(
@@ -548,6 +716,23 @@ pub struct ClaimPrize<'info> {
 	pub claim: Account<'info, PrizeClaim>,
 	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(epoch: u64)]
+pub struct SweepPrizes<'info> {
+	#[account(mut)]
+	pub authority: Signer<'info>,
+	#[account(mut, seeds = [CONFIG_SEED], bump = config.bump, has_one = authority @ EconomyError::Unauthorized)]
+	pub config: Account<'info, EconomyConfig>,
+	#[account(mut, address = config.vault_ata @ EconomyError::WrongVault, token::mint = config.mint, token::authority = config)]
+	pub vault_ata: Account<'info, TokenAccount>,
+	#[account(mut, address = config.treasury_ata @ EconomyError::WrongTreasury, token::mint = config.mint, token::authority = config.authority)]
+	pub treasury_ata: Account<'info, TokenAccount>,
+	#[account(mut, seeds = [PRIZES_SEED, epoch.to_le_bytes().as_ref()], bump = prizes.bump,
+		constraint = prizes.epoch == epoch @ EconomyError::EpochMismatch)]
+	pub prizes: Account<'info, PrizeEpoch>,
+	pub token_program: Program<'info, Token>,
 }
 
 // -------------------------------------------------------------------- events
@@ -572,6 +757,21 @@ pub struct AdminPausedV2 {
 pub struct PrizeClaimed {
 	pub player: Pubkey,
 	pub epoch: u64,
+	pub amount: u64,
+}
+
+#[event]
+pub struct PrizeSwept {
+	pub authority: Pubkey,
+	pub epoch: u64,
+	pub amount: u64,
+}
+
+#[event]
+pub struct EntryRefundedV2 {
+	pub authority: Pubkey,
+	pub player: Pubkey,
+	pub reference: [u8; 32],
 	pub amount: u64,
 }
 
@@ -682,6 +882,20 @@ pub enum EconomyError {
 	VaultFrozen,
 	// Appended last so existing error discriminants stay stable.
 	InvalidLeafCount,
+	#[msg("prize epoch has not reached its seven-day expiry")]
+	PrizeNotExpired,
+	#[msg("there is no unclaimed balance to sweep")]
+	NothingToSweep,
+	#[msg("bootstrap signer is not the program upgrade authority")]
+	BootstrapAuthorityInvalid,
+	#[msg("payment mint authority must be revoked")]
+	MintAuthorityNotRevoked,
+	#[msg("payment mint freeze authority must be revoked")]
+	FreezeAuthorityNotRevoked,
+	#[msg("token account has unsupported delegate, native wrapper, or close authority")]
+	UnsafeTokenAccount,
+	#[msg("ticket amount does not equal its stored rake and prize split")]
+	InvalidAmount,
 }
 
 
@@ -748,6 +962,40 @@ pub struct PayEntryV2<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(reference: [u8; 32])]
+pub struct RefundEntryV2<'info> {
+	#[account(seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump,
+		has_one = authority @ EconomyError::Unauthorized)]
+	pub config: Box<Account<'info, EconomyConfigV2>>,
+	pub authority: Signer<'info>,
+	/// CHECK: the ticket binds this destination to its player; the ATA owner
+	/// constraint below prevents redirecting the refund to another account.
+	#[account(mut)]
+	pub player: UncheckedAccount<'info>,
+	#[account(mut, constraint = player_ata.mint == config.mint @ EconomyError::WrongMint,
+		constraint = player_ata.owner == player.key() @ EconomyError::NotPlayerAta,
+		constraint = player_ata.key() != config.vault_ata @ EconomyError::WrongVault,
+		constraint = player_ata.key() != config.treasury_ata @ EconomyError::WrongTreasury)]
+	pub player_ata: Box<Account<'info, TokenAccount>>,
+	#[account(mut, address = config.vault_ata @ EconomyError::WrongVault,
+		constraint = vault_ata.mint == config.mint @ EconomyError::WrongMint,
+		constraint = vault_ata.owner == config.key() @ EconomyError::WrongVault)]
+	pub vault_ata: Box<Account<'info, TokenAccount>>,
+	#[account(mut, address = config.treasury_ata @ EconomyError::WrongTreasury,
+		constraint = treasury_ata.mint == config.mint @ EconomyError::WrongMint,
+		constraint = treasury_ata.owner == config.authority @ EconomyError::WrongTreasury)]
+	pub treasury_ata: Box<Account<'info, TokenAccount>>,
+	#[account(mut, close = player,
+		seeds = [ENTRY_V2_SEED, config.mint.as_ref(), reference.as_ref(), player.key().as_ref()],
+		bump = ticket.bump,
+		constraint = ticket.reference == reference @ EconomyError::Unauthorized,
+		constraint = ticket.mint == config.mint @ EconomyError::WrongMint,
+		constraint = ticket.player == player.key() @ EconomyError::Unauthorized)]
+	pub ticket: Box<Account<'info, EntryTicketV2>>,
+	pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
 #[instruction(epoch: u64)]
 pub struct PublishPrizesV2<'info> {
 	#[account(mut)]
@@ -781,13 +1029,32 @@ pub struct ClaimPrizeV2<'info> {
 		constraint = vault_ata.owner == config.key() @ EconomyError::WrongVault)]
 	pub vault_ata: Box<Account<'info, TokenAccount>>,
 	#[account(mut, seeds = [PRIZES_V2_SEED, config.mint.as_ref(), epoch.to_le_bytes().as_ref()], bump = prizes.bump,
-		constraint = prizes.mint == config.mint @ EconomyError::WrongMint)]
+		constraint = prizes.mint == config.mint @ EconomyError::WrongMint,
+		constraint = prizes.epoch == epoch @ EconomyError::EpochMismatch)]
 	pub prizes: Box<Account<'info, PrizeEpochV2>>,
 	#[account(init, payer = player, space = 8 + PrizeClaimV2::INIT_SPACE,
 		seeds = [CLAIM_V2_SEED, config.mint.as_ref(), epoch.to_le_bytes().as_ref(), player.key().as_ref()], bump)]
 	pub claim: Box<Account<'info, PrizeClaimV2>>,
 	pub token_program: Program<'info, Token>,
 	pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(epoch: u64)]
+pub struct SweepPrizesV2<'info> {
+	#[account(mut)]
+	pub authority: Signer<'info>,
+	#[account(mut, seeds = [CONFIG_V2_SEED, config.mint.as_ref()], bump = config.bump, has_one = authority @ EconomyError::Unauthorized)]
+	pub config: Box<Account<'info, EconomyConfigV2>>,
+	#[account(mut, address = config.vault_ata @ EconomyError::WrongVault, token::mint = config.mint, token::authority = config)]
+	pub vault_ata: Box<Account<'info, TokenAccount>>,
+	#[account(mut, address = config.treasury_ata @ EconomyError::WrongTreasury, token::mint = config.mint, token::authority = config.authority)]
+	pub treasury_ata: Box<Account<'info, TokenAccount>>,
+	#[account(mut, seeds = [PRIZES_V2_SEED, config.mint.as_ref(), epoch.to_le_bytes().as_ref()], bump = prizes.bump,
+		constraint = prizes.mint == config.mint @ EconomyError::WrongMint,
+		constraint = prizes.epoch == epoch @ EconomyError::EpochMismatch)]
+	pub prizes: Box<Account<'info, PrizeEpochV2>>,
+	pub token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
@@ -816,11 +1083,19 @@ pub struct AcceptAuthorityV2<'info> {
 		mut,
 		seeds = [PENDING_V2_SEED, config.mint.as_ref()],
 		bump = pending_authority.bump,
+		constraint = pending_authority.mint == config.mint @ EconomyError::WrongMint,
 		constraint = pending_authority.new_authority == new_authority.key() @ EconomyError::Unauthorized,
 		close = new_authority,
 	)]
 	pub pending_authority: Account<'info, PendingAuthorityV2>,
+	#[account(mut)]
 	pub new_authority: Signer<'info>,
+	#[account(
+		constraint = new_treasury_ata.mint == config.mint @ EconomyError::WrongMint,
+		constraint = new_treasury_ata.owner == new_authority.key() @ EconomyError::WrongTreasury,
+		constraint = new_treasury_ata.key() != config.vault_ata @ EconomyError::WrongTreasury,
+	)]
+	pub new_treasury_ata: Account<'info, TokenAccount>,
 }
 
 #[account]
@@ -855,6 +1130,9 @@ pub struct EntryTicketV2 {
 	pub kind: u8,
 	pub tier: u8,
 	pub amount: u64,
+	/// Exact split captured at payment time; refunds must not use mutable config.
+	pub rake: u64,
+	pub prize: u64,
 	pub paid_at: i64,
 	pub bump: u8,
 }

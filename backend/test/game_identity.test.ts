@@ -2,6 +2,23 @@ import { registerGameAccount } from "../src/game_pairing.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { authenticate, getJson, postJson, makeWallet, startTestApp } from "./helpers.ts";
+import { Db, migrate } from "../src/db.ts";
+import { WalletStore } from "../src/wallets.ts";
+test("anti-sybil index rejects a second active wallet for the same player", () => {
+  const db = new Db(":memory:");
+  migrate(db);
+  try {
+    const first = new WalletStore(db).upsertBinding("wallet-a", "a");
+    const second = new WalletStore(db).upsertBinding("wallet-b", "b");
+    new WalletStore(db).setPlayerLink(first.id, "same-player");
+    assert.throws(() => new WalletStore(db).setPlayerLink(second.id, "same-player"), /UNIQUE constraint/);
+    new WalletStore(db).setPlayerLink(first.id, null);
+    new WalletStore(db).setPlayerLink(second.id, "same-player");
+  } finally {
+    db.close();
+  }
+});
+
 async function setup() {
   const server = makeWallet(), wallet = makeWallet();
   const { app, base } = await startTestApp({ gameIdentityPublicKey: server.publicKeyBase64 });

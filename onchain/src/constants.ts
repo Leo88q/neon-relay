@@ -32,8 +32,8 @@ export const REWARDS_CONFIG_DISCRIMINATOR = "9b0caae01efacc82";
 export const REWARDS_EPOCH_STATE_DISCRIMINATOR = "bf3f8bed900cdfd2";
 
 /** Account sizes including the 8-byte discriminator. */
-export const REWARDS_CONFIG_SIZE = 123;
-export const REWARDS_EPOCH_STATE_SIZE = 61;
+export const REWARDS_CONFIG_SIZE = 131;
+export const REWARDS_EPOCH_STATE_SIZE = 77;
 
 /** `Claim` account order, exactly as in lib.rs. */
 export const CLAIM_ACCOUNTS = [
@@ -98,7 +98,7 @@ export const ENTRY_KIND = { match: 0, tournament: 1 } as const;
  */
 export const PRIZE_TABLE_BPS = [2500, 1800, 1400, 1100, 900, 700, 600, 500, 300, 200] as const;
 
-/** --- neonrelay-assets program (prod cheap-minting, 2026) --- */
+/** --- neonrelay-assets program (source-gated asset paths, 2026) --- */
 
 export const ASSETS_PROGRAM_ID_PLACEHOLDER =
   "F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc";

@@ -6,7 +6,8 @@
  * downgrade path by design: production changes go through a new migration.
  */
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync, readdirSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readFileSync, readdirSync, mkdirSync, lstatSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -48,6 +49,39 @@ export class Db {
 
   close(): void {
     this.raw.close();
+  }
+}
+
+export interface BackupInspection {
+  path: string;
+  bytes: number;
+  sha256: string;
+  integrity: "ok";
+  migration_count: number;
+}
+
+/**
+ * Verify a SQLite snapshot without opening it in writable mode. This is used
+ * by the API and the offline restore command before any atomic replacement.
+ */
+export function inspectBackup(path: string, expectedSha256?: string | null): BackupInspection {
+  const stat = lstatSync(path);
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.size === 0) {
+    throw new Error("backup is not a non-empty regular file");
+  }
+  const sha256 = createHash("sha256").update(readFileSync(path)).digest("hex");
+  if (expectedSha256 !== undefined && expectedSha256 !== null && sha256 !== expectedSha256) {
+    throw new Error("backup checksum mismatch");
+  }
+  const backup = new DatabaseSync(path, { readOnly: true });
+  try {
+    const integrity = backup.prepare("PRAGMA integrity_check").get() as { integrity_check?: unknown } | undefined;
+    if (integrity?.integrity_check !== "ok") throw new Error("SQLite integrity_check failed");
+    const row = backup.prepare("SELECT COUNT(*) AS n FROM schema_migrations").get() as { n?: unknown } | undefined;
+    if (typeof row?.n !== "number") throw new Error("backup has no readable schema_migrations table");
+    return { path, bytes: stat.size, sha256, integrity: "ok", migration_count: row.n };
+  } finally {
+    backup.close();
   }
 }
 

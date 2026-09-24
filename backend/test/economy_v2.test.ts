@@ -4,7 +4,7 @@ import { readFileSync, mkdtempSync, cpSync, rmSync, readdirSync } from "node:fs"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Db, migrate, MIGRATIONS_DIR } from "../src/db.ts";
-import { EconomyV2Store, type EntryIntentV2 } from "../src/economy_v2_store.ts";
+import { DEFAULT_MAX_INTENTS_PER_PLAYER_EPOCH, DB_ONLY_SEAL_TEST_CAPABILITY, EconomyV2Store, type EntryIntentV2 } from "../src/economy_v2_store.ts";
 import { economyLeafV2, verifyEconomyProofV2, configPdaV2, ticketPdaV2, prizesPdaV2, claimPdaV2, U64_MAX } from "../src/economy_v2_codec.ts";
 import { buildTree, leafHash, proofFor } from "../src/merkle.ts";
 
@@ -27,12 +27,25 @@ test("v2 migration is repeatable and leaves legacy single-mint rows untouched", 
     migrate(db, oldDir);
     db.run("INSERT INTO economy_epochs VALUES (?, ?, ?, ?, ?)", 1, "old-root", 50, "[]", 1);
     db.run("INSERT INTO economy_matches(wallet_binding_id, epoch, reference, created_at) VALUES (?, ?, ?, ?)", "legacy", 1, "old-reference", 1);
-    assert.deepEqual(migrate(db), ["0005_economy_v2.sql", "0006_game_identity.sql", "0007_game_pairing.sql", "0008_admin_workflow.sql", "0009_beta_operations.sql"]);
+    assert.deepEqual(migrate(db), ["0005_economy_v2.sql", "0006_game_identity.sql", "0007_game_pairing.sql", "0008_admin_workflow.sql", "0009_beta_operations.sql", "0010_anti_sybil.sql"]);
     assert.deepEqual(migrate(db), []);
     assert.equal(db.get<{ reference: string }>("SELECT reference FROM economy_matches")!.reference, "old-reference");
     assert.equal(db.get<{ root: string }>("SELECT root FROM economy_epochs WHERE epoch = 1")!.root, "old-root");
     assert.equal(db.get<{ n: number }>("SELECT COUNT(*) AS n FROM economy_v2_epochs")!.n, 0);
   } finally { db.close(); rmSync(oldDir, { recursive: true, force: true }); }
+});
+
+test("default intent ceiling is transactional but exact retries stay idempotent", () => {
+  const db = new Db(":memory:"); migrate(db);
+  const service = new EconomyV2Store(db);
+  service.openEpoch(mintA, 1n, 1_000_000n);
+  for (let i = 0; i < DEFAULT_MAX_INTENTS_PER_PLAYER_EPOCH; i += 1) {
+    service.createIntent(intent({ idempotencyKey: `entry-${i}`, amountBase: BigInt(i + 1) }));
+  }
+  assert.throws(() => service.createIntent(intent({ idempotencyKey: "entry-over-cap" })), /cap exceeded/);
+  assert.deepEqual(service.createIntent(intent({ idempotencyKey: "entry-0", amountBase: 1n })),
+    { reference: service.createIntent(intent({ idempotencyKey: "entry-0", amountBase: 1n })).reference, replay: true });
+  db.close();
 });
 
 test("v2 leaf golden vectors bind mint and preserve exact u64 values", () => {
@@ -101,11 +114,11 @@ test("sealing is one-way, conserves budget and proofs cannot cross mints", () =>
   try {
     service.createIntent(intent());
     const payouts = [{ wallet, amount: 100n }, { wallet: Buffer.alloc(32, 8), amount: 50n }];
-    const a = service.sealEpoch(mintA, 1n, payouts);
-    const b = service.sealEpoch(mintB, 1n, payouts.reverse());
+    const a = service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, 1n, payouts);
+    const b = service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintB, 1n, payouts.reverse());
     assert.notEqual(a.root, b.root);
     assert.equal(a.totalBase, "150");
-    assert.throws(() => service.sealEpoch(mintA, 1n, payouts), /not open/);
+    assert.throws(() => service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, 1n, payouts), /not open/);
     assert.throws(() => service.createIntent(intent({ idempotencyKey: "entry-2" })), /not open/);
     assert.equal(service.createIntent(intent()).replay, true);
     const p = service.proof(mintA, 1n, wallet)!;
@@ -117,16 +130,34 @@ test("sealing is one-way, conserves budget and proofs cannot cross mints", () =>
   } finally { db.close(); }
 });
 
+test("production seal requires a finalized RPC vault ceiling", () => {
+  const { db, service } = store();
+  try {
+    service.createIntent(intent());
+    assert.throws(() => service.sealEpochForTest(Symbol(),
+      mintA, 1n, [{ wallet, amount: 100n }]), /test-only seal capability/);
+    assert.throws(() => service.sealEpochWithRpcCeiling(mintA, 1n, [{ wallet, amount: 100n }], {
+      balanceBase: 99n, reservedBase: 0n, finalizedSlot: 10,
+    }), /finalized RPC vault ceiling/);
+    const result = service.sealEpochWithRpcCeiling(mintA, 1n, [{ wallet, amount: 100n }], {
+      balanceBase: 200n, reservedBase: 50n, finalizedSlot: 42,
+    });
+    assert.deepEqual(result.vaultCeiling, {
+      balanceBase: "200", reservedBase: "50", availableBase: "150", finalizedSlot: 42,
+    });
+  } finally { db.close(); }
+});
+
 test("failed seals roll back and do not freeze an open epoch", () => {
   const { db, service } = store();
   try {
     for (const payouts of [[], [{ wallet, amount: 1001n }], [{ wallet, amount: 0n }],
       [{ wallet, amount: 50n }, { wallet, amount: 51n }],
       [{ wallet, amount: U64_MAX }, { wallet: Buffer.alloc(32, 8), amount: 1n }]]) {
-      assert.throws(() => service.sealEpoch(mintA, 1n, payouts));
+      assert.throws(() => service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, 1n, payouts));
     }
     service.createIntent(intent());
-    service.sealEpoch(mintA, 1n, [{ wallet, amount: 100n }]);
+    service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, 1n, [{ wallet, amount: 100n }]);
   } finally { db.close(); }
 });
 
@@ -134,7 +165,7 @@ test("database prevents reopen, reseal, deletes and intent mutation", () => {
   const { db, service } = store();
   try {
     service.createIntent(intent());
-    service.sealEpoch(mintA, 1n, [{ wallet, amount: 100n }]);
+    service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, 1n, [{ wallet, amount: 100n }]);
     for (const sql of ["UPDATE economy_v2_epochs SET state = 'OPEN'", "UPDATE economy_v2_epochs SET root = 'changed'",
       "DELETE FROM economy_v2_epochs", "UPDATE economy_v2_intents SET player_id = 'other'", "DELETE FROM economy_v2_intents"]) {
       assert.throws(() => db.exec(sql));
@@ -146,7 +177,7 @@ test("unsigned u64 storage is exact and invalid numeric text is refused", () => 
   const { db, service } = store();
   try {
     service.openEpoch(mintA, U64_MAX, U64_MAX);
-    service.sealEpoch(mintA, U64_MAX, [{ wallet, amount: U64_MAX }]);
+    service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, U64_MAX, [{ wallet, amount: U64_MAX }]);
     assert.equal(service.proof(mintA, U64_MAX, wallet)!.amountBase, U64_MAX.toString());
     for (const epoch of ["-1", "01", "1.5", "", "1e2", (U64_MAX + 1n).toString()]) {
       assert.throws(() => db.run("INSERT INTO economy_v2_epochs(mint, epoch, pool_base) VALUES (?, ?, ?)", mintA.toString("hex"), epoch, "1"));
@@ -160,7 +191,7 @@ test("SQL REPLACE cannot bypass immutable epochs or intent uniqueness", () => {
   try {
     service.createIntent(intent());
     assert.throws(() => db.exec("INSERT OR REPLACE INTO economy_v2_intents SELECT * FROM economy_v2_intents"));
-    service.sealEpoch(mintA, 1n, [{ wallet, amount: 100n }]);
+    service.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, 1n, [{ wallet, amount: 100n }]);
     assert.throws(() => db.run("INSERT OR REPLACE INTO economy_v2_epochs(mint, epoch, pool_base) VALUES (?, ?, ?)", mintA.toString("hex"), "1", "1"));
     assert.equal(service.proof(mintA, 1n, wallet)!.amountBase, "100");
   } finally { db.close(); }
@@ -176,7 +207,7 @@ test("independent database connections share cap and idempotency state", () => {
     const result = a.createIntent(intent());
     assert.deepEqual(b.createIntent(intent()), { reference: result.reference, replay: true });
     assert.throws(() => b.createIntent(intent({ idempotencyKey: "second" })), /cap/);
-    b.sealEpoch(mintA, 1n, [{ wallet, amount: 100n }]);
+    b.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mintA, 1n, [{ wallet, amount: 100n }]);
     assert.equal(a.proof(mintA, 1n, wallet)!.amountBase, "100");
   } finally { first.close(); second.close(); rmSync(dir, { recursive: true, force: true }); }
 });

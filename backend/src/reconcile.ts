@@ -30,8 +30,9 @@ const REWARDS_EPOCH_SEED = Buffer.from("neonrelay_epoch", "utf8");
 const PRIZES_SEED = Buffer.from("neonrelay_prizes", "utf8");
 const ECONOMY_CONFIG_SEED = Buffer.from("neonrelay_economy_config", "utf8");
 
-// EpochState: id u64 + root [u8;32] + published_at i64 + bump u8 + leaf_count u32
-const REWARDS_EPOCH_SIZE = 8 + 8 + 32 + 8 + 1 + 4;
+// EpochState: id u64 + root [u8;32] + published_at i64 + bump u8 +
+// leaf_count u32 + total_micro u64 + remaining_micro u64.
+const REWARDS_EPOCH_SIZE = 8 + 8 + 32 + 8 + 1 + 4 + 8 + 8;
 const REWARDS_EPOCH_DISCRIMINATOR = createHash("sha256")
   .update("account:EpochState").digest().subarray(0, 8);
 
@@ -72,6 +73,8 @@ export interface RewardsEpochOnchain {
   id: string;
   root: string;
   leafCount: number;
+  total: string;
+  remaining: string;
   publishedAt: string;
 }
 
@@ -80,11 +83,16 @@ export function parseRewardsEpoch(data: Buffer): RewardsEpochOnchain {
       !data.subarray(0, 8).equals(REWARDS_EPOCH_DISCRIMINATOR)) {
     throw new ReconcileError("bad-account", "not a rewards EpochState account");
   }
+  const total = data.readBigUInt64LE(61);
+  const remaining = data.readBigUInt64LE(69);
+  if (remaining > total) throw new ReconcileError("bad-account", "epoch remaining exceeds total ceiling");
   return {
     id: data.readBigUInt64LE(8).toString(),
     root: data.subarray(16, 48).toString("hex"),
     publishedAt: data.readBigInt64LE(48).toString(),
     leafCount: data.readUInt32LE(57),
+    total: total.toString(),
+    remaining: remaining.toString(),
   };
 }
 
@@ -203,6 +211,7 @@ export function compareRewardsEpoch(
   const mismatches: string[] = [];
   if (onchain.root !== (backend.merkle_root ?? "")) mismatches.push("root");
   if (onchain.leafCount !== backend.leaf_count) mismatches.push("leaf-count");
+  if (onchain.total !== String(backend.total_micro)) mismatches.push("total");
   if (onchain.id !== String(backend.id)) mismatches.push("epoch-id");
   return {
     status: mismatches.length === 0 ? "match" : `mismatch:${mismatches.join(",")}`,

@@ -227,6 +227,31 @@ test("expected genesis pins every endpoint to one chain", async () => {
   assert.equal(lone.getStatus().endpoints.primary.chain_rejected, true);
 });
 
+test("required genesis verification never falls through after a transient failure", async () => {
+  let genesisCalls = 0;
+  let now = 1_000_000;
+  const { fetchFn } = stubFetch((url, method) => {
+    if (method === "getGenesisHash") {
+      genesisCalls += 1;
+      throw new Error("genesis temporarily unavailable");
+    }
+    return "money-path-must-not-run";
+  });
+  const pool = createRpcPool({
+    primary: "http://primary:8899", expectedGenesis: DEVNET,
+    requireGenesis: true, cooldownMs: 30_000, nowFn: () => now, fetchFn,
+  });
+  await assert.rejects(() => pool.call("getSlot", []), /cannot verify/);
+  now += 1_000;
+  await assert.rejects(() => pool.call("getSlot", []), /cannot verify/);
+  assert.equal(genesisCalls, 1);
+  assert.equal(pool.getStatus().endpoints.primary.requests, 1);
+
+  now += 30_000;
+  await assert.rejects(() => pool.call("getSlot", []), /cannot verify/);
+  assert.equal(genesisCalls, 2);
+});
+
 test("endpoint urls are redacted in status output", () => {
   const pool = createRpcPool({
     primary: "https://mainnet.helius-rpc.com/?api-key=LIVESECRET123",

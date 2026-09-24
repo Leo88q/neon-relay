@@ -92,9 +92,11 @@ Sealing (Tranche-A proposal workflow: an operator proposes
    `leaf_count`; leaves stored with their indices.
 
 The sealed `leaf_count` travels on-chain with the root
-(`publish_epoch(epoch_id, root, leaf_count)`): claims enforce the exact proof
-depth derived from it plus `leaf_index < leaf_count`, so short proofs on the
-padded tree can never verify. Every proposal step is mirrored into the
+(`publish_epoch(epoch_id, root, leaf_count, total_micro)`): publication reserves
+`total_micro` against the aggregate rewards-vault ceiling and claims decrement
+both the epoch's remaining ceiling and the config reservation. Claims also
+enforce the exact proof depth derived from `leaf_count` plus
+`leaf_index < leaf_count`, so short proofs on the padded tree can never verify. Every proposal step is mirrored into the
 append-only `admin_audit` log (`docs/API.md` §Admin).
 
 Claiming:
@@ -162,7 +164,7 @@ operator opts in:
 
 ## 9. Evidence
 
-`cd backend && npm test` → **240/240 passing** on Node v22, including the
+`cd backend && npm test` → **257/257 passing** on Node v22, including the
 reward-ledger security coverage: forged-signature rejection, duplicate
 detection, per-match and daily cap rejections with reasons,
 pending→available→claimed balance transitions, seal/claim-intent proof

@@ -1,6 +1,7 @@
 /** Internal v2 ledger, not a payment/ownership verifier or public API.
  * Callers must authenticate player_id, verify mint/fees and paid results before
- * using this store. No method here marks an intent as paid or publishes a root. */
+ * using this store. No method here marks an intent as paid or publishes a root;
+ * the only non-test seal path is the finalized-RPC ceiling method. */
 import { createHash } from "node:crypto";
 import type { Db } from "./db.ts";
 import { buildTree, proofFor } from "./merkle.ts";
@@ -11,9 +12,26 @@ interface EpochRow {
   root: string | null; total_base: string | null; distribution: string | null;
 }
 interface Distribution { wallet: string; amount: string }
+/** Hard anti-abuse ceiling; retries with the same idempotency key remain safe. */
+export const DEFAULT_MAX_INTENTS_PER_PLAYER_EPOCH = 20;
+/**
+ * Explicit capability for the database-only seal helper. It is intentionally
+ * exported only for deterministic unit tests; production code must use
+ * `sealEpochWithRpcCeiling` after a finalized RPC read.
+ */
+export const DB_ONLY_SEAL_TEST_CAPABILITY = Symbol("neonrelay-v2-db-only-seal-test");
 export interface EntryIntentV2 {
   mint: Buffer; epoch: bigint; playerId: string; wallet: Buffer;
   idempotencyKey: string; kind: 0 | 1; tier: string; amountBase: bigint;
+}
+
+/** Finalized RPC snapshot supplied by the caller immediately before sealing.
+ * The store does not fetch RPC and must never treat its DB pool as ownership
+ * evidence. `finalizedSlot` is retained for the audit/reconciliation record. */
+export interface VerifiedVaultSnapshotV2 {
+  balanceBase: bigint;
+  reservedBase: bigint;
+  finalizedSlot: number;
 }
 function text(value: string, max: number): string {
   if (typeof value !== "string" || value.length < 1 || value.length > max || /[\u0000-\u001f\u007f]/.test(value)) {
@@ -30,7 +48,7 @@ function mintHex(mint: Buffer): string {
 export class EconomyV2Store {
   private readonly db: Db;
   private readonly maxIntentsPerPlayerEpoch: number;
-  constructor(db: Db, maxIntentsPerPlayerEpoch = 1000) {
+  constructor(db: Db, maxIntentsPerPlayerEpoch = DEFAULT_MAX_INTENTS_PER_PLAYER_EPOCH) {
     if (!Number.isSafeInteger(maxIntentsPerPlayerEpoch) || maxIntentsPerPlayerEpoch < 1) throw new Error("invalid cap");
     this.db = db;
     this.maxIntentsPerPlayerEpoch = maxIntentsPerPlayerEpoch;
@@ -87,9 +105,48 @@ export class EconomyV2Store {
       mintHex(mint), text(playerId, 128), text(idempotencyKey, 128)) ?? null;
   }
 
-  /** One-way backend seal. Caller supplies already-authorized payouts, not scores.
-   * Pool is a budget in this database, NOT an RPC-verified vault balance. */
-  sealEpoch(mint: Buffer, epoch: bigint, payouts: { wallet: Buffer; amount: bigint }[]) {
+  /**
+   * Production boundary: a caller that has read the mint-bound vault and
+   * aggregate reservation from finalized RPC must use this method. It checks
+   * the live ceiling before delegating to the immutable DB seal. The caller is
+   * responsible for recording the RPC provider/slot and for retrying after a
+   * race; this store still never claims to own or verify the vault itself.
+   */
+  sealEpochWithRpcCeiling(
+    mint: Buffer, epoch: bigint, payouts: { wallet: Buffer; amount: bigint }[],
+    snapshot: VerifiedVaultSnapshotV2,
+  ) {
+    if (!Number.isSafeInteger(snapshot.finalizedSlot) || snapshot.finalizedSlot < 0) {
+      throw new Error("invalid finalized vault slot");
+    }
+    const balance = u64(snapshot.balanceBase);
+    const reserved = u64(snapshot.reservedBase);
+    if (reserved > balance) throw new Error("RPC vault reservation exceeds balance");
+    const total = u64(payouts.reduce((sum, payout) => sum + u64(payout.amount), 0n));
+    if (total > balance - reserved) throw new Error("prizes exceed finalized RPC vault ceiling");
+    const sealed = this.sealEpochLocal(mint, epoch, payouts);
+    return { ...sealed, vaultCeiling: {
+      balanceBase: balance.toString(), reservedBase: reserved.toString(),
+      availableBase: (balance - reserved).toString(), finalizedSlot: snapshot.finalizedSlot,
+    } };
+  }
+
+  /**
+   * Explicit test-only escape hatch for the local ledger. The capability is
+   * deliberately required so a production caller cannot accidentally bypass
+   * the finalized-RPC ceiling method by reusing the database helper.
+   */
+  sealEpochForTest(
+    capability: symbol,
+    mint: Buffer,
+    epoch: bigint,
+    payouts: { wallet: Buffer; amount: bigint }[],
+  ) {
+    if (capability !== DB_ONLY_SEAL_TEST_CAPABILITY) throw new Error("test-only seal capability required");
+    return this.sealEpochLocal(mint, epoch, payouts);
+  }
+
+  private sealEpochLocal(mint: Buffer, epoch: bigint, payouts: { wallet: Buffer; amount: bigint }[]) {
     const m = mintHex(mint), e = u64(epoch).toString();
     if (payouts.length < 1 || payouts.length > 10) throw new Error("expected 1..10 payouts");
     const distribution = payouts.map((p) => {

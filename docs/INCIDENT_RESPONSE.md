@@ -72,7 +72,8 @@ the operator secret store, never in this repo or chat.
    `NEONRELAY_SERVER_SIGNING_PUBLIC_KEY`; events signed by the old key start
    failing closed (`rejected_signature`) — no purge needed.
 3. Chain authority: Squads-rotates via `propose/accept_authority_change`
-   (48h timelock); pause first if active theft is suspected.
+   (432,000-slot minimum delay; wall-clock duration is cluster-dependent and
+unverified); pause first if active theft is suspected.
 4. Postmortem must list every action the compromised credential took
    (audit log) and every epoch touched (reconcile history).
 

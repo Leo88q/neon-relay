@@ -54,13 +54,27 @@ test("v2 pause, one-way publication and per-mint anti-replay guards remain prese
   assert.match(accounts("ClaimPrizeV2"), /CLAIM_V2_SEED, config\.mint\.as_ref\(\), epoch\.to_le_bytes\(\)\.as_ref\(\), player\.key\(\)\.as_ref\(\)/);
 });
 
+test("v2 authority acceptance cannot cross mint namespaces", () => {
+  assert.match(accounts("AcceptAuthorityV2"), /constraint = pending_authority\.mint == config\.mint/);
+  assert.match(accounts("AcceptAuthorityV2"), /seeds = \[PENDING_V2_SEED, config\.mint\.as_ref\(\)\]/);
+});
+
 test("v2 reserves aggregate funds and constrains claim index, depth and remaining total", () => {
   assert.match(instruction("publish_prizes_v2"), /reserve_prizes_v2\(ctx\.accounts\.vault_ata\.amount, config\.reserved, total\)/);
   const claim = instruction("claim_prize_v2");
   assert.match(claim, /leaf_index < prizes\.leaf_count/);
+  assert.match(source, /pub fn refund_entry_v2\(ctx: Context<RefundEntryV2>, reference: \[u8; 32\]\)/);
+  assert.match(source, /close = player/);
+  assert.match(source, /EntryRefundedV2/);
   assert.match(claim, /proof\.len\(\) == depth/);
   assert.match(claim, /prizes\.remaining\.checked_sub\(amount\)/);
   assert.match(claim, /config\.reserved\.checked_sub\(amount\)/);
   assert.match(claim, /CONFIG_V2_SEED, config\.mint\.as_ref\(\)/);
-  assert.match(instruction("pay_entry_v2"), /config\.fees\.get\(usize::from\(tier\)\)/);
+  const pay = instruction("pay_entry_v2");
+  assert.match(pay, /ticket\.rake = rake/);
+  assert.match(pay, /ticket\.prize = prize/);
+  const refund = instruction("refund_entry_v2");
+  assert.match(refund, /let rake = ctx\.accounts\.ticket\.rake/);
+  assert.match(refund, /let prize = ctx\.accounts\.ticket\.prize/);
+  assert.doesNotMatch(refund, /split_fee_v2\(ctx\.accounts\.ticket\.amount/);
 });

@@ -1,6 +1,13 @@
-# ПОЛНЫЙ НЕЗАВИСИМЫЙ АУДИТ КРИПТО-ИГРЫ NEON RELAY (SOLANA)
+# Исторический независимый audit report Neon Relay (superseded; не production evidence)
 
-**Дата проведения:** 21 сентября 2026 г.  
+> **SUPERSEDED / UNVERIFIED (24 сентября 2026):** это сохранённый отчёт по
+> старому commit и старой ветке. Его remediation claims, включая Bubblegum/MPL
+> Core CPI, cost/rent и runtime/toolchain statements, не применяются к текущему
+> checkout и не являются доказательством production readiness. Требуется новый
+> внешний audit report с актуальным source digest, pinned ABI/validator
+> evidence и finalized RPC verification.
+
+**Дата исходного отчёта:** 21 сентября 2026 г.
 **Аудитор:** Независимый ведущий аудитор смарт-контрактов Solana и токеномики (уровень Neodyme / OtterSec / Sec3).  
 **Репозиторий:** `Leo88q/neon-relay` (`arena/01a0c416-neon-relay`)  
 **Коммит базы:** `3d0f5fc`  

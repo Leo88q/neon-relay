@@ -1,26 +1,29 @@
-//! Neon Relay assets — продакшн-уровень дешёвой чеканки + супербезопасность.
+//! Neon Relay assets — source-hardened, production-gated asset paths.
 //!
-//! Цель: дать Neon Relay **дешёвый** путь чеканки NFT/монет (Bubblegum v2 cNFT
-//! 0.00001 SOL/шт против 0.022 SOL классики — 2400× дешевле) и **уровень
-//! продакшн-деплоя** по безопасности (45-пунктовый чеклист, Agave≥3.0.14,
-//! Alpenglow finalized, Firedancer multi-client, Squads multisig).
+//! The verified default build exposes a bounded internal collection descriptor
+//! and a classic-SPL 0-decimal fallback. External MPL-Core/Bubblegum CPI is
+//! compile-time disabled until upstream ABI/account metas and validator tests
+//! are pinned. `mint_badge_compressed` therefore fails closed with
+//! `AssetPathNotConfigured`; no live compressed-mint capability is claimed.
 //!
-//! Модель (spec §blockchain): цепь только для денег/метаданных, симуляция
-//! оффчейн. Этот модуль — non-simulation:
-//!   * Коллекция (MPL-Core style) + Merkle-дерево для cNFT (Bubblegum)
-//!   * `mint_badge_core` — fallback на SPL 0-decimal mint (дороже, совместим
-//!     с маркетами, до 100 бейджей)
-//!   * `mint_badge_compressed` — дешёвый путь: CPI в Bubblegum
-//!     `BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY` (требует DAS RPC)
-//!   * Token-2022-aware проверки (PermanentDelegate reject, TransferFee учёт)
-//!   * Timelock на смену authority (48h ~ 432_000 слотов) + pause
-//!
-//! Стоимость: 10k бейджей — SPL 220 SOL, Core 29 SOL, Bubblegum 0.27 SOL.
-//! Безопасность: все 45 чеков прокомментированы в `docs/ASSETS_SECURITY_AUDIT_CHECKLIST.md`.
+//! Model: the chain stores asset/reward metadata and bounded proofs; game
+//! simulation remains off-chain. Classic-SPL layout checks reject Token-2022
+//! extensions, and authority changes use a slot-delay policy with pause gates;
+//! wall-clock duration is cluster-dependent and unverified here.
+//! The complete source checklist is in `docs/ASSETS_SECURITY_AUDIT_CHECKLIST.md`.
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::hash::hashv;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, MintTo};
+
+// These flags are reserved for a future release with pinned upstream ABI
+// crates, account metas, and validator coverage. Refuse an accidental
+// "enabled" build rather than shipping the raw-instruction sketch below as
+// a production CPI implementation.
+#[cfg(feature = "core")]
+compile_error!("assets core CPI is not production-pinned; build without feature core");
+#[cfg(feature = "bubblegum")]
+compile_error!("assets Bubblegum CPI is not production-pinned; build without feature bubblegum");
 
 // Placeholder — заменить `anchor keys list` перед деплоем (Anchor.toml + constants.ts).
 declare_id!("F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc");
@@ -36,14 +39,78 @@ pub const MAX_COLLECTION_NAME: usize = 32;
 pub const MAX_COLLECTION_SYMBOL: usize = 10;
 pub const MAX_URI_LEN: usize = 200;
 pub const MAX_PROOF_LEN: usize = 32;
-/// 48 часов в слотах при 0.4s/slot (Alpenglow сохраняет слоты). Для timelock смены authority.
+/// Slot-delay policy for authority changes. The wall-clock duration is
+/// cluster-dependent and must be measured separately; this source does not
+/// claim that the value equals a fixed number of hours.
 pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
 
-/// Внешние программы (pin на 20 сен 2026).
+/// External program identifiers recorded for the gated adapter; live ownership,
+/// ABI compatibility, and deployment are not verified in this checkout.
 pub const BUBBLEGUM_PROGRAM_ID: &str = "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY";
 pub const COMPRESSION_PROGRAM_ID: &str = "cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK";
 pub const NOOP_PROGRAM_ID: &str = "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV";
 pub const MPL_CORE_PROGRAM_ID: &str = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d";
+/// Features registry program and seed used for the on-chain achievement proof.
+pub const FEATURES_PROGRAM_ID: Pubkey = pubkey!("4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP");
+pub const FEATURES_ACHIEVEMENTS_SEED: &[u8] = b"neonrelay_achievements";
+
+fn require_achievement_registry(
+    registry: &AccountInfo<'_>,
+    player: &Pubkey,
+    badge_id: u32,
+) -> Result<()> {
+    let expected = Pubkey::find_program_address(
+        &[FEATURES_ACHIEVEMENTS_SEED, player.as_ref()],
+        &FEATURES_PROGRAM_ID,
+    ).0;
+    require_keys_eq!(registry.key(), expected, AssetsError::InvalidAchievementRegistry);
+    require_keys_eq!(*registry.owner, FEATURES_PROGRAM_ID, AssetsError::InvalidAchievementRegistry);
+    let data = registry.try_borrow_data()?;
+    let discriminator = hashv(&[b"account:AchievementRegistry"]).to_bytes();
+    require!(data.len() >= 8 + 32 + 32 && data[..8] == discriminator[..8], AssetsError::InvalidAchievementRegistry);
+    require!(data[8..40] == player.as_ref(), AssetsError::InvalidAchievementRegistry);
+    let word = usize::try_from(badge_id / 64).map_err(|_| error!(AssetsError::BadgeIdOutOfRange))?;
+    let offset = 8 + 32 + word * 8;
+    require!(offset + 8 <= data.len(), AssetsError::InvalidAchievementRegistry);
+    let mut bytes = [0u8; 8];
+    bytes.copy_from_slice(&data[offset..offset + 8]);
+    require!(u64::from_le_bytes(bytes) & (1u64 << (badge_id % 64)) != 0, AssetsError::AchievementNotRecorded);
+    Ok(())
+}
+
+fn require_safe_token_account(account: &TokenAccount) -> Result<()> {
+    require!(
+        account.state == anchor_spl::token::spl_token::state::AccountState::Initialized &&
+        account.delegate.is_none() && account.is_native.is_none() && account.close_authority.is_none(),
+        AssetsError::UnsafeTokenAccount
+    );
+    Ok(())
+}
+
+fn require_program_account(account: &AccountInfo<'_>, expected: Pubkey, error: AssetsError) -> Result<()> {
+    let valid = account.key() == expected
+        && account.executable
+        && *account.owner == anchor_lang::solana_program::bpf_loader_upgradeable::id();
+    require!(valid, error);
+    Ok(())
+}
+
+fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey) -> Result<()> {
+    let expected = Pubkey::find_program_address(
+        &[crate::ID.as_ref()],
+        &anchor_lang::solana_program::bpf_loader_upgradeable::id(),
+    ).0;
+    require_keys_eq!(program_data.key(), expected, AssetsError::BootstrapAuthorityInvalid);
+    require_keys_eq!(*program_data.owner, anchor_lang::solana_program::bpf_loader_upgradeable::id(), AssetsError::BootstrapAuthorityInvalid);
+    let state: anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState =
+        bincode::deserialize(&program_data.try_borrow_data()?).map_err(|_| error!(AssetsError::BootstrapAuthorityInvalid))?;
+    match state {
+        anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
+            upgrade_authority_address: Some(current), ..
+        } => require_keys_eq!(current, *authority, AssetsError::BootstrapAuthorityInvalid),
+        _ => Err(error!(AssetsError::BootstrapAuthorityInvalid)),
+    }
+}
 
 #[program]
 pub mod neonrelay_assets {
@@ -51,6 +118,7 @@ pub mod neonrelay_assets {
 
     /// One-time setup. Подписант становится authority. Немедленно паузим до аудита — оператор `set_paused(false)`.
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        verify_bootstrap_authority(&ctx.accounts.program_data.to_account_info(), &ctx.accounts.authority.key())?;
         let config = &mut ctx.accounts.config;
         config.authority = ctx.accounts.authority.key();
         config.pending_authority = Pubkey::default();
@@ -66,14 +134,19 @@ pub mod neonrelay_assets {
         Ok(())
     }
 
-    /// Создать коллекцию для бейджей. Authority-only, PDA init — повтор fails.
-    /// В продакшн: CPI в MPL Core `createCollection` с `BubblegumV2` plugin (см. коммент ниже).
+    /// Create a bounded internal collection descriptor. Authority-only, PDA
+    /// init makes a duplicate fail; no MPL Core CPI is attempted in the
+    /// verified default build.
     pub fn create_collection(
         ctx: Context<CreateCollection>,
         name: String,
         symbol: String,
         uri: String,
     ) -> Result<()> {
+        // The default build records a bounded internal collection descriptor;
+        // no external MPL Core CPI is attempted. The optional raw CPI branch
+        // below remains compile-time disabled until its ABI is independently
+        // pinned and validator-tested.
         require!(!ctx.accounts.config.paused, AssetsError::Paused);
         require!(
             !name.is_empty() && name.len() <= MAX_COLLECTION_NAME,
@@ -141,14 +214,18 @@ pub mod neonrelay_assets {
         Ok(())
     }
 
-    /// Создать Merkle-дерево для сжатых бейджей. Authority-only.
-    /// Параметры depth/canopy влияют на rent: depth 14 canopy 8 ~0.34 SOL (16k), depth 20 canopy 13 ~8.5 SOL (1M).
+    /// Reserved Merkle-tree descriptor for compressed badges. Authority-only;
+    /// the verified default build is fail-closed until the compression ABI and
+    /// validator coverage are pinned.
     pub fn create_tree(
         ctx: Context<CreateTree>,
         max_depth: u32,
         max_buffer_size: u32,
         canopy_depth: u32,
     ) -> Result<()> {
+        #[cfg(not(feature = "bubblegum"))]
+        return Err(AssetsError::AssetPathNotConfigured.into());
+        #[cfg(feature = "bubblegum")]
         require!(!ctx.accounts.config.paused, AssetsError::Paused);
         // Валидация как в Bubblegum: depth 14..30, buffer power-of-two, canopy <= depth.
         require!(
@@ -183,17 +260,23 @@ pub mod neonrelay_assets {
         Ok(())
     }
 
-    /// Fallback: mint бейджа как SPL 0-decimal mint PDA (supply 1, mint authority = config PDA).
-    /// Дороже (0.0029 SOL), но совместим с Magic Eden/Tensor без DAS. Использовать для премиум бейджей <100.
-    /// CEI: state (badge_minted++) до CPI.
+    /// Verified fallback: mint a bounded classic SPL 0-decimal badge PDA
+    /// with supply 1 and the config PDA as mint authority. CEI updates the
+    /// local counter before the token CPI.
     pub fn mint_badge_core(ctx: Context<MintBadgeCore>, badge_id: u32) -> Result<()> {
         require!(!ctx.accounts.config.paused, AssetsError::Paused);
         require!(badge_id < 256, AssetsError::BadgeIdOutOfRange);
+        require_safe_token_account(&ctx.accounts.player_badge_account)?;
+        require_achievement_registry(
+            &ctx.accounts.achievement_registry.to_account_info(),
+            &ctx.accounts.player.key(),
+            badge_id,
+        )?;
 
-        // Проверка достижения — в продакшн читать `neonrelay_features` registry bitmap; здесь упрощённо требуем что collection существует.
+        // The collection must be an assets collection bound to this config.
         require!(
-            ctx.accounts.collection.key() != Pubkey::default(),
-            AssetsError::CollectionNotFound
+            ctx.accounts.collection.authority == ctx.accounts.config.authority,
+            AssetsError::Unauthorized
         );
 
         // Защита от Token-2022 PermanentDelegate: если mint — Token-2022 с delegate, CPI mint_to может быть перехвачен.
@@ -230,27 +313,41 @@ pub mod neonrelay_assets {
         Ok(())
     }
 
-    /// Дешёвый путь: mint сжатого бейджа (cNFT) через Bubblegum CPI.
-    /// Стоимость ~0.00001 SOL/шт (Bubblegum v2) — для массовых бейджей.
-    /// Требует: готовое Merkle-дерево (compression program), collection с BubblegumV2 plugin, DAS RPC для proof (клиент собирает proof оффчейн).
-    /// На цепи проверяем что Bubblegum program id == BGUM..., tree принадлежит compression program, proof len <=32.
+    /// Reserved compressed-badge path. The verified default build is
+    /// deliberately fail-closed and returns `AssetPathNotConfigured`; the
+    /// Bubblegum ABI/account metas must be pinned and validator-tested before
+    /// this instruction can be enabled.
     pub fn mint_badge_compressed(
         ctx: Context<MintBadgeCompressed>,
         badge_id: u32,
         metadata_hash: [u8; 32],
         creator_hash: [u8; 32],
     ) -> Result<()> {
+        #[cfg(not(feature = "bubblegum"))]
+        return Err(AssetsError::AssetPathNotConfigured.into());
+        #[cfg(feature = "bubblegum")]
         require!(!ctx.accounts.config.paused, AssetsError::Paused);
         require!(badge_id < 256, AssetsError::BadgeIdOutOfRange);
-        // Проверка Bubblegum program id (защита от arbitrary CPI #9).
+        require_achievement_registry(
+            &ctx.accounts.achievement_registry.to_account_info(),
+            &ctx.accounts.player.key(),
+            badge_id,
+        )?;
         require!(
-            ctx.accounts.bubblegum_program.key().to_string() == BUBBLEGUM_PROGRAM_ID,
-            AssetsError::InvalidBubblegumProgram
+            ctx.accounts.collection.authority == ctx.accounts.config.authority,
+            AssetsError::Unauthorized
         );
-        require!(
-            ctx.accounts.compression_program.key().to_string() == COMPRESSION_PROGRAM_ID,
-            AssetsError::InvalidCompressionProgram
-        );
+        // Проверка external program ids and executable program accounts (защита от arbitrary CPI #9).
+        let bubblegum_program = BUBBLEGUM_PROGRAM_ID.parse::<Pubkey>().map_err(|_| error!(AssetsError::InvalidBubblegumProgram))?;
+        let compression_program = COMPRESSION_PROGRAM_ID.parse::<Pubkey>().map_err(|_| error!(AssetsError::InvalidCompressionProgram))?;
+        let noop_program = NOOP_PROGRAM_ID.parse::<Pubkey>().map_err(|_| error!(AssetsError::InvalidNoopProgram))?;
+        require_program_account(&ctx.accounts.bubblegum_program.to_account_info(), bubblegum_program, AssetsError::InvalidBubblegumProgram)?;
+        require_program_account(&ctx.accounts.compression_program.to_account_info(), compression_program, AssetsError::InvalidCompressionProgram)?;
+        require_program_account(&ctx.accounts.noop_program.to_account_info(), noop_program, AssetsError::InvalidNoopProgram)?;
+        require_keys_eq!(*ctx.accounts.merkle_tree.owner, compression_program, AssetsError::InvalidTreeOwner);
+        require!(!ctx.accounts.merkle_tree.executable && !ctx.accounts.merkle_tree.data_is_empty(), AssetsError::InvalidTreeOwner);
+        require!(ctx.accounts.tree_config.merkle_tree == ctx.accounts.merkle_tree.key(), AssetsError::TreeMismatch);
+        require!(ctx.accounts.tree_config.authority == ctx.accounts.config.authority, AssetsError::Unauthorized);
         // Tree должен быть тем же что в collection (если коллекция указана).
         if ctx.accounts.collection.merkle_tree != Pubkey::default() {
             require!(
@@ -326,13 +423,15 @@ pub mod neonrelay_assets {
             leaf,
             metadata_hash,
         });
-        // В реальном деплое после этого CPI лист появится в дереве; DAS проиндексирует за ~2 слота (finalized).
+        // Any external indexer visibility and finalization latency remain
+        // deployment-specific and are not asserted by this source-level stub.
         Ok(())
     }
 
-    /// Создание Token-2022 / SPL mint для монет (fungible) с расширениями.
-    /// Проверяет что нет PermanentDelegate, TransferFee либо 0 либо корректно учтён.
-    /// Authority-only. Mint PDA не создаём — mint передаётся извне (operator-controlled).
+    /// Register an immutable classic-SPL mint for fungible accounting.
+    /// Token-2022 and extension-bearing mints are rejected until a separate
+    /// interface implementation proves fee/delegate semantics. The mint PDA is
+    /// not created here; the operator supplies an existing mint.
     pub fn create_token_mint_config(
         ctx: Context<CreateTokenMintConfig>,
         decimals: u8,
@@ -341,11 +440,19 @@ pub mod neonrelay_assets {
     ) -> Result<()> {
         require!(!ctx.accounts.config.paused, AssetsError::Paused);
         require!(decimals <= 9, AssetsError::InvalidDecimals);
+        // The config is intentionally classic-SPL only. The booleans are
+        // operator input, never evidence: inspect the actual account layout so
+        // a caller cannot claim that an extension is absent.
+        require!(!ctx.accounts.mint.executable, AssetsError::InvalidMint);
+        require_keys_eq!(*ctx.accounts.mint.owner, anchor_spl::token::ID, AssetsError::InvalidMint);
+        let mint_data = ctx.accounts.mint.try_borrow_data()?;
+        require!(mint_data.len() == 82 && mint_data[44] == decimals && mint_data[45] == 1, AssetsError::InvalidMint);
+        require!(u32::from_le_bytes(mint_data[0..4].try_into().unwrap()) == 0,
+            AssetsError::PermanentDelegateNotAllowed);
+        require!(u32::from_le_bytes(mint_data[46..50].try_into().unwrap()) == 0,
+            AssetsError::PermanentDelegateNotAllowed);
         // Критично: PermanentDelegate позволяет списать с любого ATA — запрещаем для vault mint.
-        require!(
-            !has_permanent_delegate,
-            AssetsError::PermanentDelegateNotAllowed
-        );
+        require!(!has_permanent_delegate, AssetsError::PermanentDelegateNotAllowed);
         // TransferFee: если есть, бекенд должен учитывать при расчёте prize (fee BPS). Пока reject чтобы не усложнять.
         if has_transfer_fee {
             msg!("TransferFee extension detected — prize accounting must handle fee; currently rejected, use fee-free mint or update accounting");
@@ -370,7 +477,7 @@ pub mod neonrelay_assets {
         Ok(())
     }
 
-    /// Предложить смену authority с timelock 48h (Squads multisig pattern).
+    /// Propose an authority change with the configured slot-delay policy.
     pub fn propose_authority_change(
         ctx: Context<AdminOnly>,
         new_authority: Pubkey,
@@ -398,8 +505,12 @@ pub mod neonrelay_assets {
             AssetsError::NoPendingAuthority
         );
         let current_slot = Clock::get()?.slot;
+        let deadline = config
+            .authority_change_slot
+            .checked_add(MIN_AUTHORITY_DELAY_SLOTS)
+            .ok_or(AssetsError::Overflow)?;
         require!(
-            current_slot >= config.authority_change_slot + MIN_AUTHORITY_DELAY_SLOTS,
+            current_slot >= deadline,
             AssetsError::TimelockNotExpired
         );
         let old = config.authority;
@@ -483,6 +594,8 @@ pub struct Initialize<'info> {
     )]
     pub config: Account<'info, AssetsConfig>,
     pub authority: Signer<'info>,
+    /// CHECK: verified against the upgradeable-loader ProgramData account in the handler.
+    pub program_data: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -578,7 +691,10 @@ pub struct MintBadgeCore<'info> {
         seeds = [COLLECTION_SEED, collection.name.as_bytes(), collection.authority.as_ref()],
         bump = collection.bump,
     )]
+    #[account(constraint = collection.authority == config.authority @ AssetsError::Unauthorized)]
     pub collection: Account<'info, Collection>,
+    /// CHECK: owned and PDA-validated against the features achievement registry.
+    pub achievement_registry: UncheckedAccount<'info>,
     #[account(
         init,
         payer = player,
@@ -614,7 +730,10 @@ pub struct MintBadgeCompressed<'info> {
         seeds = [COLLECTION_SEED, collection.name.as_bytes(), collection.authority.as_ref()],
         bump = collection.bump,
     )]
+    #[account(constraint = collection.authority == config.authority @ AssetsError::Unauthorized)]
     pub collection: Account<'info, Collection>,
+    /// CHECK: owned and PDA-validated against the features achievement registry.
+    pub achievement_registry: UncheckedAccount<'info>,
     /// CHECK: Merkle tree — validated against compression program + collection.
     #[account(mut)]
     pub merkle_tree: UncheckedAccount<'info>,
@@ -751,6 +870,8 @@ pub enum AssetsError {
     InvalidCompressionProgram,
     #[msg("merkle tree does not match collection")]
     TreeMismatch,
+    #[msg("mint must be an initialized classic SPL mint with no unsupported extensions")]
+    InvalidMint,
     #[msg("decimals must be 0..9")]
     InvalidDecimals,
     #[msg("PermanentDelegate extension not allowed for vault mints")]
@@ -761,10 +882,24 @@ pub enum AssetsError {
     InvalidAuthority,
     #[msg("no pending authority")]
     NoPendingAuthority,
-    #[msg("timelock not expired (48h)")]
+    #[msg("authority slot delay has not expired")]
     TimelockNotExpired,
     #[msg("arithmetic overflow")]
     Overflow,
+    #[msg("this asset path is not enabled in the verified build")]
+    AssetPathNotConfigured,
+    #[msg("achievement registry is missing, not owned by features, or malformed")]
+    InvalidAchievementRegistry,
+    #[msg("achievement has not been recorded for this player")]
+    AchievementNotRecorded,
+    #[msg("Bubblegum noop program account is invalid")]
+    InvalidNoopProgram,
+    #[msg("Merkle tree account is not compression-owned or initialized")]
+    InvalidTreeOwner,
+    #[msg("bootstrap signer is not the program upgrade authority")]
+    BootstrapAuthorityInvalid,
+    #[msg("token account has unsupported delegate, native wrapper, or close authority")]
+    UnsafeTokenAccount,
 }
 
 // ---------------------------------------------------------------- unit tests (cargo test -p neonrelay-assets, no chain)

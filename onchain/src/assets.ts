@@ -1,6 +1,7 @@
 /**
- * Client-side mirrors for neonrelay-assets (cheap NFT minting).
+ * Client-side mirrors for neonrelay-assets (source-gated asset paths).
  * Zero deps — Node 22 only. Mirrors lib.rs seeds / program ids / leaf hash.
+ * External CPI and cost parameters are intentionally not treated as verified.
  */
 import { createHash } from "node:crypto";
 
@@ -23,23 +24,6 @@ export const NOOP_PROGRAM_ID =
   "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV";
 export const MPL_CORE_PROGRAM_ID =
   "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d";
-
-/** Cost table — verified 20 Sep 2026 from Metaplex docs. */
-export const C_NFT_COST = {
-  /** Per cNFT in a large tree (1M) — ~0.00001 SOL */
-  perItemSOL: 0.00001,
-  /** Tree rent examples (SOL) */
-  trees: {
-    "16k_depth14_canopy8": 0.34,
-    "1M_depth20_canopy13": 8.5,
-    "16M_depth24_canopy15": 26.12,
-  },
-  /** Fallback costs */
-  fallback: {
-    corePerAssetSOL: 0.0029,
-    tokenMetadataPerAssetSOL: 0.022,
-  },
-} as const;
 
 /**
  * Compressed badge leaf (simplified LeafSchemaV2 hash).

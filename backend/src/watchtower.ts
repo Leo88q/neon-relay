@@ -31,7 +31,7 @@ export const WATCHTOWER_COMPONENTS = [
   { id: "identity-session-keys", category: "identity", name: "Session Keys", providers: ["CgInv", "SessKeys"], free_tier: true, contract: "move / boost / finish only; scoped, expiring, revocable" },
   { id: "assets-bubblegum", category: "assets", name: "Bubblegum v2 compressed assets", providers: ["Bubblegum v2", "Merkle Tree"], free_tier: true, contract: "common skins, tracks and emotes; operator-supplied tree" },
   { id: "assets-core", category: "assets", name: "MPL Core standard assets", providers: ["MPL Core", "Standard NFT"], free_tier: true, contract: "rare skins and founder badge; authority and update rules audited" },
-  { id: "assets-das-sorada", category: "assets", name: "DAS fast asset reads", providers: ["DAS", "Sorada"], free_tier: true, contract: "inventory / ownership read adapter; target 5 ms, no hard SLA" },
+  { id: "assets-das-sorada", category: "assets", name: "DAS fast asset reads", providers: ["DAS", "Sorada"], free_tier: true, contract: "inventory / ownership read adapter; latency is deployment-specific and unverified" },
   { id: "state-xandeum", category: "state", name: "Scalable race state", providers: ["Xandeum"], free_tier: true, contract: "large state adapter; final authority remains the race server" },
   { id: "economy-gamba", category: "economy", name: "Ticket, wager and jackpot", providers: ["Gamba", "GambaUi"], free_tier: true, contract: "useGamba / usePlay / useWager / WagerInput / GameResult / Jackpot" },
   { id: "bots-husks", category: "gameplay", name: "Race AI bots", providers: ["Husks"], free_tier: true, contract: "deterministic bot seed; never eligible for player rewards" },
@@ -253,12 +253,21 @@ export function watchtowerConfig(config: Config): Record<string, unknown> {
     game_id: WATCHTOWER_GAME_ID,
     tenant: WATCHTOWER_TENANT,
     component_count: WATCHTOWER_COMPONENTS.length,
+    component_status: "contract-only; providers and SLAs are unverified",
     components: WATCHTOWER_COMPONENTS,
     program_ids: {
       rewards: config.rewardsProgramId ?? "NEONRELAY_REWARDS_PROGRAM_ID",
+      features: config.featuresProgramId ?? "NEONRELAY_FEATURES_PROGRAM_ID",
+      economy: config.economyProgramId ?? "NEONRELAY_ECONOMY_PROGRAM_ID",
+      assets: config.assetsProgramId ?? "NEONRELAY_ASSETS_PROGRAM_ID",
       identity: process.env.NEONRELAY_IDENTITY_PROGRAM_ID ?? "CgInv",
       session_keys: process.env.NEONRELAY_SESSION_KEYS_PROGRAM_ID ?? "SessKeys",
       treasury: process.env.NEONRELAY_TREASURY_PROGRAM_ID ?? "STrEaSuRy",
+    },
+    mints: {
+      reward: config.rewardMint ?? "NEONRELAY_REWARD_MINT",
+      skr: config.skrMint ?? "NEONRELAY_SKR_MINT",
+      potato: config.potatoMint ?? "NEONRELAY_POTATO_MINT",
     },
     identity: {
       providers: ["Phantom OAuth", "MWA deep links", "FirstStep guest", "Privy embedded"],
@@ -267,10 +276,10 @@ export function watchtowerConfig(config: Config): Record<string, unknown> {
       wallet_secrets_client_only: true,
     },
     assets: {
-      common: { standard: "Bubblegum v2 cNFT", target_cost_reference_usd_per_million: 110 },
-      rare: { standard: "MPL Core Standard NFT", founder_badge: true },
-      stats: "Core Attributes",
-      reads: "DAS via Sorada adapter",
+      common: { standard: "external compressed-asset adapter (disabled by default)", status: "unverified" },
+      rare: { standard: "external MPL Core adapter (disabled by default)", founder_badge: true, status: "unverified" },
+      stats: "Core Attributes adapter (unverified)",
+      reads: "DAS adapter (operator-supplied; unverified)",
     },
     race_model: {
       arc_entity: {
@@ -330,11 +339,10 @@ export function routeL2(gameId: string, tps: string, ux: string): Record<string,
     state_layer: "Xandeum",
     read_layer: "Sorada",
     fallback: "Solana mainnet",
-    endpoints: {
-      api: "https://api.mainnet-alpha.sonic.game",
-      rpc: "https://rpc.mainnet-alpha.sonic.game",
-      grpc: "https://grpc.mainnet-alpha.sonic.game",
-    },
+    status: "adapter-contract-unverified",
+    enabled: false,
+    endpoint_source: "operator-supplied; no provider endpoint is configured by this repository",
+    endpoints: null,
     monitoring: ["tps", "p50_latency", "p99_latency", "grid_health", "commit_lag", "fallback_rate"],
   };
 }

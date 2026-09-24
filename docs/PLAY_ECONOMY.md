@@ -86,9 +86,10 @@ server-side (spec §5); the chain only holds money and published results.
   integer-division dust (always < n units) goes +1 to the largest remainders,
   ties broken by rank. A full 10-winner close is identical to the raw table;
   a lone winner takes the whole pool. Rationale: the alternatives strand
-  funds — carry-over needs cross-epoch vault accounting, refunds need a
-  separate instruction — while redistribution keeps every close fully
-  accounted: distributed total always equals the pool. Two documented edges:
+  funds — carry-over needs cross-epoch vault accounting; the v2 path now has
+  an authority-approved `refund_entry_v2` for cancelled tickets, while expired
+  prize reservations use the separate time-gated sweep. Redistribution keeps
+  every close fully accounted: distributed total always equals the pool. Two documented edges:
   dust pools (pool < winner count) may round tail places to zero — those
   winners get no leaf and the remainder stays vaulted; zero eligible winners
   refuse the close entirely and the pool rolls into the next epoch's vault

@@ -18,8 +18,50 @@ test("production refuses to boot on a missing or placeholder domain", () => {
   assert.throws(
     () => loadConfig({ NODE_ENV: "production", NEONRELAY_AUTH_DOMAIN: "neonrelay.leo88q.example" }),
     /placeholder/);
-  const ok = loadConfig({ NODE_ENV: "production", NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com" });
+  assert.throws(
+    () => loadConfig({
+      NODE_ENV: "production",
+      NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com",
+      NEONRELAY_CLUSTER: "mainnet-beta",
+      NEONRELAY_RPC_URL: "https://rpc.example.invalid",
+    }),
+    /production configuration is incomplete|explicit https URL|distinct RPC infrastructure/);
+  const signingKey = Buffer.alloc(32, 7).toString("base64url");
+  const ok = loadConfig({
+    NODE_ENV: "production",
+    NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com",
+    NEONRELAY_CLUSTER: "mainnet-beta",
+    NEONRELAY_RPC_URL: "https://rpc.example.invalid",
+    NEONRELAY_RPC_FALLBACK_URL: "https://fallback.example.invalid",
+    NEONRELAY_WATCHTOWER_INGEST_TOKEN: "watchtower-secret-0123456789abcdef",
+    NEONRELAY_SERVER_SIGNING_PUBLIC_KEY: signingKey,
+    NEONRELAY_REWARDS_PROGRAM_ID: "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
+    NEONRELAY_FEATURES_PROGRAM_ID: "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP",
+    NEONRELAY_ECONOMY_PROGRAM_ID: "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9",
+    NEONRELAY_ASSETS_PROGRAM_ID: "F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc",
+    NEONRELAY_SKR_MINT: "So11111111111111111111111111111111111111112",
+    NEONRELAY_REWARD_MINT: "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
+    NEONRELAY_EXPECTED_GENESIS_HASH: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    NEONRELAY_DEPLOYMENT_MANIFEST: "/etc/neonrelay/deployment.json",
+    NEONRELAY_MONETIZATION_ENABLED: "1",
+  });
   assert.equal(ok.authDomain, "relay.neonrelay.example.com");
+  assert.equal(ok.environment, "production");
+  assert.throws(() => loadConfig({
+    NODE_ENV: "production",
+    NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com",
+    NEONRELAY_RPC_URL: "https://same.example.invalid",
+    NEONRELAY_RPC_FALLBACK_URL: "https://same.example.invalid/other-api-key",
+  }), /distinct RPC infrastructure/);
+  assert.throws(() => loadConfig({
+    NEONRELAY_SKR_MINT: "So11111111111111111111111111111111111111112",
+    NEONRELAY_REWARD_MINT: "So11111111111111111111111111111111111111112",
+  }), /reward and payment mints/);
+  assert.throws(() => loadConfig({
+    NODE_ENV: "production",
+    NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com",
+    NEONRELAY_WATCHTOWER_INGEST_TOKEN: "short",
+  }), /at least 32 characters/);
 });
 
 test("rpc failover settings default to a single provider", () => {

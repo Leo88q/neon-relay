@@ -17,8 +17,9 @@ on-chain root → player claims.
 
 ## 0. Prerequisites ⛓️
 
-* Rust stable, `solana-install` (CLI + keygen + airdrop), Anchor CLI **0.30.1**
-  (matches `onchain/Anchor.toml` and the pinned `anchor-lang`).
+* Rust stable, `solana-install` (CLI + keygen + airdrop), Anchor CLI **0.31.1**
+  (matches the production source pin; the locked build must be refreshed in a
+  connected environment).
 * Node ≥ 22 for the backend and the offline test suites.
 * Two distinct operator credentials, generated on the operator machine and
   **never committed**:
@@ -32,7 +33,7 @@ on-chain root → player claims.
 ```bash
 ./scripts/local_syntax_probe.sh          # C++20 probe: 134 clean / 1 skip / 0 fail
 ./scripts/neonrelay_signer_test.sh       # C++ signer vs node:crypto: PASS
-(cd backend && npm test)                 # 240/240
+(cd backend && npm test)                 # 257/257
 (cd onchain && npm test)                 # 50/50
 ./scripts/check_secrets.py --self-test && ./scripts/check_secrets.py
 ./scripts/check_branding.sh --release --check-translations
@@ -46,9 +47,8 @@ cd onchain
 cargo test -p neonrelay-rewards -p neonrelay-features   # pure-logic unit tests + golden leaf
 anchor keys list                         # → real program ids (BOTH programs)
 # put each id into Anchor.toml [programs.devnet], the matching lib.rs
-# declare_id!, and onchain/src/constants.ts (PROGRAM_ID_PLACEHOLDER /
-# FEATURES_PROGRAM_ID_PLACEHOLDER) — the conformance tests enforce that all
-# three agree per program
+# declare_id!, and onchain/src/constants.ts — the conformance tests enforce
+# source agreement; a live account comparison belongs in the external manifest
 anchor build                             # builds the whole workspace
 ./scripts/create_test_mint.sh            # → NEONRELAY_TEST_MINT=<devnet mint>
 export NEONRELAY_TEST_MINT=...
@@ -203,14 +203,14 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 * **Deployment check**: after every deploy or authority change, re-run
   `onchain/scripts/verify_deployment.sh --cluster devnet --manifest
   onchain/deployment.devnet.json` (manifest copied from
-  `deployment.example.json`); promotion policy, Squads + 48h timelock rules
-  and incident runbooks live in `docs/DEPLOYMENT_POLICY.md` and
-  `docs/INCIDENT_RESPONSE.md`.
+  `deployment.example.json`); promotion policy, custody approval and the
+  432,000-slot authority-delay policy (wall-clock duration unverified) live in
+  `docs/DEPLOYMENT_POLICY.md` and `docs/INCIDENT_RESPONSE.md`.
 
 ## 9. Known gaps
 
 * No automated e2e test spans backend→chain (BL-03); the pipeline is covered
-  segment-wise: backend (✅ 240/240, incl. the e2e auth/claim flows), Merkle
+  segment-wise: backend (✅ 257/257, incl. the e2e auth/claim flows), Merkle
   parity + rewards-claim client contract vs the program source (onchain ✅
   50/50), signer C++↔node:crypto (✅ harness).
 * The mobile `claim` flow is implemented end to end in the client
@@ -226,7 +226,8 @@ server binary itself is BL-01 (no full native toolchain in the sandbox).
 ## 4. Economy program dry-run (devnet, test mint only)
 
 1. `anchor deploy --provider.cluster devnet` includes `neonrelay_economy`
-   (placeholder id in Anchor.toml → replace with `anchor keys list`).
+   (pinned source ID in Anchor.toml → compare against the live account and
+   record the finalized result in the external deployment manifest).
 2. Test mint: `./onchain/scripts/create_test_mint.sh` — labelled NOT official
    SKR; the official SKR mint is mainnet-only operator config (BL-16 gate).
 3. `anchor shell`: `initialize(rake_bps = 1000, fee_match, fee_tournament)`

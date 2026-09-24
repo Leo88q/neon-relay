@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { base58Encode } from "../src/economy.ts";
-import { EconomyV2Store } from "../src/economy_v2_store.ts";
+import { DB_ONLY_SEAL_TEST_CAPABILITY, EconomyV2Store } from "../src/economy_v2_store.ts";
 import { authenticate, getJson, postJson, makeWallet, startTestApp } from "./helpers.ts";
 import { v2Fixture } from "./v2_rpc_fixture.ts";
 
@@ -72,8 +72,10 @@ test("ticket inspection loads the immutable intent and binds both player and wal
     assert.equal(result.status, 200); assert.equal(result.json.ticket.ticketed, true);
     assert.equal(result.json.admissionEnabled, false); assert.equal(result.json.market.paymentsEnabled, false);
     const other = await authenticate(s.base, makeWallet());
-    await postJson(s.base, "/v1/wallet/link", { player_id: "player-1" }, other.json.session_token);
-    assert.equal((await getJson(s.base, path, other.json.session_token)).json.error.code, "intent-wallet-mismatch");
+    const conflict = await postJson(s.base, "/v1/wallet/link", { player_id: "player-1" }, other.json.session_token);
+    assert.equal(conflict.status, 409);
+    assert.equal(conflict.json.error.code, "player-already-linked");
+    assert.equal((await getJson(s.base, path, other.json.session_token)).json.error.code, "player-link-required");
     await postJson(s.base, "/v1/wallet/link", { player_id: "another-player" }, s.token);
     assert.equal((await getJson(s.base, path, s.token)).status, 404);
     await postJson(s.base, "/v1/wallet/unlink", {}, s.token);
@@ -96,7 +98,8 @@ test("v2 economy proof endpoint serves sealed Merkle proof", async () => {
     const store = new EconomyV2Store(s.app.db);
     const mint = s.fixture().mint;
     store.openEpoch(mint, 1n, 100_000_000n);
-    store.sealEpoch(mint, 1n, [{ wallet: s.wallet.rawPublicKey, amount: 50_000_000n }]);
+    store.sealEpochForTest(DB_ONLY_SEAL_TEST_CAPABILITY, mint, 1n,
+      [{ wallet: s.wallet.rawPublicKey, amount: 50_000_000n }]);
     const wallet58 = base58Encode(s.wallet.rawPublicKey);
     const mint58 = base58Encode(mint);
 

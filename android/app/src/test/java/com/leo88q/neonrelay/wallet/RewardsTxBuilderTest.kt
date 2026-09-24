@@ -109,7 +109,7 @@ class RewardsTxBuilderTest {
 
     @Test fun configRequiresExactLayoutAndDiscriminator() {
         val data = ByteArray(RewardsTxBuilder.CONFIG_SIZE)
-        assertEquals(123, data.size)
+        assertEquals(131, data.size)
         tx.hexToBytes("9b0caae01efacc82").copyInto(data)
         ByteArray(32) { 5 }.copyInto(data, 8) // authority (unchecked by the client)
         mint.copyInto(data, 40)
@@ -119,6 +119,7 @@ class RewardsTxBuilderTest {
         assertArrayEquals(mint, parsed.mint)
         assertFalse(parsed.paused)
         assertEquals(12L, parsed.epochCount)
+        assertEquals(0L, parsed.reserved)
         data[72] = 1
         assertTrue(builder.parseConfig(data).paused)
         invalid { builder.parseConfig(data.copyOf(122)) }
@@ -129,17 +130,21 @@ class RewardsTxBuilderTest {
 
     @Test fun epochStateRequiresMatchingIdAndLeafCount() {
         val data = ByteArray(RewardsTxBuilder.EPOCH_STATE_SIZE)
-        assertEquals(61, data.size)
+        assertEquals(77, data.size)
         tx.hexToBytes("bf3f8bed900cdfd2").copyInto(data)
         ByteBufferLe.u64(7).copyInto(data, 8) // id
         ByteArray(32) { 13 }.copyInto(data, 16) // root
         ByteBufferLe.u64(1_700_000_000).copyInto(data, 48) // published_at (unchecked)
         data[56] = 255.toByte() // bump (unchecked)
         (ByteBufferLe.u32(3)).copyInto(data, 57) // leaf_count
+        ByteBufferLe.u64(900).copyInto(data, 61) // total_micro
+        ByteBufferLe.u64(700).copyInto(data, 69) // remaining_micro
         val parsed = builder.parseEpochState(data, 7)
         assertEquals(7L, parsed.id)
         assertArrayEquals(ByteArray(32) { 13 }, parsed.root)
         assertEquals(3, parsed.leafCount)
+        assertEquals(900L, parsed.total)
+        assertEquals(700L, parsed.remaining)
         invalid { builder.parseEpochState(data, 8) } // id mismatch
         invalid { builder.parseEpochState(data.copyOf(60), 7) }
         invalid { builder.parseEpochState(data.copyOf().also { it[0] = 0 }, 7) }

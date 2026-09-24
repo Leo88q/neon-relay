@@ -1,15 +1,22 @@
-# Neon Relay on-chain (prod-grade, 4 programs — cheap minting + super security)
+# Neon Relay on-chain (source-hardened, production-gated, 4 programs)
 
-Workspace из 4 Anchor программ, каждая — devnet-only до BL-16, продакшн-харденинг под Agave≥3.0.14 + Alpenglow + Firedancer + ZK Compression.
+Workspace из 4 Anchor программ с source-level hardening. Все программы остаются
+неподтверждёнными до Rust/Anchor build, validator run, real IDs, custody и
+finalized RPC verification; внешние claims о live deploy здесь не делаются.
 
 | Программа | Деплой | Чеканка | Безопасность |
 |-----------|--------|---------|--------------|
 | `neonrelay-rewards` (stage 9) | `2RaaXK...tmj` | SPL vault (6 decimals) | one-way root, claim PDA, pause |
-| `neonrelay-features` (stage 11) | `4PH1dH...qYP` | supply-1 SPL badge (0.022 SOL) | bitmap, per-(badge,player) mint |
+| `neonrelay-features` (stage 11) | `4PH1dH...qYP` | supply-1 SPL badge; live cost unverified | bitmap, per-(badge,player) mint |
 | `neonrelay-economy` (stage 14 v1 + BL-16 v2) | `FZcLDd...CV9` | SKR/POTATO vault, rake 10% cap 20% | mint-изолированные рынки, timelock |
-| **`neonrelay-assets` (NEW, prod)** | `As5T3p...q0r` | **Bubblegum v2 cNFT 0.00001 SOL + MPL Core 0.0029 SOL + Token-2022** | **45-check audit, timelock 48h, finalized-only** |
+| **`neonrelay-assets` (source-gated)** | `F5VhZx...q3oc` | **classic SPL fallback only in the verified default build; Bubblegum/MPL Core CPI disabled until ABI pinning** | **source-level checks, slot-delay policy, finalized-only gates** |
 
-Дёшево: 10k бейджей — Metadata 220 SOL → Core 29 SOL → **Bubblegum 0.27 SOL (815× дешевле)**. Безопасно: см. `docs/ASSETS_SECURITY_AUDIT_CHECKLIST.md` (45/45) + `docs/SOLANA_2026_PRODUCTION_RESEARCH.md`.
+Пути Bubblegum/MPL Core CPI не объявляются готовыми: они compile-time disabled до
+pinning upstream ABI/account metas и validator coverage. В default build внешний
+asset CPI returns `AssetPathNotConfigured`; внутренний bounded collection descriptor,
+achievement registry proof и classic SPL badge fallback остаются доступными только
+после обычных program/build/live gates. См. `docs/ASSETS_SECURITY_AUDIT_CHECKLIST.md` и
+`docs/ASSETS_PRODUCTION_DEPLOYMENT.md`.
 
 Оригинальный rewards-RUNBOOK ниже сохранён; для assets см. `docs/ASSETS_PRODUCTION_DEPLOYMENT.md`.
 
@@ -23,7 +30,7 @@ and offline tests.
 
 ```
 backend (stage 7)                    this program                       player wallet
-seals epoch → merkle_root  ──▶  publish_epoch(epoch_id, root)   (operator only)
+seals epoch → merkle_root + total_micro  ──▶  publish_epoch(epoch_id, root, leaf_count, total_micro)   (operator only; aggregate vault ceiling)
 claim-intent {leaf_hash,   ──▶  claim(epoch_id, amount_micro,   ──▶  SPL transfer from
  leaf_index, merkle_proof}        leaf_index, proof)                 program vault → player ATA
 ```
@@ -71,15 +78,18 @@ cd backend && npm test        # 30/30 passing — backend side of the same vecto
 
 **Not** verified here — `cargo build`, `anchor build`, `anchor test` and any
 devnet deployment are impossible in the offline sandbox
-(`docs/KNOWN_LIMITATIONS.md` BL-03; the pinned `anchor-lang 0.30.1` /
-`anchor-spl 0.30.1` coordinates are unverified offline, BL-06). On a connected
-machine with Rust, Solana CLI and Anchor CLI 0.30.1:
+(`docs/KNOWN_LIMITATIONS.md` BL-03; the required Anchor 0.31.1 build and
+lockfile resolution are unverified offline, BL-06). The production deploy gate
+still requires a connected locked build; these devnet commands are not
+production approval. On a connected machine with Rust, Solana CLI and Anchor
+CLI 0.31.1:
+
 
 ```bash
 cd onchain
 cargo test -p neonrelay-rewards          # pure-Merkle unit tests + golden leaf
-anchor keys list                         # real program id → replace the PLACEHOLDER
-                                         #   in Anchor.toml and src/lib.rs declare_id!
+anchor keys list                         # compare live IDs with the pinned
+                                         #   Anchor.toml/source IDs; do not rewrite them without review
 anchor build                             # generates target/idl/neonrelay_rewards.json
 ./scripts/create_test_mint.sh            # export NEONRELAY_TEST_MINT=...
 solana airdrop 1                         # devnet SOL for the operator wallet

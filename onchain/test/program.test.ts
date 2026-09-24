@@ -89,12 +89,18 @@ test("no hardcoded mint, no SKR token anywhere in onchain/", () => {
 
 test("Tranche A: publish_epoch binds leaf_count and claim enforces exact depth", () => {
 	assert.match(libRs,
-		/pub fn publish_epoch\(ctx: Context<PublishEpoch>, epoch_id: u64, root: \[u8; 32\], leaf_count: u32\)/);
+		/pub fn publish_epoch\(\s*ctx: Context<PublishEpoch>,\s*epoch_id: u64,\s*root: \[u8; 32\],\s*leaf_count: u32,\s*total_micro: u64,\s*\)/s);
 	assert.match(libRs, /require!\(leaf_count > 0, NeonRelayError::InvalidLeafCount\)/);
-	assert.match(libRs, /epoch\.leaf_count = leaf_count;/);
-	// unconditional: the old `if leaf_count != 0` gate is gone
+		assert.match(libRs, /epoch\.leaf_count = leaf_count;/);
+		assert.match(libRs, /epoch\.total_micro = total_micro;/);
+		assert.match(libRs, /config\.reserved\.checked_add\(total_micro\)/);
+		assert.match(libRs, /require!\(ctx\.accounts\.vault\.amount >= new_reserved, NeonRelayError::InsufficientVaultFunds\)/);
+		assert.match(libRs, /require!\(epoch\.remaining_micro >= amount_micro, NeonRelayError::EpochAmountExceeded\)/);
+		// unconditional: the old `if leaf_count != 0` gate is gone
 	assert.equal(libRs.includes("if ctx.accounts.epoch.leaf_count != 0"), false);
-	assert.match(libRs, /let depth = ctx\.accounts\.epoch\.leaf_count\.next_power_of_two\(\)\.trailing_zeros\(\) as usize;/);
+	assert.match(libRs, /fn proof_depth\(leaf_count: u32\) -> Result<usize>/);
+	assert.match(libRs, /checked_next_power_of_two\(\)/);
+	assert.match(libRs, /let depth = proof_depth\(ctx\.accounts\.epoch\.leaf_count\)\?;/);
 	assert.match(libRs, /require!\(proof\.len\(\) == depth, NeonRelayError::ProofInvalid\)/);
 	assert.match(libRs, /require!\(leaf_index < ctx\.accounts\.epoch\.leaf_count, NeonRelayError::ProofInvalid\)/);
 	// the publication event carries the count for indexers

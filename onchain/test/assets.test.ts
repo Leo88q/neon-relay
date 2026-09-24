@@ -1,6 +1,6 @@
 /**
- * Offline conformance for neonrelay-assets (cheap minting + security).
- * No chain, no crates.io — pins seeds, program ids, leaf hash and cost table.
+ * Offline conformance for neonrelay-assets (source-gated asset paths + security).
+ * No chain, no crates.io — pins seeds, program ids, leaf hash and fail-closed CPI gates.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
   ASSETS_PROGRAM_ID_PLACEHOLDER,
+  FEATURES_PROGRAM_ID_PLACEHOLDER,
   ASSETS_SEEDS,
   BUBBLEGUM_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
@@ -57,6 +58,10 @@ test("assets program id placeholder consistent", () => {
   assert.match(
     anchorToml,
     new RegExp(`neonrelay_assets = "${ASSETS_PROGRAM_ID_PLACEHOLDER}"`)
+  );
+  assert.match(
+    libRs,
+    new RegExp(`FEATURES_PROGRAM_ID: Pubkey = pubkey!\\("${FEATURES_PROGRAM_ID_PLACEHOLDER}"\\)`)
   );
 });
 
@@ -116,10 +121,19 @@ test("security invariants present in lib.rs (45-checklist spot checks)", () => {
   // CPI program id validation (#9) — bubblegum/compression hard-check
   assert.match(libRs, /InvalidBubblegumProgram/);
   assert.match(libRs, /InvalidCompressionProgram/);
+  assert.match(libRs, /tree_config\.merkle_tree == ctx\.accounts\.merkle_tree\.key\(\)/);
+  assert.match(libRs, /data\[8\.\.40\] == player\.as_ref\(\)/);
   // PermanentDelegate reject (#31 Token-2022)
   assert.match(libRs, /PermanentDelegateNotAllowed/);
+  assert.match(libRs, /mint_data\[44\] == decimals/);
+  // The verified default build permits only the internal bounded collection
+  // descriptor; external Core/Bubblegum CPI remains compile-time gated.
+  assert.match(libRs, /bounded internal collection descriptor/);
+  assert.match(libRs, /compile_error!\("assets core CPI/);
+  assert.match(libRs, /compile_error!\("assets Bubblegum CPI/);
   // Pause gate
   assert.match(libRs, /require!.*!.*paused.*Paused/);
+  assert.match(libRs, /account\.state == anchor_spl::token::spl_token::state::AccountState::Initialized/);
   // Timelock for authority
   assert.match(libRs, /MIN_AUTHORITY_DELAY_SLOTS/);
   assert.match(libRs, /TimelockNotExpired/);
@@ -127,17 +141,10 @@ test("security invariants present in lib.rs (45-checklist spot checks)", () => {
   assert.match(libRs, /CEI/);
 });
 
-test("cost table sanity (cNFT 0.00001 vs Core 0.0029 vs Metadata 0.022)", async () => {
-  const { C_NFT_COST } = await import("../src/assets.ts");
-  assert.equal(C_NFT_COST.perItemSOL, 0.00001);
-  assert.equal(C_NFT_COST.trees["1M_depth20_canopy13"], 8.5);
-  assert.equal(C_NFT_COST.fallback.corePerAssetSOL, 0.0029);
-  // 10k cNFTs ~0.1 + 0.34 tree = ~0.27 SOL vs 220 SOL metadata => >500x cheaper
-  const tenKCompressed = 10_000 * C_NFT_COST.perItemSOL + C_NFT_COST.trees["16k_depth14_canopy8"];
-  const tenKMeta = 10_000 * C_NFT_COST.fallback.tokenMetadataPerAssetSOL;
-  assert.ok(tenKCompressed < 1, "10k cNFTs must be <1 SOL");
-  assert.ok(tenKMeta > 200, "10k metadata must be >200 SOL");
-  assert.ok(tenKMeta / tenKCompressed > 400, "must be >400x cheaper");
+test("external asset paths remain cost-measurement gated", () => {
+  assert.match(libRs, /AssetPathNotConfigured/);
+  assert.doesNotMatch(libRs, /0\.00001|0\.0029|0\.022/);
+  assert.doesNotMatch(readFileSync(join(here, "../src/assets.ts"), "utf8"), /C_NFT_COST|perItemSOL/);
 });
 
 test("no hardcoded mint / no SKR in assets program", () => {

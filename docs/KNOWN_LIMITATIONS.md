@@ -33,9 +33,12 @@ against the backend mirror, 8 program-conformance tests binding `lib.rs`/`Anchor
 TS constants, 8 rewards-claim client-contract tests spec-pinning the Kotlin builder, plus the
 economy (15), features (6) and asset-manifest (7) suites) and a golden leaf vector pinned
 identically for the Rust unit test, the backend and the TS client.
-The pinned `anchor-lang`/`anchor-spl` 0.30.1 coordinates are unverified offline (BL-06). The
-`declare_id!` value is a generated PLACEHOLDER to be replaced with `anchor keys list` output
-before any deployment.
+The source manifests now pin `anchor-lang`/`anchor-spl` to 0.31.1, but the
+checked-in `Cargo.lock` still contains the prior 0.30.1 resolution and cannot be
+refreshed without the unavailable Rust/crates toolchain. `onchain/scripts/
+verify_toolchain_pin.mjs` therefore fails closed; this is an explicit unresolved
+locked-build gate, not a production approval. Source IDs are pinned and drift-
+checked, while live program IDs still require finalized RPC verification.
 
 ### BL-06 — dependency coordinates pinned but unverifiable offline
 `android/gradle/libs.versions.toml` pins `com.solana:mobile-wallet-adapter-clientlib:2.2.0`
