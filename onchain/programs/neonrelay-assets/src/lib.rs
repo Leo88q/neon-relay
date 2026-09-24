@@ -91,7 +91,9 @@ fn require_program_account(account: &AccountInfo<'_>, expected: Pubkey, error: A
     let valid = account.key() == expected
         && account.executable
         && *account.owner == anchor_lang::solana_program::bpf_loader_upgradeable::id();
-    require!(valid, error);
+    if !valid {
+        return Err(error.into());
+    }
     Ok(())
 }
 
@@ -209,7 +211,7 @@ pub mod neonrelay_assets {
         }
 
         emit!(CollectionCreated {
-            collection: ctx.accounts.collection.key(),
+            collection: collection.key(),
             authority: collection.authority,
             name,
             symbol,
