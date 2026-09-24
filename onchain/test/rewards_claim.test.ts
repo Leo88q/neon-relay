@@ -37,8 +37,9 @@ test("claim discriminators match sha256(global/account) pins", () => {
 test("claim argument order and types match lib.rs", () => {
 	const fn = /pub fn claim\(\s*ctx: Context<Claim>,\s*([\s\S]*?)\) -> Result<\(\)>/.exec(libRs);
 	assert.ok(fn, "claim handler not found");
-	const args = [...fn[1].matchAll(/(\w+):\s*([\w<>\[; \]]+?),/g)]
-		.map((m) => [m[1].trim(), m[2].trim().replace(/\s+/g, "")] as const);
+	const fnBody = fn[1]!;
+		const args = [...fnBody.matchAll(/(\w+):\s*([\w<>\[; \]]+?),/g)]
+		.map((m) => [m[1]!.trim(), m[2]!.trim().replace(/\s+/g, "")] as const);
 	const want = CLAIM_ARGS.map(([name, type]) => [name, type.replace(/\s+/g, "")] as const);
 	assert.deepEqual(args, want);
 });
@@ -46,7 +47,7 @@ test("claim argument order and types match lib.rs", () => {
 test("Claim account order matches lib.rs", () => {
 	const body = /pub struct Claim<'info> \{([\s\S]*?)\n\}/.exec(libRs);
 	assert.ok(body, "Claim struct not found");
-	const fields = [...body[1].matchAll(/pub (\w+):/g)].map((m) => m[1]);
+	const fields = [...body[1]!.matchAll(/pub (\w+):/g)].map((m) => m[1]);
 	assert.deepEqual(fields, [...CLAIM_ACCOUNTS]);
 });
 
@@ -78,17 +79,19 @@ test("account sizes derive from the struct layouts", () => {
 	const structSize = (name: string): number => {
 		const body = new RegExp(`pub struct ${name} \\{([\\s\\S]*?)\\n\\}`).exec(libRs);
 		assert.ok(body, `${name} struct not found`);
-		const fields = [...body[1].matchAll(/pub \w+: ([\w;\[ \]]+)/g)].map((m) => m[1].trim());
+		const fields = [...body[1]!.matchAll(/pub \w+: ([\w;\[ \]]+)/g)].map((m) => m[1]!.trim());
 		assert.ok(fields.length > 0, `${name} has no fields`);
 		return 8 + fields.reduce((sum, type) => sum + fieldSize(type), 0);
 	};
 	assert.equal(structSize("Config"), REWARDS_CONFIG_SIZE);
 	assert.equal(structSize("EpochState"), REWARDS_EPOCH_STATE_SIZE);
 	// Config layout the client parses: authority, mint, paused, epoch_count, ...
-	const config = /pub struct Config \{([\s\S]*?)\n\}/.exec(libRs)![1];
+		const config = /pub struct Config \{([\s\S]*?)\n\}/.exec(libRs)?.[1];
+		if (config === undefined) throw new Error("Config struct not found");
 	const order = [...config.matchAll(/pub (\w+):/g)].map((m) => m[1]);
 	assert.deepEqual(order.slice(0, 4), ["authority", "mint", "paused", "epoch_count"]);
-	const epoch = /pub struct EpochState \{([\s\S]*?)\n\}/.exec(libRs)![1];
+		const epoch = /pub struct EpochState \{([\s\S]*?)\n\}/.exec(libRs)?.[1];
+		if (epoch === undefined) throw new Error("EpochState struct not found");
 	assert.deepEqual([...epoch.matchAll(/pub (\w+):/g)].map((m) => m[1]),
 		["id", "root", "published_at", "bump", "leaf_count", "total_micro", "remaining_micro"]);
 });

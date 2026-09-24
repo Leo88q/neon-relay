@@ -21,7 +21,7 @@ function filesUnder(directory: string): string[] {
 
 function run(command: string, args: string[]): number | null {
   const result = spawnSync(command, args, { cwd: root, stdio: "inherit" });
-  if (result.error?.code === "ENOENT") return null;
+  if (result.error && (result.error as NodeJS.ErrnoException).code === "ENOENT") return null;
   return result.status ?? 1;
 }
 

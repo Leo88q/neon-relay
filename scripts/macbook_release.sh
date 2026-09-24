@@ -262,7 +262,8 @@ stage_deploy() {
   elif [ "$CLUSTER" = "devnet" ]; then
     warn "no manifest yet — auto-generating $MANIFEST (devnet rehearsal; mints are labelled test mints)"
     node - "$ROOT" "$manifest" "$CLUSTER" "$genesis" "$auth" "$reward_mint" "$payment_mint" <<'EOF'
-const [ , root, out, cluster, genesis, auth, reward, skr ] = process.argv;
+// node - <args...>: argv[1] is the literal "-", real args start at argv[2]
+const [ , , root, out, cluster, genesis, auth, reward, skr ] = process.argv;
 const fs = require("node:fs");
 const example = JSON.parse(fs.readFileSync(`${root}/onchain/deployment.example.json`, "utf8"));
 const manifest = {

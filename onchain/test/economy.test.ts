@@ -31,15 +31,15 @@ test("prize table sums to 100% and rake defaults stay under the cap", () => {
 test("top-10 prize leaves build a tree the program's fold rule verifies", () => {
 	const wallets = Array.from({ length: 10 }, (_, i) => Buffer.alloc(32, i + 1));
 	const amounts = PRIZE_TABLE_BPS.map((bps) => bps * 1_000); // 1 SKR-unit per bps
-	const leaves = wallets.map((w, i) => leafHash(w, amounts[i]));
+	const leaves = wallets.map((w, i) => leafHash(w, amounts[i]!));
 	const tree = buildTree(leaves);
 	for (let i = 0; i < 10; i++) {
 		const proof = proofFor(tree, i);
 		assert.ok(proof.length <= MAX_PROOF_LEN);
-		assert.equal(verifyProofIndexed(leaves[i], i, proof, tree.root), true);
+		assert.equal(verifyProofIndexed(leaves[i]!, i, proof, tree.root), true);
 		// tamper: wrong amount or wrong index must fail
-		assert.equal(verifyProofIndexed(leafHash(wallets[i], amounts[i] + 1), i, proof, tree.root), false);
-		assert.equal(verifyProofIndexed(leaves[i], i + 1, proof, tree.root), false);
+		assert.equal(verifyProofIndexed(leafHash(wallets[i]!, amounts[i]! + 1), i, proof, tree.root), false);
+		assert.equal(verifyProofIndexed(leaves[i]!, i + 1, proof, tree.root), false);
 	}
 });
 
