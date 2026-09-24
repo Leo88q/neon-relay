@@ -144,13 +144,18 @@ stage_lockfile() {
   if node scripts/verify_toolchain_pin.mjs >/dev/null; then
     ok "onchain/Cargo.lock pinned to Anchor $ANCHOR_PIN"
   else
-    warn "stale lockfile (expected: Anchor 0.30.x entry) — regenerating via 'cargo update' (needs crates.io access)"
-    cargo update
-    node scripts/verify_toolchain_pin.mjs || die "lockfile still does not match the $ANCHOR_PIN pin — inspect 'cargo tree -p anchor-lang'"
+    # The committed lock predates the 0.31.1 migration. A blanket `cargo update`
+    # re-resolves the whole graph to newest and hits solana/spl conflicts, so
+    # regenerate from scratch: the manifests pin anchor-* = 0.31.1 and the
+    # dev-deps pin the Solana 2.1.0 SDK family, which is a consistent set.
+    warn "stale lockfile (expected: Anchor 0.30.x entry) — regenerating: rm Cargo.lock && cargo generate-lockfile (needs crates.io access)"
+    rm -f Cargo.lock
+    cargo generate-lockfile
+    node scripts/verify_toolchain_pin.mjs || die "regenerated lock still does not match the $ANCHOR_PIN pin — inspect 'cargo tree -p anchor-lang -p anchor-spl'"
     ok "onchain/Cargo.lock regenerated to Anchor $ANCHOR_PIN"
     cd "$ROOT"
     if ! git diff --quiet --exit-code -- onchain/Cargo.lock; then
-      warn "commit the refreshed lockfile: git add onchain/Cargo.lock && git commit -m 'onchain: refresh Cargo.lock to Anchor 0.31.1'"
+      warn "commit the refreshed lockfile: git add onchain/Cargo.lock && git commit -m 'onchain: refresh Cargo.lock to Anchor 0.31.1 (Solana 2.1.0 SDK)'"
     fi
   fi
 }
