@@ -151,6 +151,21 @@ stage_lockfile() {
     warn "stale lockfile (expected: Anchor 0.30.x entry) — regenerating: rm Cargo.lock && cargo generate-lockfile (needs crates.io access)"
     rm -f Cargo.lock
     cargo generate-lockfile
+    # The manifests declare caret requirements ("0.31.1"), so a fresh resolve lands
+    # on the newest 0.31.x patch (0.31.2). The pin gate is exact, so walk the anchor
+    # family back to 0.31.1. anchor-spl first: its 0.31.1 manifest re-pulls
+    # spl-token-2022 ^6 and the whole step is atomic — on a registry where 0.31.1
+    # is unresolvable the lock simply stays 0.31.2 and we report it.
+    local pkg
+    for pkg in anchor-spl anchor-lang anchor-syn anchor-attribute-access-control anchor-attribute-account \
+               anchor-attribute-constant anchor-attribute-error anchor-attribute-event anchor-attribute-program \
+               anchor-derive-accounts anchor-derive-serde anchor-derive-space; do
+      if grep -A1 "^name = \"$pkg\"$" Cargo.lock | grep -q 'version = "0.31.2"'; then
+        echo "  -- downgrading $pkg 0.31.2 -> 0.31.1"
+        cargo update -p "$pkg@0.31.2" --precise 0.31.1 \
+          || { echo "FAILED at $pkg — the 0.31.1 manifest is not resolvable here; see docs/ANCHOR_MIGRATION_0_31.md" >&2; break; }
+      fi
+    done
     node scripts/verify_toolchain_pin.mjs || die "regenerated lock still does not match the $ANCHOR_PIN pin — inspect 'cargo tree -p anchor-lang -p anchor-spl'"
     ok "onchain/Cargo.lock regenerated to Anchor $ANCHOR_PIN"
     cd "$ROOT"
