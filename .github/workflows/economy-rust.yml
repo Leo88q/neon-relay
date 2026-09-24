@@ -22,33 +22,82 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Cache cargo registry and index
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ runner.os }}-${{ hashFiles('onchain/Cargo.lock', 'onchain/Cargo.toml', 'onchain/**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
       # Canonical fail-closed gate: the committed lock must pin the exact
       # Anchor 0.31.1 release family. A stale (0.30.x) lock is regenerated
       # from scratch with the same walk-back procedure as
       # scripts/macbook_release.sh — an in-place `cargo update` from the old
       # lock is the known-unresolvable path and is deliberately not used.
+      # Every phase writes its failure context to the step summary AND the
+      # pin-gate-log artifact, so a red run is diagnosable without raw logs.
       - name: Anchor 0.31.1 lockfile pin gate (regenerate if stale)
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           cd onchain
-          if node scripts/verify_toolchain_pin.mjs; then
-            echo "onchain/Cargo.lock pinned to Anchor 0.31.1"
-          else
-            echo "::warning::stale lockfile — regenerating (needs crates.io)"
-            rm -f Cargo.lock
-            cargo generate-lockfile
-            for pkg in anchor-attribute-access-control anchor-attribute-account anchor-attribute-constant \
-                       anchor-attribute-error anchor-attribute-event anchor-attribute-program \
-                       anchor-derive-accounts anchor-derive-serde anchor-derive-space \
-                       anchor-syn anchor-lang anchor-spl; do
-              if grep -A1 "^name = \"$pkg\"$" Cargo.lock | grep -q 'version = "0.31.2"'; then
-                echo "  -- downgrading $pkg 0.31.2 -> 0.31.1"
-                cargo update -p "$pkg@0.31.2" --precise 0.31.1
-              fi
-            done
-            node scripts/verify_toolchain_pin.mjs
+          SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          LOG="$GITHUB_WORKSPACE/onchain/target/ci-pin-gate.log"
+          mkdir -p target
+          : > "$LOG"
+          say() { echo "$1" | tee -a "$SUMMARY"; }
+          fail() {
+            say ""
+            say "**FAIL: $1 — last 80 lines of the gate log:**"
+            say '```'
+            tail -n 80 "$LOG"
+            say '```'
+            exit 1
+          }
+          lock_version() {
+            awk -v n="$1" '$0=="name = \""n"\""{f=1;next} f&&/^version = /{sub(/^version = \"/,"");sub(/".*/,"");print;exit}' Cargo.lock
+          }
+          PKGS=(anchor-attribute-access-control anchor-attribute-account anchor-attribute-constant
+                anchor-attribute-error anchor-attribute-event anchor-attribute-program
+                anchor-derive-accounts anchor-derive-serde anchor-derive-space
+                anchor-syn anchor-lang anchor-spl)
+          if node scripts/verify_toolchain_pin.mjs >>"$LOG" 2>&1; then
+            say "onchain/Cargo.lock already pins Anchor 0.31.1 — using the committed lock as-is."
+            exit 0
           fi
+          say "::warning::committed onchain/Cargo.lock is not pinned to 0.31.1 — regenerating from scratch (needs crates.io)"
+          rm -f Cargo.lock
+          cargo generate-lockfile >>"$LOG" 2>&1 || fail "cargo generate-lockfile (fresh resolve of the full workspace graph)"
+          for pkg in "${PKGS[@]}"; do
+            v="$(lock_version "$pkg")"
+            case "$v" in
+              0.31.1) ;;
+              0.31.*)
+                say "  walk-back: $pkg $v -> 0.31.1"
+                cargo update -p "$pkg@$v" --precise 0.31.1 >>"$LOG" 2>&1 || fail "cargo update $pkg@$v --precise 0.31.1"
+                ;;
+              *)
+                say "::error::lock entry for $pkg is '$v' (expected 0.31.x)"
+                exit 1
+                ;;
+            esac
+          done
+          node scripts/verify_toolchain_pin.mjs >>"$LOG" 2>&1 || fail "final pin verification (lock still off-pin after walk-back)"
+          say "onchain/Cargo.lock regenerated and pinned to Anchor 0.31.1 (see pin-gate-log + economy-cargo-lock artifacts)."
+          {
+            echo ""
+            echo "Regenerated lock family:"
+            for pkg in "${PKGS[@]}"; do echo "- $pkg = $(lock_version "$pkg")"; done
+          } >> "$SUMMARY"
+      - name: Save pin-gate log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pin-gate-log
+          path: onchain/target/ci-pin-gate.log
+          if-no-files-found: ignore
       - name: Compile Anchor constraints and run workspace host tests
         shell: bash
         run: |

@@ -152,20 +152,27 @@ stage_lockfile() {
     rm -f Cargo.lock
     cargo generate-lockfile
     # The manifests declare caret requirements ("0.31.1"), so a fresh resolve lands
-    # on the newest 0.31.x patch (0.31.2). The pin gate is exact, so walk the anchor
-    # family back to 0.31.1. anchor-spl first: its 0.31.1 manifest re-pulls
-    # spl-token-2022 ^6 and the whole step is atomic — on a registry where 0.31.1
-    # is unresolvable the lock simply stays 0.31.2 and we report it.
-    local pkg
+    # on the newest 0.31.x patch (0.31.2 today; a later 0.31.3+ would land too).
+    # The pin gate is exact, so walk any 0.31.x family member back to 0.31.1.
+    # On a registry where 0.31.1 is unresolvable the lock stays off-pin and the
+    # final gate reports it (see docs/ANCHOR_MIGRATION_0_31.md).
+    local pkg v
     for pkg in anchor-attribute-access-control anchor-attribute-account anchor-attribute-constant \
                anchor-attribute-error anchor-attribute-event anchor-attribute-program \
                anchor-derive-accounts anchor-derive-serde anchor-derive-space \
                anchor-syn anchor-lang anchor-spl; do
-      if grep -A1 "^name = \"$pkg\"$" Cargo.lock | grep -q 'version = "0.31.2"'; then
-        echo "  -- downgrading $pkg 0.31.2 -> 0.31.1"
-        cargo update -p "$pkg@0.31.2" --precise 0.31.1 \
-          || { echo "FAILED at $pkg — the 0.31.1 manifest is not resolvable here; see docs/ANCHOR_MIGRATION_0_31.md" >&2; break; }
-      fi
+      v=$(awk -v n="$pkg" '$0=="name = \""n"\""{f=1;next} f&&/^version = /{sub(/^version = \"/,"");sub(/".*/,"");print;exit}' Cargo.lock)
+      case "$v" in
+        0.31.1) ;;
+        0.31.*)
+          echo "  -- downgrading $pkg $v -> 0.31.1"
+          cargo update -p "$pkg@$v" --precise 0.31.1 \
+            || { echo "FAILED at $pkg — the 0.31.1 manifest is not resolvable here; see docs/ANCHOR_MIGRATION_0_31.md" >&2; break; }
+          ;;
+        *)
+          echo "FAILED at $pkg — unexpected lock version '$v' (expected 0.31.x); see docs/ANCHOR_MIGRATION_0_31.md" >&2
+          break ;;
+      esac
     done
     node scripts/verify_toolchain_pin.mjs || die "regenerated lock still does not match the $ANCHOR_PIN pin — inspect 'cargo tree -p anchor-lang -p anchor-spl'"
     ok "onchain/Cargo.lock regenerated to Anchor $ANCHOR_PIN"
