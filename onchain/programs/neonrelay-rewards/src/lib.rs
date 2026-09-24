@@ -66,7 +66,10 @@ fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey
 	match state {
 		anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
 			upgrade_authority_address: Some(current), ..
-		} => require_keys_eq!(current, *authority, NeonRelayError::BootstrapAuthorityInvalid),
+		} => {
+			require_keys_eq!(current, *authority, NeonRelayError::BootstrapAuthorityInvalid);
+			Ok(())
+		}
 		_ => Err(error!(NeonRelayError::BootstrapAuthorityInvalid)),
     }
 }
@@ -377,6 +380,7 @@ pub struct PublishEpoch<'info> {
 		has_one = authority @ NeonRelayError::Unauthorized,
 	)]
 	pub config: Account<'info, Config>,
+	#[account(mut)]
 	pub authority: Signer<'info>,
 	#[account(
 		init,

@@ -68,7 +68,7 @@ fn require_achievement_registry(
     let data = registry.try_borrow_data()?;
     let discriminator = hashv(&[b"account:AchievementRegistry"]).to_bytes();
     require!(data.len() >= 8 + 32 + 32 && data[..8] == discriminator[..8], AssetsError::InvalidAchievementRegistry);
-    require!(data[8..40] == player.as_ref(), AssetsError::InvalidAchievementRegistry);
+    require!(&data[8..40] == player.as_ref(), AssetsError::InvalidAchievementRegistry);
     let word = usize::try_from(badge_id / 64).map_err(|_| error!(AssetsError::BadgeIdOutOfRange))?;
     let offset = 8 + 32 + word * 8;
     require!(offset + 8 <= data.len(), AssetsError::InvalidAchievementRegistry);
@@ -107,7 +107,10 @@ fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey
     match state {
         anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
             upgrade_authority_address: Some(current), ..
-        } => require_keys_eq!(current, *authority, AssetsError::BootstrapAuthorityInvalid),
+        } => {
+            require_keys_eq!(current, *authority, AssetsError::BootstrapAuthorityInvalid);
+            Ok(())
+        }
         _ => Err(error!(AssetsError::BootstrapAuthorityInvalid)),
     }
 }
@@ -636,6 +639,7 @@ pub struct CreateCollection<'info> {
         has_one = authority @ AssetsError::Unauthorized,
     )]
     pub config: Account<'info, AssetsConfig>,
+    #[account(mut)]
     pub authority: Signer<'info>,
     #[account(
         init,
@@ -657,6 +661,7 @@ pub struct CreateTree<'info> {
         has_one = authority @ AssetsError::Unauthorized,
     )]
     pub config: Account<'info, AssetsConfig>,
+    #[account(mut)]
     pub authority: Signer<'info>,
     /// CHECK: Merkle tree account — owned by compression program on-chain, System on devnet before init.
     #[account(mut)]
@@ -770,6 +775,7 @@ pub struct CreateTokenMintConfig<'info> {
         has_one = authority @ AssetsError::Unauthorized,
     )]
     pub config: Account<'info, AssetsConfig>,
+    #[account(mut)]
     pub authority: Signer<'info>,
     /// CHECK: mint — validated for extensions in handler, not hardcoded.
     pub mint: UncheckedAccount<'info>,
