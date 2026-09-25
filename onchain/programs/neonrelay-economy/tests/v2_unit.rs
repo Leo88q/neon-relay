@@ -68,7 +68,10 @@ fn epochs_cannot_overcommit_the_same_balance() {
 #[test]
 fn layouts_are_pinned_for_rpc_and_mobile_decoders() {
     assert_eq!(8 + EconomyConfigV2::INIT_SPACE, 180);
-    assert_eq!(8 + EntryTicketV2::INIT_SPACE, 123);
+    // EntryTicketV2 grew by rake + prize (16 bytes) after this pin was
+    // written; the RPC decoder (backend/src/economy_v2_rpc.ts) already pins
+    // ticket = 139. Keep the two in lockstep.
+    assert_eq!(8 + EntryTicketV2::INIT_SPACE, 139);
     assert_eq!(8 + PrizeEpochV2::INIT_SPACE, 109);
     assert_eq!(8 + PrizeClaimV2::INIT_SPACE, 97);
 }
