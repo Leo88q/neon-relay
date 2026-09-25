@@ -35,7 +35,15 @@ fn rpc_lifecycle() {
     // Deliberately no configurable network URL: impossible to target a cluster.
     assert_eq!(std::env::var("NEONRELAY_LOCAL_VALIDATOR").as_deref(), Ok("1"));
     let rpc = RpcClient::new_with_commitment("http://127.0.0.1:8899".to_owned(), CommitmentConfig::confirmed());
-    let admin = Keypair::new(); let player = Keypair::new();
+    // The genesis `--bpf-program` deploy makes the validator's default keypair
+    // the upgrade authority, and the legacy bootstrap only accepts that
+    // authority — so admin must be the keypair the script started the
+    // validator with (NEONRELAY_BOOTSTRAP_KEYPAIR), not an ephemeral key.
+    let bootstrap = std::env::var("NEONRELAY_BOOTSTRAP_KEYPAIR")
+        .expect("NEONRELAY_BOOTSTRAP_KEYPAIR must point at the validator's default keypair");
+    let admin = Keypair::from_bytes(&std::fs::read(&bootstrap).expect("read bootstrap keypair"))
+        .expect("bootstrap keypair parses");
+    let player = Keypair::new();
     for key in [admin.pubkey(), player.pubkey()] {
         let sig = rpc.request_airdrop(&key, 10_000_000_000).unwrap();
         let start = Instant::now();
