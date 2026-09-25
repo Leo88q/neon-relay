@@ -47,21 +47,26 @@ then
   exit 1
 fi
 # Fund the bootstrap key (rent for the program account + the airdrops it
-# will pay for) and deploy the economy ELF as that key.
+# will pay for) and deploy the economy ELF as that key. This CLI version
+# ignores SOLANA_CONFIG for command keypair resolution and has
+# 'solana airdrop' (not request-airdrop), so pass --keypair and --url
+# explicitly on every command.
+URL="http://127.0.0.1:8899"
 BOOT_PUBKEY="$(solana-keygen pubkey "$BOOTSTRAP_KEY" 2>/dev/null | awk '{print $NF}')"
 [ -n "$BOOT_PUBKEY" ] || { echo "could not derive bootstrap pubkey"; exit 1; }
-solana config set --url http://127.0.0.1:8899 >"$TMP/deploy.log" 2>&1
-solana request-airdrop 25 "$BOOT_PUBKEY" >>"$TMP/deploy.log" 2>&1 || {
+solana airdrop 25 "$BOOT_PUBKEY" --url "$URL" --keypair "$BOOTSTRAP_KEY" >>"$TMP/deploy.log" 2>&1 || {
   tail -40 "$TMP/deploy.log"; tail -20 "$TMP/validator.log"; exit 1; }
 for _ in $(seq 1 90); do
-  bal="$(solana balance "$BOOT_PUBKEY" 2>/dev/null | awk '{print $2}')"
+  bal="$(solana balance "$BOOT_PUBKEY" --url "$URL" --keypair "$BOOTSTRAP_KEY" 2>/dev/null | awk '{print $2}')"
   if [ -n "$bal" ] && python3 -c "import sys; sys.exit(0 if float('${bal:-0}') >= 1.0 else 1)"; then
     break
   fi
   sleep 1
 done
-solana balance "$BOOT_PUBKEY" >>"$TMP/deploy.log" 2>&1 || { tail -40 "$TMP/deploy.log"; exit 1; }
+solana balance "$BOOT_PUBKEY" --url "$URL" --keypair "$BOOTSTRAP_KEY" >>"$TMP/deploy.log" 2>&1 || {
+  tail -40 "$TMP/deploy.log"; exit 1; }
 solana program deploy --program-id FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9 \
+  --keypair "$BOOTSTRAP_KEY" --url "$URL" \
   "$ROOT/onchain/target/deploy/neonrelay_economy.so" >>"$TMP/deploy.log" 2>&1 || {
   tail -40 "$TMP/deploy.log"; tail -20 "$TMP/validator.log"; exit 1; }
 RUST_LOG=error cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy \
