@@ -158,10 +158,19 @@ Rules for the next person:
 - **Generated tables beat typed tables.** A number that describes a shipped file belongs in a generator
   with a `--check`, never in a header or a page. If a surface needs prose, key it by name and make a
   missing key a build failure (that is what `BLURBS`/`BLURBS_EN` do).
-- **A determinism gate must compare pixels, not container bytes.** PNG bytes move with the zlib build,
-  JPEG bytes move with the libjpeg build; `same_art()` compares decoded pixels exactly for PNG and by
-  MAE <= 2.5 for JPEG, and prints the diff size when it fails. A gate that says only "DIFF" cannot be
-  debugged from a CI log, and a gate that fails only on the runner teaches people to ignore it.
+- **A determinism gate must compare pixels, not container bytes — and must not compare what the
+  encoder produced at all.** PNG bytes move with the zlib build; worse, `UnsharpMask` and float
+  composites run through SIMD paths that differ per CPU, so a fresh bake of the *same art* on another
+  machine moves a handful of pixels by 1-2 LSB (measured on the runner: 1-314 of 921,600). The gate
+  accepts exactly that shape of noise (`SIMD_PIXEL_DELTA` / `SIMD_CHANGED_FRACTION`) and nothing else:
+  a 1600-pixel patch fails with "1600 of 921600 pixels differ, max 20". JPEG derivatives are compared
+  against the pixels *before* the encoder, so libjpeg's version never enters the verdict.
+- **Make the failure readable before you need it.** The CI step captures the check's output into the
+  job summary and repeating `::warning::` lines, which travel as check-run annotations and can be read
+  through the API when the raw log cannot be fetched. That is how the SIMD rounding above was found
+  after three attempts at guessing. Two traps while doing this: `run:` executes with `set -e`, so a
+  failing pipeline must be captured with `|| status=$?` (otherwise the step dies before reporting),
+  and there is no point printing diagnostics a reader cannot reach.
 - **Third-party names are not user-facing copy.** The map catalogue needed the tileset of every map;
   upstream asset filenames fail `check_branding.sh --release`, so the page prints the licence from
   `data/maps/license.txt` for those rows instead. The gate was right and the copy changed, not the gate.
