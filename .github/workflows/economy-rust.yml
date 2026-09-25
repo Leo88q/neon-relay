@@ -108,8 +108,10 @@ jobs:
         run: |
           LOG="$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
           mkdir -p "$(dirname "$LOG")"
-          cargo test --manifest-path onchain/Cargo.toml --workspace --locked > "$LOG" 2>&1
-          status=$?
+          # NOTE: steps run under `bash -e` — a bare failing command would
+          # abort the script before the diagnostics below ever run.
+          status=0
+          cargo test --manifest-path onchain/Cargo.toml --workspace --locked > "$LOG" 2>&1 || status=$?
           if [ "$status" -ne 0 ]; then
             # Step summary for the user UI + base64 check-run annotations
             # for the agent channel. Plain-text ::error:: lines with raw
