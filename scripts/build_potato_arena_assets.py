@@ -57,6 +57,14 @@ MAX_MAE = 8.0  # mean abs error per channel that stays invisible under the veil
 # different bytes on disk for the same pixels. The gate therefore compares the shipped file with the
 # pre-encode pixels and allows the encoder's own error, which is small and does not differ in kind.
 JPEG_MAE = 6.0
+# The background pipeline is not bit-reproducible across CPUs: `UnsharpMask` and the float composite
+# run through Pillow/numpy code paths that use SIMD when the host has it, so a fresh bake can differ
+# from the shipped file by a single least-significant bit on a handful of pixels (measured on the CI
+# runner: 1-314 pixels of 921,600, max delta 1-2). That is the same art, and a pixel-exact gate would
+# simply be red forever on somebody else's machine. The gate therefore accepts only noise of that
+# size and shape; anything a person could see still fails.
+SIMD_PIXEL_DELTA = 2          # largest per-channel difference that can only be rounding
+SIMD_CHANGED_FRACTION = 0.002  # and it may touch at most a fifth of a percent of the pixels
 CYAN, MAGENTA, VIOLET, WHITE, DIM = ui.CYAN, ui.MAGENTA, ui.VIOLET, ui.WHITE, ui.DIM
 
 # Master (assets-src/arena) -> shipped name. Keys are the approved Arena masters.
@@ -470,8 +478,10 @@ def same_art(generated: Path, shipped: Path) -> bool:
     by another Pillow build can legitimately come out with different bytes for identical pixels.
     The gate is about the art, so:
 
-      * PNG  - decoded pixels must be identical (RGBA compare, no tolerance);
-      * JPEG - libjpeg is lossy per build, so tolerate an invisible mean error (<= 2.5).
+      * PNG  - decoded pixels must be identical, except for the SIMD rounding described on
+        SIMD_PIXEL_DELTA (a fresh bake on another CPU can move a few pixels by 1-2 LSB);
+      * JPEG - never compared against a fresh *encode* (libjpeg differs per build beyond an invisible
+        amount): `--check` compares the shipped file with the pixels before the encoder, with JPEG_MAE.
 
     A mismatch prints what actually differs, because a determinism gate that can only say "DIFF"
     cannot be debugged from a CI log.
@@ -487,16 +497,15 @@ def same_art(generated: Path, shipped: Path) -> bool:
         return False
     diff = np.abs(a - b)
     worst = int(diff.max())
-    changed = int((diff.any(axis=2)).sum())
-    if shipped.suffix.lower() in (".jpg", ".jpeg"):
-        err = float(diff.astype(np.int64).sum()) / diff.size
-        if err <= 2.5:
-            print(f"  ~ re-encoded {shipped.name}: pixels match within MAE {err:.2f} "
-                  f"(encoder differs, art does not)")
-            return True
-    else:
-        err = float(diff[..., :3].astype(np.int64).sum()) / (diff.shape[0] * diff.shape[1] * 3)
-    print(f"  DIFF {rel(shipped)}: {changed} of {a.shape[0] * a.shape[1]} pixels differ, "
+    total = a.shape[0] * a.shape[1]
+    changed = int((diff[..., :3].any(axis=2)).sum())
+    err = float(diff[..., :3].astype(np.int64).sum()) / (total * 3)
+    if worst <= SIMD_PIXEL_DELTA and changed <= total * SIMD_CHANGED_FRACTION:
+        print(f"  ok   {rel(shipped)}  same art within SIMD rounding "
+              f"({changed} px differ by <= {worst}, MAE {err:.4f}; "
+              f"pillow {Image.__version__}, python {sys.version.split()[0]}, zlib {zlib.ZLIB_VERSION})")
+        return True
+    print(f"  DIFF {rel(shipped)}: {changed} of {total} pixels differ, "
           f"MAE {err:.3f}, max {worst} "
           f"(pillow {Image.__version__}, python {sys.version.split()[0]}, zlib {zlib.ZLIB_VERSION})")
     return False
