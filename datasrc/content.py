@@ -289,7 +289,7 @@ set_tee = SpriteSet("tee", image_null, 8, 4)
 set_emoticons = SpriteSet("emoticons", image_emoticons, 4, 4)
 set_speedup_arrow = SpriteSet("speedup_arrow", image_speedup_arrow, 1, 1)
 set_guibuttons = SpriteSet("guibuttons", image_guibuttons, 12, 4)
-set_guiicons = SpriteSet("guiicons", image_guiicons, 12, 2)
+set_guiicons = SpriteSet("guiicons", image_guiicons, 12, 3)
 set_strongweak = SpriteSet("strongweak", image_strongweak, 3, 1)
 set_hud = SpriteSet("hud", image_hud, 16, 16)
 set_extras = SpriteSet("extras", image_extras, 16, 16)
@@ -430,6 +430,11 @@ container.sprites.Add(Sprite("guibutton_hover", set_guibuttons, 8, 0, 4, 4))
 # single icon is one cell (x, y, 1, 1). The rects used to be 4x2 cells — correct for the old
 # 48x16 upstream sheet, a four-icon collage on the current one. Cells match GUI_ICON_CELLS in
 # the generator; scripts/test_ui_sheet_grids.py keeps the two in sync.
+# White glyphs so the caller can tint them (chat friend marker, spectator multi-view marks).
+container.sprites.Add(Sprite("guiicon_heart", set_guiicons, 9, 0, 1, 1))
+container.sprites.Add(Sprite("guiicon_star", set_guiicons, 10, 0, 1, 1))
+container.sprites.Add(Sprite("guiicon_dot_filled", set_guiicons, 0, 2, 1, 1))
+container.sprites.Add(Sprite("guiicon_dot_empty", set_guiicons, 1, 2, 1, 1))
 container.sprites.Add(Sprite("guiicon_mute", set_guiicons, 5, 0, 1, 1))
 container.sprites.Add(Sprite("guiicon_emoticon_mute", set_guiicons, 2, 1, 1, 1))
 container.sprites.Add(Sprite("guiicon_friend", set_guiicons, 1, 0, 1, 1))

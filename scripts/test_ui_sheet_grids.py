@@ -79,7 +79,17 @@ class GuiIcons(unittest.TestCase):
                          "gui_icons cell size must equal the generator's 32px pitch")
 
     def test_engine_sprites_point_at_their_own_cell(self):
-        mapping = {"guiicon_mute": "mute", "guiicon_emoticon_mute": "emoticon_mute", "guiicon_friend": "friend"}
+        mapping = {
+            "guiicon_mute": "mute",
+            "guiicon_emoticon_mute": "emoticon_mute",
+            "guiicon_friend": "friend",
+            # Drawn tinted by CChat::OnRender / CSpectator::RenderSpectatorList, so they must stay
+            # single-cell and monochrome.
+            "guiicon_heart": "heart",
+            "guiicon_star": "star",
+            "guiicon_dot_filled": "dot_filled",
+            "guiicon_dot_empty": "dot_empty",
+        }
         for sprite, icon in mapping.items():
             got = parse_sprite(self.text, sprite)
             want = GUI_ICON_CELLS[icon]
@@ -87,6 +97,17 @@ class GuiIcons(unittest.TestCase):
             self.assertEqual((got["x"], got["y"]), want, f"{sprite} must select cell {want} = GUI_ICON_NAMES['{icon}']")
             self.assertEqual((got["w"], got["h"]), (1, 1),
                              f"{sprite} spans {got['w']}x{got['h']} cells: that is a collage, not an icon")
+
+    def test_tintable_cells_are_white(self):
+        """A tinted sprite multiplies its texel, so a pre-colored glyph would tint to mud."""
+        with Image.open(ROOT / "data" / "gui_icons.png") as im:
+            px = np.asarray(im.convert("RGBA"))
+        for icon in ("heart", "star", "dot_filled", "dot_empty"):
+            col, row = GUI_ICON_CELLS[icon]
+            cell = px[row * GUI_ICON_CELL:(row + 1) * GUI_ICON_CELL, col * GUI_ICON_CELL:(col + 1) * GUI_ICON_CELL]
+            solid = cell[cell[..., 3] > 200]
+            self.assertGreater(len(solid), 0, f"{icon} has no opaque body to tint")
+            self.assertTrue(np.all(solid[:, :3] > 200), f"{icon} is not monochrome white: {tuple(solid[:, :3].max(0))}")
 
     def test_named_cells_have_ink(self):
         path = ROOT / "data" / "gui_icons.png"

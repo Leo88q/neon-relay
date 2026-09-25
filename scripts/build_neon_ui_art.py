@@ -6,7 +6,7 @@ deterministic Neon Relay originals in the exact same files and grids:
 
   data/emoticons.png        512x512, 128px cells - emote glyphs (4x4 grid in content.py)
   data/particles.png        512x512, 64px cells - potato fragments / dust
-  data/gui_icons.png        384x64,  32px cells - interface line icons (12x2 grid)
+  data/gui_icons.png        384x96,  32px cells - interface line icons (12x3 grid)
   data/hud.png              512x512, 32px cells - HUD glyphs (rows 0-7)
   data/blob.png             512x512 - menu glow blob
   data/arrow.png            48x50  - list arrow chevron
@@ -312,6 +312,14 @@ def icon_glyph(d, b, name, color):
             glow_dot(d, cx + math.cos(a) * r * 0.42, cy + math.sin(a) * r * 0.42, r * 0.14, cc, steps=3)
     elif name == "music":
         symbol(d, (cx - r, cy - r, cx + r, cy + r), "note", color)
+    elif name in ("dot_filled", "dot_empty"):
+        # Tinted at draw time by CChat / CSpectator, so these stay monochrome white: a cyan glyph
+        # multiplied by red would read as neither. Same reason "heart" lives on the white row.
+        box = [cx - r * 0.62, cy - r * 0.62, cx + r * 0.62, cy + r * 0.62]
+        if name == "dot_filled":
+            d.ellipse(box, fill=WHITE + (245,))
+        else:
+            circle(d, box, WHITE + (245,), max(2, int(r * 0.26)))
     elif name == "bolt":
         symbol(d, (cx - r, cy - r, cx + r, cy + r), "bolt", color)
 
@@ -321,8 +329,10 @@ def icon_glyph(d, b, name, color):
 # scripts/test_ui_sheet_grids.py cross-checks, so renaming or reordering here without
 # updating content.py fails the test instead of shipping a collage.
 GUI_ICON_NAMES = ["gear", "friend", "people", "globe", "flag", "mute", "check", "cross", "arrow", "heart", "star", "shield",
-                  "key", "lock", "emoticon_mute", "eye", "monitor", "coin", "trophy", "info", "grid", "wrench", "palette", "music"]
-GUI_ICON_COLS, GUI_ICON_ROWS, GUI_ICON_CELL = 12, 2, 32
+                  "key", "lock", "emoticon_mute", "eye", "monitor", "coin", "trophy", "info", "grid", "wrench", "palette", "music",
+                  # Row 2: glyphs tinted per draw call (chat friend marker, spectator multi-view marks).
+                  "dot_filled", "dot_empty"]
+GUI_ICON_COLS, GUI_ICON_ROWS, GUI_ICON_CELL = 12, 3, 32
 GUI_ICON_CELLS = {name: (i % GUI_ICON_COLS, i // GUI_ICON_COLS) for i, name in enumerate(GUI_ICON_NAMES)}
 
 
@@ -332,7 +342,9 @@ def build_gui_icons():
     d = ImageDraw.Draw(img)
     for i, name in enumerate(GUI_ICON_NAMES):
         col, row = i % GUI_ICON_COLS, i // GUI_ICON_COLS
-        color = WHITE if row == 0 else CYAN
+        # Row 0 and the explicitly monochrome marks are white so callers can tint them; row 1 is
+        # already pre-tinted cyan and is only ever drawn as-is.
+        color = WHITE if (row == 0 or name in ("heart", "star", "dot_filled", "dot_empty")) else CYAN
         pad = GUI_ICON_CELL * 0.155
         b = (col * GUI_ICON_CELL * SS + pad * SS, row * GUI_ICON_CELL * SS + pad * SS,
              (col + 1) * GUI_ICON_CELL * SS - pad * SS, (row + 1) * GUI_ICON_CELL * SS - pad * SS)

@@ -3,7 +3,8 @@
 
 Takes the approved Arena masters and produces the shipped, style-unified UI art:
 
-  assets-src/arena/*.png        -> data/ui/backgrounds/*.png   (1600x900, quiet-zone enforced)
+  assets-src/arena/*.png        -> data/ui/backgrounds/*.png   (1280x720, quiet-zone enforced)
+  assets-src/{arena,landing}    -> design/landing/*.jpg        (web derivatives, same recipe)
   data/game.png (weapon rects)  -> data/ui/weapons/weapons_6_128.png  (6x128 menu strip)
                                    assets-src/weapons/weapons_ui_all.png (2x3 master collage)
   (procedural, Neon Drive tokens) -> data/ui/icons/gamification_24.png (8x3 @64px)
@@ -36,9 +37,16 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import build_neon_ui_art as ui  # noqa: E402  tokens + drawing primitives = single style source
 
 SRC_ARENA = ROOT / "assets-src" / "arena"
+SRC_ARSENAL = ROOT / "assets-src" / "arsenal"
+SRC_LANDING = ROOT / "assets-src" / "landing"
 OUT_BG = ROOT / "data" / "ui" / "backgrounds"
 OUT_ICONS = ROOT / "data" / "ui" / "icons"
 OUT_WEAPONS = ROOT / "data" / "ui" / "weapons"
+OUT_ARSENAL = ROOT / "data" / "ui" / "arsenal"
+
+# Armoury cards: one cell per weapon, 3 columns x 2 rows, cell 384x256. The client selects a cell
+# with the same QuadsSetSubset math as the icon atlas (see CMenus::RenderWeaponCard).
+CARD_W, CARD_H, CARD_COLS = 384, 256, 3
 
 BG_W, BG_H = 1280, 720
 QUIET_X, QUIET_Y = 0.45, 0.86  # left fraction / first row of the bottom band
@@ -56,6 +64,7 @@ BACKGROUNDS = [
     ("bg_arena_control.png", "arena_control.png"),     # Settings
     ("bg_ingame_combat.png", "arena_combat.png"),      # connected / in-game menu
     ("bg_arena_popup.png", "arena_popup.png"),         # fullscreen popups
+    ("bg_arena_armory.png", "arena_armory.png"),        # Arsenal (six empty display niches)
 ]
 
 # Same rects as scripts/build_potato_weapon_sheet.py (data/game.png is 1024x512, 32px grid).
@@ -68,6 +77,8 @@ WEAPON_RECTS = {
     "laser": (64, 384, 224, 96),
 }
 WEAPON_ORDER = ["hammer", "pistol", "shotgun", "grenade", "laser", "ninja"]
+# Master (assets-src/arsenal) per weapon, in WEAPON_ORDER. Same six weapons as the sprite strip.
+ARSENAL_MASTERS = {name: f"weapon_{name}.png" for name in WEAPON_ORDER}
 
 ICON_NAMES = [
     "level_ring", "xp_bolt", "streak_flame", "quest_target", "daily_sun", "chest_prize", "trophy", "medal",
@@ -146,6 +157,17 @@ def bake_backgrounds(max_kb: int, report: list[str], out_bg: Path = OUT_BG) -> N
             f"{flag} {dst_name:22} {BG_W}x{BG_H} L{before_mean:5.1f}->{after_mean:4.1f} sd{after_sd:4.1f} "
             f"quiet L{quiet:4.1f} band L{band:4.1f}  {size / 1024:6.0f} KiB  quant-MAE {err:.2f}"
         )
+
+
+def cover(sprite: Image.Image, box: tuple[int, int]) -> Image.Image:
+    """Scale so the master fills the box, then center-crop. Uniform framing across the six cards."""
+    bw, bh = box
+    w, h = sprite.size
+    s = max(bw / w, bh / h)
+    scaled = sprite.resize((round(w * s), round(h * s)), Image.LANCZOS)
+    x = (scaled.width - bw) // 2
+    y = (scaled.height - bh) // 2
+    return scaled.crop((x, y, x + bw, y + bh))
 
 
 def contain(sprite: Image.Image, box: tuple[int, int]) -> Image.Image:
@@ -320,6 +342,85 @@ def icon_glyph(d: ImageDraw.ImageDraw, b: tuple[float, float, float, float], nam
         raise ValueError(f"unknown icon {name}")
 
 
+def bake_arsenal(report: list[str], out_arsenal: Path = OUT_ARSENAL, write_preview: bool = True,
+                 max_kb: int = 420) -> None:
+    """Six weapon cards into one atlas, plus a contact sheet for review."""
+    out_arsenal.mkdir(parents=True, exist_ok=True)
+    sheet = Image.new("RGBA", (CARD_COLS * CARD_W, 2 * CARD_H), NIGHT_0 + (255,))
+    for i, name in enumerate(WEAPON_ORDER):
+        src = SRC_ARSENAL / ARSENAL_MASTERS[name]
+        if not src.exists():
+            report.append(f"MISSING master: {rel(src)}")
+            continue
+        card = cover(Image.open(src).convert("RGB"), (CARD_W, CARD_H))
+        # The alcove glow is the brightest thing in most masters and would fight the card label;
+        # press the outer 8% and the bottom 22% toward night-0 so text stays >=4.5:1.
+        a = np.asarray(card, dtype=np.float64)
+        fy = np.clip((np.arange(CARD_H) - int(CARD_H * 0.78)) / max(1.0, CARD_H * 0.22), 0.0, 1.0) ** 1.2
+        fx = np.clip((np.arange(CARD_W) - int(CARD_W * 0.92)) / max(1.0, CARD_W * 0.08), 0.0, 1.0)
+        weight = 1.0 - np.maximum(fy[:, None], fx[None, :]) * 0.72
+        a = a * weight[..., None] + np.asarray(NIGHT_0, dtype=np.float64)[None, None, :] * (1.0 - weight[..., None])
+        card = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB")
+        col, row = i % CARD_COLS, i // CARD_COLS
+        sheet.paste(card, (col * CARD_W, row * CARD_H))
+    # Opaque night-0 backing, so the same weight gate as the backgrounds applies: quantized RGB PNG
+    # under max_kb, never at the cost of visible banding (save_small refuses a bad candidate).
+    dest = out_arsenal / "cards_6.png"
+    rgb = sheet.convert("RGB")
+    size, err = save_small(rgb, dest, max_kb)
+    mean, sd = stat(rgb)
+    flag = "OK " if err <= MAX_MAE else "WARN"
+    report.append(f"{flag} {rel(dest)}  {rgb.size[0]}x{rgb.size[1]}  {size / 1024:.0f} KiB  "
+                  f"6 cards {CARD_W}x{CARD_H}  L{mean:5.1f} sd{sd:4.1f}  quant-MAE {err:.2f}")
+    if not write_preview:
+        return
+    out = ROOT / "design" / "potato-arena" / "arsenal_preview.jpg"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    sheet.convert("RGB").save(out, quality=90)
+    report.append(f"OK  {rel(out)}  review sheet")
+
+
+# Landing images are web derivatives of the same masters, so the page cannot drift from the client's
+# art. Sizes are fixed by the layout (hero = 7:3 band, armory = the page's card section, vault = the
+# honest-money block); everything is deterministic, so `--check` byte-compares these too.
+LANDING_OUT = ROOT / "design" / "landing"
+LANDING_IMAGES = [
+    # source master, shipped file, target size (w, h), dark side that the text sits on
+    (SRC_ARENA / "bg_arena_armory.png", "hero.jpg", (1680, 713), "right"),
+    (SRC_ARENA / "bg_arena_armory.png", "armory.jpg", (1280, 720), "bottom"),
+    (SRC_LANDING / "vault_prizes.png", "vault.jpg", (1100, 600), "bottom"),
+]
+
+
+def bake_landing(report: list[str], out_dir: Path = LANDING_OUT, max_kb: int = 220) -> None:
+    """Resize + sharpen + press one edge toward night-0 so white text keeps its contrast."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for src, dst, size, side in LANDING_IMAGES:
+        dest = out_dir / dst
+        if not src.exists():
+            report.append(f"MISSING master: {rel(src)}")
+            continue
+        img = cover(Image.open(src).convert("RGB"), size)
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=110, threshold=2))
+        w, h = img.size
+        a = np.asarray(img, dtype=np.float64)
+        night = np.asarray(NIGHT_0, dtype=np.float64)
+        if side == "right":
+            # text column sits on the left, so only the far 26% is pressed (the hero copy is on the left)
+            f = np.clip((np.arange(w) - int(w * 0.74)) / max(1.0, w * 0.26), 0.0, 1.0) ** 1.3
+            weight = 1.0 - f[None, :, None] * 0.66
+        else:
+            f = np.clip((np.arange(h) - int(h * 0.72)) / max(1.0, h * 0.28), 0.0, 1.0) ** 1.2
+            weight = 1.0 - f[:, None, None] * 0.62
+        a = a * weight + night * (1.0 - weight)
+        img = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB")
+        img.save(dest, format="JPEG", quality=82, optimize=True, progressive=False, subsampling=1)
+        size_kb = dest.stat().st_size / 1024
+        mean, sd = stat(img)
+        flag = "OK " if size_kb <= max_kb else "WARN"
+        report.append(f"{flag} {rel(dest)}  {w}x{h}  {size_kb:5.0f} KiB  L{mean:5.1f} sd{sd:4.1f}")
+
+
 def build_icon_atlas() -> Image.Image:
     cols, rows, cell = 8, 3, 64
     ss = ui.SS
@@ -388,15 +489,20 @@ def main() -> int:
 
     if args.check:
         tmp = Path(tempfile.mkdtemp(prefix="potato-arena-"))
-        bg, icons, weapons = tmp / "bg", tmp / "icons", tmp / "weapons"
+        bg, icons, weapons, arsenal = tmp / "bg", tmp / "icons", tmp / "weapons", tmp / "arsenal"
         report: list[str] = []
         bake_backgrounds(args.max_kb, report, bg)
         bake_weapons(report, weapons, write_master=False)
+        bake_arsenal(report, arsenal, write_preview=False)
         bake_icons(report, icons, write_preview=False)
-        shipped = sorted(OUT_BG.glob("*.png")) + sorted(OUT_ICONS.glob("*.png")) + sorted(OUT_WEAPONS.glob("*.png"))
+        landing = tmp / "landing"
+        bake_landing(report, landing)
+        shipped = (sorted(OUT_BG.glob("*.png")) + sorted(OUT_ICONS.glob("*.png"))
+                   + sorted(OUT_WEAPONS.glob("*.png")) + sorted(OUT_ARSENAL.glob("*.png")))
         ok = bool(report and not any(r.startswith("MISSING") for r in report))
-        for p in shipped:
-            gen = {"backgrounds": bg, "icons": icons, "weapons": weapons}[p.parent.name] / p.name
+        for p in shipped + sorted(LANDING_OUT.glob("*.jpg")):
+            gen = {"backgrounds": bg, "icons": icons, "weapons": weapons, "arsenal": arsenal,
+                   "landing": landing}[p.parent.name] / p.name
             same = gen.exists() and gen.read_bytes() == p.read_bytes()
             ok = ok and same
             print(("  ok   " if same else "  DIFF ") + str(p.relative_to(ROOT)))
@@ -406,7 +512,9 @@ def main() -> int:
     report = []
     bake_backgrounds(args.max_kb, report)
     bake_weapons(report)
+    bake_arsenal(report)
     bake_icons(report)
+    bake_landing(report)
     preview_backgrounds(report)
     for line in report:
         print(line)
