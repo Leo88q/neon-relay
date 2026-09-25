@@ -18,6 +18,7 @@
     <nav>
       <a href="#arsenal">Arsenal</a>
       <a href="#maps">Maps</a>
+      <a href="#features">Features</a>
       <a href="#progress">Progress</a>
       <a href="#craft">How it is drawn</a>
       <a href="#faq">FAQ</a>
@@ -234,6 +235,58 @@
             <td>${m.solid}</td><td>${m.death}</td><td>${m.nohook}</td><td>${m.checkpoints}</td>
             <td>${m.pickups}</td><td>${m.tileset || m.license || 'base game'}</td></tr>`).join('');
     </script>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <span class="eyebrow">features</span>
+    <h2>Ten reasons people play this</h2>
+    <p class="lede">Every line is something the client and the server actually do — not a roadmap.
+      The numbers are pinned by a test: <code>scripts/test_landing_pages.py</code> checks them against the
+      catalogues.</p>
+    <div class="grid g3">
+      <div class="card"><span class="k">physics</span>
+        <h3>A hook that decides fights</h3>
+        <p class="note">Movement is the engine's own physics: hook, boost, grenade bounce. Your own blast
+          pushes you exactly like an enemy one, which is how people gain speed and reach ledges.</p></div>
+      <div class="card"><span class="k">the mode</span>
+        <h3>Burn-out to a limit</h3>
+        <p class="note">Score limit or time limit; if the lead is shared, the round goes to sudden death.
+          10 HP and 10 armor, 500 ms respawn, no long pauses.</p></div>
+      <div class="card"><span class="k">arsenal</span>
+        <h3>6 weapons = 6 icons</h3>
+        <p class="note">The HUD icon is the same sprite the weapon uses in combat, and the armoury card is
+          cut from one atlas. Menu and game cannot disagree about how a gun looks.</p></div>
+      <div class="card"><span class="k">drops</span>
+        <h3>Pickups every 15 s</h3>
+        <p class="note">The controller only lets shotgun, grenade and laser into the world: loot is
+          predictable, and nothing buffs you out of nowhere.</p></div>
+      <div class="card"><span class="k">maps</span>
+        <h3>27 maps, each with a blueprint</h3>
+        <p class="note">Every preview is a diagram of that map's own data: rock, death, no-hook, checkpoints,
+          spawns. You can see what a map punishes before you join it.</p></div>
+      <div class="card"><span class="k">skins</span>
+        <h3>10 potatoes</h3>
+        <p class="note">A character catalogue with rarity and lore; skills are story only, with no bonus to
+          physics or damage. Try-on is free and needs no wallet.</p></div>
+      <div class="card"><span class="k">progress</span>
+        <h3>3 quests a day</h3>
+        <p class="note">Levels up to 30, a day streak, three quests from a pool of 12 and XP for practice,
+          try-ons and joining a server. All of it local, in the client config.</p></div>
+      <div class="card"><span class="k">wallet</span>
+        <h3>Optional by design</h3>
+        <p class="note">Warm-up, races, try-on and progression work without a wallet. The wallet only shows
+          what already belongs to you; there are no purchases in the client.</p></div>
+      <div class="card"><span class="k">craft</span>
+        <h3>One style everywhere</h3>
+        <p class="note">Nine backdrops of one room, one icon set and one colour table
+          (<code>neon_style.h</code>) — from the Play button to the finish banner.</p></div>
+      <div class="card"><span class="k">honesty</span>
+        <h3>Zero earning promises</h3>
+        <p class="note">No "earn while you play", paid race entry stays off until the server side is
+          configured, and "verified" is stamped by a match signature, not by the client.</p></div>
+    </div>
   </div>
 </section>
 

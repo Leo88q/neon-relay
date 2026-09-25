@@ -96,6 +96,45 @@ class Numbers(unittest.TestCase):
             self.assertIn("window.NEON_MAPS", text, f"{f}: the table is not rendered")
 
 
+class Features(unittest.TestCase):
+    """The "features" section is a promise list: every number in it must come from a catalogue."""
+
+    def test_section_exists_in_both_languages(self):
+        for f in FILES:
+            text = read(f)
+            self.assertIn('<section id="features">', text, f"{f}: no features section")
+            self.assertIn('<a href="#features">', text, f"{f}: the section is not reachable from the nav")
+            self.assertEqual(text.count('<div class="grid g3">'), 2,
+                             f"{f}: expected exactly two feature grids (craft + features)")
+
+    def test_numbers_match_their_sources(self):
+        import json
+        skins = json.loads((ROOT / "data" / "skins" / "potato_catalog.json").read_text(encoding="utf-8"))["skins"]
+        weapons = len(re.findall(r'\{"\w+",.*?\d+, \d+, -?\d+, (?:true|false)\}', HEADER, re.S))
+        maps = len(re.findall(r'\{"[^"]+", "[^"]+", \d+, \d+, \d+,', MAPGEN))
+        self.assertEqual((len(skins), weapons, maps), (10, 6, 27))
+        for f in FILES:
+            text = read(f)
+            for value, what in ((len(skins), "skins"), (weapons, "weapons"), (maps, "maps")):
+                self.assertIn(str(value), text, f"{f}: the features section does not state the real {what} count")
+            self.assertIn("30", text, f"{f}: the level cap is not stated")
+            self.assertIn("12", text, f"{f}: the quest pool size is not stated")
+
+    def test_money_words_in_the_features_section_are_negated(self):
+        """The section may *deny* earning money; it must never claim it in passing."""
+        negatives = ("нет", "не ", "никак", "выключ", "no ", "not ", "never", "without", "zero")
+        for f in FILES:
+            text = read(f).lower()
+            start = text.index('<section id="features">')
+            section = text[start:text.index("</section>", start)]
+            for stem in ("зарабат", "выплат", "доход", "earn", "payout", "profit"):
+                for at in [i for i in range(len(section)) if section.startswith(stem, i)]:
+                    window = section[max(0, at - 160):at + 160]
+                    self.assertTrue(any(n in window for n in negatives),
+                                    f"{f}: '{stem}' in the features section without a negation: "
+                                    f"…{window.strip()[:120]}…")
+
+
 class Honesty(unittest.TestCase):
     """Repo rule: local-only progression, no payout promises, no money-moving button as a fact."""
 

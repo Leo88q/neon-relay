@@ -168,3 +168,21 @@ Rules for the next person:
 - **Credits follow the pixels.** As soon as the sheet contained diagrams of other people's CC-BY-SA
   maps, the manifest row stopped claiming the whole file as original work. Deriving a new raster does
   not reset somebody else's attribution.
+
+## Stage 24 — one page frame, and numbers that belong to a test (2026-09-25)
+
+Two habits were still alive after Stage 22. Page titles were typed by hand (28/28/24/28 px) with the
+tick-and-note treatment only on the two newest pages, and panel colours were literals — including a
+"brand cyan" on the Play button that was a *different* cyan (#0DE6EB) from the token #4DE3F7. Neither
+shows up in a diff review, and both make a menu look like it was assembled from three drafts.
+
+- `RenderSectionHeader` is now the only page title in the menu (Races, Wallet, Characters, Leaders,
+  Arsenal, Maps), and the Races page carries `RenderSectionBar` because Races/Maps/Arsenal are one
+  three-part menu rather than two pages plus an island.
+- `NeonStyle::PANEL_FILL / PANEL_BORDER / PANEL_ACCENT / TEXT_SOFT / TEXT_FAINT` replace the repeated
+  panel triple; `test_menu_contract.py` fails on any `ColorRGBA(0.x` left in those pages (a fully
+  transparent fill is allowed, since it is not a colour choice).
+- The landing gained a "features" section, and the numbers in it are asserted against
+  `data/skins/potato_catalog.json`, `neon_arsenal.h` and `neon_maps_gen.h`. Rule of thumb for marketing
+  copy in this repo: if a sentence contains a number, a test must be able to recompute it, and if it
+  mentions money, a negation has to sit in the same sentence.
