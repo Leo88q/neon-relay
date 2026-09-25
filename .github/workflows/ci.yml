@@ -59,12 +59,14 @@ jobs:
       - name: Generated UI art matches the generator (determinism)
         run: python3 scripts/build_neon_ui_art.py --check
       - name: Potato Arena backdrops / icon atlas match the bake (determinism)
-        # The check explains itself (which pixels differ, on which versions); pipe it into the job
-        # summary so a CI-only mismatch can actually be read back from the run page.
+        # The check explains itself (which pixels differ, on which versions). Capture it instead of
+        # piping it: `run:` executes with `set -e`, so a failing pipeline would abort the step before
+        # the diagnosis is reported. The report goes to the job summary and, line by line, to
+        # check-run annotations — both are readable from the API when the raw log is not.
         run: |
-          set -o pipefail
-          python3 scripts/build_potato_arena_assets.py --check 2>&1 | tee /tmp/bake-check.log
-          status=${PIPESTATUS[0]}
+          status=0
+          python3 scripts/build_potato_arena_assets.py --check > /tmp/bake-check.log 2>&1 || status=$?
+          cat /tmp/bake-check.log
           if [ "$status" -ne 0 ]; then
             {
               echo "### Bake determinism mismatch"
@@ -72,15 +74,13 @@ jobs:
               cat /tmp/bake-check.log
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            # Annotations travel with the check run, so the diagnosis can be read from the API even
-            # when the raw job log is not reachable.
             while IFS= read -r line; do
               case "$line" in
-                *DIFF*|*MISSING*|*environment*|*Error*|*error*) echo "::warning::$line" ;;
+                *DIFF*|*MISSING*|*environment*|*Traceback*|*Error*|*error*) echo "::warning::$line" ;;
               esac
             done < /tmp/bake-check.log
+            exit "$status"
           fi
-          exit "$status"
       - name: Map blueprints match the map builders (determinism)
         run: python3 scripts/build_map_previews.py --check
       - name: Asset manifest validation (coverage, hashes, license texts)
