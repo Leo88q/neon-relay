@@ -435,6 +435,28 @@ def build_icon_atlas() -> Image.Image:
     return img.resize((cols * cell, rows * cell), Image.LANCZOS)
 
 
+def same_art(generated: Path, shipped: Path) -> bool:
+    """PNG atlases must be byte-identical; JPEG derivatives only have to survive the encoder.
+
+    A quantized PNG is zlib + a fixed palette, so byte equality is a fair determinism test. A JPEG is
+    not: libjpeg-turbo on the runner may emit different bytes for the same pixels, which would make the
+    gate lie about the art. So for `.jpg` we compare decoded pixels and accept a mean error that stays
+    invisible (the same tolerance the backgrounds use).
+    """
+    if generated.read_bytes() == shipped.read_bytes():
+        return True
+    if shipped.suffix.lower() not in (".jpg", ".jpeg"):
+        return False
+    a = np.asarray(Image.open(generated).convert("RGB"), dtype=np.float64)
+    b = np.asarray(Image.open(shipped).convert("RGB"), dtype=np.float64)
+    if a.shape != b.shape:
+        print(f"  size differs: {generated.name} {a.shape} vs {b.shape}")
+        return False
+    err = float(np.abs(a - b).mean())
+    print(f"  ~ re-encoded {shipped.name}: pixels match within MAE {err:.2f} (encoder differs, art does not)")
+    return err <= 2.5
+
+
 def rel(path: Path) -> str:
     try:
         return str(path.relative_to(ROOT))
@@ -503,7 +525,7 @@ def main() -> int:
         for p in shipped + sorted(LANDING_OUT.glob("*.jpg")):
             gen = {"backgrounds": bg, "icons": icons, "weapons": weapons, "arsenal": arsenal,
                    "landing": landing}[p.parent.name] / p.name
-            same = gen.exists() and gen.read_bytes() == p.read_bytes()
+            same = gen.exists() and same_art(gen, p)
             ok = ok and same
             print(("  ok   " if same else "  DIFF ") + str(p.relative_to(ROOT)))
         print("potato-arena check: " + ("PASS" if ok else "FAIL"))

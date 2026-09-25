@@ -59,17 +59,13 @@ def main():
                 tool('xdotool','windowfocus','--sync',window)
                 time.sleep(3)
                 tool('import','-window',window,str(out/'warmup-lobby-card.png'))
-                # Real UI units: screen.h=600, outer margin=10, tab bar=44,
-                # desktop content margin=24, title=42, currency tabs=44,
-                # gap=12, card=164, padding=12, button=40.
-                button_y=round((10+44+24+42+44+12+164-12-20)*800/600)
-                def click():
+                def move_then_click(px,py):
                     # The game uses a virtual relative mouse, not the OS cursor.
-                    # Clamp that cursor to the top-left, then move in UI pixels.
+                    # Clamp that cursor to the top-left, then move in window pixels.
                     for _ in range(5):
                         tool('xdotool','mousemove_relative','--','-300','-300')
                         time.sleep(.1)
-                    dx,dy=640,button_y
+                    dx,dy=px,py
                     while dx or dy:
                         sx,sy=min(dx,80),min(dy,80)
                         tool('xdotool','mousemove_relative','--',str(sx),str(sy))
@@ -81,8 +77,31 @@ def main():
                     tool('xdotool','mousedown','1')
                     time.sleep(.2)
                     tool('xdotool','mouseup','1')
-                click()
-                wait(lambda:'launch requested course=warmup' in text(),5,'card click reaches launch handler')
+                # Measure the launch button instead of recomputing the whole vertical stack
+                # (margin, tab bar, title, currency tabs, gap, card, padding) in numbers that rot
+                # whenever the lobby gains a row: any click while the card is visible makes the
+                # client log its real rect in UI units, which we then scale 600 -> 800 window px.
+                def click():
+                    move_then_click(button_px[0],button_px[1])
+                button_px=(640,400)
+                move_then_click(6,794)  # dead corner: no button there, only the log we want
+                def measured():
+                    import re as _re
+                    matches=_re.findall(r'practice-ui: click=\([^)]*\) button=\((-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)\)',text())
+                    if not matches:return False
+                    x,y,w,h=(float(v) for v in matches[-1])
+                    assert w>40 and h>10,f'launch button rect makes no sense: {(x,y,w,h)}'
+                    nonlocal button_px
+                    button_px=(round((x+w/2)*800/600),round((y+h/2)*800/600))
+                    return True
+                wait(measured,5,'client logs the launch button rect')
+                def launched():return 'launch requested course=warmup' in text()
+                probe_deadline=time.monotonic()+1  # the measuring click may itself have hit the button
+                while not launched() and time.monotonic()<probe_deadline:
+                    time.sleep(.1)
+                if not launched():
+                    click()
+                    wait(launched,5,'card click reaches launch handler')
                 time.sleep(1)
                 assert 'verified course=warmup' not in text()
                 children=Path(f'/proc/{proc.pid}/task/{proc.pid}/children').read_text().strip()

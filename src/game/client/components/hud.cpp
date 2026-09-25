@@ -238,27 +238,12 @@ void CHud::OnInit()
 	PreparePlayerStateQuads();
 
 	Graphics()->QuadContainerUpload(m_HudQuadContainerIndex);
-
-	// YIELDBLOOM HUD – load industrial frames for live in-game panels
-	const char *apHudNames[] = {
-		"ui/yieldbloom/bottom_action_bar.png", "ui/yieldbloom/top_header_bar.png", "ui/yieldbloom/progress_bar.png",
-		"ui/yieldbloom/frame_small_card.png", "ui/yieldbloom/character_card_frame.png", "ui/yieldbloom/rack_unit.png",
-		"ui/yieldbloom/panel_races.png", "ui/yieldbloom/left_menu_panel.png"};
-	for(size_t i = 0; i < std::size(apHudNames) && i < m_aYieldBloomHud.size(); ++i)
-	{
-		CImageInfo Info;
-		if(Graphics()->LoadPng(Info, apHudNames[i], IStorage::TYPE_ALL))
-		{
-			m_aYieldBloomHud[i] = Graphics()->LoadTextureRaw(Info, 0, apHudNames[i]);
-		}
-	}
 }
 
-void CHud::OnShutdown()
-{
-	for(auto &Tex : m_aYieldBloomHud)
-		Graphics()->UnloadTexture(&Tex);
-}
+// The industrial HUD frames used to be loaded from `ui/yieldbloom/*.png`, eight files that never
+// existed in this repository: every boot logged eight `png: failed to open file` errors, and the one
+// overlay gated on those handles could therefore never draw. The panels are procedural now
+// (RenderYieldBloomPanel), so the loader and the unreachable overlay are gone instead of dormant.
 
 void CHud::RenderGameTimer()
 {
@@ -893,17 +878,6 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 	if(GameClient()->m_GameInfo.m_HudHealthArmor && GameClient()->m_GameInfo.m_HudAmmo)
 		PanelH = 52.0f;
 	RenderYieldBloomPanel(PanelX, PanelY, PanelW, PanelH, 6.0f);
-	// inner live indicators background
-	if(m_aYieldBloomHud.size() > 0 && m_aYieldBloomHud[0].IsValid())
-	{
-		Graphics()->TextureSet(m_aYieldBloomHud[0]);
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.18f);
-		IGraphics::CQuadItem Quad(PanelX, PanelY, PanelW, PanelH);
-		Graphics()->QuadsDrawTL(&Quad, 1);
-		Graphics()->QuadsEnd();
-	}
-
 	if(GameClient()->m_GameInfo.m_HudAmmo)
 	{
 		// ammo display – live count
