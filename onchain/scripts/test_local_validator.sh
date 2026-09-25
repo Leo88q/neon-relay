@@ -12,14 +12,19 @@ cleanup() {
 trap cleanup EXIT
 export NEONRELAY_LOCAL_VALIDATOR=1
 export NEONRELAY_PUBLIC_FIXTURE="$TMP/public-accounts.json"
-# The genesis --bpf-program deploy makes the validator's default keypair the
-# program's upgrade authority; the legacy bootstrap requires exactly that
-# signer. Use a disposable bootstrap key for both, never a persisted one.
+# The genesis --bpf-program deploy is done by the CLI's default keypair,
+# which becomes the program's upgrade authority; the legacy bootstrap
+# requires exactly that signer. Point the CLI config at a disposable dir
+# whose id.json is a throwaway bootstrap key, so the genesis deploy
+# authority and the test's admin are the same ephemeral key — never a
+# persisted one.
 BOOTSTRAP_KEY="$TMP/bootstrap.json"
 solana-keygen new --no-bip39-passphrase --force -s -o "$BOOTSTRAP_KEY" > /dev/null
 export NEONRELAY_BOOTSTRAP_KEYPAIR="$BOOTSTRAP_KEY"
+export SOLANA_CONFIG="$TMP/solana-config"
+mkdir -p "$SOLANA_CONFIG"
+cp "$BOOTSTRAP_KEY" "$SOLANA_CONFIG/id.json"
 solana-test-validator --reset --ledger "$TMP/ledger" --bind-address 127.0.0.1 --rpc-port 8899 \
-  --mint "$BOOTSTRAP_KEY" \
   --bpf-program FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9 \
   "$ROOT/onchain/target/deploy/neonrelay_economy.so" >"$TMP/validator.log" 2>&1 &
 PID=$!
