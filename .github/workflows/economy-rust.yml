@@ -125,6 +125,22 @@ jobs:
             echo "::error title=cargo-test exit $status::${esc}"
           fi
           exit "$status"
+      - name: Diag probe (temporary)
+        if: always()
+        shell: bash
+        run: |
+          echo "::error title=diag-probe-a::simple ascii message"
+          LOG="$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
+          if [ ! -f "$LOG" ]; then
+            echo "::error title=diag-probe-b::LOG-MISSING"
+          else
+            echo "LOGSIZE=$(wc -c < "$LOG")" >> "$GITHUB_STEP_SUMMARY"
+            esc=$(tail -n 12 "$LOG" | sed 's/\r//g' | cut -c1-300 | tr -d '\000-\010\013\014\016-\037' | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
+            echo "::error title=diag-probe-b::${esc:-TAIL-EMPTY}"
+            one=$(tail -n 5 "$LOG" | sed 's/\r//g' | tr '\n' '~' | cut -c1-500 | sed 's/%/%25/g')
+            echo "::error title=diag-probe-c::${one:-ONELINE-EMPTY}"
+          fi
+          true
       - name: Publish host test report to step summary
         if: always()
         shell: bash
