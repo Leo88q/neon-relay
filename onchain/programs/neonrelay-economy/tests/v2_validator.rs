@@ -41,8 +41,15 @@ fn rpc_lifecycle() {
     // validator with (NEONRELAY_BOOTSTRAP_KEYPAIR), not an ephemeral key.
     let bootstrap = std::env::var("NEONRELAY_BOOTSTRAP_KEYPAIR")
         .expect("NEONRELAY_BOOTSTRAP_KEYPAIR must point at the validator's default keypair");
-    let admin = Keypair::from_bytes(&std::fs::read(&bootstrap).expect("read bootstrap keypair"))
-        .expect("bootstrap keypair parses");
+    // solana-keygen writes a JSON array of the 64-byte seed; raw 64-byte
+    // files are accepted too, for manual setups.
+    let raw = std::fs::read(&bootstrap).expect("read bootstrap keypair");
+    let seed: Vec<u8> = if raw.len() == 64 {
+        raw
+    } else {
+        serde_json::from_slice(&raw).expect("bootstrap keypair is a JSON byte array")
+    };
+    let admin = Keypair::from_bytes(&seed).expect("bootstrap keypair parses");
     let player = Keypair::new();
     for key in [admin.pubkey(), player.pubkey()] {
         let sig = rpc.request_airdrop(&key, 10_000_000_000).unwrap();
