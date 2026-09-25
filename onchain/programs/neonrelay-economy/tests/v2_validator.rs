@@ -35,10 +35,10 @@ fn rpc_lifecycle() {
     // Deliberately no configurable network URL: impossible to target a cluster.
     assert_eq!(std::env::var("NEONRELAY_LOCAL_VALIDATOR").as_deref(), Ok("1"));
     let rpc = RpcClient::new_with_commitment("http://127.0.0.1:8899".to_owned(), CommitmentConfig::confirmed());
-    // The genesis `--bpf-program` deploy makes the validator's default keypair
-    // the upgrade authority, and the legacy bootstrap only accepts that
-    // authority — so admin must be the keypair the script started the
-    // validator with (NEONRELAY_BOOTSTRAP_KEYPAIR), not an ephemeral key.
+    // The script deploys the ELF with a disposable key, making it the
+    // upgrade authority; the legacy bootstrap only accepts that authority
+    // — so admin must be exactly that key (NEONRELAY_BOOTSTRAP_KEYPAIR),
+    // not an ephemeral one.
     let bootstrap = std::env::var("NEONRELAY_BOOTSTRAP_KEYPAIR")
         .expect("NEONRELAY_BOOTSTRAP_KEYPAIR must point at the validator's default keypair");
     // solana-keygen writes a JSON array of the 64-byte seed; raw 64-byte
