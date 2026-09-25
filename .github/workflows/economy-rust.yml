@@ -129,16 +129,19 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo "::error title=diag-probe-a::simple ascii message"
+          echo "::error title=mark-1::start"
           LOG="$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
+          echo "::error title=mark-2::LOG-set"
           if [ ! -f "$LOG" ]; then
-            echo "::error title=diag-probe-b::LOG-MISSING"
+            echo "::error title=mark-3::LOG-MISSING"
           else
-            echo "LOGSIZE=$(wc -c < "$LOG")" >> "$GITHUB_STEP_SUMMARY"
-            esc=$(tail -n 12 "$LOG" | sed 's/\r//g' | cut -c1-300 | tr -d '\000-\010\013\014\016-\037' | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":"")\$0}')
-            echo "::error title=diag-probe-b::${esc:-TAIL-EMPTY}"
-            one=$(tail -n 5 "$LOG" | sed 's/\r//g' | tr '\n' '~' | cut -c1-500 | sed 's/%/%25/g')
-            echo "::error title=diag-probe-c::${one:-ONELINE-EMPTY}"
+            sz=$(wc -c < "$LOG")
+            echo "::error title=mark-3::LOG-size-$sz"
+            echo "::error title=mark-4::before-tail"
+            t12=$(tail -n 12 "$LOG" | tr '\n' '~' | cut -c1-800)
+            echo "::error title=mark-5::after-capture"
+            echo "::error title=mark-6::tail=[${t12:0:150}]"
+            echo "::error title=mark-7::end"
           fi
           true
       - name: Publish host test report to step summary
