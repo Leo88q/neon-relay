@@ -58,7 +58,10 @@ fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey
 	match state {
 		anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
 			upgrade_authority_address: Some(current), ..
-		} => require_keys_eq!(current, *authority, EconomyError::BootstrapAuthorityInvalid),
+		} => {
+			require_keys_eq!(current, *authority, EconomyError::BootstrapAuthorityInvalid);
+			Ok(())
+		}
 		_ => Err(error!(EconomyError::BootstrapAuthorityInvalid)),
 	}
 }

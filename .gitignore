@@ -171,3 +171,10 @@ android/app/src/main/assets/
 # Pinned Python map/asset tooling is installed locally, never shipped.
 .venv/
 venv/
+
+# JS type-gate deps (installed locally by scripts/macbook_release.sh; never shipped)
+node_modules/
+
+# Operator-generated deployment manifests (the example stays tracked)
+onchain/deployment.*.json
+!onchain/deployment.example.json

@@ -132,7 +132,8 @@ const decodeCursor = (cursor: string | null): { occurredAt: number; id: string }
   if (cursor === null || cursor === "") return null;
   try {
     const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as Record<string, unknown>;
-    if (!Number.isSafeInteger(parsed.occurredAt) || typeof parsed.id !== "string" || parsed.id.length === 0) {
+    if (typeof parsed.occurredAt !== "number" || !Number.isSafeInteger(parsed.occurredAt) ||
+        typeof parsed.id !== "string" || parsed.id.length === 0) {
       throw new Error("cursor shape");
     }
     return { occurredAt: parsed.occurredAt, id: parsed.id };
@@ -1625,7 +1626,7 @@ export function buildRouter(deps: {
         const program = base58Decode(config.rewardsProgramId as string);
         const wallet = Buffer.from(binding.public_key, "base64url");
         const epochBytes = Buffer.alloc(8);
-        epochBytes.writeBigUInt64BE(BigInt(epoch));
+        epochBytes.writeBigUInt64BE(BigInt(intent.epoch_id));
         const expectedConfig = findProgramAddress([Buffer.from("neonrelay_config")], program).address;
         const expectedEpoch = findProgramAddress([Buffer.from("neonrelay_epoch"), epochBytes], program).address;
         const expectedClaim = findProgramAddress([Buffer.from("neonrelay_claim"), epochBytes, wallet], program).address;

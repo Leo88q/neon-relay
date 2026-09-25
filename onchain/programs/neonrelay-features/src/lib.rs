@@ -67,7 +67,10 @@ fn verify_bootstrap_authority(program_data: &AccountInfo<'_>, authority: &Pubkey
 	match state {
 		anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState::ProgramData {
 			upgrade_authority_address: Some(current), ..
-		} => require_keys_eq!(current, *authority, FeaturesError::BootstrapAuthorityInvalid),
+		} => {
+			require_keys_eq!(current, *authority, FeaturesError::BootstrapAuthorityInvalid);
+			Ok(())
+		}
 		_ => Err(error!(FeaturesError::BootstrapAuthorityInvalid)),
 	}
 }
@@ -430,6 +433,7 @@ pub struct CreateRegistry<'info> {
 		has_one = authority @ FeaturesError::Unauthorized,
 	)]
 	pub config: Account<'info, FeaturesConfig>,
+	#[account(mut)]
 	pub authority: Signer<'info>,
 	/// The player the registry belongs to (need not sign — the operator
 	/// service attests it from server-verified match data).
@@ -511,6 +515,7 @@ pub struct PublishLeaderboard<'info> {
 		has_one = authority @ FeaturesError::Unauthorized,
 	)]
 	pub config: Account<'info, FeaturesConfig>,
+	#[account(mut)]
 	pub authority: Signer<'info>,
 	#[account(
 		init,
@@ -532,6 +537,7 @@ pub struct CreateTournament<'info> {
 		has_one = authority @ FeaturesError::Unauthorized,
 	)]
 	pub config: Account<'info, FeaturesConfig>,
+	#[account(mut)]
 	pub authority: Signer<'info>,
 	#[account(
 		init,

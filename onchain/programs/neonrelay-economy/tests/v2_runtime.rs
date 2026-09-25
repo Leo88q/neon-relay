@@ -198,12 +198,19 @@ async fn initialize_and_isolate_two_mint_markets() {
         assert_eq!((cfg.authority, cfg.mint, cfg.vault_ata, cfg.treasury_ata),
             (admin.pubkey(), mints[i], vaults[i], treasuries[i]));
         assert_eq!(cfg.fees, neonrelay_economy::tier_fees_v2(if i == 0 { 0 } else { 6 }).unwrap());
-        assert_eq!(cfg.reserved, 0); assert!(!cfg.paused);
+        assert_eq!(cfg.reserved, 0); assert!(cfg.paused); // fail-closed: markets start closed
         let account = ctx.banks_client.get_account(vaults[i]).await.unwrap().unwrap();
         let vault = spl_token::state::Account::unpack(&account.data).unwrap();
         assert_eq!((vault.mint, vault.owner, vault.amount), (mints[i], configs[i], 0));
     }
     assert_ne!(configs[0], configs[1]); assert_ne!(vaults[0], vaults[1]);
+    // Every market starts closed (fail-closed): trading needs the explicit
+    // operator unpause — the same post-deploy step the deploy script performs.
+    for i in 0..2 {
+        let unpause = ix(accounts::AdminV2 { authority: admin.pubkey(), config: configs[i] },
+            instruction::SetPausedV2 { paused: false });
+        send(&mut ctx, &admin, unpause, true).await;
+    }
     let reference = [42; 32];
     let tickets = mints.map(|mint| pda(&[b"neonrelay_entry_v2", mint.as_ref(), &reference, player.pubkey().as_ref()]).0);
     let pay = |i: usize, source: usize, vault: usize, treasury: usize, ticket: usize| ix(accounts::PayEntryV2 {

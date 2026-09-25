@@ -15,12 +15,141 @@ permissions:
 jobs:
   host-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Compile Anchor constraints and run host plus native runtime tests
-        run: cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache cargo registry and index
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ runner.os }}-${{ hashFiles('onchain/Cargo.lock', 'onchain/Cargo.toml', 'onchain/**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-
+      # Canonical fail-closed gate: the committed lock must pin the exact
+      # Anchor 0.31.1 release family. A stale (0.30.x) lock is regenerated
+      # from scratch with the same walk-back procedure as
+      # scripts/macbook_release.sh — an in-place `cargo update` from the old
+      # lock is the known-unresolvable path and is deliberately not used.
+      # Every phase writes its failure context to the step summary AND the
+      # pin-gate-log artifact, so a red run is diagnosable without raw logs.
+      - name: Anchor 0.31.1 lockfile pin gate (regenerate if stale)
+        shell: bash
+        run: |
+          set -uo pipefail
+          cd onchain
+          SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          LOG="$GITHUB_WORKSPACE/onchain/target/ci-pin-gate.log"
+          mkdir -p target
+          : > "$LOG"
+          say() { echo "$1" | tee -a "$SUMMARY"; }
+          fail() {
+            say ""
+            say "**FAIL: $1 — last 80 lines of the gate log:**"
+            say '```'
+            tail -n 80 "$LOG"
+            say '```'
+            # Also surface the tail as a check-run annotation: unlike the step
+            # summary and raw logs, annotations are readable via the Checks
+            # API (this sandbox cannot reach results-receiver / blob hosts).
+            esc=$(tail -n 60 "$LOG" | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
+            echo "::error title=Pin-gate: $1::${esc}"
+            exit 1
+          }
+          lock_version() {
+            awk -v n="$1" '$0=="name = \""n"\""{f=1;next} f&&/^version = /{sub(/^version = \"/,"");sub(/".*/,"");print;exit}' Cargo.lock
+          }
+          PKGS=(anchor-attribute-access-control anchor-attribute-account anchor-attribute-constant
+                anchor-attribute-error anchor-attribute-event anchor-attribute-program
+                anchor-derive-accounts anchor-derive-serde anchor-derive-space
+                anchor-syn anchor-lang anchor-spl)
+          if node scripts/verify_toolchain_pin.mjs >>"$LOG" 2>&1; then
+            say "onchain/Cargo.lock already pins Anchor 0.31.1 — using the committed lock as-is."
+            exit 0
+          fi
+          say "::warning::committed onchain/Cargo.lock is not pinned to 0.31.1 — regenerating from scratch (needs crates.io)"
+          rm -f Cargo.lock
+          cargo generate-lockfile >>"$LOG" 2>&1 || fail "cargo generate-lockfile (fresh resolve of the full workspace graph)"
+          for pkg in "${PKGS[@]}"; do
+            v="$(lock_version "$pkg")"
+            case "$v" in
+              0.31.1) ;;
+              0.31.*)
+                say "  walk-back: $pkg $v -> 0.31.1"
+                cargo update -p "$pkg@$v" --precise 0.31.1 >>"$LOG" 2>&1 || fail "cargo update $pkg@$v --precise 0.31.1"
+                ;;
+              *)
+                say "::error::lock entry for $pkg is '$v' (expected 0.31.x)"
+                exit 1
+                ;;
+            esac
+          done
+          node scripts/verify_toolchain_pin.mjs >>"$LOG" 2>&1 || fail "final pin verification (lock still off-pin after walk-back)"
+          say "onchain/Cargo.lock regenerated and pinned to Anchor 0.31.1 (see pin-gate-log + economy-cargo-lock artifacts)."
+          {
+            echo ""
+            echo "Regenerated lock family:"
+            for pkg in "${PKGS[@]}"; do echo "- $pkg = $(lock_version "$pkg")"; done
+          } >> "$SUMMARY"
+      - name: Save pin-gate log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pin-gate-log
+          path: onchain/target/ci-pin-gate.log
+          if-no-files-found: ignore
+      - name: Compile Anchor constraints and run workspace host tests
+        shell: bash
+        run: |
+          LOG="$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
+          mkdir -p "$(dirname "$LOG")"
+          # NOTE: steps run under `bash -e` — a bare failing command would
+          # abort the script before the diagnostics below ever run.
+          status=0
+          cargo test --manifest-path onchain/Cargo.toml --workspace --locked > "$LOG" 2>&1 || status=$?
+          if [ "$status" -ne 0 ]; then
+            # Step summary for the user UI + base64 check-run annotations
+            # for the agent channel. Plain-text ::error:: lines with raw
+            # cargo output get dropped unpredictably by the workflow-command
+            # parser; base64 is parser-proof and decodable.
+            {
+              echo "## cargo test exit $status (tail of $LOG)"
+              echo '```'
+              tail -n 40 "$LOG"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::ctrl-A status=$status logbytes=$(wc -c < "$LOG")"
+            b64h=$(head -c 3000 "$LOG" | base64 -w0)
+            echo "::error::head-b64-len=${#b64h}::"
+            echo "::error::head-b64: $b64h"
+            b64t=$(tail -n 12 "$LOG" | base64 -w0)
+            echo "::error::tail-b64: $b64t"
+            echo "::error::ctrl-B end"
+          fi
+          exit "$status"
+      - name: Publish host test report to step summary
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo "## Neon Relay — Rust host test report"
+            echo
+            grep -E -B1 '^test result:' "$GITHUB_WORKSPACE/onchain/target/workspace-test.log" 2>/dev/null \
+              | sed 's/^/  /' || echo '  (no test results captured)'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Save workspace test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-test-log
+          path: onchain/target/workspace-test.log
+          if-no-files-found: ignore
       - name: Install pinned Agave SBF build toolchain
         shell: bash
         run: |
@@ -46,7 +175,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          if ! cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy --test v2_runtime -- --test-threads=1 2>&1 | tee "$RUNNER_TEMP/economy-sbf-test.log"; then
+          if ! cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy --test v2_runtime --locked -- --test-threads=1 2>&1 | tee "$RUNNER_TEMP/economy-sbf-test.log"; then
             python3 - <<'PYLOG'
           import os
           from pathlib import Path
@@ -56,9 +185,17 @@ jobs:
           PYLOG
             exit 1
           fi
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: Save SBF runtime report to step summary
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            echo "## Neon Relay — economy SBF runtime report"
+            echo
+            grep -E -B1 '^test result:' "$RUNNER_TEMP/economy-sbf-test.log" 2>/dev/null \
+              | sed 's/^/  /' || echo '  (SBF stage not reached)'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Isolated validator lifecycle and production backend RPC decoding
         shell: bash
         run: |

@@ -102,7 +102,7 @@ test("epoch close pays the top-10 table and excludes an unpaid leader", async ()
     const raw = createHash("sha256").update(`w${i}`).digest();
     return { raw, wallet: base58Encode(raw), total: (12 - i) * 1000 };
   });
-  const unpaid = wallets[0]; // rank 1 but no ticket -> excluded from prizes
+  const unpaid = wallets[0]!; // rank 1 but no ticket -> excluded from prizes (wallets is 12 entries)
   const paid = new Set(wallets.slice(1).map((w) => w.wallet));
   const result = await closeEpochPrizes({
     rankedTotals: wallets.map((w) => ({ wallet: w.wallet, totalMicro: w.total })),
@@ -336,7 +336,7 @@ test("vault pool fails closed on bad accounts and dead RPC", async () => {
   await assert.rejects(readVaultPool(withConfig(truncated), ECONOMY_PROGRAM_ID, null),
     (err: Error) => err instanceof VaultReadError && err.code === "bad-config-account");
   const badDisc = Buffer.from(good);
-  badDisc[0] ^= 0xff;
+  badDisc.writeUInt8(badDisc.readUInt8(0) ^ 0xff, 0);
   await assert.rejects(readVaultPool(withConfig(badDisc), ECONOMY_PROGRAM_ID, null),
     (err: Error) => err instanceof VaultReadError && err.code === "bad-config-account");
   await assert.rejects(readVaultPool(withConfig(good, "11111111111111111111111111111111"), ECONOMY_PROGRAM_ID, null),

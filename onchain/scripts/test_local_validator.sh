@@ -12,9 +12,18 @@ cleanup() {
 trap cleanup EXIT
 export NEONRELAY_LOCAL_VALIDATOR=1
 export NEONRELAY_PUBLIC_FIXTURE="$TMP/public-accounts.json"
+# The legacy bootstrap only accepts the program's UPGRADE AUTHORITY as
+# signer. Load the program at genesis with that authority set to a
+# throwaway key (--upgradeable-program <id> <elf> <authority>; unlike
+# --bpf-program, which hard-codes a null authority in Agave 3.x), and let
+# the test load the same key as admin. No persisted keys are ever created.
+BOOTSTRAP_KEY="$TMP/bootstrap.json"
+solana-keygen new --no-bip39-passphrase --force -s -o "$BOOTSTRAP_KEY" > /dev/null
+export NEONRELAY_BOOTSTRAP_KEYPAIR="$BOOTSTRAP_KEY"
 solana-test-validator --reset --ledger "$TMP/ledger" --bind-address 127.0.0.1 --rpc-port 8899 \
-  --bpf-program FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9 \
-  "$ROOT/onchain/target/deploy/neonrelay_economy.so" >"$TMP/validator.log" 2>&1 &
+  --upgradeable-program FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9 \
+  "$ROOT/onchain/target/deploy/neonrelay_economy.so" "$BOOTSTRAP_KEY" \
+  >"$TMP/validator.log" 2>&1 &
 PID=$!
 export VALIDATOR_PID="$PID"
 if ! python3 - <<'PY'

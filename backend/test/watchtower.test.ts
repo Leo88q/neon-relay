@@ -108,8 +108,8 @@ test("telemetry is idempotent and late-binds earlier external events", () =>
     });
     assert.equal(second.status, 200);
     assert.equal(second.json.accepted, 1);
-    const rows = db.all<{ event_type: string; solana_wallet: string | null }>(
-      "SELECT event_type, solana_wallet FROM watchtower_events WHERE external_id = ? ORDER BY event_type", "click-42");
+    const rows = db.all(
+      "SELECT event_type, solana_wallet FROM watchtower_events WHERE external_id = ? ORDER BY event_type", "click-42") as { event_type: string; solana_wallet: string | null }[];
     assert.equal(rows.length, 2);
     assert.equal(rows[0]!.solana_wallet, "wallet-public-key");
     assert.equal(rows[1]!.solana_wallet, "wallet-public-key");
@@ -132,8 +132,8 @@ test("Solana indexer envelopes map into session telemetry", () =>
     assert.equal(response.status, 200);
     assert.equal(response.json.accepted, 1);
     assert.equal(response.json.results[0].status, "accepted");
-    const row = db.get<{ event_type: string; metadata_json: string }>(
-      "SELECT event_type, metadata_json FROM watchtower_events WHERE id = ?", response.json.results[0].id);
+    const row = db.get(
+      "SELECT event_type, metadata_json FROM watchtower_events WHERE id = ?", response.json.results[0].id) as { event_type: string; metadata_json: string } | undefined;
     assert.equal(row?.event_type, "match_start");
     assert.match(row?.metadata_json ?? "", /test-neon-1/);
     const canonical = await getJson(base, "/watchtower/events/test-neon-1");

@@ -35,7 +35,22 @@ fn rpc_lifecycle() {
     // Deliberately no configurable network URL: impossible to target a cluster.
     assert_eq!(std::env::var("NEONRELAY_LOCAL_VALIDATOR").as_deref(), Ok("1"));
     let rpc = RpcClient::new_with_commitment("http://127.0.0.1:8899".to_owned(), CommitmentConfig::confirmed());
-    let admin = Keypair::new(); let player = Keypair::new();
+    // The script deploys the ELF with a disposable key, making it the
+    // upgrade authority; the legacy bootstrap only accepts that authority
+    // — so admin must be exactly that key (NEONRELAY_BOOTSTRAP_KEYPAIR),
+    // not an ephemeral one.
+    let bootstrap = std::env::var("NEONRELAY_BOOTSTRAP_KEYPAIR")
+        .expect("NEONRELAY_BOOTSTRAP_KEYPAIR must point at the validator's default keypair");
+    // solana-keygen writes a JSON array of the 64-byte seed; raw 64-byte
+    // files are accepted too, for manual setups.
+    let raw = std::fs::read(&bootstrap).expect("read bootstrap keypair");
+    let seed: Vec<u8> = if raw.len() == 64 {
+        raw
+    } else {
+        serde_json::from_slice(&raw).expect("bootstrap keypair is a JSON byte array")
+    };
+    let admin = Keypair::from_bytes(&seed).expect("bootstrap keypair parses");
+    let player = Keypair::new();
     for key in [admin.pubkey(), player.pubkey()] {
         let sig = rpc.request_airdrop(&key, 10_000_000_000).unwrap();
         let start = Instant::now();
@@ -53,6 +68,10 @@ fn rpc_lifecycle() {
             ata::instruction::create_associated_token_account(&admin.pubkey(), &admin.pubkey(), &mints[i].pubkey(), &spl_token::id()),
             ata::instruction::create_associated_token_account(&admin.pubkey(), &player.pubkey(), &mints[i].pubkey(), &spl_token::id()),
             spl_token::instruction::mint_to(&spl_token::id(), &mints[i].pubkey(), &sources[i], &admin.pubkey(), &[], 100).unwrap(),
+            // Both bootstrap paths reject live mint authorities: revoke the
+            // mint authority after seeding (freeze authority was never set).
+            spl_token::instruction::set_authority(&spl_token::id(), &mints[i].pubkey(), None,
+                spl_token::instruction::AuthorityType::MintTokens, &admin.pubkey(), &[]).unwrap(),
         ], true);
     }
     // Exercise real legacy bootstrap, not a genesis account fixture.
@@ -74,6 +93,9 @@ fn rpc_lifecycle() {
         send(&rpc, &admin, &[], vec![ix(accounts::InitializeV2 { authority: admin.pubkey(), legacy_config: legacy,
             mint, config, treasury_ata: treasury[i], vault_ata: vault, token_program: spl_token::id(),
             associated_token_program: ata::id(), system_program: system_program::id() }, instruction::InitializeV2 { rake_bps: 1000 })], true);
+        // Markets start fail-closed (paused); opening is an explicit operator act.
+        send(&rpc, &admin, &[], vec![ix(accounts::AdminV2 { authority: admin.pubkey(), config },
+            instruction::SetPausedV2 { paused: false })], true);
         let reference = [42; 32];
         let ticket = pda(&[b"neonrelay_entry_v2", mint.as_ref(), &reference, player.pubkey().as_ref()]);
         let pay = ix(accounts::PayEntryV2 { player: player.pubkey(), config, player_ata: sources[i], vault_ata: vault,

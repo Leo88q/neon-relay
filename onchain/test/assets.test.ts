@@ -149,7 +149,8 @@ test("external asset paths remain cost-measurement gated", () => {
 
 test("no hardcoded mint / no SKR in assets program", () => {
   // Only program id string long enough to be pubkey should be declare_id + pinned externals
-  const candidates = libRs.match(/"[1-9A-HJ-NP-Za-km-z]{32,44}"/g) ?? [];
+  const matched = libRs.match(/"[1-9A-HJ-NP-Za-km-z]{32,44}"/g);
+  const candidates: string[] = matched ?? [];
   // Should contain exactly: declare_id + bubblegum + compression + noop + core
   assert.ok(
     candidates.includes(`"${ASSETS_PROGRAM_ID_PLACEHOLDER}"`),

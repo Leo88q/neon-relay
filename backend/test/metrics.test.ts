@@ -100,8 +100,8 @@ test("metrics aggregate activity, finish, claims and pipeline", async () => {
     assert.equal(json.window_days, 7);
 
     const byDay = new Map((json.activity as { day: string }[]).map((d) => [d.day, d]));
-    const rowA = byDay.get(dayKey(dayA)) as { dau: number; sessions: number; avg_session_s: number };
-    const rowB = byDay.get(dayKey(now - 60_000)) as { dau: number; sessions: number; avg_session_s: number };
+    const rowA = byDay.get(dayKey(dayA)) as unknown as { dau: number; sessions: number; avg_session_s: number };
+    const rowB = byDay.get(dayKey(now - 60_000)) as unknown as { dau: number; sessions: number; avg_session_s: number };
     assert.equal(rowA.dau, 2);
     assert.equal(rowA.sessions, 2);
     assert.equal(rowA.avg_session_s, 90);

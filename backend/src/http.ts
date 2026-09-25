@@ -59,7 +59,7 @@ export function bearerToken(req: IncomingMessage): string | null {
   const header = req.headers["authorization"];
   if (typeof header !== "string") return null;
   const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match ? match[1] : null;
+  return match?.[1] ?? null;
 }
 
 export function clientIp(req: IncomingMessage): string {
@@ -75,9 +75,9 @@ export function clientIp(req: IncomingMessage): string {
     if (isSocketTrusted) {
       const forwarded = req.headers["x-forwarded-for"];
       if (typeof forwarded === "string" && forwarded.length > 0) {
-        const first = forwarded.split(",")[0].trim();
+        const first = forwarded.split(",")[0]?.trim();
         // Strict IP sanity: must be a syntactically valid IPv4 or IPv6 address.
-        if (isIP(first) !== 0) {
+        if (first !== undefined && isIP(first) !== 0) {
           return first;
         }
       }

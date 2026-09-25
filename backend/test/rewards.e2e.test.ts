@@ -378,7 +378,8 @@ test("daily cap is also enforced across the wallet dimension", async () => {
     const auth = await authenticate(base, wallet);
     const binding = auth.json.wallet_binding_id as string;
     const now = Date.now();
-    const events = [["pA", "m1"], ["pB", "m2"]].map(([player, match]) => server.signEvent({
+    const pairs: [string, string][] = [["pA", "m1"], ["pB", "m2"]];
+    const events = pairs.map(([player, match]) => server.signEvent({
       match_id: match, player_id: player, wallet_binding_id: binding,
       event_type: "match_win", amount_micro: 900, occurred_at: now,
     }));
@@ -428,7 +429,8 @@ test("weekly cap is also enforced across the wallet dimension", async () => {
     const auth = await authenticate(base, wallet);
     const binding = auth.json.wallet_binding_id as string;
     const now = Date.now();
-    const events = [["pA", "m1"], ["pB", "m2"]].map(([player, match]) => server.signEvent({
+    const pairs: [string, string][] = [["pA", "m1"], ["pB", "m2"]];
+    const events = pairs.map(([player, match]) => server.signEvent({
       match_id: match, player_id: player, wallet_binding_id: binding,
       event_type: "match_win", amount_micro: 900, occurred_at: now,
     }));

@@ -8,7 +8,7 @@ import { v2Fixture } from "./v2_rpc_fixture.ts";
 
 async function setup() {
   const wallet = makeWallet();
-  let fixture = v2Fixture(wallet.rawPublicKey);
+  let fixture = v2Fixture(Buffer.from(wallet.rawPublicKey));
   let failed = false;
   const rpc = createServer(async (req, res) => {
     try {
@@ -35,7 +35,7 @@ async function setup() {
       const intent = store.createIntent({ mint: fixture.mint, wallet: wallet.rawPublicKey,
         epoch: 1n, playerId: "player-1", idempotencyKey: "entry-1", kind: 0,
         tier: "micro-sprint", amountBase: fixture.fees[0]! });
-      fixture = v2Fixture(wallet.rawPublicKey, Buffer.from(intent.reference, "hex"));
+      fixture = v2Fixture(Buffer.from(wallet.rawPublicKey), Buffer.from(intent.reference, "hex"));
     },
     close: async () => { await app.close(); await new Promise<void>((resolve) => rpc.close(() => resolve())); },
   };
