@@ -1760,6 +1760,16 @@ set(EXPECTED_DATA
   themes/none.png
   themes/rand.png
   touch_controls.json
+  ui/backgrounds/arena_burn.png
+  ui/backgrounds/arena_combat.png
+  ui/backgrounds/arena_control.png
+  ui/backgrounds/arena_night.png
+  ui/backgrounds/arena_podium.png
+  ui/backgrounds/arena_popup.png
+  ui/backgrounds/arena_roster.png
+  ui/backgrounds/arena_vault.png
+  ui/icons/gamification_24.png
+  ui/weapons/weapons_6_128.png
   wordlist.txt
   # tidy-alphabetical-end
 )

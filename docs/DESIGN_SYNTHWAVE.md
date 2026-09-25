@@ -71,3 +71,18 @@ keeps upstream line work. Commercial release still requires original maps and
 tilesets (BL-14); the color language above is what those originals will reuse.
 Tilesets embedded inside .map files (e.g. Tutorial's grey grass) are replaced
 only together with the original maps.
+
+## Stage 20 — Potato Arena UI pass (2026-09-25)
+
+Interface colour/geometry now has a single source of truth: `src/game/client/neon_style.h`
+(`NeonStyle::CYAN/PINK/INDIGO/ICE/DIM/NIGHT_0/1/2/RARE_*`, panel radius 16, card radius 12,
+border 2, glow 10, backdrop alpha 0.62 + veil 0.55). Menu/HUD code must use these constants
+instead of float literals; the storefront rarity accent comes from `NeonStyle::RarityAccent`
+so the card, the portrait frame and the diamonds cannot disagree.
+
+Art: `data/ui/backgrounds/arena_*.png` (one room, seven lighting states, generated in Arena and
+baked deterministically by `scripts/build_potato_arena_assets.py`, gate `--check` in CI),
+`data/ui/icons/gamification_24.png` (flat icon atlas drawn with the same primitives as
+`scripts/build_neon_ui_art.py`), `data/ui/weapons/weapons_6_128.png` (six weapon cells cut out of
+`data/game.png`, so a menu icon is the in-combat sprite). Rationale, the token-drift table and the
+honest-lobby copy rules: `docs/UI_POTATO_ARENA_REDESIGN_RU.md`.

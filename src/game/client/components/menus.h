@@ -659,13 +659,19 @@ protected:
 	IGraphics::CTextureHandle m_TextureBlob;
 	IGraphics::CTextureHandle m_aCharacterPortraits[10];
 	std::array<IGraphics::CTextureHandle, 8> m_aBgTextures;
-	std::array<IGraphics::CTextureHandle, 32> m_aYieldBloomFrames;
+	// Style atlases. Both are drawn with explicit UV sub-rects (IGraphics::QuadsSetSubset),
+	// so they need no datasrc sprite registration; see scripts/build_potato_arena_assets.py.
+	IGraphics::CTextureHandle m_IconAtlas; // ui/icons/gamification_24.png, 8x3 cells of 64px
+	IGraphics::CTextureHandle m_WeaponStrip; // ui/weapons/weapons_6_128.png, 6 cells of 128px
 
 public:
 	void RenderBackground();
-	void RenderYieldBloomFrame(CUIRect Rect, float Rounding = 6.0f, bool WithRivets = true);
+	void RenderIcon(int IconId, const CUIRect *pRect, ColorRGBA Color, float AlphaScale = 1.0f);
+	void RenderWeaponIcon(int WeaponIndex, const CUIRect *pRect, float AlphaScale = 1.0f);
+	// Local-progress strip and the six-weapon availability row of the lobby (neon_progress.h).
+	void RenderProgressStrip(CUIRect Rect);
+	void RenderWeaponStrip(CUIRect Rect, const char *pCaption);
 	void RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, ColorRGBA BorderColor, bool WithGlow, bool WithImpulse, float ImpulseProgress, ColorRGBA ImpulseColor);
-	void RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor);
 
 	CMenus();
 	int Sizeof() const override { return sizeof(*this); }
