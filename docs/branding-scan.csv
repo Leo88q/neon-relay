@@ -480,7 +480,7 @@ docs/THREAT_MODEL.md,104,historical-documentation,document that describes the up
 docs/TWMAP_PIPELINE_RU.md,19,code/api-identifier,brand appears only inside code identifiers,m = twmap.Map.empty('DDNet06')
 docs/TWMAP_PIPELINE_RU.md,85,code/api-identifier,brand appears only inside code identifiers,оригинальных карт проверена возможность начать с пустого `DDNet06`; миграция
 docs/UI_POTATO_ARENA_REDESIGN_RU.md,246,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),`ddnet-libs` не клонирован. Поэтому:
-docs/UI_POTATO_ARENA_REDESIGN_RU.md,438,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"Чего проверка **не** покрывает: линковку и запуск клиента (нет `cmake`, SDL2, `ddnet-libs`),"
+docs/UI_POTATO_ARENA_REDESIGN_RU.md,462,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),"Чего проверка **не** покрывает: линковку и запуск клиента (нет `cmake`, SDL2, `ddnet-libs`),"
 docs/UPSTREAM_AUDIT.md,1,historical-documentation,document that describes the upstream derivation,# Upstream audit — DDNet → Neon Relay
 docs/UPSTREAM_AUDIT.md,7,historical-documentation,document that describes the upstream derivation,| Upstream | https://github.com/ddnet/ddnet |
 docs/UPSTREAM_AUDIT.md,10,historical-documentation,document that describes the upstream derivation,| Tracked files | 1852 + 1 submodule gitlink (`ddnet-libs` @ `c0e6703`) |
