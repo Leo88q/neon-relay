@@ -1,0 +1,124 @@
+# Helper (self-terminating): regenerate onchain/Cargo.lock from scratch with
+# stable cargo and commit+push the canonical lock to this branch.
+#
+# The resolution runs under temporary STRICT pins (anchor-lang / anchor-spl
+# "=0.31.1" in every program manifest) so the resolver selects the whole
+# Anchor family atomically at 0.31.1 — a per-crate `cargo update --precise`
+# walk-back is order-fragile and can leave the lock inconsistent with the
+# 0.31.1 manifests, which `cargo test --locked` then rejects. The manifests
+# are restored afterwards; a lock that satisfies "=0.31.1" also satisfies the
+# committed caret "0.31.1" requirement.
+#
+# Safety:
+#  - deterministic resolve: if the regenerated lock is identical to the
+#    committed one, no commit is made (no loop);
+#  - if the branch moved while this run was working, the push is skipped
+#    (the next trigger regenerates from the newest commit).
+#
+# This file is expected to be deleted from main once the canonical lock has
+# been validated by a green economy run.
+name: Generate canonical lockfile
+on:
+  push:
+    branches: ["arena/01a0d32d-neon-relay"]
+    paths:
+      - "onchain/**"
+      - ".github/workflows/generate-lock.yml"
+permissions:
+  contents: write
+concurrency:
+  group: genlock
+  cancel-in-progress: false
+jobs:
+  genlock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Regenerate canonical lockfile (fresh resolve, strict 0.31.1 pins)
+        shell: bash
+        run: |
+          set -uo pipefail
+          BRANCH="arena/01a0d32d-neon-relay"
+          cd onchain
+          SUMMARY="${GITHUB_STEP_SUMMARY:-/dev/null}"
+          LOG="$GITHUB_WORKSPACE/onchain/target/genlock.log"
+          mkdir -p target
+          : > "$LOG"
+          say() { echo "$1" | tee -a "$SUMMARY"; }
+          lock_version() {
+            [ -f Cargo.lock ] || return 0
+            awk -v n="$1" '$0=="name = \""n"\""{f=1;next} f&&/^version = /{sub(/^version = "/,"");sub(/".*/,"");print;exit}' Cargo.lock
+          }
+          PKGS=(anchor-attribute-access-control anchor-attribute-account anchor-attribute-constant
+                anchor-attribute-error anchor-attribute-event anchor-attribute-program
+                anchor-derive-accounts anchor-derive-serde anchor-derive-space
+                anchor-syn anchor-lang anchor-spl)
+          # Temporarily strict-pin the Anchor family in every program manifest.
+          sed -i 's/anchor-lang = "0.31.1"/anchor-lang = "=0.31.1"/; s/anchor-spl = "0.31.1"/anchor-spl = "=0.31.1"/' programs/*/Cargo.toml
+          rm -f Cargo.lock
+          cargo generate-lockfile >>"$LOG" 2>&1 || {
+            say "## cargo generate-lockfile failed — last 40 lines:"
+            echo '```'; tail -n 40 "$LOG" >>"$SUMMARY"; echo '```' | tee -a "$SUMMARY"
+            say "::error::cargo generate-lockfile failed — see summary"
+            exit 1
+          }
+          # Restore the committed manifests (strict pins were generation-time only).
+          git checkout -- programs/ || true
+          for pkg in "${PKGS[@]}"; do
+            v="$(lock_version "$pkg")"
+            [ "$v" = "0.31.1" ] || { say "::error::lock entry for $pkg is '$v' (expected 0.31.1)"; exit 1; }
+          done
+          node scripts/verify_toolchain_pin.mjs >>"$LOG" 2>&1 || {
+            say "## final pin verification failed — last 40 lines:"
+            echo '```'; tail -n 40 "$LOG" >>"$SUMMARY"; echo '```' | tee -a "$SUMMARY"
+            say "::error::final pin verification failed — see summary"
+            exit 1
+          }
+          {
+            echo "## Canonical lock generated:"
+            echo "- packages: \$(grep -c '\[\[package\]\]' Cargo.lock)"
+            for pkg in "${PKGS[@]}"; do echo "- $pkg = \$(lock_version \"$pkg\")"; done
+            echo "- solana-program = \$(lock_version solana-program)"
+            echo "- solana-program-test = \$(lock_version solana-program-test)"
+            echo "- spl-token = \$(lock_version spl-token)"
+            echo "- spl-token-2022 = \$(lock_version spl-token-2022)"
+            echo "- tokio = \$(lock_version tokio)"
+          } >> "$SUMMARY"
+          # Stale-run guard: if the branch advanced while we worked, do not
+          # push (the next trigger regenerates from the newest commit).
+          remote_sha="$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)"
+          if [ -n "$remote_sha" ] && [ "$remote_sha" != "$(git rev-parse HEAD)" ]; then
+            say "::warning::branch moved while regenerating — skipping push; next run will regenerate"
+            exit 0
+          fi
+          git config user.name "neon-relay-lock-bot"
+          git config user.email "neon-relay-lock-bot@users.noreply.github.com"
+          git add Cargo.lock
+          if git diff --cached --quiet; then
+            say "Regenerated lock is identical to the committed one — no commit needed."
+            exit 0
+          fi
+          git commit -m "onchain: canonical Cargo.lock generated by stable cargo (Anchor 0.31.1 exact)"
+          git push origin HEAD:"$BRANCH"
+          say "Pushed the canonical lock to $BRANCH."
+      - name: Save genlock log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genlock-log
+          path: onchain/target/genlock.log
+          if-no-files-found: ignore
+      - name: Save generated lock
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-cargo-lock
+          path: onchain/Cargo.lock
+          if-no-files-found: ignore

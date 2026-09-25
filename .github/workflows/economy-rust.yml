@@ -125,25 +125,6 @@ jobs:
             echo "::error title=cargo-test exit $status::${esc}"
           fi
           exit "$status"
-      - name: Diag probe (temporary)
-        if: always()
-        shell: bash
-        run: |
-          echo "::error title=mark-1::start"
-          LOG="$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
-          echo "::error title=mark-2::LOG-set"
-          if [ ! -f "$LOG" ]; then
-            echo "::error title=mark-3::LOG-MISSING"
-          else
-            sz=$(wc -c < "$LOG")
-            echo "::error title=mark-3::LOG-size-$sz"
-            echo "::error title=mark-4::before-tail"
-            t12=$(tail -n 12 "$LOG" | tr '\n' '~' | cut -c1-800)
-            echo "::error title=mark-5::after-capture"
-            echo "::error title=mark-6::tail=[${t12:0:150}]"
-            echo "::error title=mark-7::end"
-          fi
-          true
       - name: Publish host test report to step summary
         if: always()
         shell: bash
