@@ -135,7 +135,7 @@ jobs:
             echo "::error title=diag-probe-b::LOG-MISSING"
           else
             echo "LOGSIZE=$(wc -c < "$LOG")" >> "$GITHUB_STEP_SUMMARY"
-            esc=$(tail -n 12 "$LOG" | sed 's/\r//g' | cut -c1-300 | tr -d '\000-\010\013\014\016-\037' | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
+            esc=$(tail -n 12 "$LOG" | sed 's/\r//g' | cut -c1-300 | tr -d '\000-\010\013\014\016-\037' | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":"")\$0}')
             echo "::error title=diag-probe-b::${esc:-TAIL-EMPTY}"
             one=$(tail -n 5 "$LOG" | sed 's/\r//g' | tr '\n' '~' | cut -c1-500 | sed 's/%/%25/g')
             echo "::error title=diag-probe-c::${one:-ONELINE-EMPTY}"
