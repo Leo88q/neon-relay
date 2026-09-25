@@ -111,18 +111,23 @@ jobs:
           cargo test --manifest-path onchain/Cargo.toml --workspace --locked > "$LOG" 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
-            # Surface the tail via step summary (user UI) + check-run
-            # annotation (agent channel); raw logs / artifacts are
-            # unreachable from the agent environment.
+            # Surface the tail via step summary (user UI) + ONE-LINE
+            # check-run annotations (agent channel). Multi-line / titled
+            # annotations are silently dropped by the workflow-command
+            # parser in this setup; single-line ::error:: lines land
+            # reliably in the check-runs API.
             {
               echo "## cargo test exit $status (tail of $LOG)"
               echo '```'
               tail -n 40 "$LOG"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            esc=$(tail -n 25 "$LOG" | cut -c1-400 | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
-            [ -n "$esc" ] || esc="cargo failed before producing output (exit $status); see workspace-test-log artifact"
-            echo "::error title=cargo-test exit $status::${esc}"
+            firsterr=$(grep -m1 -E '^error' "$LOG" | cut -c1-300 | tr '\n' '~' | sed 's/%/%25/g')
+            [ -n "$firsterr" ] && echo "::error::cargo-test exit $status first-error: $firsterr"
+            tail -n 15 "$LOG" | while IFS= read -r line; do
+              [ -n "$line" ] || continue
+              echo "::error::testlog: $(printf '%s' "$line" | cut -c1-300 | sed 's/%/%25/g') "
+            done
           fi
           exit "$status"
       - name: Publish host test report to step summary

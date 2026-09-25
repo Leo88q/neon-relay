@@ -69,11 +69,31 @@ jobs:
             say "::error::cargo generate-lockfile failed — see summary"
             exit 1
           }
-          # Restore the committed manifests (strict pins were generation-time only).
+          # Restore the committed manifests before the walk-back: the
+          # transitive family crates were selected above the strict pin
+          # (anchor-lang/spl caret-require their siblings), and
+          # `cargo update -p X@v --precise` is a consistent re-resolution
+          # that works against the original caret manifests (0.31.1 is
+          # inside the caret range).
           git checkout -- programs/ || true
           for pkg in "${PKGS[@]}"; do
             v="$(lock_version "$pkg")"
-            [ "$v" = "0.31.1" ] || { say "::error::lock entry for $pkg is '$v' (expected 0.31.1)"; exit 1; }
+            if [ "$v" = "0.31.1" ]; then continue; fi
+            if [ -z "$v" ]; then
+              say "::error::no lock entry for $pkg after generate"
+              exit 1
+            fi
+            say "  walk-back: $pkg $v -> 0.31.1"
+            cargo update -p "$pkg@$v" --precise 0.31.1 >>"$LOG" 2>&1 || {
+              say "## cargo update $pkg@$v --precise 0.31.1 failed — last 40 lines:"
+              echo '```'; tail -n 40 "$LOG" >>"$SUMMARY"; echo '```' | tee -a "$SUMMARY"
+              say "::error::walk-back $pkg failed — see summary"
+              exit 1
+            }
+          done
+          for pkg in "${PKGS[@]}"; do
+            v="$(lock_version "$pkg")"
+            [ "$v" = "0.31.1" ] || { say "::error::lock entry for $pkg is '$v' after walk-back (expected 0.31.1)"; exit 1; }
           done
           node scripts/verify_toolchain_pin.mjs >>"$LOG" 2>&1 || {
             say "## final pin verification failed — last 40 lines:"
@@ -81,6 +101,20 @@ jobs:
             say "::error::final pin verification failed — see summary"
             exit 1
           }
+          # Fast consistency pre-check (same --locked comparison the test
+          # step does, seconds instead of a full compile). On failure the
+          # exact cargo complaint is surfaced line-by-line.
+          cargo metadata --format-version 1 --locked > /dev/null 2>>"$LOG"
+          mstat=$?
+          if [ "$mstat" -ne 0 ]; then
+            grep -E '^error|^  ' "$LOG" | tail -n 20 | while IFS= read -r line; do
+              [ -n "$line" ] || continue
+              echo "::error::metadata: $(printf '%s' "$line" | cut -c1-300 | sed 's/%/%25/g')"
+            done
+            say "## cargo metadata --locked failed (exit $mstat) — last 40 lines:"
+            echo '```'; tail -n 40 "$LOG" >>"$SUMMARY"; echo '```' | tee -a "$SUMMARY"
+            exit 1
+          fi
           {
             echo "## Canonical lock generated:"
             echo "- packages: \$(grep -c '\[\[package\]\]' Cargo.lock)"
