@@ -108,6 +108,17 @@ def quiet_zone(img: Image.Image) -> Image.Image:
     return Image.fromarray(np.clip(out, 0, 255).astype(np.uint8), "RGB")
 
 
+def _mae(a: np.ndarray, b: np.ndarray) -> float:
+    """Mean absolute error over integer differences.
+
+    The fidelity decision below compares this number with MAX_MAE, so it must not depend on how the
+    CPU sums floats: numpy reduces float32/float64 with SIMD, and two machines can disagree in the
+    last bits — enough to pick a different quantisation candidate and turn a determinism gate red on
+    CI only. Integer sums are exact everywhere.
+    """
+    return float(np.abs(a.astype(np.int64) - b.astype(np.int64)).sum()) / a.size
+
+
 def save_small(img: Image.Image, dest: Path, max_kb: int) -> tuple[int, float]:
     """Smallest PNG that keeps the quantization error invisible under the menu veil.
 
@@ -121,11 +132,11 @@ def save_small(img: Image.Image, dest: Path, max_kb: int) -> tuple[int, float]:
     best = (dest.stat().st_size, 0.0)
     if best[0] <= max_kb * 1024:
         return best
-    ref = np.asarray(rgb, dtype=np.float64)
+    ref = np.asarray(rgb, dtype=np.int16)
     for colors in (160, 128, 96, 64):
         q = rgb.quantize(colors=colors, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG)
         q.save(dest, optimize=True, compress_level=9)
-        err = float(np.abs(np.asarray(q.convert("RGB"), dtype=np.float64) - ref).mean())
+        err = _mae(np.asarray(q.convert("RGB"), dtype=np.int16), ref)
         size = dest.stat().st_size
         if size <= max_kb * 1024 and err <= MAX_MAE:
             return size, err
@@ -454,6 +465,7 @@ def same_art(generated: Path, shipped: Path) -> bool:
         return True
     a = np.asarray(Image.open(generated).convert("RGBA"), dtype=np.int16)
     b = np.asarray(Image.open(shipped).convert("RGBA"), dtype=np.int16)
+    _ = (a, b)  # same dtype trick as save_small: all decisions are made on integer differences
     if a.shape != b.shape:
         print(f"  DIFF {rel(shipped)}: size {b.shape[1]}x{b.shape[0]} vs freshly baked "
               f"{a.shape[1]}x{a.shape[0]}")
@@ -462,13 +474,13 @@ def same_art(generated: Path, shipped: Path) -> bool:
     worst = int(diff.max())
     changed = int((diff.any(axis=2)).sum())
     if shipped.suffix.lower() in (".jpg", ".jpeg"):
-        err = float(diff.mean())
+        err = float(diff.astype(np.int64).sum()) / diff.size
         if err <= 2.5:
             print(f"  ~ re-encoded {shipped.name}: pixels match within MAE {err:.2f} "
                   f"(encoder differs, art does not)")
             return True
     else:
-        err = float(diff[..., :3].mean())
+        err = float(diff[..., :3].astype(np.int64).sum()) / (diff.shape[0] * diff.shape[1] * 3)
     print(f"  DIFF {rel(shipped)}: {changed} of {a.shape[0] * a.shape[1]} pixels differ, "
           f"MAE {err:.3f}, max {worst} "
           f"(pillow {Image.__version__}, python {sys.version.split()[0]}, zlib {zlib.ZLIB_VERSION})")
@@ -546,6 +558,9 @@ def main() -> int:
             same = gen.exists() and same_art(gen, p)
             ok = ok and same
             print(("  ok   " if same else "  DIFF ") + str(p.relative_to(ROOT)))
+        print(f"environment: pillow {Image.__version__} numpy {np.__version__} "
+              f"python {sys.version.split()[0]} zlib {zlib.ZLIB_VERSION} libjpeg "
+              f"{Image.core.jpeglib_version if hasattr(Image.core, 'jpeglib_version') else '?'}")
         print("potato-arena check: " + ("PASS" if ok else "FAIL"))
         return 0 if ok else 1
 

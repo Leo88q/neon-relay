@@ -59,7 +59,21 @@ jobs:
       - name: Generated UI art matches the generator (determinism)
         run: python3 scripts/build_neon_ui_art.py --check
       - name: Potato Arena backdrops / icon atlas match the bake (determinism)
-        run: python3 scripts/build_potato_arena_assets.py --check
+        # The check explains itself (which pixels differ, on which versions); pipe it into the job
+        # summary so a CI-only mismatch can actually be read back from the run page.
+        run: |
+          set -o pipefail
+          python3 scripts/build_potato_arena_assets.py --check 2>&1 | tee /tmp/bake-check.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "### Bake determinism mismatch"
+              echo '```'
+              cat /tmp/bake-check.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
       - name: Map blueprints match the map builders (determinism)
         run: python3 scripts/build_map_previews.py --check
       - name: Asset manifest validation (coverage, hashes, license texts)
