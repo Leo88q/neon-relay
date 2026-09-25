@@ -27,6 +27,7 @@ import math
 import os
 import sys
 import tempfile
+import zlib
 from pathlib import Path
 
 import numpy as np
@@ -436,25 +437,42 @@ def build_icon_atlas() -> Image.Image:
 
 
 def same_art(generated: Path, shipped: Path) -> bool:
-    """PNG atlases must be byte-identical; JPEG derivatives only have to survive the encoder.
+    """Compare a fresh bake with the shipped file by *pixels*, not by container bytes.
 
-    A quantized PNG is zlib + a fixed palette, so byte equality is a fair determinism test. A JPEG is
-    not: libjpeg-turbo on the runner may emit different bytes for the same pixels, which would make the
-    gate lie about the art. So for `.jpg` we compare decoded pixels and accept a mean error that stays
-    invisible (the same tolerance the backgrounds use).
+    Byte equality is the fast path and the strictest possible answer, but it is also a test of the
+    encoder: zlib and libjpeg builds differ between the sandbox and the runner, and a PNG re-saved
+    by another Pillow build can legitimately come out with different bytes for identical pixels.
+    The gate is about the art, so:
+
+      * PNG  - decoded pixels must be identical (RGBA compare, no tolerance);
+      * JPEG - libjpeg is lossy per build, so tolerate an invisible mean error (<= 2.5).
+
+    A mismatch prints what actually differs, because a determinism gate that can only say "DIFF"
+    cannot be debugged from a CI log.
     """
     if generated.read_bytes() == shipped.read_bytes():
         return True
-    if shipped.suffix.lower() not in (".jpg", ".jpeg"):
-        return False
-    a = np.asarray(Image.open(generated).convert("RGB"), dtype=np.float64)
-    b = np.asarray(Image.open(shipped).convert("RGB"), dtype=np.float64)
+    a = np.asarray(Image.open(generated).convert("RGBA"), dtype=np.int16)
+    b = np.asarray(Image.open(shipped).convert("RGBA"), dtype=np.int16)
     if a.shape != b.shape:
-        print(f"  size differs: {generated.name} {a.shape} vs {b.shape}")
+        print(f"  DIFF {rel(shipped)}: size {b.shape[1]}x{b.shape[0]} vs freshly baked "
+              f"{a.shape[1]}x{a.shape[0]}")
         return False
-    err = float(np.abs(a - b).mean())
-    print(f"  ~ re-encoded {shipped.name}: pixels match within MAE {err:.2f} (encoder differs, art does not)")
-    return err <= 2.5
+    diff = np.abs(a - b)
+    worst = int(diff.max())
+    changed = int((diff.any(axis=2)).sum())
+    if shipped.suffix.lower() in (".jpg", ".jpeg"):
+        err = float(diff.mean())
+        if err <= 2.5:
+            print(f"  ~ re-encoded {shipped.name}: pixels match within MAE {err:.2f} "
+                  f"(encoder differs, art does not)")
+            return True
+    else:
+        err = float(diff[..., :3].mean())
+    print(f"  DIFF {rel(shipped)}: {changed} of {a.shape[0] * a.shape[1]} pixels differ, "
+          f"MAE {err:.3f}, max {worst} "
+          f"(pillow {Image.__version__}, python {sys.version.split()[0]}, zlib {zlib.ZLIB_VERSION})")
+    return False
 
 
 def rel(path: Path) -> str:
