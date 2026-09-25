@@ -108,6 +108,13 @@
   .hero img{width:min(46vh,320px); border-radius:var(--panel-r)}
   .caption{font-size:19px}
   .legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:6px}
+  .sheetbox{position:relative; display:inline-block; vertical-align:top; border:2px solid var(--cyan); border-radius:10px}
+  .sheetbox canvas{position:absolute; inset:0; pointer-events:none}
+  .gbtn{width:16px; height:16px; display:inline-block; background-repeat:no-repeat}
+  .emo{width:32px; height:32px; display:inline-block; background-repeat:no-repeat}
+  .sheetrow{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap}
+  .sheetlabel{font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:16px}
+  .micro{font-size:10px; color:var(--dim); margin-top:3px}
   @media (max-width:880px){ .quests{grid-template-columns:1fr} .body{flex-direction:column} }
 </style>
 </head>
@@ -299,14 +306,49 @@ function settings(){
   </div>`;
 }
 
-const RENDER = {play:start, races:races, chars:chars, wallet:wallet, leaders:leaders, settings:settings};
+// Боевые листы движка: ровно та математика UV, что делают SelectSprite + CQuadItem.
+const GUI_ICONS = [['friend',1,0],['mute',5,0],['emoticon_mute',2,1]];
+const EMOTES = ['oop','exclamation','hearts','drop','dotdot','music','sorry','ghost'];
+function gridOverlay(){
+  const c=document.getElementById('gig'); if(!c) return; const x=c.getContext('2d');
+  x.strokeStyle='rgba(77,227,247,.45)'; x.lineWidth=1;
+  for(let i=1;i<12;i++){ x.beginPath(); x.moveTo(i*32+.5,0); x.lineTo(i*32+.5,64); x.stroke(); }
+  x.beginPath(); x.moveTo(0,32.5); x.lineTo(384,32.5); x.stroke();
+  GUI_ICONS.forEach(([,col,row])=>{ x.strokeStyle='#FF2E88'; x.lineWidth=2; x.strokeRect(col*32+1,row*32+1,30,30); });
+}
+function sheets(){
+  const gi = GUI_ICONS.map(([n,c,r])=>`<div style="text-align:center">
+      <div class="gbtn" style="background-image:url('../../data/gui_icons.png');background-size:192px 32px;background-position:${-c*16}px ${-r*16}px"></div>
+      <div class="micro">${n}<br>(${c},${r},1,1)</div></div>`).join('');
+  const em = EMOTES.map((n,i)=>`<div style="text-align:center">
+      <div class="emo" style="background-image:url('../../data/emoticons.png');background-size:128px 128px;background-position:${-(i%4)*32}px ${-Math.floor(i/4)*32}px"></div>
+      <div class="micro">${n}</div></div>`).join('');
+  return `<div class="panel pad" style="flex:1; max-width:900px">
+    <h2>Боевые листы <span class="muted">· data/*.png, выборка спрайтами из datasrc/content.py</span></h2>
+    <div class="sheetlabel">gui_icons.png 384×64 · сетка 12×2 по 32px → кнопка меню 16px</div>
+    <div class="sheetrow" style="margin:8px 0 12px">${gi}</div>
+    <div class="sheetbox"><img src="../../data/gui_icons.png" width="384" height="64" style="display:block; image-rendering:pixelated">
+      <canvas id="gig" width="384" height="64"></canvas></div>
+    <div class="sheetlabel">emoticons.png 512×512 · сетка 4×4 по 128px → эмодзи над тэлом 32px</div>
+    <div class="sheetrow" style="margin:8px 0 12px">${em}</div>
+    <div class="note">Раньше rect'ы спрайтов остались от upstream-листов: mute выбирал 4×2 ячейки
+      (128×64 px = четыре иконы в кнопке 16px), а эмодзи рисовались с шагом 32px при ячейке 128px
+      (мозаика 4×4). Сейчас разметка объявлена один раз — в <code>scripts/build_neon_ui_art.py</code>
+      (<code>GUI_ICON_*</code>, <code>EMOTE_*</code>) — и сверяется с <code>datasrc/content.py</code>
+      тестом <code>scripts/test_ui_sheet_grids.py</code>.</div>
+  </div>`;
+}
+
+const RENDER = {play:start, races:races, chars:chars, wallet:wallet, leaders:leaders, settings:settings, sheets:sheets};
 
 function render(){
   const p = PAGES.find(x=>x.id===current) || {bg:'arena_night'};
   document.getElementById('bg').style.backgroundImage = `url("../../data/ui/backgrounds/${p.bg}.png")`;
   document.getElementById('tabs').innerHTML = PAGES.map(x=>
     `<div class="tab ${x.id===current?'on':''}" data-id="${x.id}">${icon(x.icon, x.id===current?'cyan':'dim')}${x.label}</div>`).join('')
-    + `<div class="tab ${current==='play'?'on':''}" data-id="play">${icon(0, current==='play'?'cyan':'dim')}Экран запуска</div>`;
+    + `<div class="tab ${current==='play'?'on':''}" data-id="play">${icon(0, current==='play'?'cyan':'dim')}Экран запуска</div>`
+    + `<div class="tab ${current==='sheets'?'on':''}" data-id="sheets">${icon(19, current==='sheets'?'cyan':'dim')}Боевые листы</div>`;
+  gridOverlay();
   document.getElementById('page').innerHTML = (RENDER[current]||races)();
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{current=t.dataset.id; render();});
 }

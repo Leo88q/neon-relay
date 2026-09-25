@@ -39,6 +39,7 @@ jobs:
       - name: Potato assets and native catalog regression checks
         run: |
           python3 scripts/test_potato_assets.py
+          python3 scripts/test_ui_sheet_grids.py
           python3 scripts/test_menu_contract.py
           python3 scripts/test_map_format.py
           python3 scripts/test_reference_maps.py

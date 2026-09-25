@@ -426,9 +426,13 @@ container.sprites.Add(Sprite("guibutton_off", set_guibuttons, 0, 0, 4, 4))
 container.sprites.Add(Sprite("guibutton_on", set_guibuttons, 4, 0, 4, 4))
 container.sprites.Add(Sprite("guibutton_hover", set_guibuttons, 8, 0, 4, 4))
 
-container.sprites.Add(Sprite("guiicon_mute", set_guiicons, 0, 0, 4, 2))
-container.sprites.Add(Sprite("guiicon_emoticon_mute", set_guiicons, 4, 0, 4, 2))
-container.sprites.Add(Sprite("guiicon_friend", set_guiicons, 8, 0, 4, 2))
+# data/gui_icons.png is a 12x2 grid of 32px cells drawn by scripts/build_neon_ui_art.py, so a
+# single icon is one cell (x, y, 1, 1). The rects used to be 4x2 cells — correct for the old
+# 48x16 upstream sheet, a four-icon collage on the current one. Cells match GUI_ICON_CELLS in
+# the generator; scripts/test_ui_sheet_grids.py keeps the two in sync.
+container.sprites.Add(Sprite("guiicon_mute", set_guiicons, 5, 0, 1, 1))
+container.sprites.Add(Sprite("guiicon_emoticon_mute", set_guiicons, 2, 1, 1, 1))
+container.sprites.Add(Sprite("guiicon_friend", set_guiicons, 1, 0, 1, 1))
 
 
 container.sprites.Add(Sprite("hook_strong", set_strongweak, 0, 0, 1, 1))

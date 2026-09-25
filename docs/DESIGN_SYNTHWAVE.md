@@ -86,3 +86,27 @@ baked deterministically by `scripts/build_potato_arena_assets.py`, gate `--check
 `scripts/build_neon_ui_art.py`), `data/ui/weapons/weapons_6_128.png` (six weapon cells cut out of
 `data/game.png`, so a menu icon is the in-combat sprite). Rationale, the token-drift table and the
 honest-lobby copy rules: `docs/UI_POTATO_ARENA_REDESIGN_RU.md`.
+
+## Stage 21 — sprite-grid contract (2026-09-25)
+
+`datasrc/content.py` addresses sprites in **cells of the SpriteSet grid**, not in pixels, and
+`SelectSprite` divides by that grid at runtime. So three things must agree at all times: the grid
+declared in `content.py`, the pitch the generator actually draws at, and the rect of each sprite.
+When the original-art pass replaced `data/emoticons.png` (512×512) and `data/gui_icons.png`
+(384×64) with new artwork, the rects were left at upstream values: `guiicon_mute (0,0,4,2)` sampled
+128×64 px — four icons crammed into a 16px button — and the emoticon glyphs were drawn on a 32px
+pitch while `set_emoticons` uses a 4×4 grid (128px cells), so every emote above a tee was a 4×4
+collage. `CheckImageDivisibility` only verifies that the image divides by the grid, so CI stayed
+green.
+
+The layout is now declared once, in `scripts/build_neon_ui_art.py`
+(`EMOTE_GRID`/`EMOTE_CELL`/`EMOTE_NAMES`/`EMOTE_CELLS`, `GUI_ICON_COLS/ROWS/CELL/NAMES/CELLS`), and
+`scripts/test_ui_sheet_grids.py` (in `ci.yml` and `scripts/ci-local.sh`) fails if the grid, the
+pitch, the rects, the engine's contiguous `SPRITE_OOP + i` order, or the ink inside a named cell
+disagree. Rules for anyone touching these sheets:
+
+- Resizing a sheet means editing the generator constants **and** the SpriteSet grid in the same
+  commit; the test is the tie-breaker, do not "fix" it by cropping the PNG.
+- A menu icon drawn as one `CUi::ICOM_SIZE` quad needs a 1×1-cell rect.
+- Both sheets are deterministic (`build_neon_ui_art.py --check`), so glyph changes must land as a
+  regeneration, never as a hand-edited PNG.
