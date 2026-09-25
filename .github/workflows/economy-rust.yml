@@ -106,16 +106,25 @@ jobs:
       - name: Compile Anchor constraints and run workspace host tests
         shell: bash
         run: |
-          set -o pipefail
-          cargo test --manifest-path onchain/Cargo.toml --workspace --locked 2>&1 | tee "$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
+          LOG="$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
+          mkdir -p "$(dirname "$LOG")"
+          cargo test --manifest-path onchain/Cargo.toml --workspace --locked > "$LOG" 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
-            # Surface the tail as a check-run annotation (raw logs / artifacts
-            # are unreachable from the agent environment).
-            esc=$(tail -n 60 "$GITHUB_WORKSPACE/onchain/target/workspace-test.log" | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
+            # Surface the tail via step summary (user UI) + check-run
+            # annotation (agent channel); raw logs / artifacts are
+            # unreachable from the agent environment.
+            {
+              echo "## cargo test exit $status (tail of $LOG)"
+              echo '```'
+              tail -n 40 "$LOG"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            esc=$(tail -n 25 "$LOG" | cut -c1-400 | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
+            [ -n "$esc" ] || esc="cargo failed before producing output (exit $status); see workspace-test-log artifact"
             echo "::error title=cargo-test exit $status::${esc}"
-            exit "$status"
           fi
+          exit "$status"
       - name: Publish host test report to step summary
         if: always()
         shell: bash
