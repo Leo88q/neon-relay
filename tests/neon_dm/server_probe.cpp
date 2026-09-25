@@ -14,7 +14,7 @@
 
 namespace
 {
-int s_Stage = 0, s_Ticks = 0, s_StageTick = 0, s_DeathTick = 0;
+int s_Stage = 0, s_Ticks = 0, s_StageTick = 0, s_DeathTick = 0, s_ScoreLimitDeathTick = 0;
 int s_aFire[MAX_CLIENTS]{};
 bool s_Failed = false, s_Done = false;
 
@@ -33,6 +33,14 @@ bool Check(CGameContext *pGame, bool Condition, const char *pMessage)
 					pChr->GetWeaponAmmo(WEAPON_SHOTGUN), pChr->GetWeaponAmmo(WEAPON_LASER),
 					pGame->m_pController->SnapPlayerScore(Id, pGame->m_apPlayers[Id]));
 		}
+		// Round state, so a failure tells which half of the transition was missing: the frag
+		// (scores below) or the round end (paused). Players without a character - the killed
+		// one - are only visible here.
+		log_error("dm-probe", "round tick=%d paused=%d reset_requested=%d", pGame->Server()->Tick(),
+			pGame->m_pController->IsGamePaused(), pGame->m_World.m_ResetRequested);
+		for(int Id = 0; Id < MAX_CLIENTS; ++Id)
+			if(pGame->m_apPlayers[Id] && pGame->Server()->ClientIngame(Id))
+				log_error("dm-probe", "frags=%d: %d", Id, pGame->m_pController->SnapPlayerScore(Id, pGame->m_apPlayers[Id]));
 		pGame->Server()->SetErrorShutdown("DM server probe failed");
 	}
 	return Condition;
@@ -179,8 +187,19 @@ void NeonDmServerProbeTick(CGameContext *pGame)
 	case 7:
 		if(!pB)
 		{
-			if(!Check(pGame, pA && Score(A) == 2 && pGame->m_pController->IsGamePaused() &&
-				pA->GetWeaponAmmo(WEAPON_LASER) < 10, "laser frag and gameover at score limit")) return;
+			// The frag and the round end belong to the same frame, but the round end is decided
+			// in the controller's Tick, which runs after this probe (CGameContext::OnTick calls
+			// the probe first and the controller later). An observation can therefore land in the
+			// frame between the two. Wait for the pause - but only half a second of grace: a
+			// round that reaches the score limit and never pauses is still a failure.
+			if(!s_ScoreLimitDeathTick)
+				s_ScoreLimitDeathTick = Now;
+			if(!pGame->m_pController->IsGamePaused())
+			{
+				if(!Check(pGame, Now - s_ScoreLimitDeathTick <= Hz / 2, "round must end after the score limit frag")) return;
+				break;
+			}
+			if(!Check(pGame, pA && Score(A) == 2 && pA->GetWeaponAmmo(WEAPON_LASER) < 10, "laser frag and gameover at score limit")) return;
 			Next(pGame, "LASER_KILL_GAMEOVER");
 			break;
 		}
