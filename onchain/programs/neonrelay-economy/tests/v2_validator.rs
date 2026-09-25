@@ -68,6 +68,10 @@ fn rpc_lifecycle() {
             ata::instruction::create_associated_token_account(&admin.pubkey(), &admin.pubkey(), &mints[i].pubkey(), &spl_token::id()),
             ata::instruction::create_associated_token_account(&admin.pubkey(), &player.pubkey(), &mints[i].pubkey(), &spl_token::id()),
             spl_token::instruction::mint_to(&spl_token::id(), &mints[i].pubkey(), &sources[i], &admin.pubkey(), &[], 100).unwrap(),
+            // Both bootstrap paths reject live mint authorities: revoke the
+            // mint authority after seeding (freeze authority was never set).
+            spl_token::instruction::set_authority(&spl_token::id(), &mints[i].pubkey(), None,
+                spl_token::instruction::AuthorityType::MintTokens, &admin.pubkey(), &[]).unwrap(),
         ], true);
     }
     // Exercise real legacy bootstrap, not a genesis account fixture.
@@ -89,6 +93,9 @@ fn rpc_lifecycle() {
         send(&rpc, &admin, &[], vec![ix(accounts::InitializeV2 { authority: admin.pubkey(), legacy_config: legacy,
             mint, config, treasury_ata: treasury[i], vault_ata: vault, token_program: spl_token::id(),
             associated_token_program: ata::id(), system_program: system_program::id() }, instruction::InitializeV2 { rake_bps: 1000 })], true);
+        // Markets start fail-closed (paused); opening is an explicit operator act.
+        send(&rpc, &admin, &[], vec![ix(accounts::AdminV2 { authority: admin.pubkey(), config },
+            instruction::SetPausedV2 { paused: false })], true);
         let reference = [42; 32];
         let ticket = pda(&[b"neonrelay_entry_v2", mint.as_ref(), &reference, player.pubkey().as_ref()]);
         let pay = ix(accounts::PayEntryV2 { player: player.pubkey(), config, player_ata: sources[i], vault_ata: vault,
