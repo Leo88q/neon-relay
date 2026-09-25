@@ -108,6 +108,14 @@ jobs:
         run: |
           set -o pipefail
           cargo test --manifest-path onchain/Cargo.toml --workspace --locked 2>&1 | tee "$GITHUB_WORKSPACE/onchain/target/workspace-test.log"
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            # Surface the tail as a check-run annotation (raw logs / artifacts
+            # are unreachable from the agent environment).
+            esc=$(tail -n 60 "$GITHUB_WORKSPACE/onchain/target/workspace-test.log" | awk '{gsub(/%/,"%25"); printf "%s%s",(NR>1?"%0A":""),$0}')
+            echo "::error title=cargo-test exit $status::${esc}"
+            exit "$status"
+          fi
       - name: Publish host test report to step summary
         if: always()
         shell: bash
