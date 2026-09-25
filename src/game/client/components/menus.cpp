@@ -563,13 +563,16 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		{
 			CUIRect Tab;
 			Box.VSplitLeft(Width, &Tab, &Box);
+			// Maps and the armoury are sections of "Play": keep that tab lit while they are open, so
+			// the bar cannot show five inactive tabs on a page the user is looking at.
+			const bool Active = m_MenuPage == aPages[i] || (aPages[i] == PAGE_RACES && SectionFromPage(m_MenuPage) > 0);
 			// A 20px icon sits left of the label inside the same tab; the label keeps its own rect
 			// so the upstream button visuals and the hit area are unchanged.
 			CUIRect Icon = Tab;
 			Icon.VSplitLeft(Icon.h * 0.9f, &Icon, nullptr);
 			Icon.Margin(Icon.h * 0.2f, &Icon);
-			RenderIcon(aIcons[i], &Icon, m_MenuPage == aPages[i] ? NeonStyle::CYAN : NeonStyle::DIM, 1.0f);
-			if(DoButton_MenuTab(&s_aTabs[i], apLabels[i], m_MenuPage == aPages[i], &Tab, IGraphics::CORNER_T))
+			RenderIcon(aIcons[i], &Icon, Active ? NeonStyle::CYAN : NeonStyle::DIM, 1.0f);
+			if(DoButton_MenuTab(&s_aTabs[i], apLabels[i], Active, &Tab, IGraphics::CORNER_T))
 				SetMenuPage(aPages[i]);
 		}
 		return;
@@ -769,7 +772,7 @@ void CMenus::OnInit()
 	static const char *const apBgNames[] = {
 		"ui/backgrounds/arena_night.png", "ui/backgrounds/arena_burn.png", "ui/backgrounds/arena_roster.png",
 		"ui/backgrounds/arena_vault.png", "ui/backgrounds/arena_podium.png", "ui/backgrounds/arena_control.png",
-		"ui/backgrounds/arena_combat.png", "ui/backgrounds/arena_popup.png"};
+		"ui/backgrounds/arena_combat.png", "ui/backgrounds/arena_popup.png", "ui/backgrounds/arena_armory.png"};
 	for(size_t i = 0; i < m_aBgTextures.size(); ++i)
 	{
 		CImageInfo Info;
@@ -781,6 +784,9 @@ void CMenus::OnInit()
 	// Style atlases: gamification icons (8x3 of 64px) and the six-weapon strip (6x128px).
 	m_IconAtlas = Graphics()->LoadTexture("ui/icons/gamification_24.png", IStorage::TYPE_ALL);
 	m_WeaponStrip = Graphics()->LoadTexture("ui/weapons/weapons_6_128.png", IStorage::TYPE_ALL);
+	// Arsenal cards and map blueprints (scripts/build_potato_arena_assets.py, build_map_previews.py).
+	m_ArsenalAtlas = Graphics()->LoadTexture("ui/arsenal/cards_6.png", IStorage::TYPE_ALL);
+	m_MapPreviews = Graphics()->LoadTexture("ui/maps/previews.png", IStorage::TYPE_ALL);
 	// Character portraits – original potato skins, NOT regenerated, keep original names
 	const char *apPortraitNames[] = {
 		"portraits/potato_cool_guy_1.png", "portraits/potato_cool_girl_1.png", "portraits/potato_guy_2.png",
@@ -1004,6 +1010,10 @@ void CMenus::Render()
 
 			if(m_MenuPage == PAGE_RACES)
 				RenderRaceLobby(MainView);
+			else if(m_MenuPage == PAGE_ARSENAL)
+				RenderArsenal(MainView);
+			else if(m_MenuPage == PAGE_MAPS)
+				RenderMaps(MainView);
 			else if(m_MenuPage == PAGE_CHARACTERS)
 				RenderCharacters(MainView);
 			else if(m_MenuPage == PAGE_WALLET)
@@ -2251,6 +2261,8 @@ void CMenus::OnShutdown()
 	for(auto &Texture : m_aBgTextures) Graphics()->UnloadTexture(&Texture);
 	Graphics()->UnloadTexture(&m_IconAtlas);
 	Graphics()->UnloadTexture(&m_WeaponStrip);
+	Graphics()->UnloadTexture(&m_ArsenalAtlas);
+	Graphics()->UnloadTexture(&m_MapPreviews);
 	m_CommunityIcons.Shutdown();
 }
 
@@ -2607,6 +2619,7 @@ void CMenus::RenderBackground()
 		case PAGE_CHARACTERS: BgIndex = 2; break;
 		case PAGE_WALLET: BgIndex = 3; break;
 		case PAGE_LEADERS: BgIndex = 4; break;
+		case PAGE_ARSENAL: BgIndex = 8; break; // the room the cards were photographed in
 		case PAGE_SETTINGS: BgIndex = 5; break;
 		default:
 			if(m_MenuPage >= PAGE_INTERNET && m_MenuPage <= PAGE_FAVORITE_COMMUNITY_5)

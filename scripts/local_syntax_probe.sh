@@ -132,6 +132,7 @@ src/engine/client/serverbrowser_ping_cache.cpp
 src/engine/client/updater.cpp
 src/game/client/gameclient.cpp
 src/game/client/components/chat.cpp
+src/game/client/components/menus_arsenal.cpp
 src/game/client/components/menus.cpp
 src/game/client/components/menus_browser.cpp
 src/game/client/components/menus_ingame.cpp

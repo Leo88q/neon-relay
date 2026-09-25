@@ -8,6 +8,8 @@
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
+#include <base/color.h>
+#include <generated/client_data.h>
 
 #include <generated/protocol.h>
 
@@ -266,6 +268,14 @@ void CSpectator::OnRender()
 	float StartY = -190.0f;
 	float LineHeight = 60.0f;
 	float TeeSizeMod = 1.0f;
+
+	// Marks next to a name used to be single glyphs (⬤, ◯, ♥) pushed through the text renderer. A sprite
+	// does not care whether the debug font carries those codepoints, and the colour comes from the
+	// caller instead of a global TextColor() that the following draws had to reset.
+	auto DrawGuiIcon = [this](int SpriteId, float x, float y, float Size, const ColorRGBA &Color) {
+		const CUIRect Rect = {x, y, Size, Size};
+		RenderTools()->RenderIcon(IMAGE_GUIICONS, SpriteId, &Rect, &Color);
+	};
 	float RoundRadius = 30.0f;
 	bool MultiViewSelected = false;
 	int TotalPlayers = 0;
@@ -544,15 +554,13 @@ void CSpectator::OnRender()
 		if(GameClient()->m_MultiViewActivated)
 		{
 			if(GameClient()->m_aMultiViewId[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId])
-			{
-				TextRender()->TextColor(0.1f, 1.0f, 0.1f, PlayerSelected ? 1.0f : 0.5f);
-				TextRender()->Text(Width / 2.0f + x + 50.0f + 180.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize - 3, "⬤", 220.0f);
-			}
+				DrawGuiIcon(SPRITE_GUIICON_DOT_FILLED, Width / 2.0f + x + 50.0f + 180.0f,
+					Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.0f, FontSize - 3,
+					ColorRGBA(0.1f, 1.0f, 0.1f, PlayerSelected ? 1.0f : 0.5f));
 			else if(GameClient()->m_MultiViewTeam == DDTeam)
-			{
-				TextRender()->TextColor(1.0f, 0.1f, 0.1f, PlayerSelected ? 1.0f : 0.5f);
-				TextRender()->Text(Width / 2.0f + x + 50.0f + 180.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize - 3, "◯", 220.0f);
-			}
+				DrawGuiIcon(SPRITE_GUIICON_DOT_EMPTY, Width / 2.0f + x + 50.0f + 180.0f,
+					Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.0f, FontSize - 3,
+					ColorRGBA(1.0f, 0.1f, 0.1f, PlayerSelected ? 1.0f : 0.5f));
 		}
 
 		// flag
@@ -585,9 +593,9 @@ void CSpectator::OnRender()
 
 		if(GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
 		{
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)));
-			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, "♥", 220.0f);
-			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+			DrawGuiIcon(SPRITE_GUIICON_HEART, Width / 2.0f + x - TeeInfo.m_Size / 2.0f,
+				Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.0f, FontSize,
+				color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)));
 		}
 
 		y += LineHeight;

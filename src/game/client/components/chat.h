@@ -55,6 +55,12 @@ class CChat : public CComponent
 		STextContainerIndex m_TextContainerIndex;
 		int m_QuadContainerIndex;
 
+		// Friend marker. The glyph used to live inside the text stream; a sprite does not, so the
+		// build pass records where it belongs and OnRender draws it with the container's own offset.
+		vec2 m_FriendIconPos;
+		float m_FriendIconSize;
+		bool m_HasFriendIcon;
+
 		std::shared_ptr<CManagedTeeRenderInfo> m_pManagedTeeRenderInfo;
 
 		float m_TextYOffset;

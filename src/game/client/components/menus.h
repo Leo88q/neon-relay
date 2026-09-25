@@ -658,11 +658,13 @@ protected:
 
 	IGraphics::CTextureHandle m_TextureBlob;
 	IGraphics::CTextureHandle m_aCharacterPortraits[10];
-	std::array<IGraphics::CTextureHandle, 8> m_aBgTextures;
+	std::array<IGraphics::CTextureHandle, 9> m_aBgTextures;
 	// Style atlases. Both are drawn with explicit UV sub-rects (IGraphics::QuadsSetSubset),
 	// so they need no datasrc sprite registration; see scripts/build_potato_arena_assets.py.
 	IGraphics::CTextureHandle m_IconAtlas; // ui/icons/gamification_24.png, 8x3 cells of 64px
 	IGraphics::CTextureHandle m_WeaponStrip; // ui/weapons/weapons_6_128.png, 6 cells of 128px
+	IGraphics::CTextureHandle m_ArsenalAtlas; // ui/arsenal/cards_6.png, 3x2 cells of 384x256
+	IGraphics::CTextureHandle m_MapPreviews; // ui/maps/previews.png, 5x1 cells of 320x160
 
 public:
 	void RenderBackground();
@@ -670,6 +672,17 @@ public:
 	void RenderWeaponIcon(int WeaponIndex, const CUIRect *pRect, float AlphaScale = 1.0f);
 	// Local-progress strip and the six-weapon availability row of the lobby (neon_progress.h).
 	void RenderProgressStrip(CUIRect Rect);
+	// Armoury room + arena map gallery (components/menus_arsenal.cpp) and the primitives they share.
+	void RenderArsenal(CUIRect MainView);
+	void RenderMaps(CUIRect MainView);
+	void RenderSectionBar(CUIRect Rect, int Active);
+	void RenderSectionHeader(const CUIRect *pRect, const char *pTitle, const char *pNote);
+	void RenderStatChip(const CUIRect *pRect, const char *pLabel, const char *pValue, ColorRGBA ValueColor);
+	void RenderAtlasCell(const IGraphics::CTextureHandle &Texture, int CellsX, int CellsY, int CellIndex,
+		const CUIRect *pRect, float Alpha);
+	// Which section of the "Play" group a page belongs to: 0 lobby, 1 maps, 2 arsenal. Keeps the
+	// tab bar honest when a sub-page is open, and is used by RenderSectionBar for its highlight.
+	static int SectionFromPage(int Page);
 	void RenderWeaponStrip(CUIRect Rect, const char *pCaption);
 	void RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, ColorRGBA BorderColor, bool WithGlow, bool WithImpulse, float ImpulseProgress, ColorRGBA ImpulseColor);
 
@@ -717,6 +730,8 @@ public:
 		PAGE_GHOST,
 
 		PAGE_RACES,
+		PAGE_MAPS,
+		PAGE_ARSENAL,
 		PAGE_CHARACTERS,
 		PAGE_WALLET,
 		PAGE_LEADERS,
