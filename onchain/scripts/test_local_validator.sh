@@ -13,18 +13,18 @@ trap cleanup EXIT
 export NEONRELAY_LOCAL_VALIDATOR=1
 export NEONRELAY_PUBLIC_FIXTURE="$TMP/public-accounts.json"
 # The legacy bootstrap only accepts the program's UPGRADE AUTHORITY as
-# signer. So deploy the ELF explicitly with a disposable key (it becomes
-# the upgrade authority), and make that same key the test's admin.
-# SOLANA_CONFIG points the CLI — and thus the deployer — at the
-# throwaway keypair only; no persisted keys are ever created.
+# signer. The genesis --bpf-program deploy is performed by the validator's
+# default keypair (the identity, since no separate --mint is given), so run
+# the validator with a throwaway key as its identity: that key becomes the
+# upgrade authority, and the test loads the same key as admin. No persisted
+# keys are ever created.
 BOOTSTRAP_KEY="$TMP/bootstrap.json"
 solana-keygen new --no-bip39-passphrase --force -s -o "$BOOTSTRAP_KEY" > /dev/null
 export NEONRELAY_BOOTSTRAP_KEYPAIR="$BOOTSTRAP_KEY"
-export SOLANA_CONFIG="$TMP/solana-config"
-mkdir -p "$SOLANA_CONFIG"
-cp "$BOOTSTRAP_KEY" "$SOLANA_CONFIG/id.json"
 solana-test-validator --reset --ledger "$TMP/ledger" --bind-address 127.0.0.1 --rpc-port 8899 \
-  >"$TMP/validator.log" 2>&1 &
+  --identity "$BOOTSTRAP_KEY" \
+  --bpf-program FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9 \
+  "$ROOT/onchain/target/deploy/neonrelay_economy.so" >"$TMP/validator.log" 2>&1 &
 PID=$!
 export VALIDATOR_PID="$PID"
 if ! python3 - <<'PY'
@@ -46,29 +46,6 @@ then
   tail -40 "$TMP/validator.log"
   exit 1
 fi
-# Fund the bootstrap key (rent for the program account + the airdrops it
-# will pay for) and deploy the economy ELF as that key. This CLI version
-# ignores SOLANA_CONFIG for command keypair resolution and has
-# 'solana airdrop' (not request-airdrop), so pass --keypair and --url
-# explicitly on every command.
-URL="http://127.0.0.1:8899"
-BOOT_PUBKEY="$(solana-keygen pubkey "$BOOTSTRAP_KEY" 2>/dev/null | awk '{print $NF}')"
-[ -n "$BOOT_PUBKEY" ] || { echo "could not derive bootstrap pubkey"; exit 1; }
-solana airdrop 25 "$BOOT_PUBKEY" --url "$URL" --keypair "$BOOTSTRAP_KEY" >>"$TMP/deploy.log" 2>&1 || {
-  tail -40 "$TMP/deploy.log"; tail -20 "$TMP/validator.log"; exit 1; }
-for _ in $(seq 1 90); do
-  bal="$(solana balance "$BOOT_PUBKEY" --url "$URL" --keypair "$BOOTSTRAP_KEY" 2>/dev/null | awk '{print $2}')"
-  if [ -n "$bal" ] && python3 -c "import sys; sys.exit(0 if float('${bal:-0}') >= 1.0 else 1)"; then
-    break
-  fi
-  sleep 1
-done
-solana balance "$BOOT_PUBKEY" --url "$URL" --keypair "$BOOTSTRAP_KEY" >>"$TMP/deploy.log" 2>&1 || {
-  tail -40 "$TMP/deploy.log"; exit 1; }
-solana program deploy --program-id FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9 \
-  --keypair "$BOOTSTRAP_KEY" --url "$URL" \
-  "$ROOT/onchain/target/deploy/neonrelay_economy.so" >>"$TMP/deploy.log" 2>&1 || {
-  tail -40 "$TMP/deploy.log"; tail -20 "$TMP/validator.log"; exit 1; }
 RUST_LOG=error cargo test --manifest-path onchain/Cargo.toml -p neonrelay-economy \
   --test v2_validator -- --ignored --test-threads=1
 node --experimental-strip-types onchain/scripts/verify_validator_rpc.ts
