@@ -115,7 +115,47 @@
   .sheetrow{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap}
   .sheetlabel{font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:16px}
   .micro{font-size:10px; color:var(--dim); margin-top:3px}
-  @media (max-width:880px){ .quests{grid-template-columns:1fr} .body{flex-direction:column} }
+  /* Общая шкала страниц: заголовок с тиком, секции, карточки, чипы. Повторяет
+     RenderSectionHeader / RenderSectionBar / RenderStatChip из menus_arsenal.cpp. */
+  .sect{display:flex; gap:4px; height:30px; margin:0 0 12px}
+  .sect a{flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13px;
+          background:rgba(10,14,30,.6); border:1px solid rgba(96,116,148,.35); border-radius:10px;
+          color:var(--dim); cursor:pointer; text-decoration:none}
+  .sect a.on{color:var(--ice); border-color:rgba(77,227,247,.7); background:rgba(16,26,48,.92);
+            box-shadow:0 0 10px rgba(77,227,247,.16)}
+  .hd{display:flex; align-items:baseline; gap:10px; border-left:3px solid var(--cyan); padding-left:10px; margin:0 0 10px}
+  .hd h2{font-size:22px; margin:0; letter-spacing:.05em}
+  .hd .note{margin-left:auto; font-size:12px; color:var(--dim)}
+  .rules{display:flex; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--dim); margin:0 0 12px}
+  .grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:12px}
+  .wc{background:rgba(10,14,30,.92); border:2px solid rgba(77,227,247,.5); border-radius:var(--card-r);
+      overflow:hidden; display:flex; flex-direction:column}
+  .wc.off{border-color:rgba(96,116,148,.45)}
+  .wc .art{aspect-ratio:3/2; background-image:url("../../data/ui/arsenal/cards_6.png");
+           background-size:300% 200%; background-repeat:no-repeat; border-bottom:1px solid rgba(77,227,247,.25)}
+  .wc.off .art{filter:saturate(.35) brightness(.7)}
+  .wc .b{padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px}
+  .wc h3{margin:0; font-size:18px; display:flex; align-items:center; gap:8px}
+  .wc .role{color:var(--cyan); font-size:13px}
+  .wc .how{font-size:12.5px}
+  .wc .tip{font-size:12px; color:var(--dim)}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:2px}
+  .chip2{border:1px solid rgba(96,116,148,.4); border-radius:8px; padding:3px 7px; font-size:11px;
+         color:var(--dim); background:rgba(5,6,14,.5)}
+  .chip2 b{color:var(--ice); font-weight:600; margin-left:5px}
+  .chip2.ok b{color:var(--mint)} .chip2.no b{color:var(--pink)}
+  .wicon{width:26px;height:26px;flex:none;background-image:url("../../data/ui/weapons/weapons_6_128.png");
+         background-size:156px 26px;background-repeat:no-repeat}
+  .mp{aspect-ratio:2/1; background-image:url("../../data/ui/maps/previews.png");
+      background-size:500% 100%; background-repeat:no-repeat; border-radius:10px;
+      border:1px solid rgba(77,227,247,.35); background-color:var(--night-0)}
+  .guiicon{width:16px;height:16px;display:inline-block;image-rendering:auto;vertical-align:-3px;
+           background-image:url("../../data/gui_icons.png"); background-size:192px 48px; background-repeat:no-repeat}
+  .mc{background:rgba(10,14,30,.92); border:1px solid rgba(77,227,247,.45); border-radius:var(--card-r);
+      overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+  .mc .mp{border-radius:0; border:none; border-right:1px solid rgba(77,227,247,.2)}
+  .mc .b{padding:10px 12px; display:flex; flex-direction:column; gap:5px}
+  @media (max-width:880px){ .quests{grid-template-columns:1fr} .body{flex-direction:column} .mc{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -136,6 +176,8 @@
 // Одна и та же комната, семь состояний света — ровно как в клиенте (CMenus::RenderBackground).
 const PAGES = [
   {id:'races', label:'Играть · выжигание', icon:20, bg:'arena_burn'},
+  {id:'maps', label:'Карты арены', icon:21, bg:'arena_night'},
+  {id:'arsenal', label:'Оружейная', icon:11, bg:'arena_armory'},
   {id:'chars', label:'Персонажи', icon:13, bg:'arena_roster'},
   {id:'wallet', label:'Кошелёк', icon:5, bg:'arena_vault'},
   {id:'leaders', label:'Лидеры', icon:6, bg:'arena_podium'},
@@ -307,14 +349,18 @@ function settings(){
 }
 
 // Боевые листы движка: ровно та математика UV, что делают SelectSprite + CQuadItem.
-const GUI_ICONS = [['friend',1,0],['mute',5,0],['emoticon_mute',2,1]];
+const GUI_ICONS = [['friend',1,0],['mute',5,0],['emoticon_mute',2,1]]; // движковые спрайты (красным)
+const GUI_ROWS = 3;
 const EMOTES = ['oop','exclamation','hearts','drop','dotdot','music','sorry','ghost'];
 function gridOverlay(){
   const c=document.getElementById('gig'); if(!c) return; const x=c.getContext('2d');
   x.strokeStyle='rgba(77,227,247,.45)'; x.lineWidth=1;
-  for(let i=1;i<12;i++){ x.beginPath(); x.moveTo(i*32+.5,0); x.lineTo(i*32+.5,64); x.stroke(); }
-  x.beginPath(); x.moveTo(0,32.5); x.lineTo(384,32.5); x.stroke();
-  GUI_ICONS.forEach(([,col,row])=>{ x.strokeStyle='#FF2E88'; x.lineWidth=2; x.strokeRect(col*32+1,row*32+1,30,30); });
+  for(let i=1;i<12;i++){ x.beginPath(); x.moveTo(i*32+.5,0); x.lineTo(i*32+.5,96); x.stroke(); }
+  for(let j=1;j<3;j++){ x.beginPath(); x.moveTo(0,j*32+.5); x.lineTo(384,j*32+.5); x.stroke(); }
+  Object.entries(GUI_CELLS).forEach(([n,[col,row]])=>{
+    x.strokeStyle = GUI_ICONS.some(g=>g[0]===n) ? '#FF2E88' : 'rgba(255,200,87,.9)';
+    x.lineWidth=2; x.strokeRect(col*32+1,row*32+1,30,30);
+  });
 }
 function sheets(){
   const gi = GUI_ICONS.map(([n,c,r])=>`<div style="text-align:center">
@@ -325,10 +371,10 @@ function sheets(){
       <div class="micro">${n}</div></div>`).join('');
   return `<div class="panel pad" style="flex:1; max-width:900px">
     <h2>Боевые листы <span class="muted">· data/*.png, выборка спрайтами из datasrc/content.py</span></h2>
-    <div class="sheetlabel">gui_icons.png 384×64 · сетка 12×2 по 32px → кнопка меню 16px</div>
+    <div class="sheetlabel">gui_icons.png 384×96 · сетка 12×3 по 32px → кнопка 16px и маркеры в чате/списке</div>
     <div class="sheetrow" style="margin:8px 0 12px">${gi}</div>
-    <div class="sheetbox"><img src="../../data/gui_icons.png" width="384" height="64" style="display:block; image-rendering:pixelated">
-      <canvas id="gig" width="384" height="64"></canvas></div>
+    <div class="sheetbox"><img src="../../data/gui_icons.png" width="384" height="96" style="display:block; image-rendering:pixelated">
+      <canvas id="gig" width="384" height="96"></canvas></div>
     <div class="sheetlabel">emoticons.png 512×512 · сетка 4×4 по 128px → эмодзи над тэлом 32px</div>
     <div class="sheetrow" style="margin:8px 0 12px">${em}</div>
     <div class="note">Раньше rect'ы спрайтов остались от upstream-листов: mute выбирал 4×2 ячейки
@@ -339,7 +385,117 @@ function sheets(){
   </div>`;
 }
 
-const RENDER = {play:start, races:races, chars:chars, wallet:wallet, leaders:leaders, settings:settings, sheets:sheets};
+// Копия таблиц из src/game/client/neon_arsenal.h; цифры в клиенте сверяет
+// scripts/test_map_catalog.py (damage/delay из datasrc/content.py, карты — из build_neon_maps.py).
+const WEAPONS = [
+ ['Hammer','Молот','Ближний бой и выталкивание','Дуга удара, 3 урона и сильный отброс на обоих (character.cpp:553).','Очко за frag молотом не начисляется: удар считается административным.',3,125,'∞',true],
+ ['Pistol','Пистолет','Штатное оружие на старте','Снаряд живёт 2 с, 1 урон за попадание, скорость 2200 (content.py:596).','Патроны восстанавливаются сами: 10 в магазине, регенерация каждые 500 мс.',1,125,10,true],
+ ['Shotgun','Дробовик','Веер вблизи','5 дробин по 1 урону, разброс ±0.185 рад, снаряд живёт 0.25 с (character.cpp:595).','В deathmatch это веер; вне его тот же выстрел становится лучом — не путайся между режимами.',5,500,10,true],
+ ['Grenade','Граната','Взрыв и отскок от земли','Радиус 135 px, внутренний 48 px, урон падает с расстоянием (gamecontext.cpp:396).','Свой взрыв толкает так же, как чужой: им и разгоняются, и запрыгивают на полки.',2,500,10,true],
+ ['Laser','Лазер','Прямой луч на 800 px','5 урона, задержка 800 мс, одно отражение без штрафа (content.py:639, laser.cpp:100).','Бьёт ровно одного: второй tee за первым не получит ничего, целиться надо в ближнего.',5,800,10,true],
+ ['Ninja','Ниндзя','Меч и рывок','9 урона, 15 с усиления, +50 к скорости на 200 мс (content.py:649).','В NeonDM не выпадает: контроллер разрешает подбор только дробовика, гранат и лазера.',9,800,'∞',false],
+];
+// [имя, подпись, cell, grid, спавны, чекпойнты, death, nohook]; cell<0 — нет блюпринта.
+const MAPROWS = [
+ ['Neon Relay Basin','сбалансированный заезд-введение',0,'220×70',3,3,100,35],
+ ['Chromatic Canyon','хук-роут по каньону над рекой смерти',1,'240×90',3,3,163,0],
+ ['Vector Spire','зигзаг полок вверх',2,'160×110',3,6,24,44],
+ ['Midnight Circuit','быстрый слалом по плоскому кругу',3,'260×56',3,5,22,81],
+ ['Aurora Ascent','лесенка под полосой авроры',4,'200×100',3,4,550,200],
+ ['Neon Relay Warmup','разминка: без дропов и без очков',-1,'—',0,0,0,0],
+];
+const SECTIONS = [['races','Играть'],['maps','Карты'],['arsenal','Оружейная']];
+const sect = (id) => `<div class="sect">${SECTIONS.map(([k,l])=>
+  `<a data-go="${k}" class="${k===id?'on':''}">${l}</a>`).join('')}</div>`;
+const chips = (rows) => `<div class="chips">${rows.map(([l,v,c])=>`<span class="chip2 ${c||''}">${l}<b>${v}</b></span>`).join('')}</div>`;
+
+function arsenal(){
+  return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+  <div class="panel pad" style="flex:1; overflow:auto">
+    <div class="hd"><h2>Оружейная</h2><span class="note">шесть стволов, одна комната</span></div>
+    ${sect('arsenal')}
+    <div class="rules"><span>NeonDM: 10 HP и 10 брони</span><span>·</span>
+      <span>выпавшее оружие респавнится через 15 с</span><span>·</span>
+      <span>возрождение через 500 мс</span><span>·</span>
+      <span>фон = арена с шестью нишами, карточки — те же пиксели, что и иконки</span></div>
+    <div class="grid2">
+    ${WEAPONS.map((w,i)=>`<div class="wc ${w[8]?'':'off'}">
+        <div class="art" style="background-position:${(i%3)*50}% ${Math.floor(i/3)*100}%"></div>
+        <div class="b">
+          <h3><span class="wicon" style="background-position:-${i*26}px 0;${w[8]?'':'filter:saturate(.3) brightness(.7)'}"></span>${w[1]} <span class="muted" style="font-size:12px">${w[0]}</span></h3>
+          <div class="role">${w[2]}</div>
+          <div class="how">${w[3]}</div>
+          <div class="tip">${w[4]}</div>
+          ${chips([['урон',w[5]],['задержка',w[6]+' мс'],['магазин',w[7]],[ 'NeonDM', w[8]?'дроп':'не выпадает', w[8]?'ok':'no']])}
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="note" style="margin-top:10px">Молот и ниндзя показаны, хотя в пуле режима их нет: пустое
+      место в комнате надо объяснять, а не прятать.</div>
+  </div></div>`;
+}
+
+function maps(){
+  return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+  <div class="panel pad" style="flex:1; overflow:auto">
+    <div class="hd"><h2>Карты арены</h2><span class="note">27 карт в поставке · 6 из них наши</span></div>
+    ${sect('maps')}
+    <div class="rules"><span>блюпринты рисуются из самих карт: порода, смерть, no-hook, чекпойнты, спавны</span><span>·</span>
+      <span>генератор: scripts/build_map_previews.py (гейт --check в CI)</span></div>
+    <div style="display:flex; flex-direction:column; gap:10px">
+    ${MAPROWS.map(m=>`<div class="mc">
+        ${m[2]>=0?`<div class="mp" style="background-position:${m[2]*25}% 0"></div>`
+                 :`<div class="mp" style="background-size:auto; display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:12px">разминка, без блюпринта</div>`}
+        <div class="b">
+          <h3 style="margin:0; font-size:18px">${m[0]}</h3>
+          <div class="role" style="color:var(--cyan); font-size:13px">${m[1]}</div>
+          ${chips([['сетка',m[3]],['спавнов',m[4]],['чекпойнтов',m[5]],['смерть',m[6]],['no-hook',m[7]]])}
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="note" style="margin-top:10px">Остальные 21 — базовый набор исходного проекта (dm*, ctf*, Tutorial,
+      LearnToPlay и четыре служебные). Neon Relay их не перекраивает, поэтому у них нет ни блюпринта,
+      ни цифр: список и классификация проверяются scripts/test_map_catalog.py.</div>
+  </div></div>`;
+}
+
+const GUI_CELLS = {'friend':[1,0],'mute':[5,0],'emoticon_mute':[2,1],'heart':[9,0],'star':[10,0],'dot_filled':[0,2],'dot_empty':[1,2]};
+const gi = (n) => `<span class="guiicon" style="background-position:-${GUI_CELLS[n][0]*16}px -${GUI_CELLS[n][1]*16}px"></span>`;
+function emoji(){
+  const chatRow = `<div class="row" style="gap:6px; align-items:center; background:rgba(16,26,48,.85);
+      border:1px solid rgba(96,116,148,.35); border-radius:8px; padding:6px 8px">
+      ${gi('heart')}<b style="color:#FF6B9C">Люма</b><span class="muted">: going to burn the flag zone</span></div>`;
+  return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+  <div class="panel pad" style="flex:1; overflow:auto">
+    <div class="hd"><h2>Иконки вместо эмодзи</h2><span class="note">data/gui_icons.png · 12×3 по 32px</span></div>
+    <div class="rules"><span>глиф ♥ в чате и ⬤/◯ в списке наблюдателя заменены спрайтами:
+      им не нужен кодпоинт в шрифте, и цвет приходит из конфига, а не из TextColor()</span></div>
+    <div class="grid2">
+      <div>
+        <h2>Чат: строка друга</h2>
+        ${chatRow}
+        <div class="note" style="margin:6px 0 12px">Отступ = ширина иконки + пробел (1.15 × размер шрифта).
+          Мера и отрисовка используют одну функцию, поэтому перенос строк не разъезжается.</div>
+        <h2>Список наблюдателя</h2>
+        <div class="row" style="gap:8px"><span>${gi('dot_filled')}</span><span class="muted">выбран в multiview · клиент красит в #1AFF1A</span></div>
+        <div class="row" style="gap:8px"><span>${gi('dot_empty')}</span><span class="muted">своя команда · красит в #FF1A1A</span></div>
+        <div class="row" style="gap:8px"><span>${gi('heart')}</span><span class="muted">друг · цвет из cl_message_friend_color</span></div>
+      </div>
+      <div>
+        <h2>Кнопки 16px (engine-спрайты)</h2>
+        <div class="row" style="gap:12px">
+          ${['friend','mute','emoticon_mute'].map(n=>`<span style="text-align:center">${gi(n)}<div class="mini">${n}<br>(${GUI_CELLS[n].join(',')},1,1)</div></span>`).join('')}
+        </div>
+        <h2 style="margin-top:14px">Готово, но не используется в UI</h2>
+        <div class="row" style="gap:12px">${['star','dot_filled','dot_empty','heart'].map(n=>`<span style="text-align:center">${gi(n)}<div class="mini">${n}</div></span>`).join('')}</div>
+        <div class="note" style="margin-top:8px">★/✰ рейтинга карт остаются глифами: на них завязан
+          регэксп в src/test/score_test.cpp, а спрайтов в скорборде нет.</div>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+const RENDER = {play:start, races:races, chars:chars, wallet:wallet, leaders:leaders, settings:settings, sheets:sheets, arsenal:arsenal, maps:maps, emoji:emoji};
 
 function render(){
   const p = PAGES.find(x=>x.id===current) || {bg:'arena_night'};
@@ -347,7 +503,9 @@ function render(){
   document.getElementById('tabs').innerHTML = PAGES.map(x=>
     `<div class="tab ${x.id===current?'on':''}" data-id="${x.id}">${icon(x.icon, x.id===current?'cyan':'dim')}${x.label}</div>`).join('')
     + `<div class="tab ${current==='play'?'on':''}" data-id="play">${icon(0, current==='play'?'cyan':'dim')}Экран запуска</div>`
-    + `<div class="tab ${current==='sheets'?'on':''}" data-id="sheets">${icon(19, current==='sheets'?'cyan':'dim')}Боевые листы</div>`;
+    + `<div class="tab ${current==='sheets'?'on':''}" data-id="sheets">${icon(19, current==='sheets'?'cyan':'dim')}Боевые листы</div>`
+    + `<div class="tab ${current==='emoji'?'on':''}" data-id="emoji">${icon(9, current==='emoji'?'cyan':'dim')}Иконки вместо эмодзи</div>`;
+  document.querySelectorAll('[data-go]').forEach(a=>a.onclick=()=>{current=a.dataset.go; render();});
   gridOverlay();
   document.getElementById('page').innerHTML = (RENDER[current]||races)();
   document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{current=t.dataset.id; render();});

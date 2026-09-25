@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon Relay — a potato arena with six guns</title>
+<meta name="description" content="Neon Relay: a potato arena built on a hook-based engine. Burn-out mode, six weapons, 27 maps, local progression with no earning promises.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05060E">
+<link rel="stylesheet" href="landing.css">
+<link rel="alternate" hreflang="ru" href="index.html">
+<link rel="alternate" hreflang="en" href="en.html">
+</head>
+<body>
+
+<div class="nav">
+  <div class="wrap row">
+    <span class="brand"><i></i>Neon&nbsp;Relay</span>
+    <nav>
+      <a href="#arsenal">Arsenal</a>
+      <a href="#maps">Maps</a>
+      <a href="#progress">Progress</a>
+      <a href="#craft">How it is drawn</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <span class="lang"><a href="index.html">RU</a><b>EN</b></span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="art"></div>
+  <div class="scrim"></div>
+  <div class="wrap">
+    <span class="eyebrow">six niches · one beam of light · no fake lettering in the rasters</span>
+    <h1>A potato arena where<br>burn-out decides</h1>
+    <p class="lede">A neon room where two teams of potatoes share one hall. <b>Burn-out</b> (NeonDM): play to a
+      score limit, sudden death on a tie, and the only weapons in play are the ones that actually exist in the
+      mode — pistol at spawn, shotgun, grenades and laser off the floor. Everything else is cosmetics and your
+      own local progression.</p>
+    <div class="cta">
+      <a class="btn" href="#arsenal">Open the armoury</a>
+      <a class="btn ghost" href="#progress">How progression works</a>
+    </div>
+    <div class="facts">
+      <span><b>6</b>weapons, same art as the HUD</span>
+      <span><b>27</b>maps shipped</span>
+      <span><b>9</b>backdrops of one room</span>
+      <span><b>0</b>external requests on this page</span>
+    </div>
+  </div>
+</header>
+
+<section id="mode">
+  <div class="wrap">
+    <span class="eyebrow">the mode</span>
+    <h2>What burn-out is</h2>
+    <div class="grid g4">
+      <div class="card">
+        <span class="k">round</span>
+        <h3>Score or clock</h3>
+        <p class="note">A score limit and a minute limit, both server settings. Exactly one player has to
+          break into the lead, otherwise the round goes to sudden death.</p>
+      </div>
+      <div class="card">
+        <span class="k">survival</span>
+        <h3>10 HP + 10 armor</h3>
+        <p class="note">Armor does not absorb everything: any hit above 1 damage leaks one point through.
+          Respawn is 500 ms, so no long pauses.</p>
+      </div>
+      <div class="card">
+        <span class="k">drops</span>
+        <h3>Pickups respawn after 15 s</h3>
+        <p class="note">The controller lets you pick up shotgun, grenade and laser only. No ninja, no armor
+          or health packs — on purpose.</p>
+      </div>
+      <div class="card">
+        <span class="k">scoring</span>
+        <h3>A hammer kill scores nothing</h3>
+        <p class="note">A hammer hit counts as an administrative action: knockback yes, point no. Suicides
+          cost a point.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="arsenal">
+  <div class="wrap">
+    <span class="eyebrow">the armoury room</span>
+    <h2>Six weapons, laid out in their niches</h2>
+    <p class="lede">The room is the one the client draws: <code>data/ui/backgrounds/arena_armory.png</code>. The
+      cards come from a single atlas, <code>data/ui/arsenal/cards_6.png</code>, and the HUD icons are cut from the
+      same sprites the weapons use in combat — so "the pretty picture" and "the thing flying at you" are the
+      same object.</p>
+    <div class="room">
+      <div class="bgimg"></div>
+      <div class="veil"></div>
+      <div class="inner">
+
+        <div class="wcard">
+          <div class="art" style="background-position:0% 0%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:0 0"></span>Hammer</h3>
+            <div class="role">Melee and displacement</div>
+            <div class="how">A swing arc: 3 damage plus a hard knockback on both of you — you move too.</div>
+            <div class="tip">A hammer kill earns no point. It is a positioning tool, not a farming one.</div>
+            <div class="chips"><span class="chip">damage<b>3</b></span><span class="chip">delay<b>125 ms</b></span><span class="chip">magazine<b>∞</b></span><span class="chip ok">in fight<b>always</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:50% 0%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-26px 0"></span>Pistol</h3>
+            <div class="role">The weapon you spawn with</div>
+            <div class="how">The projectile lives 2 seconds, 1 damage per hit, flight speed 2200.</div>
+            <div class="tip">Magazine of 10 that refills itself every 500 ms — in burn-out you are rarely empty.</div>
+            <div class="chips"><span class="chip">damage<b>1</b></span><span class="chip">delay<b>125 ms</b></span><span class="chip">magazine<b>10</b></span><span class="chip ok">at spawn<b>yes</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:100% 0%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-52px 0"></span>Shotgun</h3>
+            <div class="role">A fan up close</div>
+            <div class="how">Five pellets of 1 damage, spread of ±0.185 rad, projectile lives 0.25 s.</div>
+            <div class="tip">Outside deathmatch the same shot turns into a beam. Do not mix the modes up: here it is a fan.</div>
+            <div class="chips"><span class="chip">damage<b>5</b></span><span class="chip">delay<b>500 ms</b></span><span class="chip">magazine<b>10</b></span><span class="chip ok">off the floor<b>yes</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:0% 100%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-78px 0"></span>Grenade</h3>
+            <div class="role">Explosion and a bounce off the floor</div>
+            <div class="how">Radius 135 px, inner radius 48 px: damage and knockback fall off with distance.</div>
+            <div class="tip">Your own blast pushes you exactly like an enemy one — that is how people gain speed and reach ledges.</div>
+            <div class="chips"><span class="chip">damage<b>2</b></span><span class="chip">delay<b>500 ms</b></span><span class="chip">magazine<b>10</b></span><span class="chip ok">off the floor<b>yes</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:50% 100%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-104px 0"></span>Laser</h3>
+            <div class="role">A straight beam, 800 px of it</div>
+            <div class="how">5 damage, 800 ms between shots, one wall bounce with no cost.</div>
+            <div class="tip">It hits exactly one tee: whoever stands behind them gets nothing. Aim at the nearest, not at the crowd.</div>
+            <div class="chips"><span class="chip">damage<b>5</b></span><span class="chip">delay<b>800 ms</b></span><span class="chip">magazine<b>10</b></span><span class="chip ok">off the floor<b>yes</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard no">
+          <div class="art" style="background-position:100% 100%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-130px 0; filter:saturate(.3) brightness(.7)"></span>Ninja</h3>
+            <div class="role">Sword and dash</div>
+            <div class="how">9 damage, 15 s of empowerment, +50 speed for the first 200 ms.</div>
+            <div class="tip">It never drops in burn-out: the controller does not let this pickup into the world. Shown so an empty niche is not a riddle.</div>
+            <div class="chips"><span class="chip">damage<b>9</b></span><span class="chip">delay<b>800 ms</b></span><span class="chip">magazine<b>∞</b></span><span class="chip no">in the mode<b>no</b></span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <p class="note">The numbers are not marketing: damage, delays and magazines are taken straight from
+      <code>datasrc/content.py</code>, the mode's weapon pool from
+      <code>src/game/server/gamemodes/neon_dm.cpp</code>. <code>scripts/test_map_catalog.py</code> fails if this page
+      and the code ever disagree.</p>
+  </div>
+</section>
+
+<section id="maps">
+  <div class="wrap">
+    <span class="eyebrow">maps</span>
+    <h2>Six of ours, twenty-one shared</h2>
+    <p class="lede">The previews are not "inspired by" the maps — they are drawn from the map data: rock, death,
+      no-hook, checkpoints, spawns. The same generator feeds the Maps page inside the client.</p>
+    <div class="grid g2">
+
+      <div class="map"><div class="mp" style="background-position:0% 0"></div>
+        <div class="b"><h3>Neon Relay Basin</h3>
+          <p class="note">balanced intro race: three spawns, three checkpoints, four death pits.</p>
+          <div class="chips"><span class="chip">grid<b>220×70</b></span><span class="chip">death<b>100</b></span><span class="chip">no-hook<b>35</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:25% 0"></div>
+        <div class="b"><h3>Chromatic Canyon</h3>
+          <p class="note">canyon hook route over a death river: almost no no-hook, 163 death tiles.</p>
+          <div class="chips"><span class="chip">grid<b>240×90</b></span><span class="chip">checkpoints<b>3</b></span><span class="chip">death<b>163</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:50% 0"></div>
+        <div class="b"><h3>Vector Spire</h3>
+          <p class="note">zigzag ledge tower climb: six checkpoints, narrow platforms, one miss sends you to the floor.</p>
+          <div class="chips"><span class="chip">grid<b>160×110</b></span><span class="chip">checkpoints<b>6</b></span><span class="chip">no-hook<b>44</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:75% 0"></div>
+        <div class="b"><h3>Midnight Circuit</h3>
+          <p class="note">fast flat gate slalom: low ceiling, 81 no-hook tiles, five checkpoints in a row.</p>
+          <div class="chips"><span class="chip">grid<b>260×56</b></span><span class="chip">checkpoints<b>5</b></span><span class="chip">death<b>22</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:100% 0"></div>
+        <div class="b"><h3>Aurora Ascent</h3>
+          <p class="note">staircase climb under an aurora band: 550 death tiles and 200 no-hook — a patience map.</p>
+          <div class="chips"><span class="chip">grid<b>200×100</b></span><span class="chip">death<b>550</b></span><span class="chip">no-hook<b>200</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-size:cover; background-image:none; display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:13px">warmup · no blueprint</div>
+        <div class="b"><h3>Neon Relay Warmup</h3>
+          <p class="note">local warmup: no drops, no score. This is exactly the map the client's practice button starts.</p>
+          <div class="chips"><span class="chip">mode<b>solo</b></span><span class="chip">payment<b>not needed</b></span></div></div></div>
+
+    </div>
+    <div class="legend note">
+      <span><i style="background:#1A2C4A"></i>rock</span>
+      <span><i style="background:#FF2E88"></i>death</span>
+      <span><i style="background:#6C60FF"></i>no-hook</span>
+      <span><i style="background:#4DE3F7"></i>checkpoint / tele</span>
+      <span><i style="background:#D8F6FF"></i>spawn</span>
+      <span><i style="background:#FFB820"></i>finish</span>
+    </div>
+    <p class="note">The other 21 maps are the base project's own pool (dm*, ctf*, Tutorial, LearnToPlay and four utility
+      maps). Neon Relay does not reshape them, so they get no blueprint and no numbers here. The listing is
+      checked against <code>data/maps/</code> by the same test.</p>
+  </div>
+</section>
+
+<section id="progress">
+  <div class="wrap">
+    <span class="eyebrow">progress and money</span>
+    <h2>Local progression, said honestly</h2>
+    <div class="grid g2">
+      <div class="card">
+        <span class="k">there</span>
+        <h3><span class="glyph" style="background-position:0 0"></span>What you level up</h3>
+        <ul class="tight note">
+          <li><b>Level</b> — curve 250·L·(L+1)/2, capped at 30.</li>
+          <li><b>Day streak</b> — counted in UTC days, no "magic" reset.</li>
+          <li><b>3 daily quests</b> from a pool of 12 — warmup, trying on a character, joining a server.</li>
+          <li><b>XP sinks</b>: starting practice 25, stopping 40, trying on 10, session 15.</li>
+        </ul>
+        <p class="note">Progress lives in the client config (<code>cl_neonrelay_*</code>) and is labelled
+          <b>local</b> on purpose: it does not turn into money and does not move between accounts.</p>
+      </div>
+      <div class="card honest">
+        <span class="k">not there</span>
+        <h3>What this game will not promise</h3>
+        <ul class="tight note">
+          <li>No "earn while you play", no payout promises of any kind.</li>
+          <li>Paid race entry is <b>unavailable</b>: the button exists, but it takes no money until the server side is configured.</li>
+          <li>NFT skin purchases are switched off in the client; the storefront only shows what you already own.</li>
+          <li>"Verified" is not stamped by the client: a match signature confirms the result, and the leaderboard
+            shows only what passed that check.</li>
+        </ul>
+        <figure>
+          <img src="vault.jpg" alt="Prize vault: an open metallic chest glowing cyan, tokens scattered on the floor">
+          <figcaption>The prize shelf in the interface is a display case, not a cash register.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="craft">
+  <div class="wrap">
+    <span class="eyebrow">how it is drawn</span>
+    <h2>One room, one interface language</h2>
+    <div class="grid g3">
+      <div class="card">
+        <span class="k">tokens</span>
+        <h3>Colors are not eyeballed</h3>
+        <p class="note">The night palette, radii 16/12, the 2 px border and the dimming value live in
+          <code>src/game/client/neon_style.h</code>, and menu and HUD code reads them from there — 231 stray
+          color literals were removed from the code.</p>
+      </div>
+      <div class="card">
+        <span class="k">rasters</span>
+        <h3>Not one letter baked in</h3>
+        <p class="note">Backdrops and cards are generated without pseudo-text; the client's font draws letters.
+          Characters are never painted into backgrounds either — the portrait is drawn on top, so it cannot
+          fight the frame.</p>
+      </div>
+      <div class="card">
+        <span class="k">CI</span>
+        <h3>Assets are reproducible</h3>
+        <p class="note">The bake for backdrops, atlases and blueprints is deterministic: <code>--check</code>
+          rebuilds everything into a temp directory and compares byte for byte. A separate test guards that
+          the sprite grid matches the pixel pitch of each sheet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <span class="eyebrow">faq</span>
+    <h2>The confusing parts, briefly</h2>
+    <details open>
+      <summary>Do I need a wallet to play?</summary>
+      <p>No. Warmup, local races, trying on characters and all progression work without a wallet. The wallet
+        is only there to prove that a skin you bought earlier really belongs to you.</p>
+    </details>
+    <details>
+      <summary>Why show the ninja if it never drops?</summary>
+      <p>So an empty niche does not look like a bug. The page labels the weapon "not in the mode" exactly like
+        the HUD dims an unavailable cell.</p>
+    </details>
+    <details>
+      <summary>Did you really remove emoji from chat?</summary>
+      <p>Yes. The friend heart and the spectator-list marks are sprites from <code>data/gui_icons.png</code>
+        (a 12×3 grid of 32 px cells), not glyphs: they do not need a codepoint in the font, and their color
+        comes from a setting. The map star rating stayed a glyph — a test parses that string, and the
+        scoreboard has no sprites to draw.</p>
+    </details>
+    <details>
+      <summary>Is there a shrinking zone, like a battle royale?</summary>
+      <p>No. Burn-out is a duel to points with a time limit and sudden death: no closing circle, no 60
+        potatoes on one map. This page does not promise what the code does not do.</p>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap row">
+    <span>Neon Relay 0.1 · a standalone build on an open-source engine, with its own mode, skins and storefront</span>
+    <span style="margin-left:auto"><a href="https://github.com/Leo88q/neon-relay">repository</a></span>
+    <span><a href="index.html">Русская версия</a></span>
+    <span class="muted">this page is a landing mock-up; every image is a file from this repository</span>
+  </div>
+</footer>
+</body>
+</html>

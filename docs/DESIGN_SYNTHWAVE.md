@@ -110,3 +110,29 @@ disagree. Rules for anyone touching these sheets:
 - A menu icon drawn as one `CUi::ICOM_SIZE` quad needs a 1×1-cell rect.
 - Both sheets are deterministic (`build_neon_ui_art.py --check`), so glyph changes must land as a
   regeneration, never as a hand-edited PNG.
+
+## Stage 22 — armoury room, map blueprints, icons inside the text flow, landing (2026-09-25)
+
+Three rules earned their keep this stage:
+
+- **One object, one picture.** HUD weapon icons stay cut out of `data/game.png` (`weapon_*` RECTS), and
+  the armoury page draws its cards from `data/ui/arsenal/cards_6.png`; the copy lives in
+  `src/game/client/neon_arsenal.h`, which is the only table the client page, the operator stand
+  (`design/potato-arena/index.html`) and the landing (`design/landing/`) read. `scripts/test_map_catalog.py`
+  and `scripts/test_landing_pages.py` fail if a number drifts, so "the marketing says 5 damage" cannot
+  happen while the table says 3.
+- **Text-flow glyphs are icons too, but only where a sprite can advance the cursor.** The chat friend
+  heart and the spectator marks became `IMAGE_GUIICONS` sprites, with `CChat::FriendIconAdvance()` used
+  by *both* the measuring and the drawing pass — a mismatch there is a broken line-wrap, not a cosmetic
+  bug. The map rating keeps `★`/`✰` on purpose: `src/test/score_test.cpp` parses that string and the
+  scoreboard has no sprite atlas to draw from.
+- **Previews must be derived, never painted.** `scripts/build_map_previews.py` rasterises the semantic
+  grid produced by the map builders themselves (`scripts/build_neon_maps.py`), so a map change moves its
+  blueprint, and `--check` makes an out-of-date PNG a CI failure rather than a slow drift. Parsing the
+  shipped `.map` v4 binaries instead was tried and abandoned: the fork's `MapWriter` layer int layout and
+  `mapitems.h` enum disagree with the vendored upstream engine, and the tile stride is ambiguous.
+
+Landing copy rules inherited from the lobby rules: state the local-only nature of progression, never
+promise earnings, and say out loud that paid entry is not accepted, that client-side NFT purchases are
+disabled, and that there is no shrinking zone. The page is honest about what does not exist, because a
+landing page that overstates a fork is worse than a plain one.

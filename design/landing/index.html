@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Neon Relay — картошечная арена на шесть стволов</title>
+<meta name="description" content="Neon Relay: картошечная арена на движке с крюком. Режим «выжигание», шесть стволов, 27 карт, локальный прогресс без обещаний заработка.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05060E">
+<link rel="stylesheet" href="landing.css">
+<link rel="alternate" hreflang="en" href="en.html">
+<link rel="alternate" hreflang="ru" href="index.html">
+</head>
+<body>
+
+<div class="nav">
+  <div class="wrap row">
+    <span class="brand"><i></i>Neon&nbsp;Relay</span>
+    <nav>
+      <a href="#arsenal">Оружейная</a>
+      <a href="#maps">Карты</a>
+      <a href="#progress">Прогресс</a>
+      <a href="#craft">Как нарисовано</a>
+      <a href="#faq">Вопросы</a>
+    </nav>
+    <span class="lang"><b>RU</b><a href="en.html">EN</a></span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="art"></div>
+  <div class="scrim"></div>
+  <div class="wrap">
+    <span class="eyebrow">шесть ниш · один луч света · без псевдо-текста на растрах</span>
+    <h1>Картофельная арена,<br>где решает выжигание</h1>
+    <p class="lede">Неон-рум, в котором две команды картошек делят один зал. Режим <b>«выжигание»</b> (NeonDM): счёт до лимита,
+      резкая смерть на ничьей, оружие — только то, что реально есть в бою: пистолет на старте, дробовик,
+      гранаты и лазер — с пола. Всё остальное — косметика и твой локальный прогресс.</p>
+    <div class="cta">
+      <a class="btn" href="#arsenal">Зайти в оружейную</a>
+      <a class="btn ghost" href="#progress">Как устроен прогресс</a>
+    </div>
+    <div class="facts">
+      <span><b>6</b>стволов, они же иконки в HUD</span>
+      <span><b>27</b>действующих карт</span>
+      <span><b>9</b>фонов одной комнаты</span>
+      <span><b>0</b>внешних запросов со страницы</span>
+    </div>
+  </div>
+</header>
+
+<section id="mode">
+  <div class="wrap">
+    <span class="eyebrow">режим</span>
+    <h2>Что такое «выжигание»</h2>
+    <div class="grid g4">
+      <div class="card">
+        <span class="k">раунд</span>
+        <h3>Счёт или время</h3>
+        <p class="note">Лимит очков и лимит по минутам — обе настройки сервера. Ровно один игрок должен
+          выйти в лидеры, иначе раунд уходит в резкую смерть.</p>
+      </div>
+      <div class="card">
+        <span class="k">жизнь</span>
+        <h3>10 HP + 10 брони</h3>
+        <p class="note">Броня гасит не всё: при уроне больше единицы один пункт проходит насквозь.
+          Возрождение — 500 мс, никаких долгих пауз.</p>
+      </div>
+      <div class="card">
+        <span class="k">лут</span>
+        <h3>Дроп респавнится через 15 с</h3>
+        <p class="note">Контроллер разрешает подбор только дробовика, гранат и лазера. Ни ниндзя,
+          ни броню со health-паками ты здесь не найдёшь — специально.</p>
+      </div>
+      <div class="card">
+        <span class="k">очки</span>
+        <h3>Фраг молотом не считается</h3>
+        <p class="note">Удар молотом — административное действие: отброс есть, очка нет. Автоубийство
+          снимает очко.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="arsenal">
+  <div class="wrap">
+    <span class="eyebrow">оружейная комната</span>
+    <h2>Шесть стволов, разложенные по нишам</h2>
+    <p class="lede">Комната та же, что в клиенте: <code>data/ui/backgrounds/arena_armory.png</code>. Карточки —
+      один атлас <code>data/ui/arsenal/cards_6.png</code>, иконки в HUD берутся из тех же спрайтов, что и оружие
+      в бою, поэтому «красивая картинка» и «то, что летит в тебя» — это один и тот же объект.</p>
+    <div class="room">
+      <div class="bgimg"></div>
+      <div class="veil"></div>
+      <div class="inner">
+
+        <div class="wcard">
+          <div class="art" style="background-position:0% 0%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:0 0"></span>Молот</h3>
+            <div class="role">Ближний бой и выталкивание</div>
+            <div class="how">Дуга удара: 3 урона и сильный отброс на обоих — тебя тоже сдвинет.</div>
+            <div class="tip">Очко за frag молотом не начисляется. Молот — инструмент позиционки, а не фарма.</div>
+            <div class="chips"><span class="chip">урон<b>3</b></span><span class="chip">задержка<b>125 мс</b></span><span class="chip">магазин<b>∞</b></span><span class="chip ok">в бою<b>всегда</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:50% 0%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-26px 0"></span>Пистолет</h3>
+            <div class="role">Штатное оружие на старте</div>
+            <div class="how">Снаряд живёт 2 секунды, 1 урон за попадание, скорость полёта 2200.</div>
+            <div class="tip">Магазин 10, патроны восстанавливаются сами каждые 500 мс — в «выжигании» ты почти никогда не пуст.</div>
+            <div class="chips"><span class="chip">урон<b>1</b></span><span class="chip">задержка<b>125 мс</b></span><span class="chip">магазин<b>10</b></span><span class="chip ok">на старте<b>да</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:100% 0%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-52px 0"></span>Дробовик</h3>
+            <div class="role">Веер вблизи</div>
+            <div class="how">Пять дробин по 1 урону, разброс ±0.185 рад, снаряд живёт 0.25 с.</div>
+            <div class="tip">Вне deathmatch тот же выстрел становится лучом. Не путай режимы: в «выжигании» — именно веер.</div>
+            <div class="chips"><span class="chip">урон<b>5</b></span><span class="chip">задержка<b>500 мс</b></span><span class="chip">магазин<b>10</b></span><span class="chip ok">с пола<b>да</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:0% 100%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-78px 0"></span>Граната</h3>
+            <div class="role">Взрыв и отскок от земли</div>
+            <div class="how">Радиус 135 px, внутренний 48 px: урон и отброс падают с расстоянием.</div>
+            <div class="tip">Свой взрыв толкает так же, как чужой — гранатой и разгоняются, и запрыгивают на полки.</div>
+            <div class="chips"><span class="chip">урон<b>2</b></span><span class="chip">задержка<b>500 мс</b></span><span class="chip">магазин<b>10</b></span><span class="chip ok">с пола<b>да</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard">
+          <div class="art" style="background-position:50% 100%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-104px 0"></span>Лазер</h3>
+            <div class="role">Прямой луч на 800 px</div>
+            <div class="how">5 урона, задержка 800 мс, одно отражение от стены без штрафа.</div>
+            <div class="tip">Бьёт ровно одного: tee за первым ничего не получит. Целиться надо в ближнего, а не в толпу.</div>
+            <div class="chips"><span class="chip">урон<b>5</b></span><span class="chip">задержка<b>800 мс</b></span><span class="chip">магазин<b>10</b></span><span class="chip ok">с пола<b>да</b></span></div>
+          </div>
+        </div>
+
+        <div class="wcard no">
+          <div class="art" style="background-position:100% 100%"></div>
+          <div class="b">
+            <h3><span class="ico lg" style="background-position:-130px 0; filter:saturate(.3) brightness(.7)"></span>Ниндзя</h3>
+            <div class="role">Меч и рывок</div>
+            <div class="how">9 урона, 15 с усиления, +50 к скорости на первые 200 мс.</div>
+            <div class="tip">В «выжигании» не выпадает: контроллер не пускает этот подбор в мир. Показан, чтобы ниша не была пустой загадкой.</div>
+            <div class="chips"><span class="chip">урон<b>9</b></span><span class="chip">задержка<b>800 мс</b></span><span class="chip">магазин<b>∞</b></span><span class="chip no">в режиме<b>нет</b></span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <p class="note">Цифры — не маркетинг: урон, задержки и магазин взяты прямо из <code>datasrc/content.py</code>,
+      набор оружия в режиме — из <code>src/game/server/gamemodes/neon_dm.cpp</code>. Тест
+      <code>scripts/test_map_catalog.py</code> падает, если страница и код разойдутся.</p>
+  </div>
+</section>
+
+<section id="maps">
+  <div class="wrap">
+    <span class="eyebrow">карты</span>
+    <h2>Действующие карты: шесть своих и двадцать одна общая</h2>
+    <p class="lede">Превью нарисованы не «вдохновением», а по данным карты: порода, смерть, no-hook,
+      чекпойнты, спавны. Тот же генератор кормит и страницу «Карты» в клиенте.</p>
+    <div class="grid g2">
+
+      <div class="map"><div class="mp" style="background-position:0% 0"></div>
+        <div class="b"><h3>Neon Relay Basin</h3>
+          <p class="note">сбалансированный заезд-введение: три спавна, три чекпойнта, четыре ямы со смертью.</p>
+          <div class="chips"><span class="chip">сетка<b>220×70</b></span><span class="chip">смерть<b>100</b></span><span class="chip">no-hook<b>35</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:25% 0"></div>
+        <div class="b"><h3>Chromatic Canyon</h3>
+          <p class="note">хук-роут по каньону над рекой смерти: no-hook здесь почти нет, зато есть 163 плитки смерти.</p>
+          <div class="chips"><span class="chip">сетка<b>240×90</b></span><span class="chip">чекпойнтов<b>3</b></span><span class="chip">смерть<b>163</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:50% 0"></div>
+        <div class="b"><h3>Vector Spire</h3>
+          <p class="note">зигзаг полок вверх: шесть чекпойнтов, узкие площадки, промах — вниз до самого пола.</p>
+          <div class="chips"><span class="chip">сетка<b>160×110</b></span><span class="chip">чекпойнтов<b>6</b></span><span class="chip">no-hook<b>44</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:75% 0"></div>
+        <div class="b"><h3>Midnight Circuit</h3>
+          <p class="note">быстрый плоский слалом: низкий потолок, 81 no-hook плитка, пять чекпойнтов подряд.</p>
+          <div class="chips"><span class="chip">сетка<b>260×56</b></span><span class="chip">чекпойнтов<b>5</b></span><span class="chip">смерть<b>22</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-position:100% 0"></div>
+        <div class="b"><h3>Aurora Ascent</h3>
+          <p class="note">лесенка под полосой авроры: 550 плиток смерти и 200 no-hook — карта про терпение.</p>
+          <div class="chips"><span class="chip">сетка<b>200×100</b></span><span class="chip">смерть<b>550</b></span><span class="chip">no-hook<b>200</b></span></div></div></div>
+
+      <div class="map"><div class="mp" style="background-size:cover; background-image:none; display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:13px">разминка · без блюпринта</div>
+        <div class="b"><h3>Neon Relay Warmup</h3>
+          <p class="note">локальная разминка: без дропов и без очков. Именно она запускается кнопкой «разминка» в клиенте.</p>
+          <div class="chips"><span class="chip">режим<b>соло</b></span><span class="chip">оплата<b>не нужна</b></span></div></div></div>
+
+    </div>
+    <div class="legend note" style="margin-top:14px">
+      <span><i style="background:#1A2C4A"></i>порода</span>
+      <span><i style="background:#FF2E88"></i>смерть</span>
+      <span><i style="background:#6C60FF"></i>no-hook</span>
+      <span><i style="background:#4DE3F7"></i>чекпойнт / телепорт</span>
+      <span><i style="background:#D8F6FF"></i>спавн</span>
+      <span><i style="background:#FFB820"></i>финиш</span>
+    </div>
+    <p class="note">Остальные 21 карта — базовый набор исходного проекта (dm*, ctf*, Tutorial, LearnToPlay и четыре
+      служебные). Neon Relay их не перекраивает, поэтому у них нет ни блюпринта, ни цифр. Список
+      сверяется с <code>data/maps/</code> тем же тестом.</p>
+  </div>
+</section>
+
+<section id="progress">
+  <div class="wrap">
+    <span class="eyebrow">прогресс и деньги</span>
+    <h2>Локальный прогресс — честно, без обещаний</h2>
+    <div class="grid g2">
+      <div class="card">
+        <span class="k">есть</span>
+        <h3><span class="glyph" style="background-position:0 0"></span>Что качается</h3>
+        <ul class="tight note">
+          <li><b>Уровень</b> — кривая 250·L·(L+1)/2, максимум 30.</li>
+          <li><b>Серия дней</b> — считается по UTC-суткам, без «волшебного» сброса.</li>
+          <li><b>3 ежедневных задания</b> из пула в 12 — разминка, примерка персонажа, заход на сервер.</li>
+          <li><b>XP-стоки</b>: старт разминки 25, остановка 40, примерка 10, сессия 15.</li>
+        </ul>
+        <p class="note">Прогресс хранится в конфиге клиента (<code>cl_neonrelay_*</code>) и подписан в названии
+          как <b>локальный</b>: он не превращается в деньги и не переносится между аккаунтами.</p>
+      </div>
+      <div class="card honest">
+        <span class="k">нет</span>
+        <h3>Чего здесь не будет</h3>
+        <ul class="tight note">
+          <li>Никаких «зарабатывай, играя» и никаких обещаний выплат.</li>
+          <li>Платный вход в заезд <b>недоступен</b>: кнопка есть, но она не принимает деньги, пока не настроен сервер.</li>
+          <li>Покупка NFT-скинов в клиенте отключена; витрина только показывает то, что уже принадлежит тебе.</li>
+          <li>Рейтинг «верифицировано» ставится не клиентом: результат подтверждается подписью матча,
+            и в таблице лидеров показывается только то, что прошло проверку.</li>
+        </ul>
+        <figure>
+          <img src="vault.jpg" alt="Хранилище призов: открытый сундук с сине-розовым свечением, жетоны рядом">
+          <figcaption>Призовой фонд в интерфейсе — это витрина, а не касса.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="craft">
+  <div class="wrap">
+    <span class="eyebrow">как нарисовано</span>
+    <h2>Одна комната, один язык интерфейса</h2>
+    <div class="grid g3">
+      <div class="card">
+        <span class="k">токены</span>
+        <h3>Цвета не «на глаз»</h3>
+        <p class="note">Ночная палитра, радиусы 16/12, рамка 2 px и величина затемнения живут в
+          <code>src/game/client/neon_style.h</code>. Меню и HUD берут значения оттуда — 231 случайный
+          литерал цвета из кода убран.</p>
+      </div>
+      <div class="card">
+        <span class="k">растры</span>
+        <h3>Ни одной буквы на арте</h3>
+        <p class="note">Фоны и карточки генерируются без псевдо-текста, буквы рисует шрифт клиента.
+          Персонажей в фоны тоже не вписывают: портрет рисуется поверх, поэтому он не спорит с кадром.</p>
+      </div>
+      <div class="card">
+        <span class="k">CI</span>
+        <h3>Ассеты воспроизводимы</h3>
+        <p class="note">Выпечка фонов, атласов и блюпринтов детерминирована: <code>--check</code> пересобирает
+          всё в temp-папке и сверяет побайтово. Отдельный тест сторожит совпадение сетки спрайтов
+          с пиксельным шагом листа.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <span class="eyebrow">вопросы</span>
+    <h2>Коротко о непонятном</h2>
+    <details open>
+      <summary>Нужен ли кошелёк, чтобы играть?</summary>
+      <p>Нет. Разминка, локальные заезды, примерка персонажей и весь прогресс работают без кошелька.
+        Кошелёк нужен только чтобы показать, что тебе действительно принадлежит купленный раньше скин.</p>
+    </details>
+    <details>
+      <summary>Почему в оружейной показан ниндзя, если он не выпадает?</summary>
+      <p>Чтобы пустая ниша не выглядела багом. Страница честно помечает оружие как «не в режиме» —
+        так же, как HUD приглушает недоступную ячейку.</p>
+    </details>
+    <details>
+      <summary>Эмодзи в чате убрали?</summary>
+      <p>Да. Сердечко друга и маркеры списка наблюдателя — это спрайты из
+        <code>data/gui_icons.png</code> (сетка 12×3 по 32 px), а не глифы: им не нужен кодпоинт в шрифте,
+        а цвет приходит из настройки. Звёздный рейтинг карт остался глифами: на него завязан парсинг
+        строки в тестах, и спрайтов в скорборде нет.</p>
+    </details>
+    <details>
+      <summary>Есть ли зона, которая сужается, или королевская битва?</summary>
+      <p>Нет. «Выжигание» — это дуэль на очки с лимитом времени и резкой смертью: никакой сжимающейся
+        зоны и никаких 60 картошек на карте. Страница не обещает то, чего в коде нет.</p>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap row">
+    <span>Neon Relay 0.1 · самостоятельная вилка открытого движка: свой режим, скины и витрина</span>
+    <span style="margin-left:auto"><a href="https://github.com/Leo88q/neon-relay">репозиторий</a></span>
+    <span><a href="en.html">English version</a></span>
+    <span class="muted">эта страница — макет лендинга; все изображения взяты из файлов проекта</span>
+  </div>
+</footer>
+</body>
+</html>
