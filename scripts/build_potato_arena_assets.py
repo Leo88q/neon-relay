@@ -53,6 +53,10 @@ BG_W, BG_H = 1280, 720
 QUIET_X, QUIET_Y = 0.45, 0.86  # left fraction / first row of the bottom band
 NIGHT_0 = (5, 6, 14)
 MAX_MAE = 8.0  # mean abs error per channel that stays invisible under the veil
+# A JPEG is lossy by design and by *build*: libjpeg-turbo (CI runner) and libjpeg 6.2 (sandbox) put
+# different bytes on disk for the same pixels. The gate therefore compares the shipped file with the
+# pre-encode pixels and allows the encoder's own error, which is small and does not differ in kind.
+JPEG_MAE = 6.0
 CYAN, MAGENTA, VIOLET, WHITE, DIM = ui.CYAN, ui.MAGENTA, ui.VIOLET, ui.WHITE, ui.DIM
 
 # Master (assets-src/arena) -> shipped name. Keys are the approved Arena masters.
@@ -404,33 +408,44 @@ LANDING_IMAGES = [
 ]
 
 
+def landing_rgb(src: Path, size: tuple[int, int], side: str) -> Image.Image:
+    """The landing shots: resize + sharpen + press one edge toward night-0 so white text keeps contrast.
+
+    Split from the file write on purpose. The determinism gate must judge the *art*, and a JPEG's
+    bytes are the encoder's opinion (libjpeg-turbo on the runner and libjpeg 6.2 here disagree by
+    more than an invisible amount). So `--check` compares the shipped file against these pixels
+    instead of against a fresh encode, and the encoder disappears from the gate entirely.
+    """
+    img = cover(Image.open(src).convert("RGB"), size)
+    img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=110, threshold=2))
+    w, h = img.size
+    a = np.asarray(img, dtype=np.float64)
+    night = np.asarray(NIGHT_0, dtype=np.float64)
+    if side == "right":
+        # text column sits on the left, so only the far 26% is pressed (the hero copy is on the left)
+        f = np.clip((np.arange(w) - int(w * 0.74)) / max(1.0, w * 0.26), 0.0, 1.0) ** 1.3
+        weight = 1.0 - f[None, :, None] * 0.66
+    else:
+        f = np.clip((np.arange(h) - int(h * 0.72)) / max(1.0, h * 0.28), 0.0, 1.0) ** 1.2
+        weight = 1.0 - f[:, None, None] * 0.62
+    a = a * weight + night * (1.0 - weight)
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB")
+
+
 def bake_landing(report: list[str], out_dir: Path = LANDING_OUT, max_kb: int = 220) -> None:
-    """Resize + sharpen + press one edge toward night-0 so white text keeps its contrast."""
     out_dir.mkdir(parents=True, exist_ok=True)
     for src, dst, size, side in LANDING_IMAGES:
         dest = out_dir / dst
         if not src.exists():
             report.append(f"MISSING master: {rel(src)}")
             continue
-        img = cover(Image.open(src).convert("RGB"), size)
-        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=110, threshold=2))
-        w, h = img.size
-        a = np.asarray(img, dtype=np.float64)
-        night = np.asarray(NIGHT_0, dtype=np.float64)
-        if side == "right":
-            # text column sits on the left, so only the far 26% is pressed (the hero copy is on the left)
-            f = np.clip((np.arange(w) - int(w * 0.74)) / max(1.0, w * 0.26), 0.0, 1.0) ** 1.3
-            weight = 1.0 - f[None, :, None] * 0.66
-        else:
-            f = np.clip((np.arange(h) - int(h * 0.72)) / max(1.0, h * 0.28), 0.0, 1.0) ** 1.2
-            weight = 1.0 - f[:, None, None] * 0.62
-        a = a * weight + night * (1.0 - weight)
-        img = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB")
+        img = landing_rgb(src, size, side)
         img.save(dest, format="JPEG", quality=82, optimize=True, progressive=False, subsampling=1)
         size_kb = dest.stat().st_size / 1024
         mean, sd = stat(img)
         flag = "OK " if size_kb <= max_kb else "WARN"
-        report.append(f"{flag} {rel(dest)}  {w}x{h}  {size_kb:5.0f} KiB  L{mean:5.1f} sd{sd:4.1f}")
+        report.append(f"{flag} {rel(dest)}  {img.size[0]}x{img.size[1]}  {size_kb:5.0f} KiB  "
+                      f"L{mean:5.1f} sd{sd:4.1f}")
 
 
 def build_icon_atlas() -> Image.Image:
@@ -547,17 +562,33 @@ def main() -> int:
         bake_weapons(report, weapons, write_master=False)
         bake_arsenal(report, arsenal, write_preview=False)
         bake_icons(report, icons, write_preview=False)
-        landing = tmp / "landing"
-        bake_landing(report, landing)
         shipped = (sorted(OUT_BG.glob("*.png")) + sorted(OUT_ICONS.glob("*.png"))
                    + sorted(OUT_WEAPONS.glob("*.png")) + sorted(OUT_ARSENAL.glob("*.png")))
         ok = bool(report and not any(r.startswith("MISSING") for r in report))
-        for p in shipped + sorted(LANDING_OUT.glob("*.jpg")):
-            gen = {"backgrounds": bg, "icons": icons, "weapons": weapons, "arsenal": arsenal,
-                   "landing": landing}[p.parent.name] / p.name
+        for p in shipped:
+            gen = {"backgrounds": bg, "icons": icons, "weapons": weapons, "arsenal": arsenal}[p.parent.name] / p.name
             same = gen.exists() and same_art(gen, p)
             ok = ok and same
             print(("  ok   " if same else "  DIFF ") + str(p.relative_to(ROOT)))
+        # JPEG derivatives: compare the shipped file with the pixels *before* the encoder, so the
+        # result is the same on every libjpeg build.
+        for src, dst, size, side in LANDING_IMAGES:
+            p = LANDING_OUT / dst
+            if not src.exists() or not p.exists():
+                print(f"  MISSING {p.relative_to(ROOT)}")
+                ok = False
+                continue
+            ref = np.asarray(landing_rgb(src, size, side), dtype=np.int16)
+            have = np.asarray(Image.open(p).convert("RGB"), dtype=np.int16)
+            if ref.shape != have.shape:
+                print(f"  DIFF {p.relative_to(ROOT)}: {have.shape[1]}x{have.shape[0]} vs {ref.shape[1]}x{ref.shape[0]}")
+                ok = False
+                continue
+            err = _mae(have, ref)
+            good = err <= JPEG_MAE
+            ok = ok and good
+            print(f"  {'ok  ' if good else 'DIFF'} {p.relative_to(ROOT)}  decode vs fresh pixels: "
+                  f"MAE {err:.2f} (tolerance {JPEG_MAE}, encoder-independent)")
         print(f"environment: pillow {Image.__version__} numpy {np.__version__} "
               f"python {sys.version.split()[0]} zlib {zlib.ZLIB_VERSION} libjpeg "
               f"{Image.core.jpeglib_version if hasattr(Image.core, 'jpeglib_version') else '?'}")

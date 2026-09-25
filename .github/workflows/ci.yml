@@ -72,6 +72,13 @@ jobs:
               cat /tmp/bake-check.log
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            # Annotations travel with the check run, so the diagnosis can be read from the API even
+            # when the raw job log is not reachable.
+            while IFS= read -r line; do
+              case "$line" in
+                *DIFF*|*MISSING*|*environment*|*Error*|*error*) echo "::warning::$line" ;;
+              esac
+            done < /tmp/bake-check.log
           fi
           exit "$status"
       - name: Map blueprints match the map builders (determinism)
