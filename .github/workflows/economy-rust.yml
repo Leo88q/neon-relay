@@ -111,23 +111,23 @@ jobs:
           cargo test --manifest-path onchain/Cargo.toml --workspace --locked > "$LOG" 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
-            # Surface the tail via step summary (user UI) + ONE-LINE
-            # check-run annotations (agent channel). Multi-line / titled
-            # annotations are silently dropped by the workflow-command
-            # parser in this setup; single-line ::error:: lines land
-            # reliably in the check-runs API.
+            # Step summary for the user UI + base64 check-run annotations
+            # for the agent channel. Plain-text ::error:: lines with raw
+            # cargo output get dropped unpredictably by the workflow-command
+            # parser; base64 is parser-proof and decodable.
             {
               echo "## cargo test exit $status (tail of $LOG)"
               echo '```'
               tail -n 40 "$LOG"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            firsterr=$(grep -m1 -E '^error' "$LOG" | cut -c1-300 | tr '\n' '~' | sed 's/%/%25/g')
-            [ -n "$firsterr" ] && echo "::error::cargo-test exit $status first-error: $firsterr"
-            tail -n 15 "$LOG" | while IFS= read -r line; do
-              [ -n "$line" ] || continue
-              echo "::error::testlog: $(printf '%s' "$line" | cut -c1-300 | sed 's/%/%25/g') "
-            done
+            echo "::error::ctrl-A status=$status logbytes=$(wc -c < "$LOG")"
+            b64h=$(head -c 3000 "$LOG" | base64 -w0)
+            echo "::error::head-b64-len=${#b64h}::"
+            echo "::error::head-b64: $b64h"
+            b64t=$(tail -n 12 "$LOG" | base64 -w0)
+            echo "::error::tail-b64: $b64t"
+            echo "::error::ctrl-B end"
           fi
           exit "$status"
       - name: Publish host test report to step summary
