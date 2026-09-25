@@ -13,6 +13,9 @@ ROOT = Path(__file__).resolve().parent.parent
 LANDING = ROOT / "design" / "landing"
 FILES = ["index.html", "en.html"]
 HEADER = (ROOT / "src" / "game" / "client" / "neon_arsenal.h").read_text(encoding="utf-8")
+# Map rows moved to the generated header: scripts/build_map_previews.py reads every data/maps/*.map
+# and writes both src/game/client/neon_maps_gen.h and the maps_data.js the pages render.
+MAPGEN = (ROOT / "src" / "game" / "client" / "neon_maps_gen.h").read_text(encoding="utf-8")
 
 RESOURCES = re.compile(r'(?:src|href)="([^"]+)"|url\("([^"]+)"\)')
 
@@ -66,22 +69,31 @@ class Numbers(unittest.TestCase):
                 else:
                     self.assertEqual(hits, 1, f"{name}: EN landing must state damage {damage} once")
 
-    def test_map_grids_match_the_header_table(self):
-        rows = re.findall(r'\{"([^"]+)", "([^"]+)", (-?\d+), (\d+), (\d+),', HEADER)
-        for _name, _blurb, cell, w, h in rows:
-            if int(cell) < 0:
-                continue  # warmup has no blueprint and no numbers, by design
+    def test_map_grids_match_the_generated_table(self):
+        rows = re.findall(r'\{"([^"]+)", "([^"]+)", (\d+), (\d+), (\d+),', MAPGEN)
+        self.assertEqual(len(rows), 27, "the generated catalogue lost rows")
+        for name, _blurb, _cell, w, h in rows:
+            if name not in {"Neon Relay Basin", "Chromatic Canyon", "Vector Spire", "Midnight Circuit",
+                            "Aurora Ascent", "Neon Relay Warmup"}:
+                continue  # only our six get a hero card; the rest live in the generated table
             pair = f"{w}×{h}"
             for f in FILES:
-                self.assertIn(pair, read(f), f"{f}: landing lost the grid size {pair}")
+                self.assertIn(pair, read(f), f"{f}: landing lost the grid size of {name} ({pair})")
 
     def test_shipped_map_count_matches(self):
         shipped = len(list((ROOT / "data" / "maps").glob("*.map")))
-        ours = len([r for r in re.findall(r'\{"([^"]+)", "([^"]+)", (-?\d+),', HEADER) if int(r[2]) >= 0]) + 1
         for f in FILES:
             text = read(f)
             self.assertIn(f"<b>{shipped}</b>", text, f"{f}: the landing must state the real map count")
-            self.assertIn(str(shipped - ours), text, f"{f}: the count of stock maps is not on the page")
+            heading = f"все {shipped}" if f == "index.html" else f"all {shipped}"
+            self.assertIn(heading, text.lower(), f"{f}: the maps heading must state the real total")
+
+    def test_pages_render_the_generated_catalogue(self):
+        for f in FILES:
+            text = read(f)
+            self.assertIn('<script src="maps_data.js"></script>', text,
+                          f"{f}: the full catalogue must come from the generated table")
+            self.assertIn("window.NEON_MAPS", text, f"{f}: the table is not rendered")
 
 
 class Honesty(unittest.TestCase):

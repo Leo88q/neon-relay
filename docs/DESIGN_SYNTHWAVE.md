@@ -136,3 +136,35 @@ Landing copy rules inherited from the lobby rules: state the local-only nature o
 promise earnings, and say out loud that paid entry is not accepted, that client-side NFT purchases are
 disabled, and that there is no shrinking zone. The page is honest about what does not exist, because a
 landing page that overstates a fork is worse than a plain one.
+
+## Stage 23 — the catalogue reads the maps, not the builder (2026-09-25)
+
+Stage 22 said "previews are derived, not drawn". This stage closes the loophole in that sentence:
+the maps gallery was derived from `scripts/build_neon_maps.py`, i.e. from the *generator* of five maps,
+while `data/maps` ships 27 files. Twenty-two of them had no preview and no numbers on any page, and an
+edit to a shipped `.map` (or a new map dropped in the folder) changed nothing anywhere — the page could
+not be wrong, because it was never about the real files.
+
+`scripts/neon_mapread.py` now reads the shipped datafile v4 containers directly: item table, raw
+blocks, `CMapItemLayerTilemap` with the engine's own upgrade rules (`CMap::UpgradeAndValidateTilesLayerItem`,
+engine/shared/map.cpp:455-570 — v2-legacy keeps physics indices at ints 15-19, v3/v4 at 18-22, anything
+past the item's length reads as -1), and tile indices with the engine's meaning (1/3 = solid/no-hook,
+2 = death, >=191 = entity `index - ENTITY_OFFSET`). One pass then feeds all three surfaces: the 1600x960
+blueprint sheet, the generated `neon_maps_gen.h` that `PAGE_MAPS` renders, and the `maps_data.js` the
+stand and both landing languages read.
+
+Rules for the next person:
+
+- **Generated tables beat typed tables.** A number that describes a shipped file belongs in a generator
+  with a `--check`, never in a header or a page. If a surface needs prose, key it by name and make a
+  missing key a build failure (that is what `BLURBS`/`BLURBS_EN` do).
+- **A determinism gate must compare pixels, not container bytes.** PNG bytes move with the zlib build,
+  JPEG bytes move with the libjpeg build; `same_art()` compares decoded pixels exactly for PNG and by
+  MAE <= 2.5 for JPEG, and prints the diff size when it fails. A gate that says only "DIFF" cannot be
+  debugged from a CI log, and a gate that fails only on the runner teaches people to ignore it.
+- **Third-party names are not user-facing copy.** The map catalogue needed the tileset of every map;
+  upstream asset filenames fail `check_branding.sh --release`, so the page prints the licence from
+  `data/maps/license.txt` for those rows instead. The gate was right and the copy changed, not the gate.
+- **Credits follow the pixels.** As soon as the sheet contained diagrams of other people's CC-BY-SA
+  maps, the manifest row stopped claiming the whole file as original work. Deriving a new raster does
+  not reset somebody else's attribution.

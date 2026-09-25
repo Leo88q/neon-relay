@@ -30,6 +30,15 @@ inline constexpr ColorRGBA RARE_VIOLET{0.6275f, 0.4667f, 1.0f, 1.0f};     // #A0
 inline constexpr ColorRGBA RARE_GOLD{1.0f, 0.7843f, 0.3412f, 1.0f};       // #FFC857
 inline constexpr ColorRGBA SUCCESS{0.3490f, 0.9020f, 0.7490f, 1.0f};      // mint, "ready/verified"
 
+// Page chrome: the fill / border / accent triple that every product-page panel and card uses, and
+// the two text tones for "good" and "secondary" copy. These were float literals in the wallet file
+// (and the same numbers again in the storefront), which is how one page ends up a shade off.
+inline constexpr ColorRGBA PANEL_FILL{0.0470f, 0.0745f, 0.2039f, 0.96f};   // card / form background
+inline constexpr ColorRGBA PANEL_BORDER{0.1647f, 0.5294f, 0.5922f, 0.85f}; // its hairline
+inline constexpr ColorRGBA PANEL_ACCENT{0.3725f, 0.8902f, 0.9608f, 1.0f};  // its highlight bar
+inline constexpr ColorRGBA TEXT_SOFT{0.7490f, 0.8275f, 0.9490f, 1.0f};     // explanatory paragraphs
+inline constexpr ColorRGBA TEXT_FAINT{0.6784f, 0.7686f, 0.8902f, 1.0f};    // footnotes, secondary rows
+
 // Geometry (rule P7 of docs/UI_POTATO_ARENA_REDESIGN_RU.md)
 inline constexpr float PANEL_RADIUS = 16.0f;
 inline constexpr float CARD_RADIUS = 12.0f;

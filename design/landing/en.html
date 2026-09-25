@@ -173,7 +173,7 @@
 <section id="maps">
   <div class="wrap">
     <span class="eyebrow">maps</span>
-    <h2>Six of ours, twenty-one shared</h2>
+    <h2>Every shipped map: all 27, each with a blueprint from its own data</h2>
     <p class="lede">The previews are not "inspired by" the maps — they are drawn from the map data: rock, death,
       no-hook, checkpoints, spawns. The same generator feeds the Maps page inside the client.</p>
     <div class="grid g2">
@@ -203,10 +203,10 @@
           <p class="note">staircase climb under an aurora band: 550 death tiles and 200 no-hook — a patience map.</p>
           <div class="chips"><span class="chip">grid<b>200×100</b></span><span class="chip">death<b>550</b></span><span class="chip">no-hook<b>200</b></span></div></div></div>
 
-      <div class="map"><div class="mp" style="background-size:cover; background-image:none; display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:13px">warmup · no blueprint</div>
+      <div class="map"><div class="mp" style="background-position:0% 20%"></div>
         <div class="b"><h3>Neon Relay Warmup</h3>
           <p class="note">local warmup: no drops, no score. This is exactly the map the client's practice button starts.</p>
-          <div class="chips"><span class="chip">mode<b>solo</b></span><span class="chip">payment<b>not needed</b></span></div></div></div>
+          <div class="chips"><span class="chip">grid<b>176×48</b></span><span class="chip">start pads<b>35</b></span><span class="chip">payment<b>not needed</b></span></div></div></div>
 
     </div>
     <div class="legend note">
@@ -217,9 +217,23 @@
       <span><i style="background:#D8F6FF"></i>spawn</span>
       <span><i style="background:#FFB820"></i>finish</span>
     </div>
-    <p class="note">The other 21 maps are the base project's own pool (dm*, ctf*, Tutorial, LearnToPlay and four utility
-      maps). Neon Relay does not reshape them, so they get no blueprint and no numbers here. The listing is
-      checked against <code>data/maps/</code> by the same test.</p>
+    <h3 style="margin-top:22px">The full shipped catalogue</h3>
+    <p class="note">The same numbers the client's Maps page prints: this table is rendered from
+      <code>maps_data.js</code>, written by <code>scripts/build_map_previews.py</code> after reading every
+      <code>data/maps/*.map</code>. Credits and licences come from <code>data/maps/license.txt</code>.</p>
+    <div class="wrap" style="padding:0"><table class="cat" id="mapcat"></table></div>
+    <script src="maps_data.js"></script>
+    <script>
+      const MODE = {race: 'race', deathmatch: 'deathmatch', ctf: 'ctf', 'single spawn': 'single spawn'};
+      document.getElementById('mapcat').innerHTML =
+        '<tr><th>map</th><th>grid</th><th>mode</th><th>spawns</th><th>rock</th><th>death</th>'
+        + '<th>no-hook</th><th>checkpoints</th><th>drops</th><th>tiles / licence</th></tr>'
+        + window.NEON_MAPS.map(m => `<tr${m.base ? ' class="base"' : ''}>
+            <td><b>${m.name}</b><div class="note" style="margin:0">${m.blurbEn}</div></td>
+            <td>${m.w}×${m.h}</td><td>${MODE[m.mode] || m.mode}</td><td>${m.spawns}</td>
+            <td>${m.solid}</td><td>${m.death}</td><td>${m.nohook}</td><td>${m.checkpoints}</td>
+            <td>${m.pickups}</td><td>${m.tileset || m.license || 'base game'}</td></tr>`).join('');
+    </script>
   </div>
 </section>
 

@@ -214,8 +214,8 @@ void CMenus::RenderMaps(CUIRect MainView)
 
 	CUIRect Row;
 	MainView.HSplitTop(42.0f, &Row, &MainView);
-	char aNote[64];
-	str_format(aNote, sizeof(aNote), Localize("%d maps shipped"), NeonMaps::NUM_SHIPPED_MAPS);
+	char aNote[96];
+	str_format(aNote, sizeof(aNote), Localize("%d maps, one blueprint each"), (int)NeonMaps::NUM_CARDS);
 	RenderSectionHeader(&Row, Localize("Maps"), aNote);
 	MainView.HSplitTop(8.0f, nullptr, &MainView);
 	MainView.HSplitTop(30.0f, &Row, &MainView);
@@ -226,7 +226,8 @@ void CMenus::RenderMaps(CUIRect MainView)
 	MainView.HSplitTop(18.0f, &Legend, &MainView);
 	TextRender()->TextColor(NeonStyle::DIM);
 	Ui()->DoLabel(&Legend,
-		Localize("Blueprints are drawn from the map data itself: solid rock, death, no-hook, checkpoints, spawns"),
+		Localize("Every blueprint is rasterised from the map's own collision layer: rock, death, no-hook, "
+			 "teleports, checkpoints, spawns. Numbers are counted on the same pass."),
 		12.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 	MainView.HSplitTop(12.0f, nullptr, &MainView);
@@ -242,23 +243,19 @@ void CMenus::RenderMaps(CUIRect MainView)
 		MainView.HSplitTop(CardHeight, &Row, &MainView);
 		if(!s_MapsScroll.AddRect(Row))
 			continue;
-		const NeonMaps::SMapCard &Entry = NeonMaps::g_aCards[i];
+		const NeonMaps::SMapFacts &Entry = NeonMaps::g_aFacts[i];
 		CUIRect Card = Row;
 		Card.Draw(NeonStyle::Dim(NeonStyle::NIGHT_1, 0.92f), NeonStyle::CARD_RADIUS, IGraphics::CORNER_ALL);
-		Card.Draw(NeonStyle::Dim(Entry.m_PreviewCell >= 0 ? NeonStyle::CYAN : NeonStyle::DIM, 0.5f),
+		// Our own six maps get the accent frame; the base-game pool keeps a neutral one, because the
+		// page must not imply this fork reshaped someone else's map.
+		Card.Draw(NeonStyle::Dim(Entry.m_BaseGame ? NeonStyle::DIM : NeonStyle::CYAN, 0.5f),
 			NeonStyle::CARD_RADIUS, IGraphics::CORNER_ALL);
 
 		CUIRect Art, Body;
 		Card.VSplitLeft(Card.h * 2.0f, &Art, &Body); // previews are 320x160, i.e. exactly 2:1
 		Art.Margin(6.0f, &Art);
-		if(Entry.m_PreviewCell >= 0)
-			RenderAtlasCell(m_MapPreviews, NeonMaps::PREVIEW_CELLS, 1, Entry.m_PreviewCell, &Art, 1.0f);
-		else
-		{
-			Art.Draw(NeonStyle::NIGHT_2, NeonStyle::CARD_RADIUS, IGraphics::CORNER_ALL);
-			CUIRect Center = Art;
-			Ui()->DoLabel(&Center, Localize("warmup run, no blueprint"), 12.0f, TEXTALIGN_MC);
-		}
+		RenderAtlasCell(m_MapPreviews, NeonMaps::PREVIEW_COLS, NeonMaps::PREVIEW_ROWS,
+			Entry.m_PreviewCell, &Art, 1.0f);
 		Body.Margin(10.0f, &Body);
 
 		CUIRect Name;
@@ -269,20 +266,17 @@ void CMenus::RenderMaps(CUIRect MainView)
 		CUIRect Blurb;
 		Body.HSplitTop(16.0f, &Blurb, &Body);
 		TextRender()->TextColor(NeonStyle::CYAN);
-		Ui()->DoLabel(&Blurb, Localize(Entry.m_pBlurb), 13.0f, TEXTALIGN_ML);
+		Ui()->DoLabel(&Blurb, Localize(Entry.m_pBlurb), 13.0f, TEXTALIGN_ML, Props);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		Body.HSplitTop(6.0f, nullptr, &Body);
-		const char *apLabels[] = {"grid", "spawns", "checkpoints", "death tiles", "no-hook"};
 		char aGrid[32], aSpawns[16], aCps[16], aDeath[16], aNohook[16];
-		if(Entry.m_PreviewCell >= 0)
-			str_format(aGrid, sizeof(aGrid), "%d\u00d7%d", Entry.m_TilesW, Entry.m_TilesH);
-		else
-			str_copy(aGrid, Localize("stock"), sizeof(aGrid));
+		str_format(aGrid, sizeof(aGrid), "%d\u00d7%d", Entry.m_TilesW, Entry.m_TilesH);
 		str_format(aSpawns, sizeof(aSpawns), "%d", Entry.m_Spawns);
 		str_format(aCps, sizeof(aCps), "%d", Entry.m_Checkpoints);
 		str_format(aDeath, sizeof(aDeath), "%d", Entry.m_DeathTiles);
 		str_format(aNohook, sizeof(aNohook), "%d", Entry.m_NohookTiles);
+		const char *apLabels[] = {"grid", "spawns", "checkpoints", "death tiles", "no-hook"};
 		const char *apValues[] = {aGrid, aSpawns, aCps, aDeath, aNohook};
 		const float Chip = Body.w / 5.0f;
 		for(int c = 0; c < 5; ++c)
@@ -291,7 +285,30 @@ void CMenus::RenderMaps(CUIRect MainView)
 			Body.VSplitLeft(Chip, &ChipRect, &Body);
 			RenderStatChip(&ChipRect, Localize(apLabels[c]), apValues[c], NeonStyle::ICE);
 		}
-		Row.HSplitTop(2.0f, nullptr, nullptr);
+		// Second line: what makes the map playable, and who to credit for it.
+		CUIRect Facts;
+		Body.HSplitTop(16.0f, &Facts, &Body);
+		char aMode[48], aTileset[64], aLicense[32], aDrops[32];
+		str_copy(aMode, Localize(Entry.m_RaceReady ? "race" : Entry.m_NeonDmReady ? "deathmatch" : "no spawns"),
+			sizeof(aMode));
+		// Base-game maps print their licence here: their tileset asset names belong to upstream,
+		// and the branding gate keeps those out of user-facing strings.
+		str_copy(aTileset, Entry.m_pTileset[0] ? Entry.m_pTileset : Entry.m_pLicense,
+			sizeof(aTileset));
+		str_copy(aLicense, Entry.m_pLicense[0] ? Entry.m_pLicense : Localize("base game"), sizeof(aLicense));
+		str_format(aDrops, sizeof(aDrops), Localize("%d drops, %d hazards"), Entry.m_Pickups, Entry.m_Hazards);
+		const char *apFactLabels[] = {"mode", "tileset", "licence", "in the map"};
+		const char *apFactValues[] = {aMode, aTileset, aLicense, aDrops};
+		TextRender()->TextColor(NeonStyle::DIM);
+		for(int c = 0; c < 4; ++c)
+		{
+			CUIRect FactRect;
+			Body.VSplitLeft(Body.w / (float)(4 - c), &FactRect, &Body);
+			char aLine[192];
+			str_format(aLine, sizeof(aLine), "%s %s", Localize(apFactLabels[c]), apFactValues[c]);
+			Ui()->DoLabel(&FactRect, aLine, 11.0f, TEXTALIGN_ML);
+		}
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 	s_MapsScroll.End();
 
@@ -302,8 +319,8 @@ void CMenus::RenderMaps(CUIRect MainView)
 	FootProps.m_MaxWidth = Footer.w;
 	TextRender()->TextColor(NeonStyle::DIM);
 	Ui()->DoLabel(&Footer,
-		Localize("The rest of the shipped pool comes from the base game: deathmatch, CTF and learning maps. "
-				 "Neon Relay does not reshape them, so they get no blueprint and no numbers here."),
+		Localize("The pool is read, not described: the base-game maps count the same entities this page shows, "
+			 "and their credits come from data/maps/license.txt. Neon Relay only reshapes its own six."),
 		12.0f, TEXTALIGN_TL, FootProps);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 }

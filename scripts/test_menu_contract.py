@@ -111,6 +111,23 @@ class MenuContract(unittest.TestCase):
         self.assertIn('RenderCharacterPortrait', start)
         self.assertIn('Compact', start)
 
+    def test_pages_share_one_header_and_no_color_literals(self):
+        """One page frame across the menu: same header helper, same panel tokens, no stray floats."""
+        wallet = self.text('src/game/client/components/menus_settings_wallet.cpp')
+        settings = self.text('src/game/client/components/menus_settings.cpp')
+        for title in ('Wallet', 'Races', 'Characters', 'Leaders'):
+            self.assertIn(f'RenderSectionHeader(&', wallet)
+            self.assertIn(f'Localize("{title}")', wallet)
+        # Races / Maps / Arsenal are one navigation triple, so the Races page must show the same bar.
+        self.assertIn('RenderSectionBar(Row, SectionFromPage(m_MenuPage))', wallet)
+        style = self.text('src/game/client/neon_style.h')
+        for token in ('PANEL_FILL', 'PANEL_BORDER', 'PANEL_ACCENT', 'TEXT_SOFT', 'TEXT_FAINT'):
+            self.assertIn(token, style)
+        # A fully transparent fill is not a colour choice; everything else must be a token.
+        for name, text in (('wallet', wallet), ('settings', settings)):
+            opaque = text.replace('ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f)', '').replace('ColorRGBA(0,0,0,0)', '')
+            self.assertNotIn('ColorRGBA(0.', opaque, f"{name}: colours must come from NeonStyle, not floats")
+
     def test_wallet_is_read_only_and_scrollable(self):
         wallet = self.text('src/game/client/components/menus_settings_wallet.cpp')
         self.assertNotIn('neonrelay_wallet_request_economy(', wallet)

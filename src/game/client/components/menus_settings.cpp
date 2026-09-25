@@ -11,6 +11,7 @@
 
 #include <game/client/components/menu_background.h>
 #include <game/client/gameclient.h>
+#include <game/client/neon_style.h>
 #include <game/client/ui.h>
 #include <game/localization.h>
 
@@ -31,9 +32,10 @@ void CMenus::RenderSettings(CUIRect MainView)
 		MainView.HSplitTop(104.0f, &TabBar, &MainView);
 	else
 		MainView.VSplitRight(152.0f, &MainView, &TabBar);
-	MainView.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
-	CUIRect MainEdge = {MainView.x, MainView.y, MainView.w, 3.0f};
-	MainEdge.Draw(ColorRGBA(0.05f, 0.90f, 0.92f, 0.85f), IGraphics::CORNER_T, 4.0f);
+	// Same panel chrome as the product pages: token fill, token hairline, token top beam.
+	MainView.Draw(NeonStyle::Dim(NeonStyle::NIGHT_1, 0.96f), IGraphics::CORNER_ALL, NeonStyle::CARD_RADIUS);
+	CUIRect MainEdge = {MainView.x, MainView.y, MainView.w, NeonStyle::BORDER_WIDTH};
+	MainEdge.Draw(NeonStyle::Dim(NeonStyle::CYAN, 0.85f), IGraphics::CORNER_T, 4.0f);
 	MainView.Margin(Compact ? 12.0f : 20.0f, &MainView);
 
 	const bool NeedRestart = m_NeedRestartGraphics || m_NeedRestartSound || m_NeedRestartUpdate;
@@ -202,7 +204,7 @@ bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alp
 	Preview.HSplitTop(OffY / 2.0f, nullptr, &Preview);
 	Preview.HSplitTop(PreviewHeight, &Preview, nullptr);
 
-	Preview.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
+	Preview.Draw(NeonStyle::NIGHT_2, IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
 	Preview.Margin(PreviewMargin, &Preview);
 	Preview.Draw(color_cast<ColorRGBA>(Color.UnclampLighting(DarkestLight)), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
 
@@ -374,7 +376,7 @@ bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alp
 		Button.VSplitLeft(140.0f, &Label, &Button);
 		Label.VMargin(10.0f, &Label);
 
-		Button.Draw(ColorRGBA(0.10f, 0.11f, 0.13f, 1.0f), IGraphics::CORNER_ALL, 4.0f);
+		Button.Draw(NeonStyle::NIGHT_1, IGraphics::CORNER_ALL, NeonStyle::CARD_RADIUS);
 
 		CUIRect Rail;
 		Button.Margin(2.0f, &Rail);

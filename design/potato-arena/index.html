@@ -147,8 +147,11 @@
   .wicon{width:26px;height:26px;flex:none;background-image:url("../../data/ui/weapons/weapons_6_128.png");
          background-size:156px 26px;background-repeat:no-repeat}
   .mp{aspect-ratio:2/1; background-image:url("../../data/ui/maps/previews.png");
-      background-size:500% 100%; background-repeat:no-repeat; border-radius:10px;
+      background-size:500% 600%; background-repeat:no-repeat; border-radius:10px;
       border:1px solid rgba(77,227,247,.35); background-color:var(--night-0)}
+  table.mapstat td{font-size:12px; vertical-align:top}
+  table.mapstat tr:first-child th{position:sticky; top:0; background:rgba(10,14,30,.97)}
+  .mode-ok{color:var(--mint)} .mode-warn{color:var(--sun)}
   .guiicon{width:16px;height:16px;display:inline-block;image-rendering:auto;vertical-align:-3px;
            background-image:url("../../data/gui_icons.png"); background-size:192px 48px; background-repeat:no-repeat}
   .mc{background:rgba(10,14,30,.92); border:1px solid rgba(77,227,247,.45); border-radius:var(--card-r);
@@ -159,6 +162,7 @@
 </style>
 </head>
 <body>
+<script src="maps_data.js"></script>
 <div class="stage">
   <div class="bg" id="bg"></div>
   <div class="veil"></div>
@@ -395,15 +399,8 @@ const WEAPONS = [
  ['Laser','Лазер','Прямой луч на 800 px','5 урона, задержка 800 мс, одно отражение без штрафа (content.py:639, laser.cpp:100).','Бьёт ровно одного: второй tee за первым не получит ничего, целиться надо в ближнего.',5,800,10,true],
  ['Ninja','Ниндзя','Меч и рывок','9 урона, 15 с усиления, +50 к скорости на 200 мс (content.py:649).','В NeonDM не выпадает: контроллер разрешает подбор только дробовика, гранат и лазера.',9,800,'∞',false],
 ];
-// [имя, подпись, cell, grid, спавны, чекпойнты, death, nohook]; cell<0 — нет блюпринта.
-const MAPROWS = [
- ['Neon Relay Basin','сбалансированный заезд-введение',0,'220×70',3,3,100,35],
- ['Chromatic Canyon','хук-роут по каньону над рекой смерти',1,'240×90',3,3,163,0],
- ['Vector Spire','зигзаг полок вверх',2,'160×110',3,6,24,44],
- ['Midnight Circuit','быстрый слалом по плоскому кругу',3,'260×56',3,5,22,81],
- ['Aurora Ascent','лесенка под полосой авроры',4,'200×100',3,4,550,200],
- ['Neon Relay Warmup','разминка: без дропов и без очков',-1,'—',0,0,0,0],
-];
+// Каталог карт не печатается здесь руками: maps_data.js пишет тот же скрипт, что рисует
+// блюпринты (scripts/build_map_previews.py), а гейт --check и test_map_catalog.py следят за парой.
 const SECTIONS = [['races','Играть'],['maps','Карты'],['arsenal','Оружейная']];
 const sect = (id) => `<div class="sect">${SECTIONS.map(([k,l])=>
   `<a data-go="${k}" class="${k===id?'on':''}">${l}</a>`).join('')}</div>`;
@@ -436,26 +433,44 @@ function arsenal(){
 }
 
 function maps(){
+  const mode = m => m.mode === 'race' ? ['заезд', 'ok'] : m.mode === 'ctf' ? ['флаги', '']
+      : m.mode === 'deathmatch' ? ['deathmatch', ''] : ['один спавн', 'warn'];
   return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
   <div class="panel pad" style="flex:1; overflow:auto">
-    <div class="hd"><h2>Карты арены</h2><span class="note">27 карт в поставке · 6 из них наши</span></div>
+    <div class="hd"><h2>Карты арены</h2><span class="note">${NEON_MAPS.length} карт в поставке · у каждой блюпринт
+      из её собственных данных</span></div>
     ${sect('maps')}
-    <div class="rules"><span>блюпринты рисуются из самих карт: порода, смерть, no-hook, чекпойнты, спавны</span><span>·</span>
-      <span>генератор: scripts/build_map_previews.py (гейт --check в CI)</span></div>
-    <div style="display:flex; flex-direction:column; gap:10px">
-    ${MAPROWS.map(m=>`<div class="mc">
-        ${m[2]>=0?`<div class="mp" style="background-position:${m[2]*25}% 0"></div>`
-                 :`<div class="mp" style="background-size:auto; display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:12px">разминка, без блюпринта</div>`}
+    <div class="rules"><span>таблица и превью — один проход scripts/build_map_previews.py</span><span>·</span>
+      <span>читает data/maps/*.map через scripts/neon_mapread.py</span><span>·</span>
+      <span>гейт --check в CI</span></div>
+    <table class="mapstat" style="margin:8px 0 4px">
+      <tr><th>#</th><th>карта</th><th>сетка</th><th>режим</th><th>спавнов</th><th>порода</th>
+          <th>смерть</th><th>no-hook</th><th>чекпойнтов</th><th>дропов</th><th>лицензия</th></tr>
+      ${NEON_MAPS.map(m=>`<tr>
+        <td class="muted">${m.cell}</td>
+        <td><b>${m.name}</b>${m.base?' <span class="muted">· база</span>':''}<div class="micro">${m.blurb}</div></td>
+        <td>${m.w}×${m.h}</td>
+        <td class="mode-${mode(m)[1]}">${mode(m)[0]}</td>
+        <td>${m.spawns}</td><td>${m.solid}</td><td>${m.death}</td><td>${m.nohook}</td>
+        <td>${m.checkpoints}</td><td>${m.pickups}</td>
+        <td class="muted">${m.tileset||m.license||'база'}</td></tr>`).join('')}
+    </table>
+    <div class="sheetlabel">Блюпринты 1600×960 · ${NEON_MAPS.length} ячеек 320×160, 5 в ряд</div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px">
+    ${NEON_MAPS.map(m=>`<div class="mc" style="flex:0 0 320px">
+        <div class="mp" style="background-position:${(m.cell%5)*25}% ${Math.floor(m.cell/5)*20}%"></div>
         <div class="b">
-          <h3 style="margin:0; font-size:18px">${m[0]}</h3>
-          <div class="role" style="color:var(--cyan); font-size:13px">${m[1]}</div>
-          ${chips([['сетка',m[3]],['спавнов',m[4]],['чекпойнтов',m[5]],['смерть',m[6]],['no-hook',m[7]]])}
+          <h3 style="margin:0; font-size:16px">${m.name}</h3>
+          <div class="role" style="color:var(--cyan); font-size:13px">${m.blurb}</div>
+          ${chips([['сетка',m.w+'×'+m.h],['спавнов',m.spawns],['чекпойнтов',m.checkpoints],
+                   ['смерть',m.death],['no-hook',m.nohook]])}
         </div>
       </div>`).join('')}
     </div>
-    <div class="note" style="margin-top:10px">Остальные 21 — базовый набор исходного проекта (dm*, ctf*, Tutorial,
-      LearnToPlay и четыре служебные). Neon Relay их не перекраивает, поэтому у них нет ни блюпринта,
-      ни цифр: список и классификация проверяются scripts/test_map_catalog.py.</div>
+    <div class="note" style="margin-top:10px">Двадцать одна карта — базовый набор исходного проекта (dm*, ctf*,
+      Tutorial, LearnToPlay, четыре одиночные). Раньше они были перечислены словами и без цифр; теперь читаются
+      тем же ридером, что и наши, поэтому «сколько на карте спавнов» — ответ из файла, а не из макета.
+      Кредиты берутся из data/maps/license.txt.</div>
   </div></div>`;
 }
 

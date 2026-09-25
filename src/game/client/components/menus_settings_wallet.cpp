@@ -135,7 +135,7 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 	MainView.Margin(MainView.w < 500.0f ? 12.0f : 24.0f, &MainView);
 	CUIRect Header, Line, Panel;
 	MainView.HSplitTop(42.0f, &Header, &MainView);
-	Ui()->DoLabel(&Header, Localize("Wallet"), 28.0f, TEXTALIGN_ML);
+	RenderSectionHeader(&Header, Localize("Wallet"), Localize("read-only preview"));
 
 	// Wrapped content lives inside a scroll region, never under the navigation.
 	static CScrollRegion s_WalletScroll;
@@ -152,14 +152,14 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 	};
 
 	MainView.HSplitTop(pInfo->connected ? 128.0f : 72.0f, &Panel, &MainView);
-	RenderFormAPanel(Panel, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+	RenderFormAPanel(Panel, NeonStyle::PANEL_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::PANEL_BORDER, true, false, 0.0f, NeonStyle::PANEL_ACCENT);
 	s_WalletScroll.AddRect(Panel);
 	Panel.Margin(16.0f, &Panel);
 	Panel.HSplitTop(28.0f, &Line, &Panel);
 	const char *pStatus = pInfo->requesting ? Localize("Waiting for the wallet app…") :
 		pInfo->connected ? Localize("Wallet connected") :
 		pInfo->error_message[0] ? Localize("Wallet error") : Localize("No wallet connected");
-	TextRender()->TextColor(pInfo->connected ? ColorRGBA(0.35f, 0.9f, 0.75f, 1.0f) : ColorRGBA(0.75f, 0.83f, 0.95f, 1.0f));
+	TextRender()->TextColor(pInfo->connected ? NeonStyle::SUCCESS : NeonStyle::TEXT_SOFT);
 	Ui()->DoLabel(&Line, pStatus, 18.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 	if(pInfo->connected)
@@ -254,7 +254,10 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 	MainView.Margin(Compact ? 12.0f : 24.0f, &MainView);
 	CUIRect Row, Tab, Footer;
 	MainView.HSplitTop(42.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Races"), 28.0f, TEXTALIGN_ML);
+	RenderSectionHeader(&Row, Localize("Races"), Localize("local progress only"));
+	MainView.HSplitTop(8.0f, nullptr, &MainView);
+	MainView.HSplitTop(30.0f, &Row, &MainView);
+	RenderSectionBar(Row, SectionFromPage(m_MenuPage));
 	// The daily set and the streak roll over once per menu session.
 	NeonProgress::TouchDay();
 	CUIRect ProgressStrip;
@@ -301,7 +304,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 	MainView.HSplitTop(Compact ? 196.0f : 164.0f, &Row, &MainView);
 	if(s_RaceScroll.AddRect(Row))
 	{
-		RenderFormAPanel(Row, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+		RenderFormAPanel(Row, NeonStyle::CARD_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::Dim(NeonStyle::PANEL_BORDER, 0.88f), true, false, 0.0f, NeonStyle::PANEL_ACCENT);
 		Row.Margin(12.0f, &Row);
 		CUIRect Name, Detail, Action;
 		Row.HSplitBottom(40.0f, &Row, &Action);
@@ -344,7 +347,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		const bool Visible = s_RaceScroll.AddRect(Row);
 		if(Visible)
 		{
-			RenderFormAPanel(Row, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+			RenderFormAPanel(Row, NeonStyle::CARD_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::Dim(NeonStyle::PANEL_BORDER, 0.88f), true, false, 0.0f, NeonStyle::PANEL_ACCENT);
 			Row.Margin(12.0f, &Row);
 			CUIRect Name, Players, Fee;
 			Row.HSplitTop(28.0f, &Name, &Row);
@@ -361,9 +364,9 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 			Ui()->DoLabel(&Name, Race.m_pName, 19.0f, TEXTALIGN_ML);
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), Localize("Players: %s"), Race.m_pPlayers);
-			TextRender()->TextColor(ColorRGBA(0.68f, 0.77f, 0.89f, 1.0f));
+			TextRender()->TextColor(NeonStyle::TEXT_FAINT);
 			Ui()->DoLabel(&Players, Race.m_LegendaryOnly ? Localize("Legendary holders only") : aBuf, 14.0f, TEXTALIGN_ML);
-			TextRender()->TextColor(ColorRGBA(0.35f, 0.9f, 0.8f, 1.0f));
+			TextRender()->TextColor(NeonStyle::SUCCESS);
 			str_format(aBuf, sizeof(aBuf), "%s %s", Race.m_pEntry, apCurrencies[s_Currency]);
 			Ui()->DoLabel(&Fee, aBuf, 16.0f, Compact ? TEXTALIGN_ML : TEXTALIGN_MR);
 			TextRender()->TextColor(TextRender()->DefaultTextColor());
@@ -437,8 +440,8 @@ void CMenus::RenderCharacters(CUIRect MainView)
 	MainView.Margin(16.0f, &MainView);
 	const bool Russian = str_find(g_Config.m_ClLanguagefile, "russian") != nullptr;
 	CUIRect Row;
-	MainView.HSplitTop(30.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Characters"), 24.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(42.0f, &Row, &MainView);
+	RenderSectionHeader(&Row, Localize("Characters"), Localize("try-on only"));
 	MainView.HSplitTop(26.0f, &Row, &MainView);
 	Ui()->DoLabel(&Row, Russian ? "Витрина • Покупки NFT пока недоступны. Только примерка." : "Store preview • NFT purchases unavailable. Local try-on only.", 12.0f, TEXTALIGN_ML);
 	bool Compact = MainView.w < 760.0f;
@@ -477,7 +480,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 	{
 		float t = (time_get() / (float)time_freq());
 		float prog = std::fmod(t, 5.0f) / 5.0f;
-		RenderFormAPanel(Details, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, true, prog, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+		RenderFormAPanel(Details, NeonStyle::PANEL_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::PANEL_BORDER, true, true, prog, NeonStyle::PANEL_ACCENT);
 	}
 	Details.Margin(12.0f, &Details);
 	static int s_Selected = 0;
@@ -512,7 +515,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 			float prog = std::fmod(t, ImpulseDur) / ImpulseDur;
 			RenderFormAPanel(Card, 0.0f, ColorRGBA(0,0,0,0), BorderColor, true, IsSelected, prog, ImpulseColor);
 		}
-		if(DoButton_Menu(&s_aSelect[i], "", IsSelected, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.0f)))
+		if(DoButton_Menu(&s_aSelect[i], "", IsSelected, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f)))
 		{ s_Selected = i; if(Compact) s_DetailOpen = true; }
 		CUIRect Portrait = CardTop;
 		Portrait.Margin(2.0f, &Portrait);
@@ -569,13 +572,13 @@ void CMenus::RenderLeaders(CUIRect MainView)
 	MainView.Margin(MainView.w < 620.0f ? 12.0f : 24.0f, &MainView);
 	CUIRect Row, Footer;
 	MainView.HSplitTop(42.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Leaders"), 28.0f, TEXTALIGN_ML);
+	RenderSectionHeader(&Row, Localize("Leaders"), Localize("server-verified only"));
 	MainView.HSplitBottom(44.0f, &MainView, &Footer);
 	MainView.HSplitBottom(12.0f, &MainView, nullptr);
 	static CButtonContainer s_Races;
 	if(DoButton_Menu(&s_Races, Localize("View races"), 0, &Footer))
 		SetMenuPage(PAGE_RACES);
-	{ float t=(time_get()/(float)time_freq()); float prog=std::fmod(t,5.0f)/5.0f; RenderFormAPanel(MainView, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, true, prog, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f)); }
+	{ float t=(time_get()/(float)time_freq()); float prog=std::fmod(t,5.0f)/5.0f; RenderFormAPanel(MainView, NeonStyle::PANEL_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::PANEL_BORDER, true, true, prog, NeonStyle::PANEL_ACCENT); }
 	MainView.Margin(16.0f, &MainView);
 	// A three-row podium, marked as a preview: the copy below is explicit that only
 	// server-verified results can occupy it.

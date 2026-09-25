@@ -134,7 +134,8 @@ td b { color: var(--ice); }
 /* maps */
 .map { background: rgba(10, 14, 30, .88); border: 1px solid rgba(77, 227, 247, .35); border-radius: var(--card-r);
   overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.map .mp { background-image: url("../../data/ui/maps/previews.png"); background-size: 500% 100%;
+/* 27 blueprint cells: 5 per row, 6 rows (the atlas grew with the catalogue) */
+.map .mp { background-image: url("../../data/ui/maps/previews.png"); background-size: 500% 600%;
   background-repeat: no-repeat; aspect-ratio: 2/1; background-color: var(--night-0); border-right: 1px solid rgba(77, 227, 247, .2); }
 .map .b { padding: 12px 14px; }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--dim); margin-top: 12px; }
@@ -163,3 +164,9 @@ footer .row { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
   .map .mp { border-right: none; border-bottom: 1px solid rgba(77, 227, 247, .2); }
   .nav nav { display: none; }
 }
+
+/* full catalogue table */
+table.cat td { font-size: 13px; }
+table.cat tr.base td { color: #9fb0c9; }
+table.cat tr.base td b { color: #c9d8ea; }
+table.cat .note { font-size: 12px; }

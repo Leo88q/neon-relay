@@ -1,8 +1,8 @@
 //
-// Static data for the Arsenal and Maps pages. Every number here is copied from the code that
-// implements it (see the comments), and scripts/test_map_catalog.py + check_menu_syntax.sh fail if
-// the tables drift: the blurbs and grid statistics are re-derived from scripts/build_neon_maps.py,
-// the weapon numbers from datasrc/content.py.
+// Static data for the Arsenal page, plus the generated Maps catalogue. Every weapon number here is
+// copied from the code that implements it (see the comments) and scripts/test_map_catalog.py fails
+// if the tables drift: the weapon numbers are re-derived from datasrc/content.py, the map rows from
+// data/maps/*.map via scripts/neon_mapread.py.
 //
 #ifndef GAME_CLIENT_NEON_ARSENAL_H
 #define GAME_CLIENT_NEON_ARSENAL_H
@@ -70,39 +70,10 @@ inline constexpr int PICKUP_RESPAWN_SECONDS = 15;
 inline constexpr int RESPAWN_MILLISECONDS = 500;
 } // namespace NeonArsenal
 
-namespace NeonMaps
-{
-// One card of the arena gallery. m_PreviewCell is the 320x160 cell in data/ui/maps/previews.png;
-// -1 means the map has no blueprint because it did not come from scripts/build_neon_maps.py.
-struct SMapCard
-{
-	const char *m_pName;
-	const char *m_pBlurb;
-	int m_PreviewCell;
-	int m_TilesW;
-	int m_TilesH;
-	int m_Spawns;
-	int m_Checkpoints;
-	int m_DeathTiles;
-	int m_NohookTiles;
-};
-
-inline constexpr SMapCard g_aCards[] = {
-	{"Neon Relay Basin", "сбалансированный заезд-введение", 0, 220, 70, 3, 3, 100, 35},
-	{"Chromatic Canyon", "хук-роут по каньону над рекой смерти", 1, 240, 90, 3, 3, 163, 0},
-	{"Vector Spire", "зигзаг полок вверх", 2, 160, 110, 3, 6, 24, 44},
-	{"Midnight Circuit", "быстрый слалом по плоскому кругу", 3, 260, 56, 3, 5, 22, 81},
-	{"Aurora Ascent", "лесенка под полосой авроры", 4, 200, 100, 3, 4, 550, 200},
-	{"Neon Relay Warmup", "разминка: без дропов и без очков", -1, 0, 0, 0, 0, 0, 0},
-};
-inline constexpr size_t NUM_CARDS = std::size(g_aCards);
-
-// Everything else shipped in data/maps is DDNet's own pool (dm*, ctf*, Tutorial, LearnToPlay and
-// four single-purpose maps). Counted by scripts/test_map_catalog.py against the real directory.
-inline constexpr int NUM_SHIPPED_MAPS = 27;
-inline constexpr int PREVIEW_CELL_W = 320;
-inline constexpr int PREVIEW_CELL_H = 160;
-inline constexpr int PREVIEW_CELLS = 5;
-} // namespace NeonMaps
+// Maps: the catalogue is generated, not typed here. scripts/build_map_previews.py reads every
+// shipped data/maps/*.map through scripts/neon_mapread.py and writes src/game/client/neon_maps_gen.h
+// (blurbs included), which is why the page cannot disagree with the map a player joins. The gate is
+// the generator's own --check plus scripts/test_map_catalog.py.
+#include "neon_maps_gen.h"
 
 #endif // GAME_CLIENT_NEON_ARSENAL_H

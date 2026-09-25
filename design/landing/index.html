@@ -170,7 +170,7 @@
 <section id="maps">
   <div class="wrap">
     <span class="eyebrow">карты</span>
-    <h2>Действующие карты: шесть своих и двадцать одна общая</h2>
+    <h2>Действующие карты: все 27, у каждой — блюпринт из её же данных</h2>
     <p class="lede">Превью нарисованы не «вдохновением», а по данным карты: порода, смерть, no-hook,
       чекпойнты, спавны. Тот же генератор кормит и страницу «Карты» в клиенте.</p>
     <div class="grid g2">
@@ -200,10 +200,10 @@
           <p class="note">лесенка под полосой авроры: 550 плиток смерти и 200 no-hook — карта про терпение.</p>
           <div class="chips"><span class="chip">сетка<b>200×100</b></span><span class="chip">смерть<b>550</b></span><span class="chip">no-hook<b>200</b></span></div></div></div>
 
-      <div class="map"><div class="mp" style="background-size:cover; background-image:none; display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:13px">разминка · без блюпринта</div>
+      <div class="map"><div class="mp" style="background-position:0% 20%"></div>
         <div class="b"><h3>Neon Relay Warmup</h3>
           <p class="note">локальная разминка: без дропов и без очков. Именно она запускается кнопкой «разминка» в клиенте.</p>
-          <div class="chips"><span class="chip">режим<b>соло</b></span><span class="chip">оплата<b>не нужна</b></span></div></div></div>
+          <div class="chips"><span class="chip">сетка<b>176×48</b></span><span class="chip">стартовых площадок<b>35</b></span><span class="chip">оплата<b>не нужна</b></span></div></div></div>
 
     </div>
     <div class="legend note" style="margin-top:14px">
@@ -214,9 +214,23 @@
       <span><i style="background:#D8F6FF"></i>спавн</span>
       <span><i style="background:#FFB820"></i>финиш</span>
     </div>
-    <p class="note">Остальные 21 карта — базовый набор исходного проекта (dm*, ctf*, Tutorial, LearnToPlay и четыре
-      служебные). Neon Relay их не перекраивает, поэтому у них нет ни блюпринта, ни цифр. Список
-      сверяется с <code>data/maps/</code> тем же тестом.</p>
+    <h3 style="margin-top:22px">Полный каталог поставки</h3>
+    <p class="note">Те же цифры, что показывает страница «Карты» в клиенте: таблица печатается из
+      <code>maps_data.js</code>, который пишет <code>scripts/build_map_previews.py</code>, прочитав каждый
+      <code>data/maps/*.map</code>. Кредиты и лицензии — из <code>data/maps/license.txt</code>.</p>
+    <div class="wrap" style="padding:0"><table class="cat" id="mapcat"></table></div>
+    <script src="maps_data.js"></script>
+    <script>
+      const MODE = {race: 'заезд', deathmatch: 'deathmatch', ctf: 'флаги', 'single spawn': 'один спавн'};
+      document.getElementById('mapcat').innerHTML =
+        '<tr><th>карта</th><th>сетка</th><th>режим</th><th>спавнов</th><th>порода</th><th>смерть</th>'
+        + '<th>no-hook</th><th>чекпойнтов</th><th>дропов</th><th>тайлы / лицензия</th></tr>'
+        + window.NEON_MAPS.map(m => `<tr${m.base ? ' class="base"' : ''}>
+            <td><b>${m.name}</b><div class="note" style="margin:0">${m.blurb}</div></td>
+            <td>${m.w}×${m.h}</td><td>${MODE[m.mode] || m.mode}</td><td>${m.spawns}</td>
+            <td>${m.solid}</td><td>${m.death}</td><td>${m.nohook}</td><td>${m.checkpoints}</td>
+            <td>${m.pickups}</td><td>${m.tileset || m.license || 'база'}</td></tr>`).join('');
+    </script>
   </div>
 </section>
 
