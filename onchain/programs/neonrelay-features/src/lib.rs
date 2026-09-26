@@ -62,10 +62,10 @@ pub const REGISTRATION_STAKE_LAMPORTS: u64 = 10_000_000;
 /// (pre-upgrade) is rejected instead of being dropped below rent-exemption —
 /// an under-funded tombstone could be garbage-collected, which would break
 /// the one-way registration rule.
-fn return_registration_stake(
-	registration: &AccountInfo<'_>,
-	player: &AccountInfo<'_>,
-	system_program: &AccountInfo<'_>,
+fn return_registration_stake<'a>(
+	registration: &AccountInfo<'a>,
+	player: &AccountInfo<'a>,
+	system_program: &AccountInfo<'a>,
 	rent: &Rent,
 	tournament_id: u64,
 	bump: u8,
