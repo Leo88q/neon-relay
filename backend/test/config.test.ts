@@ -34,6 +34,8 @@ test("production refuses to boot on a missing or placeholder domain", () => {
     NEONRELAY_RPC_URL: "https://rpc.example.invalid",
     NEONRELAY_RPC_FALLBACK_URL: "https://fallback.example.invalid",
     NEONRELAY_WATCHTOWER_INGEST_TOKEN: "watchtower-secret-0123456789abcdef",
+    // SW-2026-AGI: production ingestion must also MAC the agent memory store.
+    NEONRELAY_WATCHTOWER_MEMORY_KEY: "watchtower-memory-key-0123456789abcdef",
     NEONRELAY_SERVER_SIGNING_PUBLIC_KEY: signingKey,
     NEONRELAY_GAME_IDENTITY_PUBLIC_KEY: signingKey,
     NEONRELAY_OPERATOR_TOKEN: "operator-token-0123456789abcdef-0123456789",
@@ -61,6 +63,8 @@ test("production refuses to boot on a missing or placeholder domain", () => {
     NEONRELAY_RPC_URL: "https://rpc.example.invalid",
     NEONRELAY_RPC_FALLBACK_URL: "https://fallback.example.invalid",
     NEONRELAY_WATCHTOWER_INGEST_TOKEN: "watchtower-secret-0123456789abcdef",
+    // SW-2026-AGI: production ingestion must also MAC the agent memory store.
+    NEONRELAY_WATCHTOWER_MEMORY_KEY: "watchtower-memory-key-0123456789abcdef",
     NEONRELAY_SERVER_SIGNING_PUBLIC_KEY: signingKey,
     NEONRELAY_REWARDS_PROGRAM_ID: "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
     NEONRELAY_FEATURES_PROGRAM_ID: "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP",
@@ -107,6 +111,16 @@ test("production refuses to boot on a missing or placeholder domain", () => {
     NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com",
     NEONRELAY_WATCHTOWER_INGEST_TOKEN: "short",
   }), /at least 32 characters/);
+  // SW-2026-AGI T74: ingestion without an authenticated memory store must not
+  // boot in production — un-MACed rows are poisonable agent memory.
+  assert.throws(() => loadConfig({
+    ...productionEnv,
+    NEONRELAY_WATCHTOWER_MEMORY_KEY: undefined,
+  } as Record<string, string | undefined>), /NEONRELAY_WATCHTOWER_MEMORY_KEY/);
+  assert.throws(() => loadConfig({
+    ...productionEnv,
+    NEONRELAY_WATCHTOWER_MEMORY_KEY: "short",
+  }), /NEONRELAY_WATCHTOWER_MEMORY_KEY must be at least 32 characters/);
 });
 
 test("rpc failover settings default to a single provider", () => {

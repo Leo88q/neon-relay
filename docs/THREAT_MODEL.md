@@ -96,6 +96,18 @@ after the mitigation.
 | Legally significant history rewriting | policy: no `git filter-repo` on notices; upstream provenance pinned in `UPSTREAM_BASE.md` | none known |
 | CI silently disabled/broken | workflow mirrors locally-evidenced gates; first real run blocked by **account billing** (BL-12) — recorded, not hidden | CI currently not executing |
 
+## 7b. Agentic-AI surface (SW-2026-AGI, 2026-09-26)
+
+The 2026 agentic-AI threat classes (indirect prompt injection, agent-memory
+poisoning, tool-description poisoning, audit poisoning, durable-nonce social
+engineering) are audited and mitigated in
+[`AGENTIC_THREAT_AUDIT_2026_09_26.md`](AGENTIC_THREAT_AUDIT_2026_09_26.md):
+telemetry sanitization + HMAC-authenticated agent memory in the Watchtower
+store, pinned tool descriptions with fail-closed drift detection, a
+per-commit AI-injection CI gate, no autonomous value movement in the
+automation catalog, client-side program-id allowlisting, and a System-Program
+instruction ban in the Android transaction builders.
+
 ## 8. Explicitly out of scope
 
 * Full native/Android/Solana builds (BL-01/02/03) — the binaries/APKs/program

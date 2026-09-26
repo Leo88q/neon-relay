@@ -89,6 +89,12 @@ export interface Config {
   environment: "production" | "development" | "test";
   /** Service credential required by production Watchtower ingestion. */
   watchtowerIngestToken: string | null;
+  /**
+   * SW-2026-AGI T74: HMAC key for the agent-memory store (watchtower_events).
+   * Required in production whenever ingestion is configured — records written
+   * without a MAC would be unauthenticated memory for exporter-reading agents.
+   */
+  watchtowerMemoryKey: string | null;
   /** Canonical Solana cluster recorded in the deployment manifest. */
   cluster: "devnet" | "testnet" | "mainnet-beta";
   /** Explicit second gate for paid entry; default is disabled. */
@@ -203,6 +209,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (production && watchtowerIngestToken !== null && watchtowerIngestToken.length < 32) {
     throw new Error("NEONRELAY_WATCHTOWER_INGEST_TOKEN must be at least 32 characters in production");
   }
+  // SW-2026-AGI T74: agent memory (watchtower_events) must be authenticated.
+  // If production can ingest, it must also MAC what it ingests.
+  const watchtowerMemoryKey = env.NEONRELAY_WATCHTOWER_MEMORY_KEY ?? null;
+  if (production && watchtowerIngestToken !== null && watchtowerMemoryKey === null) {
+    throw new Error(
+      "NEONRELAY_WATCHTOWER_MEMORY_KEY is required in production when NEONRELAY_WATCHTOWER_INGEST_TOKEN is set " +
+      "(agent memory must be HMAC-authenticated)");
+  }
+  if (production && watchtowerMemoryKey !== null && watchtowerMemoryKey.length < 32) {
+    throw new Error("NEONRELAY_WATCHTOWER_MEMORY_KEY must be at least 32 characters in production");
+  }
   const deploymentManifestPath = env.NEONRELAY_DEPLOYMENT_MANIFEST ?? null;
   if (production) {
     const primaryRpc = productionRpcUrl(env.NEONRELAY_RPC_URL, "NEONRELAY_RPC_URL");
@@ -298,6 +315,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     telegramChatId: env.NEONRELAY_TELEGRAM_CHAT_ID ?? null,
     environment,
     watchtowerIngestToken,
+    watchtowerMemoryKey,
     cluster,
     monetizationEnabled,
     deploymentManifestPath,

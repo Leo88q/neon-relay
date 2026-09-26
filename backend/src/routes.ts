@@ -57,7 +57,9 @@ import {
   WATCHTOWER_SOURCE, WATCHTOWER_STAGE, gameSignalsConfig, ingestContract,
   ingestWatchtowerEvent, normalizeSolanaEvent, routeL2, sdkConfig,
   watchtowerConfig, type TelemetryInput,
+  memoryMacRecord, scanMemoryIntegrity, verifyMemoryMac,
 } from "./watchtower.ts";
+import { toolIntegrityReport } from "./tool_registry.ts";
 
 const str = (value: unknown, field: string, max = 512): string => {
   if (typeof value !== "string" || value.length === 0 || value.length > max) {
@@ -159,6 +161,7 @@ interface WatchtowerEventRow {
   metadata_json: string | null;
   occurred_at: number;
   received_at: number;
+  memory_mac: string | null;
 }
 
 const normalizeWatchtowerEventRow = (row: WatchtowerEventRow, config: Config): Record<string, unknown> => {
@@ -197,6 +200,9 @@ const normalizeWatchtowerEventRow = (row: WatchtowerEventRow, config: Config): R
     matchId: row.match_id,
     mode: row.mode,
     idempotencyHash: row.idempotency_hash,
+    // SW-2026-AGI T74: every exported row announces its memory integrity so a
+    // consuming agent can fail closed on "tampered" instead of trusting it.
+    integrity: verifyMemoryMac(config.watchtowerMemoryKey, memoryMacRecord(row), row.memory_mac),
   };
 };
 
@@ -570,6 +576,26 @@ export function buildRouter(deps: {
         acknowledged: false,
       });
     }
+    // SW-2026-AGI T74: a MAC mismatch means the agent memory store was edited
+    // outside the ingest path (direct DB write, restored backup, tamper).
+    // A poisoned record that reaches an exporter-reading agent is an attack,
+    // not bad data. Un-MACed legacy rows are reported as counts, not alerts.
+    const memoryScan = scanMemoryIntegrity(db, config.watchtowerMemoryKey);
+    if (memoryScan.tampered.length > 0) {
+      alerts.push({
+        id: "watchtower-memory-tampered",
+        severity: "high",
+        type: "AgentMemoryTampered",
+        detectedAt: new Date(now).toISOString(),
+        payload: {
+          checked: memoryScan.checked,
+          tampered: memoryScan.tampered.slice(0, 50),
+          tampered_total: memoryScan.tampered.length,
+          policy: "do not feed flagged rows to any agent; quarantine and investigate the writer",
+        },
+        acknowledged: false,
+      });
+    }
     const lastVerifiedAt = latestObservedAt(
       latestValue("SELECT MAX(received_at) AS t FROM watchtower_events"),
       latestValue("SELECT MAX(created_at) AS t FROM reconcile_snapshots"),
@@ -695,6 +721,11 @@ export function buildRouter(deps: {
     });
   }
 
+  // SW-2026-AGI V78: pinned tool-description integrity. Integrating agents
+  // verify this before trusting any SDK contract description; drift also
+  // fails the backend boot (see assertToolRegistryPinned in server.ts).
+  router.add("GET", "/api/os/tools/integrity", () => toolIntegrityReport());
+
   router.add("GET", "/api/game-signals/config", (ctx) => {
     const gameId = ctx.url.searchParams.get("gameId") ?? WATCHTOWER_GAME_ID;
     if (gameId !== WATCHTOWER_GAME_ID) {
@@ -805,7 +836,7 @@ export function buildRouter(deps: {
     const eventType = ctx.url.searchParams.get("eventType");
     const args: (string | number | null)[] = [];
     let sql = `SELECT id, idempotency_hash, event_type, external_id, solana_wallet, wallet_id,
-      session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at
+      session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at, memory_mac
       FROM watchtower_events WHERE 1 = 1`;
     if (since !== null) {
       sql += " AND occurred_at >= ?";
@@ -840,10 +871,21 @@ export function buildRouter(deps: {
 
   router.add("GET", "/watchtower/events/:signature", (ctx) => {
     const signature = ctx.params.signature;
+    // SW-2026-AGI F-AI-01: the previous implementation interpolated the raw
+    // signature into a LIKE pattern, so `%`/`_` wildcards let one signature
+    // lookup match arbitrary other rows. Validate the base58-ish signature
+    // shape AND escape the remaining LIKE metacharacters.
+    // Charset note: real Solana signatures are pure base58, but the repository
+    // fixtures and smoke checks use hyphenated labels ("test-neon-1"); the
+    // security property is a bounded charset without LIKE metacharacters.
+    if (!/^[A-Za-z0-9_-]{8,96}$/.test(signature)) {
+      throw new HttpError(400, "bad-signature", "signature must be 8..96 url-safe signature characters");
+    }
+    const escaped = signature.replace(/[\\%_]/g, (ch) => `\\${ch}`);
     const row = db.get<WatchtowerEventRow>(`SELECT id, idempotency_hash, event_type, external_id, solana_wallet, wallet_id,
-      session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at
-      FROM watchtower_events WHERE metadata_json LIKE ? ORDER BY received_at DESC LIMIT 1`,
-    `%\"signature\":\"${signature}\"%`);
+      session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at, memory_mac
+      FROM watchtower_events WHERE metadata_json LIKE ? ESCAPE '\\' ORDER BY received_at DESC LIMIT 1`,
+    `%\"signature\":\"${escaped}\"%`);
     if (!row) throw new HttpError(404, "not-found", `no watchtower event for signature ${signature}`);
     return watchtowerEnvelope(normalizeWatchtowerEventRow(row, config), {
       dataQuality: "partial",
@@ -1025,6 +1067,7 @@ export function buildRouter(deps: {
   });
 
   router.add("GET", "/watchtower/security", () => {
+    const memoryScan = scanMemoryIntegrity(db, config.watchtowerMemoryKey);
     const reconcile = db.all<{ kind: string; status: string; n: number }>(
       `SELECT kind, status, COUNT(*) AS n FROM reconcile_snapshots GROUP BY kind, status ORDER BY kind, status`);
     const adminActions = db.all<{ action: string; n: number }>(
@@ -1037,6 +1080,15 @@ export function buildRouter(deps: {
       reconcile,
       adminActions,
       openAlerts: alerts.length,
+      // SW-2026-AGI T74: exporter-reading agents must be able to fail closed
+      // on poisoned memory; tampered rows are named, not silently dropped.
+      memoryIntegrity: {
+        checked: memoryScan.checked,
+        tampered: memoryScan.tampered.length,
+        tamperedIds: memoryScan.tampered.slice(0, 20).map((row) => row.id),
+        unsigned: memoryScan.unsigned,
+        policy: "rows flagged tampered must never be fed to an agent; investigate the writer",
+      },
       auditReport: "external AUDIT_REPORT_PATH required; committed reports are not release evidence",
     }, {
       dataQuality: reconcile.length > 0 || adminActions.length > 0 ? "partial" : "unavailable",
@@ -1129,7 +1181,10 @@ export function buildRouter(deps: {
 
   const ingestTelemetry = (input: unknown): ReturnType<typeof ingestWatchtowerEvent> => {
     try {
-      return ingestWatchtowerEvent(db, normalizeSolanaEvent(input));
+      // SW-2026-AGI T74: every stored event is MACed with the deployment
+      // memory key so exporter-reading agents can detect poisoned records.
+      return ingestWatchtowerEvent(db, normalizeSolanaEvent(input), Date.now(),
+        { memoryKey: config.watchtowerMemoryKey });
     } catch (err) {
       throw new HttpError(400, "bad-telemetry", (err as Error).message);
     }

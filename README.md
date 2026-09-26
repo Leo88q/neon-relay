@@ -86,7 +86,10 @@ late ID binding. Verification routes are served by the Node 22 backend:
 `/api/os/config`, `/api/l2/router`, `/api/sdk/*`, `/api/game-signals/config`,
 and `/api/ingest/solana`. Provider SDKs, wallet keys and mainnet credentials
 remain deployment concerns; the checked-in Godot wallet/session-key adapters
-fail closed until installed.
+fail closed until installed. The 2026 agentic-AI hardening (telemetry
+sanitization, HMAC-authenticated agent memory, pinned tool descriptions,
+per-commit AI-injection gate) is documented in
+[`docs/AGENTIC_THREAT_AUDIT_2026_09_26.md`](docs/AGENTIC_THREAT_AUDIT_2026_09_26.md).
 
 ## Repository layout
 

@@ -78,7 +78,7 @@ async function main(): Promise<void> {
 
     const configResponse = await request(base, "/watchtower/config");
     assert.equal(configResponse.status, 200);
-    assert.equal(configResponse.json.parserVersion, "neonrelay-watchtower-v1");
+    assert.equal(configResponse.json.parserVersion, "neonrelay-watchtower-v2");
     console.log(`parser_version=${configResponse.json.parserVersion}`);
 
     const events = await request(base, "/watchtower/events?limit=10");

@@ -129,6 +129,21 @@ export class Router {
     }
     return undefined;
   }
+
+  /**
+   * SW-2026-AGI: introspection for the route-integrity tests — the exporter
+   * surface must provably stay GET-only, so tests walk the live route table
+   * instead of trusting a documented list.
+   */
+  routeTable(): { method: string; path: string }[] {
+    return [
+      ...[...this.routes.keys()].map((key) => {
+        const [method, ...path] = key.split(" ");
+        return { method: method as string, path: path.join(" ") };
+      }),
+      ...this.patternRoutes.map((route) => ({ method: route.method, path: `/${route.parts.join("/")}` })),
+    ];
+  }
 }
 
 /**

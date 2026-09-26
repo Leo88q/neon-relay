@@ -196,6 +196,15 @@ object EconomyTxBuilder {
         require(metas.all { it.key.size == 32 }) { "account key must be 32 bytes" }
         require(ixAccountIndexes.all { it in metas.indices }) { "invalid instruction account index" }
         require(!payer.contentEquals(programId)) { "payer cannot be the program" }
+        // SW-2026-AGI (threat 82 + T75): a game transaction must never carry a
+        // System Program instruction. The AdvanceNonceAccount system call is
+        // exactly how a durable-nonce transaction stays valid forever after a
+        // signer is socially engineered into "just a routine" pre-signature
+        // (Drift, 2026-04-01), and a system transfer would be an unguarded
+        // value movement outside the audited program logic.
+        require(!programId.contentEquals(SYSTEM_PROGRAM_ID)) {
+            "SW-2026-AGI: system-program instructions are never built here; durable-nonce advance and raw lamport moves are forbidden"
+        }
         val keys = mutableListOf(AccountMeta(payer, true, true))
         fun include(meta: AccountMeta) {
             val i = keys.indexOfFirst { it.key.contentEquals(meta.key) }

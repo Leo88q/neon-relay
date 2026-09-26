@@ -1,0 +1,20 @@
+{
+  "pins_version": 1,
+  "algo": "sha256",
+  "pins": {
+    "godot-solana": "28810393bf49f5ea1b3bd6253d2c1e6865630f938ef8fc44ed821e6aecba40b1",
+    "gamba": "0e06b7fbb4780f5468505d2995264f6caa1d9c24889f3ef70b8908b4e88a7a2d",
+    "preset": "9184389265abc38e6952565b2e187b28c94857e36f7f06ced4f57fe12f360e39",
+    "ritarena": "c3e2f812016e809fc3968eb1759aca8f0c2e5fd223bdb10bc0d48795dcb953aa",
+    "xandeum": "8beea4fa670231b16a07d2341370e977f8c903e78660c20a8f1b0761897ab100",
+    "pst": "33a8a6c161c5fc860bf4210a95d3691e904375e14b1a80231e8084a8eeaa0957",
+    "core-attributes": "cdb57a371fa6616be55fdc3a884a9a28ff2bc2d2e0315112ac23804b5cba406b",
+    "access-protocol": "8b55ad280658ae8f7a840d84e7de1197e265c14efaa7d48fa5d1d52472eb5e8b",
+    "idosgames-wallet": "4d74b6ad73321eee4310d0885bfedcac4f889cbba3608054d25147c85c4db56e",
+    "security-auditing-skill": "d03aa9ae3f0316dfe29efbaf6273b013e459bc5c6422d7b4a7b2ab532ece8b73",
+    "sentio-cli": "ce75286566708887e167fe10a554d78e221fd72bb0a1f852c55401238fe72c45",
+    "solguard": "8e1acf8aaae3a8981c37730be95199137cfae0932332e72fa4f3211628a013ea",
+    "solana-slam": "c9dfec1ece52f76363558df69ccfed5a2b78948ba6be16d5951d8cda94e7e989",
+    "arcium": "79c2e52e2504cf9a2ff51120e10739b7ee091b19cd12b81e132e11aa15b64362"
+  }
+}
