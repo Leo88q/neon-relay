@@ -6,9 +6,10 @@
 // is a payment, a ticket or a claim, and the pages label it as local progress
 // (docs/UI_POTATO_ARENA_REDESIGN_RU.md rule P9, docs/REWARD_SECURITY.md).
 //
-// Verified match results (kills, placements) stay on the server/backend side; when a read-only
-// achievements endpoint lands (onchain/programs/neonrelay-features has the registry already),
-// the same panels can switch to it by replacing Counters() below.
+// Verified match results (kills, placements) stay on the server/backend side. The read-only
+// endpoint now exists (GET /v1/rewards/verified, backend/src/routes.ts) and the switch itself
+// lives in Counter() below: it is the single point where the daily-quest source flips from
+// local counters to server-confirmed numbers (cl_neon_verified_source + SetVerifiedSource()).
 #ifndef GAME_CLIENT_NEON_PROGRESS_H
 #define GAME_CLIENT_NEON_PROGRESS_H
 
@@ -143,8 +144,64 @@ enum ECounter
 	COUNTER_COUNT
 };
 
+// ---- verified source (server-confirmed numbers) ------------------------------------
+//
+// Filled by the fetch path from GET /v1/rewards/verified (the route is read-only and
+// returns only the bearer session's own events). Until a fetch has landed for the current
+// day, the source stays empty and the local counters below remain authoritative, so a
+// failed or absent fetch can never zero a player's progress.
+struct SVerifiedSource
+{
+	int m_PracticesToday = 0; // verified practice laps today
+	int m_SessionsToday = 0; // verified match finishes today
+	int m_FetchedDay = 0; // TodayStamp() at fetch time
+};
+
+inline SVerifiedSource &VerifiedSource()
+{
+	static SVerifiedSource s_Source;
+	return s_Source;
+}
+
+// The fetch path calls this with the payload's per-day counts. Values are clamped to the
+// same range as the local counters so a hostile reply cannot overflow the quest math.
+inline void SetVerifiedSource(int PracticesToday, int SessionsToday, int FetchedDay)
+{
+	SVerifiedSource &S = VerifiedSource();
+	S.m_PracticesToday = std::clamp(PracticesToday, 0, 1000000);
+	S.m_SessionsToday = std::clamp(SessionsToday, 0, 1000000);
+	S.m_FetchedDay = FetchedDay;
+}
+
+inline void ClearVerifiedSource()
+{
+	VerifiedSource() = SVerifiedSource();
+}
+
+// Usable only for the day it was fetched (daily quests count "today") and only when at
+// least one number actually came back.
+inline bool VerifiedSourceUsable()
+{
+	const SVerifiedSource &S = VerifiedSource();
+	return g_Config.m_ClNeonVerifiedSource != 0 && S.m_FetchedDay == TodayStamp() &&
+		(S.m_PracticesToday > 0 || S.m_SessionsToday > 0);
+}
+
 inline int Counter(int Which)
 {
+	// SINGLE SOURCE-SWITCH POINT (docs/UI_POTATO_ARENA_REDESIGN_RU.md §7.7): when a
+	// same-day verified fetch is present and enabled, the counters the server can confirm
+	// (practice laps, matches joined) read the server-verified numbers; the counters with
+	// no server source yet (try-ons, streak) keep the local value. No other panel may
+	// read the verified source directly.
+	if(VerifiedSourceUsable())
+	{
+		switch(Which)
+		{
+		case COUNTER_PRACTICE: return VerifiedSource().m_PracticesToday;
+		case COUNTER_SESSIONS: return VerifiedSource().m_SessionsToday;
+		}
+	}
 	switch(Which)
 	{
 	case COUNTER_PRACTICE: return std::max(0, g_Config.m_ClNeonPractices - g_Config.m_ClNeonBasePractices);
@@ -156,8 +213,8 @@ inline int Counter(int Which)
 }
 
 // Daily progress = lifetime counter minus the baseline captured at the last rollover (see
-// TouchDay). When the verified-statistics endpoint lands, Counter() is the single place to
-// switch data sources from local counters to server-confirmed numbers.
+// TouchDay). The verified-source switch above is the only place a panel's number changes
+// origin; quest baselines keep meaning the same thing in both sources.
 inline const SQuest *QuestDef(int PoolIndex)
 {
 	static const SQuest s_aQuests[QUEST_POOL] = {

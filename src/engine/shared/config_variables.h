@@ -240,6 +240,7 @@ MACRO_CONFIG_INT(ClNeonQuestDone, cl_neon_quest_done, 0, 0, 4095, CFGFLAG_CLIENT
 MACRO_CONFIG_INT(ClNeonBasePractices, cl_neon_base_practices, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: practice counter baseline for the current quest day")
 MACRO_CONFIG_INT(ClNeonBaseTries, cl_neon_base_tries, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: try-on counter baseline for the current quest day")
 MACRO_CONFIG_INT(ClNeonBaseSessions, cl_neon_base_sessions, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: session counter baseline for the current quest day")
+MACRO_CONFIG_INT(ClNeonVerifiedSource, cl_neon_verified_source, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Verified results: 1 = read the daily quest counters (practice, matches) from the backend GET /v1/rewards/verified when a same-day fetch is present; 0 = local counters (default)")
 
 MACRO_CONFIG_INT(UiColorizePing, ui_colorize_ping, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight ping")
 MACRO_CONFIG_INT(UiColorizeGametype, ui_colorize_gametype, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight gametype")
