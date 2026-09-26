@@ -415,8 +415,10 @@ export function getStruct(structs: AccountsStruct[], name: string): AccountsStru
 
 /** Body of `pub fn <name>(...)`, brace-balanced. */
 export function functionBody(source: string, name: string): string {
-  // Matches `pub fn name(`, `fn name(` and `pub(crate) fn name(`.
-  const re = new RegExp(`\\bfn ${name}\\s*\\(`);
+  // Matches `pub fn name(`, `fn name(` and `pub(crate) fn name(`,
+  // with optional generic parameters between the name and the parens
+  // (e.g. `fn helper<'a>(...)`).
+  const re = new RegExp(`\\bfn ${name}(?:<[^>]*>)?\\s*\\(`);
   const match = re.exec(source);
   const start = match ? match.index : -1;
   if (start < 0) throw new Error(`function ${name} not found`);
