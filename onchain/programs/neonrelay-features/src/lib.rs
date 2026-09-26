@@ -74,10 +74,15 @@ fn return_registration_stake(
 	let needed = keep.checked_add(REGISTRATION_STAKE_LAMPORTS).ok_or(FeaturesError::Overflow)?;
 	require!(registration.lamports() >= needed, FeaturesError::RegistrationStakeMissing);
 	// Bound before the seeds so no temporary is borrowed past its statement
-	// (same pattern as the rewards program's claim signer seeds).
+	// (same pattern as the rewards program's claim signer seeds). The player
+	// key goes through a `let` binding: `player.key().as_ref()` inline would
+	// create a temporary that is freed at the end of the statement (E0716),
+	// because method-call results are not covered by temporary lifetime
+	// extension, unlike array literals such as `&[bump]`.
 	let tournament_id_bytes = tournament_id.to_be_bytes();
+	let player_key = player.key();
 	let signer_seeds: &[&[&[u8]]] =
-		&[&[REGISTRATION_SEED, &tournament_id_bytes, player.key().as_ref(), &[bump]]];
+		&[&[REGISTRATION_SEED, &tournament_id_bytes, player_key.as_ref(), &[bump]]];
 	anchor_lang::system_program::transfer(
 		CpiContext::new_with_signer(
 			system_program.clone(),

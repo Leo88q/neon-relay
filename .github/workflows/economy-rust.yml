@@ -124,9 +124,6 @@ jobs:
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::error::ctrl-A status=$status logbytes=$(wc -c < "$LOG")"
-            b64h=$(head -c 3000 "$LOG" | base64 -w0)
-            echo "::error::head-b64-len=${#b64h}::"
-            echo "::error::head-b64: $b64h"
             b64t=$(tail -n 12 "$LOG" | base64 -w0)
             echo "::error::tail-b64: $b64t"
             # Per-error blocks. Cargo colorizes output, so strip ANSI escape
@@ -142,7 +139,9 @@ jobs:
             sed 's/\x1b\[[0-9;]*m//g' "$LOG" > "$LOGC"
             n=0
             : > "$LOGC.errs"
-            for ln in $(grep -n -E '^error(\[E[0-9]+\])?:' "$LOGC" | cut -d: -f1); do
+            for ln in $(grep -n -E '^error(\[E[0-9]+\])?:' "$LOGC" \
+                | grep -v 'could not compile' | grep -v 'aborting due to' \
+                | cut -d: -f1); do
               n=$((n+1))
               blk=$(sed -n "$(( ln > 3 ? ln - 3 : 1 )),$(( ln + 18 ))p" "$LOGC" | base64 -w0)
               echo "::error::err${n}-b64: $blk"
@@ -150,7 +149,7 @@ jobs:
                 | sed "s/^/err${n}|" >> "$LOGC.errs"
             done
             if [ -s "$LOGC.errs" ]; then
-              echo "::warning::digest errcount=$n b64: $(base64 -w0 "$LOGC.errs")"
+              echo "::warning::digest errcount=$n b64: $(head -c 2000 "$LOGC.errs" | base64 -w0)"
             fi
             echo "::error::ctrl-B end"
           fi
