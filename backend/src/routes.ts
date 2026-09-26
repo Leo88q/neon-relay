@@ -9,7 +9,9 @@
  *   GET  /v1/health                liveness + migration count
  *
  * Reward routes (/v1/rewards/…) arrive in stage 7 and are intentionally absent:
- * an unknown path is a 404, never a silent stub.
+ * an unknown path is a 404, never a silent stub. The one exception is the
+ * read-only GET /v1/rewards/verified (stage 12): server-confirmed results for
+ * the client's "verified" showcase, no writes, no admin surface.
  *
  * Tranche A: direct seal/close execution was replaced by the two-person
  * proposal workflow (POST /v1/admin/proposals → approve/reject); the old
@@ -29,6 +31,7 @@ import type { Config } from "./config.ts";
 import { AuthFailure } from "./auth.ts";
 import type { AuthService } from "./auth.ts";
 import { RewardService, RewardsError } from "./rewards.ts";
+import { readAchievementRegistry, type AchievementRegistryView } from "./features_read.ts";
 import { GameEventService, GameEventsError } from "./game_events.ts";
 import { collectStuck, computeMetrics, STUCK_SUBMITTED_MS } from "./metrics.ts";
 import { alertSinks, formatDigest, sendAlertText } from "./alerts.ts";
@@ -1314,6 +1317,29 @@ export function buildRouter(deps: {
   router.add("GET", "/v1/rewards/eligibility", (ctx) => {
     const { binding } = requireSession(ctx);
     return rewards.eligibility(binding.player_id, binding);
+  });
+
+  // Read-only verified-results route (docs/UI_POTATO_ARENA_REDESIGN_RU.md §7.7).
+  // The single server-confirmed source for the client's "verified" showcase:
+  // DB-side accepted events only (signature-verified at ingest), plus the
+  // on-chain achievement registry when the program id is configured. No writes,
+  // no admin surface; the on-chain half degrades to "unavailable" so the DB
+  // stats are still served when RPC is down.
+  router.add("GET", "/v1/rewards/verified", async (ctx) => {
+    const { binding } = requireSession(ctx);
+    const stats = rewards.verifiedStats(binding);
+    let achievements: AchievementRegistryView | null = null;
+    let achievements_status = "disabled";
+    if (config.featuresProgramId) {
+      try {
+        achievements = await readAchievementRegistry(
+          rpc, config.featuresProgramId, binding.public_key);
+        achievements_status = achievements ? "on-chain" : "none-recorded";
+      } catch {
+        achievements_status = "unavailable";
+      }
+    }
+    return { source: "server-verified", ...stats, achievements, achievements_status };
   });
 
   router.add("GET", "/v1/rewards/epochs", (ctx) => {

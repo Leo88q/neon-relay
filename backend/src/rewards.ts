@@ -372,6 +372,54 @@ export class RewardService {
     };
   }
 
+  /**
+   * Read-only aggregation of server-verified results for one player: every
+   * accepted (signature-verified, cap-checked) event, grouped by event_type,
+   * plus the ten most recent. Serves GET /v1/rewards/verified — the single
+   * source for the client's "verified" showcase (docs/UI_POTATO_ARENA_REDESIGN_RU.md
+   * §7.7). Never writes, never sees another player's events: the scope is the
+   * session binding's player_id and its wallet binding id only.
+   */
+  verifiedStats(binding: BindingRow, now: number = Date.now()) {
+    const playerKey = binding.player_id ?? binding.id;
+    const dayStart = windowStart(now, DAY_MS);
+    const rows = this.db.all<{
+      event_type: string; n_all: number; n_day: number; total_micro: number; last_at: number;
+    }>(
+      `SELECT event_type,
+              COUNT(*) AS n_all,
+              SUM(CASE WHEN ingested_at >= ? THEN 1 ELSE 0 END) AS n_day,
+              COALESCE(SUM(amount_micro), 0) AS total_micro,
+              MAX(occurred_at) AS last_at
+       FROM reward_events
+       WHERE status = 'accepted' AND (player_id = ? OR wallet_binding_id = ?)
+       GROUP BY event_type
+       ORDER BY event_type`,
+      dayStart, playerKey, binding.id);
+    const recent = this.db.all<{
+      match_id: string; event_type: string; amount_micro: number; occurred_at: number;
+    }>(
+      `SELECT match_id, event_type, amount_micro, occurred_at
+       FROM reward_events
+       WHERE status = 'accepted' AND (player_id = ? OR wallet_binding_id = ?)
+       ORDER BY occurred_at DESC, id DESC
+       LIMIT 10`,
+      playerKey, binding.id);
+    return {
+      player_id: binding.player_id,
+      wallet_binding_id: binding.id,
+      day_start: dayStart,
+      events: rows.map((r) => ({
+        event_type: r.event_type,
+        count: r.n_all,
+        count_today: r.n_day,
+        total_micro: r.total_micro,
+        last_at: r.last_at,
+      })),
+      recent,
+    };
+  }
+
   // ---------------------------------------------------------------- sealing
 
   sealEpoch(epochId: number, now: number = Date.now()): EpochRow {
