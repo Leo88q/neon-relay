@@ -13,6 +13,7 @@
 #include <generated/client_data.h>
 
 #include <game/client/gameclient.h>
+#include <game/client/neon_style.h>
 #include <game/client/ui.h>
 #include <game/localization.h>
 #include <game/version.h>
@@ -46,7 +47,8 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		Menu.VSplitLeft(20.0f, nullptr, &Menu);
 	}
 	// Form A CLEAN – no covering over main character, only border, portrait 100% bright
-	GameClient()->m_Menus.RenderFormAPanel(Hero, 16.0f, ColorRGBA(0,0,0,0), ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+	GameClient()->m_Menus.RenderFormAPanel(Hero, NeonStyle::PANEL_RADIUS, ColorRGBA(0, 0, 0, 0),
+		NeonStyle::Dim(NeonStyle::PANEL_ACCENT, 0.85f), true, false, 0.0f, NeonStyle::PANEL_ACCENT);
 	CUIRect Art = Hero;
 	Art.Margin(8.0f, &Art);
 	if(!Compact)
@@ -67,8 +69,10 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		CUIRect Button;
 		Menu.HSplitTop(ButtonHeight, &Button, &Menu);
 		Menu.HSplitTop(8.0f, nullptr, &Menu);
-		// Cyberpunk: primary cyan bright #4de3f7, secondary dark with magenta hover
-		const ColorRGBA Color = i == 0 ? ColorRGBA(0.05f, 0.90f, 0.92f, 1.0f) : ColorRGBA(0.11f, 0.12f, 0.14f, 0.94f);
+		// Start-menu buttons: the token cyan for "Play", night-1 for the rest. The old literals were
+		// a *different* cyan (#0DE6EB) and a grey outside the palette, i.e. the drift this header exists
+		// to stop.
+		const ColorRGBA Color = i == 0 ? NeonStyle::CYAN : NeonStyle::Dim(NeonStyle::NIGHT_1, 0.94f);
 		if(GameClient()->m_Menus.DoButton_Menu(&s_aButtons[i], apLabels[i], 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, Color) || CheckHotKey(aKeys[i]) || (i == 0 && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 			NewPage = aPages[i];
 	}

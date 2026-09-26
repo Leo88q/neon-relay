@@ -17,6 +17,8 @@
 #include <game/client/animstate.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
+#include <game/client/neon_progress.h>
+#include <game/client/neon_style.h>
 #include <game/client/potato_catalog.h>
 #include <game/client/race_catalog.h>
 #include <base/str.h>
@@ -28,13 +30,112 @@
 #include <game/localization.h>
 #include <neonrelay/wallet_bridge.h>
 
+// ---------------------------------------------------------------------------
+// Local progress + daily quests (cosmetic; see src/game/client/neon_progress.h).
+// Kept in this file because these panels belong to the product pages, not to the
+// generic menu plumbing, and because the copy has to stay aligned with the
+// "no earnings are guaranteed" wording of the wallet page.
+// ---------------------------------------------------------------------------
+void CMenus::RenderProgressStrip(CUIRect Rect)
+{
+	const int Xp = g_Config.m_ClNeonXp;
+	const int Level = NeonProgress::LevelFromXp(Xp);
+	const int Next = NeonProgress::XpForLevel(Level + 1);
+	const bool Capped = Level >= NeonProgress::MAX_LEVEL;
+	char aBuf[128];
+
+	CUIRect Icons, Bar, Quests;
+	Rect.HSplitTop(20.0f, &Icons, &Rect);
+	Rect.HSplitTop(10.0f, &Bar, &Rect);
+	Rect.HSplitTop(6.0f, nullptr, &Rect);
+	Quests = Rect;
+
+	CUIRect Left = Icons, Right = Icons;
+	Left.VSplitLeft(Icons.w * 0.5f, &Left, nullptr);
+	Right.VSplitRight(150.0f, &Right, nullptr);
+
+	CUIRect LevelIcon = Left;
+	LevelIcon.VSplitLeft(20.0f, &LevelIcon, &Left);
+	RenderIcon(NeonStyle::ICON_LEVEL_RING, &LevelIcon, NeonStyle::CYAN);
+	str_format(aBuf, sizeof(aBuf), Localize("Level %d"), Level);
+	Ui()->DoLabel(&Left, aBuf, 15.0f, TEXTALIGN_ML);
+
+	CUIRect StreakIcon = Right;
+	StreakIcon.VSplitLeft(18.0f, &StreakIcon, &Right);
+	RenderIcon(NeonStyle::ICON_STREAK_FLAME, &StreakIcon, NeonStyle::PINK, g_Config.m_ClNeonStreak > 0 ? 1.0f : 0.35f);
+	str_format(aBuf, sizeof(aBuf), Localize("%d-day streak"), g_Config.m_ClNeonStreak);
+	Ui()->DoLabel(&Right, aBuf, 14.0f, TEXTALIGN_ML);
+
+	if(!Capped)
+	{
+		str_format(aBuf, sizeof(aBuf), "%d / %d XP", Xp - NeonProgress::XpForLevel(Level), Next - NeonProgress::XpForLevel(Level));
+		Ui()->DoLabel(&Bar, aBuf, 11.0f, TEXTALIGN_MR);
+		CUIRect BarRect = Bar;
+		BarRect.VSplitRight(160.0f, &BarRect, nullptr);
+		BarRect.VSplitLeft(BarRect.w - 170.0f, &BarRect, nullptr);
+		BarRect.Margin(1.0f, &BarRect);
+		Ui()->RenderProgressBar(BarRect, NeonProgress::LevelProgress(Xp));
+	}
+
+	// Three daily quest chips. "Готово" pulses pink so the row can be seen from a distance.
+	static CButtonContainer s_aClaim[NeonProgress::QUEST_COUNT];
+	const float ChipWidth = std::max(150.0f, (Quests.w - 2 * 8.0f) / NeonProgress::QUEST_COUNT);
+	for(int i = 0; i < NeonProgress::QUEST_COUNT; ++i)
+	{
+		const NeonProgress::SQuestState Quest = NeonProgress::QuestState(i);
+		CUIRect Chip;
+		Quests.VSplitLeft(ChipWidth, &Chip, &Quests);
+		Quests.VSplitLeft(8.0f, nullptr, &Quests);
+		const ColorRGBA Accent = Quest.m_Claimed ? NeonStyle::DIM : (Quest.m_Complete ? NeonStyle::PINK : NeonStyle::CYAN);
+		RenderFormAPanel(Chip, NeonStyle::CARD_RADIUS, NeonStyle::Dim(NeonStyle::NIGHT_1, 0.92f), NeonStyle::Dim(Accent, 0.75f), false, false, 0.0f, Accent);
+		CUIRect Inner = Chip;
+		Inner.Margin(6.0f, &Inner);
+		CUIRect IconRow = Inner;
+		IconRow.VSplitLeft(16.0f, &IconRow, &Inner);
+		RenderIcon(Quest.m_pQuest->m_Icon, &IconRow, Accent);
+		CUIRect Title, Progress;
+		Inner.HSplitTop(Inner.h - 14.0f, &Title, &Progress);
+		SLabelProperties Props;
+		Props.m_MaxWidth = Title.w;
+		Props.m_EllipsisAtEnd = true;
+		const bool Russian = str_find(g_Config.m_ClLanguagefile, "russian") != nullptr;
+		Ui()->DoLabel(&Title, Russian ? Quest.m_pQuest->m_pTitleRu : Quest.m_pQuest->m_pTitle, 12.0f, TEXTALIGN_ML, Props);
+		str_format(aBuf, sizeof(aBuf), "%d / %d", Quest.m_Progress, Quest.m_pQuest->m_Target);
+		Ui()->DoLabel(&Progress, aBuf, 11.0f, TEXTALIGN_ML);
+		if(Quest.m_Complete && !Quest.m_Claimed)
+		{
+			CUIRect Button;
+			Progress.VSplitRight(52.0f, &Progress, &Button);
+			if(DoButton_Menu(&s_aClaim[i], Localize("Claim"), 0, &Button, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 4.0f, -3.0f))
+				NeonProgress::QuestClaim(i);
+		}
+	}
+}
+
+// The six weapons of the potato arena, with the honest availability of the current mode:
+// NeonDM issues the gun and drops shotgun / grenade / laser, hammer and ninja are not spawned.
+void CMenus::RenderWeaponStrip(CUIRect Rect, const char *pCaption)
+{
+	CUIRect Caption, Strip;
+	Rect.HSplitTop(14.0f, &Caption, &Rect);
+	Strip = Rect;
+	Ui()->DoLabel(&Caption, pCaption, 11.0f, TEXTALIGN_ML);
+	static const bool s_aAvailable[NeonStyle::WEAPON_ICON_COUNT] = {false, true, true, true, true, false};
+	const float Cell = std::min(30.0f, Strip.w / (float)NeonStyle::WEAPON_ICON_COUNT);
+	for(int i = 0; i < NeonStyle::WEAPON_ICON_COUNT; ++i)
+	{
+		CUIRect Icon = {Strip.x + i * Cell, Strip.y, Cell - 2.0f, Strip.h};
+		RenderWeaponIcon(i, &Icon, s_aAvailable[i] ? 1.0f : 0.28f);
+	}
+}
+
 void CMenus::RenderSettingsWallet(CUIRect MainView)
 {
 	const NeonRelayWalletInfo *pInfo = neonrelay_wallet_info();
 	MainView.Margin(MainView.w < 500.0f ? 12.0f : 24.0f, &MainView);
 	CUIRect Header, Line, Panel;
 	MainView.HSplitTop(42.0f, &Header, &MainView);
-	Ui()->DoLabel(&Header, Localize("Wallet"), 28.0f, TEXTALIGN_ML);
+	RenderSectionHeader(&Header, Localize("Wallet"), Localize("read-only preview"));
 
 	// Wrapped content lives inside a scroll region, never under the navigation.
 	static CScrollRegion s_WalletScroll;
@@ -51,14 +152,14 @@ void CMenus::RenderSettingsWallet(CUIRect MainView)
 	};
 
 	MainView.HSplitTop(pInfo->connected ? 128.0f : 72.0f, &Panel, &MainView);
-	RenderFormAPanel(Panel, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+	RenderFormAPanel(Panel, NeonStyle::PANEL_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::PANEL_BORDER, true, false, 0.0f, NeonStyle::PANEL_ACCENT);
 	s_WalletScroll.AddRect(Panel);
 	Panel.Margin(16.0f, &Panel);
 	Panel.HSplitTop(28.0f, &Line, &Panel);
 	const char *pStatus = pInfo->requesting ? Localize("Waiting for the wallet app…") :
 		pInfo->connected ? Localize("Wallet connected") :
 		pInfo->error_message[0] ? Localize("Wallet error") : Localize("No wallet connected");
-	TextRender()->TextColor(pInfo->connected ? ColorRGBA(0.35f, 0.9f, 0.75f, 1.0f) : ColorRGBA(0.75f, 0.83f, 0.95f, 1.0f));
+	TextRender()->TextColor(pInfo->connected ? NeonStyle::SUCCESS : NeonStyle::TEXT_SOFT);
 	Ui()->DoLabel(&Line, pStatus, 18.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 	if(pInfo->connected)
@@ -153,7 +254,20 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 	MainView.Margin(Compact ? 12.0f : 24.0f, &MainView);
 	CUIRect Row, Tab, Footer;
 	MainView.HSplitTop(42.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Races"), 28.0f, TEXTALIGN_ML);
+	RenderSectionHeader(&Row, Localize("Races"), Localize("local progress only"));
+	MainView.HSplitTop(8.0f, nullptr, &MainView);
+	MainView.HSplitTop(30.0f, &Row, &MainView);
+	RenderSectionBar(Row, SectionFromPage(m_MenuPage));
+	// The daily set and the streak roll over once per menu session.
+	NeonProgress::TouchDay();
+	CUIRect ProgressStrip;
+	MainView.HSplitTop(86.0f, &ProgressStrip, &MainView);
+	ProgressStrip.VSplitLeft(4.0f, nullptr, &ProgressStrip);
+	RenderFormAPanel(ProgressStrip, NeonStyle::PANEL_RADIUS, NeonStyle::Dim(NeonStyle::NIGHT_1, 0.94f), NeonStyle::Dim(NeonStyle::CYAN, 0.55f), true, false, 0.0f, NeonStyle::CYAN);
+	ProgressStrip.Margin(10.0f, &ProgressStrip);
+	RenderProgressStrip(ProgressStrip);
+	MainView.HSplitTop(12.0f, nullptr, &MainView);
+
 	MainView.HSplitTop(44.0f, &Row, &MainView);
 	static int s_Currency = 0;
 	static CButtonContainer s_aCurrencies[2];
@@ -190,19 +304,22 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 	MainView.HSplitTop(Compact ? 196.0f : 164.0f, &Row, &MainView);
 	if(s_RaceScroll.AddRect(Row))
 	{
-		RenderFormAPanel(Row, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+		RenderFormAPanel(Row, NeonStyle::CARD_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::Dim(NeonStyle::PANEL_BORDER, 0.88f), true, false, 0.0f, NeonStyle::PANEL_ACCENT);
 		Row.Margin(12.0f, &Row);
 		CUIRect Name, Detail, Action;
 		Row.HSplitBottom(40.0f, &Row, &Action);
 		Row.HSplitTop(28.0f, &Name, &Row);
 		Ui()->DoLabel(&Name, Localize("Warmup", "Original course"), 22.0f, TEXTALIGN_ML);
 		Row.HSplitTop(24.0f, &Detail, &Row);
-		TextRender()->TextColor(ColorRGBA(0.47f, 0.92f, 0.60f, 1.0f));
+		TextRender()->TextColor(NeonStyle::SUCCESS);
 		Ui()->DoLabel(&Detail, Localize("Beginner / Solo / Free"), 14.0f, TEXTALIGN_ML);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		SLabelProperties Props;
 		Props.m_MaxWidth = Row.w;
 		Ui()->DoLabel(&Row, Localize("Original course. Local practice, no wallet or ranked prizes."), 14.0f, TEXTALIGN_TL, Props);
+		CUIRect WeaponRow;
+		Row.HSplitBottom(20.0f, &Row, &WeaponRow);
+		RenderWeaponStrip(WeaponRow, Localize("Weapon pool in NeonDM: gun + shotgun / grenade / laser drops"));
 		static CButtonContainer s_Warmup;
 		const bool Running = GameClient()->m_LocalServer.IsWarmupRunning();
 		if(g_Config.m_Debug && Ui()->MouseButtonClicked(0))
@@ -210,9 +327,16 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		if(DoButton_Menu(&s_Warmup, Running ? Localize("Stop practice server") : Localize("Start Warmup"), 0, &Action))
 		{
 			if(Running)
+			{
 				GameClient()->m_LocalServer.StopWarmup();
+				NeonProgress::OnPracticeStopped();
+			}
 			else
+			{
 				GameClient()->m_LocalServer.StartWarmup();
+				NeonProgress::OnPracticeStarted();
+				NeonProgress::OnSessionStarted();
+			}
 		}
 	}
 	MainView.HSplitTop(12.0f, nullptr, &MainView);
@@ -223,7 +347,7 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 		const bool Visible = s_RaceScroll.AddRect(Row);
 		if(Visible)
 		{
-			RenderFormAPanel(Row, 12.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+			RenderFormAPanel(Row, NeonStyle::CARD_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::Dim(NeonStyle::PANEL_BORDER, 0.88f), true, false, 0.0f, NeonStyle::PANEL_ACCENT);
 			Row.Margin(12.0f, &Row);
 			CUIRect Name, Players, Fee;
 			Row.HSplitTop(28.0f, &Name, &Row);
@@ -240,12 +364,24 @@ void CMenus::RenderRaceLobby(CUIRect MainView)
 			Ui()->DoLabel(&Name, Race.m_pName, 19.0f, TEXTALIGN_ML);
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), Localize("Players: %s"), Race.m_pPlayers);
-			TextRender()->TextColor(ColorRGBA(0.68f, 0.77f, 0.89f, 1.0f));
+			TextRender()->TextColor(NeonStyle::TEXT_FAINT);
 			Ui()->DoLabel(&Players, Race.m_LegendaryOnly ? Localize("Legendary holders only") : aBuf, 14.0f, TEXTALIGN_ML);
-			TextRender()->TextColor(ColorRGBA(0.35f, 0.9f, 0.8f, 1.0f));
+			TextRender()->TextColor(NeonStyle::SUCCESS);
 			str_format(aBuf, sizeof(aBuf), "%s %s", Race.m_pEntry, apCurrencies[s_Currency]);
 			Ui()->DoLabel(&Fee, aBuf, 16.0f, Compact ? TEXTALIGN_ML : TEXTALIGN_MR);
 			TextRender()->TextColor(TextRender()->DefaultTextColor());
+			if(!Compact)
+			{
+				// The prize is claimed through the wallet after a sealed epoch, never picked up
+				// in the arena; the row says so instead of pretending there is a loot drop.
+				CUIRect Note;
+				Row.HSplitTop(16.0f, &Note, nullptr);
+				SLabelProperties NoteProps;
+				NoteProps.m_MaxWidth = Note.w;
+				TextRender()->TextColor(NeonStyle::Dim(NeonStyle::ICE, 0.75f));
+				Ui()->DoLabel(&Note, Localize("Prize: wallet claim after the epoch, not a pickup"), 11.0f, TEXTALIGN_ML, NoteProps);
+				TextRender()->TextColor(TextRender()->DefaultTextColor());
+			}
 		}
 		MainView.HSplitTop(10.0f, nullptr, &MainView);
 	}
@@ -272,10 +408,9 @@ void CMenus::RenderCharacterPortrait(CUIRect Rect, int Index)
 	if(!Portrait.IsValid()) return;
 
 	const auto &Entry = POTATO_CATALOG[Index % 10];
-	ColorRGBA BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.95f);
-	int Diamonds = 1;
-	if(Entry.m_PriceSkr == 1000) { BorderColor = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.95f); Diamonds = 2; }
-	else if(Entry.m_PriceSkr == 2000) { BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); Diamonds = 3; }
+	const NeonStyle::SRarityAccent Accent = NeonStyle::RarityAccent(Entry.m_pRarity);
+	ColorRGBA BorderColor = Accent.m_Border;
+	int Diamonds = Accent.m_Diamonds;
 
 	// CLEAN – no background at all, only portrait, 100% bright
 	CUIRect Inner = Rect;
@@ -305,8 +440,8 @@ void CMenus::RenderCharacters(CUIRect MainView)
 	MainView.Margin(16.0f, &MainView);
 	const bool Russian = str_find(g_Config.m_ClLanguagefile, "russian") != nullptr;
 	CUIRect Row;
-	MainView.HSplitTop(30.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Characters"), 24.0f, TEXTALIGN_ML);
+	MainView.HSplitTop(42.0f, &Row, &MainView);
+	RenderSectionHeader(&Row, Localize("Characters"), Localize("try-on only"));
 	MainView.HSplitTop(26.0f, &Row, &MainView);
 	Ui()->DoLabel(&Row, Russian ? "Витрина • Покупки NFT пока недоступны. Только примерка." : "Store preview • NFT purchases unavailable. Local try-on only.", 12.0f, TEXTALIGN_ML);
 	bool Compact = MainView.w < 760.0f;
@@ -345,7 +480,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 	{
 		float t = (time_get() / (float)time_freq());
 		float prog = std::fmod(t, 5.0f) / 5.0f;
-		RenderFormAPanel(Details, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, true, prog, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
+		RenderFormAPanel(Details, NeonStyle::PANEL_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::PANEL_BORDER, true, true, prog, NeonStyle::PANEL_ACCENT);
 	}
 	Details.Margin(12.0f, &Details);
 	static int s_Selected = 0;
@@ -359,12 +494,11 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		if(i >= 10) break;
 		const auto &Entry = POTATO_CATALOG[i];
 		CUIRect Card = {Grid.x + (Slot % Columns) * Width, Grid.y + (Slot / Columns) * Height, Width - 5.0f, Height - 5.0f};
-		// Card background Form A 12px, rarity border
-		ColorRGBA BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f);
+		// Card background Form A 12px, rarity border (single source: NeonStyle::RarityAccent)
+		const NeonStyle::SRarityAccent Accent = NeonStyle::RarityAccent(Entry.m_pRarity);
+		ColorRGBA BorderColor = NeonStyle::Dim(Accent.m_Border, 0.85f);
 		ColorRGBA ImpulseColor = BorderColor;
-		float ImpulseDur = 5.0f;
-		if(Entry.m_PriceSkr == 1000) { BorderColor = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.9f); ImpulseColor = BorderColor; }
-		else if(Entry.m_PriceSkr == 2000) { BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f); ImpulseColor = BorderColor; ImpulseDur = 6.0f; }
+		float ImpulseDur = Accent.m_ImpulseSeconds;
 
 		bool IsSelected = s_Selected == i;
 		// CLEAN – no blue/purple/yellow film, no triangles, only border with rarity color
@@ -381,7 +515,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 			float prog = std::fmod(t, ImpulseDur) / ImpulseDur;
 			RenderFormAPanel(Card, 0.0f, ColorRGBA(0,0,0,0), BorderColor, true, IsSelected, prog, ImpulseColor);
 		}
-		if(DoButton_Menu(&s_aSelect[i], "", IsSelected, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.0f)))
+		if(DoButton_Menu(&s_aSelect[i], "", IsSelected, &Card, BUTTONFLAG_LEFT, nullptr, IGraphics::CORNER_ALL, 6.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f)))
 		{ s_Selected = i; if(Compact) s_DetailOpen = true; }
 		CUIRect Portrait = CardTop;
 		Portrait.Margin(2.0f, &Portrait);
@@ -425,6 +559,7 @@ void CMenus::RenderCharacters(CUIRect MainView)
 	Footer.HSplitTop(44.0f, &Row, &Footer);
 	if(DoButton_Menu(&s_TryOn, Russian ? "Примерить бесплатно (тест)" : "Try on free (preview)", 0, &Row))
 	{
+		NeonProgress::OnCharacterTried();
 		str_copy(g_Config.m_ClPlayerSkin, Entry.m_pSkin);
 		g_Config.m_ClPlayerUseCustomColor = 0;
 		g_Config.m_ClVanillaSkinsOnly = 0;
@@ -437,14 +572,32 @@ void CMenus::RenderLeaders(CUIRect MainView)
 	MainView.Margin(MainView.w < 620.0f ? 12.0f : 24.0f, &MainView);
 	CUIRect Row, Footer;
 	MainView.HSplitTop(42.0f, &Row, &MainView);
-	Ui()->DoLabel(&Row, Localize("Leaders"), 28.0f, TEXTALIGN_ML);
+	RenderSectionHeader(&Row, Localize("Leaders"), Localize("server-verified only"));
 	MainView.HSplitBottom(44.0f, &MainView, &Footer);
 	MainView.HSplitBottom(12.0f, &MainView, nullptr);
 	static CButtonContainer s_Races;
 	if(DoButton_Menu(&s_Races, Localize("View races"), 0, &Footer))
 		SetMenuPage(PAGE_RACES);
-	{ float t=(time_get()/(float)time_freq()); float prog=std::fmod(t,5.0f)/5.0f; RenderFormAPanel(MainView, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, true, prog, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f)); }
+	{ float t=(time_get()/(float)time_freq()); float prog=std::fmod(t,5.0f)/5.0f; RenderFormAPanel(MainView, NeonStyle::PANEL_RADIUS, NeonStyle::PANEL_FILL, NeonStyle::PANEL_BORDER, true, true, prog, NeonStyle::PANEL_ACCENT); }
 	MainView.Margin(16.0f, &MainView);
+	// A three-row podium, marked as a preview: the copy below is explicit that only
+	// server-verified results can occupy it.
+	for(int Place = 0; Place < 3; ++Place)
+	{
+		CUIRect PodiumRow;
+		MainView.HSplitTop(30.0f, &PodiumRow, &MainView);
+		MainView.HSplitTop(4.0f, nullptr, &MainView);
+		const ColorRGBA Metal = Place == 0 ? NeonStyle::RARE_GOLD : (Place == 1 ? NeonStyle::ICE : NeonStyle::DIM);
+		RenderFormAPanel(PodiumRow, NeonStyle::CARD_RADIUS, NeonStyle::Dim(NeonStyle::NIGHT_2, 0.5f), NeonStyle::Dim(Metal, 0.5f), false, false, 0.0f, Metal);
+		CUIRect Medal = PodiumRow, Label = PodiumRow;
+		Medal.VSplitLeft(34.0f, &Medal, &Label);
+		Medal.Margin(7.0f, &Medal);
+		RenderIcon(NeonStyle::ICON_MEDAL, &Medal, Metal);
+		char aPlace[48];
+		str_format(aPlace, sizeof(aPlace), Localize("Place %d — waiting for verified results"), Place + 1);
+		Ui()->DoLabel(&Label, aPlace, 13.0f, TEXTALIGN_ML);
+	}
+	MainView.HSplitTop(10.0f, nullptr, &MainView);
 	static CScrollRegion s_LeadersScroll;
 	CScrollRegionParams ScrollParams;
 	s_LeadersScroll.Begin(&MainView, &ScrollParams);

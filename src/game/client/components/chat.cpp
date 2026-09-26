@@ -14,6 +14,7 @@
 #include <engine/shared/config.h>
 #include <engine/shared/csv.h>
 #include <engine/textrender.h>
+#include <generated/client_data.h>
 
 #include <generated/protocol.h>
 #include <generated/protocol7.h>
@@ -28,10 +29,24 @@
 
 char CChat::ms_aDisplayText[MAX_CHAT_LENGTH] = "";
 
+namespace
+{
+// The friend marker is a sprite now, so it reserves its own advance instead of borrowing one from a
+// "♥ " glyph. One icon plus a space at the same size: the measure pass and the render pass both use
+// this, so wrapping stays identical between them (and no longer depends on the font having U+2665).
+float FriendIconAdvance(float FontSize)
+{
+	return FontSize * 1.15f;
+}
+} // namespace
+
 CChat::CLine::CLine()
 {
 	m_TextContainerIndex.Reset();
 	m_QuadContainerIndex = -1;
+	m_FriendIconPos = vec2(0.0f, 0.0f);
+	m_FriendIconSize = 0.0f;
+	m_HasFriendIcon = false;
 }
 
 void CChat::CLine::Reset(CChat &This)
@@ -43,6 +58,7 @@ void CChat::CLine::Reset(CChat &This)
 	m_aText[0] = '\0';
 	m_aName[0] = '\0';
 	m_Friend = false;
+	m_HasFriendIcon = false;
 	m_TimesRepeated = 0;
 	m_pManagedTeeRenderInfo = nullptr;
 }
@@ -1003,7 +1019,8 @@ void CChat::OnPrepareLines(float y)
 
 				if(Line.m_Friend && g_Config.m_ClMessageFriend)
 				{
-					TextRender()->TextEx(&MeasureCursor, "♥ ");
+					// Same advance as the old "♥ " glyph pair (icon + space), see the render pass below.
+					MeasureCursor.m_X += FriendIconAdvance(MeasureCursor.m_FontSize);
 				}
 			}
 
@@ -1055,8 +1072,10 @@ void CChat::OnPrepareLines(float y)
 
 			if(Line.m_Friend && g_Config.m_ClMessageFriend)
 			{
-				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)).WithAlpha(1.0f));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, "♥ ");
+				Line.m_FriendIconPos = vec2(LineCursor.m_X, LineCursor.m_Y);
+				Line.m_FriendIconSize = LineCursor.m_FontSize * 0.92f;
+				Line.m_HasFriendIcon = true;
+				LineCursor.m_X += FriendIconAdvance(LineCursor.m_FontSize);
 			}
 		}
 
@@ -1288,6 +1307,18 @@ void CChat::OnRender()
 				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChatBackgroundColor, true)).WithMultipliedAlpha(Blend));
 				Graphics()->RenderQuadContainerEx(Line.m_QuadContainerIndex, 0, -1, 0, ((y + RealMsgPaddingY / 2.0f) - Line.m_TextYOffset));
 			}
+		}
+
+		if(Line.m_HasFriendIcon)
+		{
+			// Follow the exact vertical offset the text container gets, so the marker cannot drift
+			// away from the line it belongs to.
+			const vec2 Pos = Line.m_FriendIconPos +
+							 vec2(0.0f, (y + RealMsgPaddingY / 2.0f) - Line.m_TextYOffset);
+			const CUIRect Icon = {Pos.x, Pos.y, Line.m_FriendIconSize, Line.m_FriendIconSize};
+			const ColorRGBA FriendColor =
+				color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)).WithMultipliedAlpha(Blend);
+			RenderTools()->RenderIcon(IMAGE_GUIICONS, SPRITE_GUIICON_HEART, &Icon, &FriendColor);
 		}
 
 		if(Line.m_TextContainerIndex.Valid())

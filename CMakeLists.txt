@@ -1760,6 +1760,19 @@ set(EXPECTED_DATA
   themes/none.png
   themes/rand.png
   touch_controls.json
+  ui/arsenal/cards_6.png
+  ui/backgrounds/arena_armory.png
+  ui/backgrounds/arena_burn.png
+  ui/backgrounds/arena_combat.png
+  ui/backgrounds/arena_control.png
+  ui/backgrounds/arena_night.png
+  ui/backgrounds/arena_podium.png
+  ui/backgrounds/arena_popup.png
+  ui/backgrounds/arena_roster.png
+  ui/backgrounds/arena_vault.png
+  ui/icons/gamification_24.png
+  ui/maps/previews.png
+  ui/weapons/weapons_6_128.png
   wordlist.txt
   # tidy-alphabetical-end
 )
@@ -2403,6 +2416,7 @@ if(CLIENT)
     components/menu_background.h
     components/menus.cpp
     components/menus.h
+    components/menus_arsenal.cpp
     components/menus_browser.cpp
     components/menus_demo.cpp
     components/menus_ingame.cpp

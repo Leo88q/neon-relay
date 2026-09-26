@@ -6,7 +6,6 @@
 #include <engine/graphics.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
-#include <array>
 
 #include <generated/protocol.h>
 
@@ -118,7 +117,6 @@ public:
 	void OnReset() override;
 	void OnRender() override;
 	void OnInit() override;
-	void OnShutdown() override;
 	void OnNewSnapshot() override;
 
 	// DDRace
@@ -173,8 +171,6 @@ private:
 	int m_Team0ModeOffset;
 	int m_LockModeOffset;
 
-	// YIELDBLOOM industrial HUD frames – live indicators in gunmetal frames
-	std::array<IGraphics::CTextureHandle, 16> m_aYieldBloomHud;
 	void RenderYieldBloomPanel(float x, float y, float w, float h, float Rounding = 6.0f);
 	void RenderFormAPanelHud(float x, float y, float w, float h, float Chamfer, ColorRGBA BorderColor, bool WithImpulse);
 	void RenderYieldBloomProgressBar(float x, float y, float w, float h, float Progress, ColorRGBA FillColor);

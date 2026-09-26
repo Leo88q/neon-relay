@@ -226,6 +226,21 @@ MACRO_CONFIG_STR(ClNeonrelayEconomyProgram, cl_neonrelay_economy_program, 64, ""
 MACRO_CONFIG_STR(ClNeonrelaySkrMint, cl_neonrelay_skr_mint, 64, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "SKR payment mint (base58) for display/validation; operator configuration (docs/PLAY_ECONOMY.md)")
 MACRO_CONFIG_STR(ClNeonrelayRewardsProgram, cl_neonrelay_rewards_program, 64, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "neonrelay-rewards program id (base58) for in-game reward claims; operator configuration, never hardcoded in the build")
 
+// Local-only progress for the menu gamification layer (src/game/client/neon_progress.h).
+// These are cosmetic: they never touch the reward ledger, the prize vault or any payment,
+// and the UI labels them as local progress (docs/UI_POTATO_ARENA_REDESIGN_RU.md rule P9).
+MACRO_CONFIG_INT(ClNeonXp, cl_neon_xp, 0, 0, 1000000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: total experience")
+MACRO_CONFIG_INT(ClNeonMatches, cl_neon_matches, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: sessions started")
+MACRO_CONFIG_INT(ClNeonPractices, cl_neon_practices, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: practice runs started")
+MACRO_CONFIG_INT(ClNeonTries, cl_neon_tries, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: characters tried on")
+MACRO_CONFIG_INT(ClNeonStreak, cl_neon_streak, 0, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: consecutive days with a session")
+MACRO_CONFIG_INT(ClNeonStreakDay, cl_neon_streak_day, 0, 0, 1000031, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: last counted day as year*1000+yday+1")
+MACRO_CONFIG_INT(ClNeonQuestDay, cl_neon_quest_day, 0, 0, 1000031, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: day the current quest set belongs to")
+MACRO_CONFIG_INT(ClNeonQuestDone, cl_neon_quest_done, 0, 0, 4095, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: bitmask of claimed daily quests for ClNeonQuestDay")
+MACRO_CONFIG_INT(ClNeonBasePractices, cl_neon_base_practices, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: practice counter baseline for the current quest day")
+MACRO_CONFIG_INT(ClNeonBaseTries, cl_neon_base_tries, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: try-on counter baseline for the current quest day")
+MACRO_CONFIG_INT(ClNeonBaseSessions, cl_neon_base_sessions, 0, 0, 1000000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Local progress: session counter baseline for the current quest day")
+
 MACRO_CONFIG_INT(UiColorizePing, ui_colorize_ping, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight ping")
 MACRO_CONFIG_INT(UiColorizeGametype, ui_colorize_gametype, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Highlight gametype")
 

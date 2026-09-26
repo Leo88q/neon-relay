@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Neon Relay — Potato Arena UI стенд</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* Стенд повторяет токены и геометрию клиента:
+     src/game/client/neon_style.h (цвета/скругления/veil) +
+     RenderFormAPanel / RenderMenubar / RenderProgressStrip (menus*.cpp).
+     Это НЕ скриншот клиента: он нужен, чтобы утверждать стиль и композицию страниц
+     до сборки C++ (в песочнице нет cmake/SDL2). */
+  :root{
+    --night-0:#05060E; --night-1:#0A0E1E; --night-2:#101A30;
+    --cyan:#4DE3F7; --pink:#FF2E88; --indigo:#6C60FF; --ice:#D8F6FF; --dim:#607494;
+    --rare:#A077FF; --gold:#FFC857; --mint:#59E6BF;
+    --panel-r:16px; --card-r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--night-0); color:var(--ice);
+    font:14px/1.45 "DejaVu Sans", system-ui, sans-serif;
+    display:flex; flex-direction:column; min-height:100%;
+  }
+  .stage{position:relative; flex:1; overflow:hidden; border-top:2px solid rgba(77,227,247,.35)}
+  .bg{position:absolute; inset:0; background-size:cover; background-position:center;
+       opacity:.62; transition:background-image .25s}
+  .veil{position:absolute; inset:0; background:linear-gradient(180deg,rgba(5,6,14,.55),rgba(5,6,14,.55))}
+  .screen{position:relative; inset:0; padding:10px; display:flex; flex-direction:column; gap:10px}
+  /* tabs */
+  .tabs{display:flex; gap:4px; height:44px}
+  .tab{flex:1; display:flex; align-items:center; gap:8px; justify-content:center;
+        padding:0 10px; background:rgba(10,14,30,.72); border:1px solid rgba(96,116,148,.35);
+        border-bottom:none; border-radius:var(--panel-r) var(--panel-r) 0 0; color:var(--dim);
+        cursor:pointer; font-size:14px; white-space:nowrap}
+  .tab.on{color:var(--ice); background:rgba(16,26,48,.9); border-color:rgba(77,227,247,.75);
+          box-shadow:0 -2px 0 var(--cyan) inset, 0 0 12px rgba(77,227,247,.18)}
+  .icon{width:20px;height:20px;display:inline-block;
+        background-image:url("../../data/ui/icons/gamification_24.png");
+        background-size:512px 192px; flex:none}
+  .icon.cyan{filter:drop-shadow(0 0 4px rgba(77,227,247,.55))}
+  .icon.pink{filter:drop-shadow(0 0 4px rgba(255,46,136,.55))}
+  .icon.dim{opacity:.42; filter:grayscale(.4)}
+  .i0{background-position:-0px -0px} .i1{background-position:-64px -0px} .i2{background-position:-128px -0px}
+  .i3{background-position:-192px -0px} .i4{background-position:-256px -0px} .i5{background-position:-320px -0px}
+  .i6{background-position:-384px -0px} .i7{background-position:-448px -0px} .i8{background-position:-0px -64px}
+  .i9{background-position:-64px -64px} .i10{background-position:-128px -64px} .i11{background-position:-192px -64px}
+  .i12{background-position:-256px -64px} .i13{background-position:-320px -64px} .i14{background-position:-384px -64px}
+  .i15{background-position:-448px -64px} .i16{background-position:-0px -128px} .i17{background-position:-64px -128px}
+  .i18{background-position:-128px -128px} .i19{background-position:-192px -128px} .i20{background-position:-256px -128px}
+  .i21{background-position:-320px -128px} .i22{background-position:-384px -128px} .i23{background-position:-448px -128px}
+  .body{flex:1; display:flex; gap:10px; min-height:0}
+  .panel{background:rgba(10,14,30,.78); border:1px solid rgba(77,227,247,.35);
+          border-radius:var(--panel-r); box-shadow:0 0 12px rgba(77,227,247,.10); overflow:hidden}
+  .panel::before{content:""; display:block; height:34%;
+          background:linear-gradient(180deg,rgba(18,27,70,.42),transparent)}
+  .pad{padding:12px}
+  h1{font-size:30px; letter-spacing:.14em; margin:0}
+  h2{font-size:16px; margin:0 0 8px; letter-spacing:.04em}
+  .muted{color:var(--dim); font-size:12px}
+  .chip{display:inline-flex; align-items:center; gap:6px; padding:3px 8px; font-size:12px;
+         border:1px solid rgba(96,116,148,.5); border-radius:999px; color:var(--ice)}
+  .chip.gold{border-color:rgba(255,200,87,.65)} .chip.pink{border-color:rgba(255,46,136,.65)}
+  .chip.ok{border-color:rgba(89,230,191,.6)}
+  /* progress strip */
+  .strip{display:flex; flex-direction:column; gap:8px}
+  .row{display:flex; align-items:center; gap:8px}
+  .bar{height:8px; border-radius:4px; background:rgba(16,26,48,.9); border:1px solid rgba(96,116,148,.4);
+        overflow:hidden; flex:1}
+  .bar>i{display:block; height:100%; background:linear-gradient(90deg,var(--cyan),#9ff4ff)}
+  .quests{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .quest{background:rgba(10,14,30,.9); border:1px solid rgba(77,227,247,.5); border-radius:var(--card-r);
+         padding:8px; display:flex; gap:8px; align-items:flex-start}
+  .quest.done{border-color:rgba(89,230,191,.55)} .quest.ready{border-color:rgba(255,46,136,.8);
+         animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 14px rgba(255,46,136,.35)}}
+  .quest b{font-size:13px; font-weight:600}
+  .quest .mini{font-size:11px; color:var(--dim)}
+  /* weapon strip */
+  .weapons{display:flex; gap:6px; align-items:center}
+  .wp{width:30px;height:30px;background-size:180px 30px;background-repeat:no-repeat;
+       background-image:url("../../data/ui/weapons/weapons_6_128.png")}
+  .wp.off{opacity:.28; filter:grayscale(.6)}
+  /* cards */
+  .grid{display:grid; gap:8px}
+  .card{position:relative; border:1px solid rgba(77,227,247,.55); border-radius:var(--card-r);
+         background:rgba(10,14,30,.55); padding:8px; display:flex; flex-direction:column; gap:4px}
+  .card.rare{border-color:rgba(160,119,255,.75)} .card.legend{border-color:rgba(255,200,87,.85)}
+  .card img{width:100%; aspect-ratio:1; object-fit:contain; border-radius:6px}
+  .diamonds{display:flex; gap:3px; justify-content:center}
+  .diamonds i{width:6px;height:6px;background:currentColor;transform:rotate(45deg)}
+  .btn{display:inline-flex; align-items:center; justify-content:center; height:34px; padding:0 14px;
+        border-radius:8px; border:1px solid rgba(77,227,247,.6); background:rgba(16,26,48,.92);
+        color:var(--ice); font:inherit; cursor:pointer}
+  .btn.primary{background:linear-gradient(90deg,rgba(13,229,235,.92),rgba(77,227,247,.75)); color:#04121a;
+        border-color:transparent; font-weight:600}
+  .btn.small{height:24px; font-size:12px; padding:0 8px}
+  .btn.ghost{border-color:rgba(96,116,148,.5); color:var(--dim)}
+  table{border-collapse:collapse; width:100%; font-size:13px}
+  td,th{padding:6px 8px; border-bottom:1px solid rgba(96,116,148,.22); text-align:left}
+  th{color:var(--dim); font-weight:500; font-size:11px; letter-spacing:.08em; text-transform:uppercase}
+  .fee{color:var(--cyan); font-weight:600}
+  .note{font-size:11px; color:rgba(216,246,255,.7)}
+  .foot{display:flex; justify-content:space-between; align-items:center; padding:6px 12px; font-size:12px;
+         color:var(--dim); border-top:1px solid rgba(96,116,148,.22)}
+  .hero{display:flex; gap:12px; align-items:center}
+  .hero img{width:min(46vh,320px); border-radius:var(--panel-r)}
+  .caption{font-size:19px}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:6px}
+  .sheetbox{position:relative; display:inline-block; vertical-align:top; border:2px solid var(--cyan); border-radius:10px}
+  .sheetbox canvas{position:absolute; inset:0; pointer-events:none}
+  .gbtn{width:16px; height:16px; display:inline-block; background-repeat:no-repeat}
+  .emo{width:32px; height:32px; display:inline-block; background-repeat:no-repeat}
+  .sheetrow{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap}
+  .sheetlabel{font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:16px}
+  .micro{font-size:10px; color:var(--dim); margin-top:3px}
+  /* Общая шкала страниц: заголовок с тиком, секции, карточки, чипы. Повторяет
+     RenderSectionHeader / RenderSectionBar / RenderStatChip из menus_arsenal.cpp. */
+  .sect{display:flex; gap:4px; height:30px; margin:0 0 12px}
+  .sect a{flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13px;
+          background:rgba(10,14,30,.6); border:1px solid rgba(96,116,148,.35); border-radius:10px;
+          color:var(--dim); cursor:pointer; text-decoration:none}
+  .sect a.on{color:var(--ice); border-color:rgba(77,227,247,.7); background:rgba(16,26,48,.92);
+            box-shadow:0 0 10px rgba(77,227,247,.16)}
+  .hd{display:flex; align-items:baseline; gap:10px; border-left:3px solid var(--cyan); padding-left:10px; margin:0 0 10px}
+  .hd h2{font-size:22px; margin:0; letter-spacing:.05em}
+  .hd .note{margin-left:auto; font-size:12px; color:var(--dim)}
+  .rules{display:flex; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--dim); margin:0 0 12px}
+  .grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(360px,1fr)); gap:12px}
+  .wc{background:rgba(10,14,30,.92); border:2px solid rgba(77,227,247,.5); border-radius:var(--card-r);
+      overflow:hidden; display:flex; flex-direction:column}
+  .wc.off{border-color:rgba(96,116,148,.45)}
+  .wc .art{aspect-ratio:3/2; background-image:url("../../data/ui/arsenal/cards_6.png");
+           background-size:300% 200%; background-repeat:no-repeat; border-bottom:1px solid rgba(77,227,247,.25)}
+  .wc.off .art{filter:saturate(.35) brightness(.7)}
+  .wc .b{padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px}
+  .wc h3{margin:0; font-size:18px; display:flex; align-items:center; gap:8px}
+  .wc .role{color:var(--cyan); font-size:13px}
+  .wc .how{font-size:12.5px}
+  .wc .tip{font-size:12px; color:var(--dim)}
+  .chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:2px}
+  .chip2{border:1px solid rgba(96,116,148,.4); border-radius:8px; padding:3px 7px; font-size:11px;
+         color:var(--dim); background:rgba(5,6,14,.5)}
+  .chip2 b{color:var(--ice); font-weight:600; margin-left:5px}
+  .chip2.ok b{color:var(--mint)} .chip2.no b{color:var(--pink)}
+  .wicon{width:26px;height:26px;flex:none;background-image:url("../../data/ui/weapons/weapons_6_128.png");
+         background-size:156px 26px;background-repeat:no-repeat}
+  .mp{aspect-ratio:2/1; background-image:url("../../data/ui/maps/previews.png");
+      background-size:500% 600%; background-repeat:no-repeat; border-radius:10px;
+      border:1px solid rgba(77,227,247,.35); background-color:var(--night-0)}
+  table.mapstat td{font-size:12px; vertical-align:top}
+  table.mapstat tr:first-child th{position:sticky; top:0; background:rgba(10,14,30,.97)}
+  .mode-ok{color:var(--mint)} .mode-warn{color:var(--sun)}
+  .guiicon{width:16px;height:16px;display:inline-block;image-rendering:auto;vertical-align:-3px;
+           background-image:url("../../data/gui_icons.png"); background-size:192px 48px; background-repeat:no-repeat}
+  .mc{background:rgba(10,14,30,.92); border:1px solid rgba(77,227,247,.45); border-radius:var(--card-r);
+      overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+  .mc .mp{border-radius:0; border:none; border-right:1px solid rgba(77,227,247,.2)}
+  .mc .b{padding:10px 12px; display:flex; flex-direction:column; gap:5px}
+  @media (max-width:880px){ .quests{grid-template-columns:1fr} .body{flex-direction:column} .mc{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<script src="maps_data.js"></script>
+<div class="stage">
+  <div class="bg" id="bg"></div>
+  <div class="veil"></div>
+  <div class="screen">
+    <div class="tabs" id="tabs"></div>
+    <div class="body" id="page"></div>
+    <div class="foot">
+      <span>Стенд дизайна · ассеты и цвета берутся из реальных файлов проекта (data/ui/…, neon_style.h)</span>
+      <span>Neon Relay 0.1 · не является скриншотом клиента</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// Одна и та же комната, семь состояний света — ровно как в клиенте (CMenus::RenderBackground).
+const PAGES = [
+  {id:'races', label:'Играть · выжигание', icon:20, bg:'arena_burn'},
+  {id:'maps', label:'Карты арены', icon:21, bg:'arena_night'},
+  {id:'arsenal', label:'Оружейная', icon:11, bg:'arena_armory'},
+  {id:'chars', label:'Персонажи', icon:13, bg:'arena_roster'},
+  {id:'wallet', label:'Кошелёк', icon:5, bg:'arena_vault'},
+  {id:'leaders', label:'Лидеры', icon:6, bg:'arena_podium'},
+  {id:'settings', label:'Настройки', icon:23, bg:'arena_control'},
+];
+let current = 'races';
+
+const CAT = [
+  ['Nox','Нокс','Common','potato_cool_guy_1','500'],
+  ['Luma','Люма','Common','potato_cool_girl_1','500'],
+  ['Bit','Бит','Common','potato_guy_2','500'],
+  ['Roxy','Рокси','Common','potato_girl_2','500'],
+  ['Riff','Риф','Common','potato_guy_3','500'],
+  ['Bruno','Бруно','Rare','potato_guy_4','1000'],
+  ['Vega','Вега','Rare','potato_girl_3','1000'],
+  ['Stella','Стелла','Rare','potato_girl_4','1000'],
+  ['Midas','Мидас','Legendary','potato_legend_guy','2000'],
+  ['Aurora','Аврора','Legendary','potato_legend_girl','2000'],
+];
+const icon = (n, cls='') => `<span class="icon i${n} ${cls}"></span>`;
+const wpIcon = (i, off) => `<span class="wp ${off?'off':''}" style="background-position:-${i*30}px 0"></span>`;
+
+function progressStrip(){
+  const quests = [
+    {n:4, t:'2 разминки', p:'1 / 2', cls:''},
+    {n:13, t:'Примерить 2 персонажей', p:'2 / 2', cls:'ready'},
+    {n:21, t:'1 заход на сервер', p:'1 / 1', cls:'done'},
+  ];
+  return `<div class="panel pad strip">
+    <div class="row">
+      ${icon(0,'cyan')}<b style="font-size:16px">Уровень 3</b>
+      <span class="muted">140 / 750 XP</span>
+      <span style="flex:1"></span>
+      <span class="chip pink">${icon(2,'pink')} серия 2 дня</span>
+      <span class="chip">${icon(10)} локальный прогресс</span>
+    </div>
+    <div class="row"><div class="bar"><i style="width:37%"></i></div><span class="muted">37%</span></div>
+    <div class="quests">
+      ${quests.map(q=>`<div class="quest ${q.cls}">${icon(q.n, q.cls==='ready'?'pink':'cyan')}
+        <div style="min-width:0"><b>${q.t}</b><div class="mini">${q.p} · +60 XP ${q.cls==='done'?'· получено':''}</div></div>
+        <span style="flex:1"></span>${q.cls==='ready'?'<button class="btn small">Забрать</button>':''}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function weaponStrip(){
+  return `<div class="row" style="justify-content:space-between">
+    <div class="weapons">${[0,1,2,3,4,5].map(i=>wpIcon(i,[0,5].includes(i))).join('')}</div>
+    <span class="note">4 из 6 доступны в NeonDM: gun + дроп shotgun / grenade / laser</span>
+  </div>`;
+}
+
+function races(){
+  return `
+  <div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+    ${progressStrip()}
+    <div class="panel pad" style="display:flex; gap:12px; align-items:center">
+      <img src="../../data/portraits/potato_cool_guy_1.png" style="width:84px;border-radius:8px">
+      <div style="flex:1">
+        <h2>Разминка — «Neon Relay Warmup»</h2>
+        <div class="row" style="gap:6px"><span class="chip ok">новичок · соло · бесплатно</span>
+          <span class="muted">локальный сервер, без кошелька и ранговых призов</span></div>
+        ${weaponStrip()}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn primary">Запустить разминку</button>
+        <button class="btn ghost">Остановить</button>
+      </div>
+    </div>
+    <div class="panel pad" style="flex:1">
+      <h2>Заезды <span class="muted">· предпросмотр: платный вход ещё недоступен</span></h2>
+      <table>
+        <tr><th>Тир</th><th>Игроки</th><th>Вход</th><th>Заполнение</th><th>Пул призов</th></tr>
+        ${[['Micro Sprint','10','50 SKR',.62],['Neon Dash','20','100 SKR',.41],['Chromatic Cup','50','500 SKR',.78],['Grand Prix','100+','2000 SKR',.34],['Legend Freeroll','—','только Legendary',1]]
+          .map(r=>`<tr><td>${r[0]}</td><td class="muted">${r[1]}</td><td class="fee">${r[2]}</td>
+          <td style="width:26%"><div class="bar" style="height:6px"><i style="width:${r[3]*100}%"></i></div></td>
+          <td><span class="chip gold">${icon(5,'pink')} 90% игрокам / 10% студии</span></td></tr>`).join('')}
+      </table>
+      <div class="note" style="margin-top:8px">Приз не подбирается в арене: выдача — заявка из кошелька после закрытой эпохи. Выплаты топ-10: 25 / 18 / 14 / 11 / 9 / 7 / 6 / 5 / 3 / 2%. Никаких гарантий дохода.</div>
+    </div>
+  </div>`;
+}
+
+function start(){
+  return `
+  <div class="panel pad hero" style="flex:1.05">
+    <img src="../../data/portraits/potato_legend_girl.png" alt="">
+    <div>
+      <h1 style="margin-bottom:8px">NEON RELAY</h1>
+      <div class="caption">Твой маршрут. Твой стиль.</div>
+      <div class="legend">
+        <span class="chip">${icon(20,'cyan')} выжигание в комнате</span>
+        <span class="chip">${icon(10)} 10 картошек</span>
+        <span class="chip gold">${icon(5,'pink')} призы через кошелёк</span>
+      </div>
+      ${weaponStrip()}
+    </div>
+  </div>
+  <div class="panel pad" style="width:360px; display:flex; flex-direction:column; gap:8px">
+    <button class="btn primary" style="height:46px; font-size:17px">Играть</button>
+    <button class="btn" style="height:42px">Персонажи</button>
+    <button class="btn" style="height:42px">Кошелёк</button>
+    <button class="btn" style="height:42px">Лидеры</button>
+    <button class="btn" style="height:42px">Настройки</button>
+    <div class="muted" style="margin-top:auto">P · C · W · L · S — быстрые клавиши. Фон = data/ui/backgrounds/arena_night.png, портрет — RenderCharacterPortrait(Hero, 0)</div>
+  </div>`;
+}
+
+function chars(){
+  const d = r => r==='Legendary'?'legend':(r==='Rare'?'rare':'');
+  const dia = r => r==='Legendary'?3:(r==='Rare'?2:1);
+  const col = r => r==='Legendary'?'var(--gold)':(r==='Rare'?'var(--rare)':'var(--cyan)');
+  return `<div class="panel pad" style="flex:1">
+    <h2>Витрина <span class="muted">· покупки NFT отключены, примерка бесплатна; навыки — легенда, не бонусы</span></h2>
+    <div class="grid" style="grid-template-columns:repeat(5,1fr)">
+      ${CAT.map((c,i)=>`<div class="card ${d(c[2])}" ${i===0?'style="box-shadow:0 0 0 2px rgba(77,227,247,.55),0 0 16px rgba(77,227,247,.3)"':''}>
+        <img src="../../data/portraits/${c[3]}.png">
+        <div style="text-align:center;font-size:13px">${c[1]}</div>
+        <div class="muted" style="text-align:center;font-size:11px">${c[2]}</div>
+        <div class="diamonds" style="color:${col(c[2])}">${'<i></i>'.repeat(dia(c[2]))}</div>
+        <div class="muted" style="text-align:center;font-size:12px">${c[4]} SKR</div>
+        ${i===0?'<span class="chip ok" style="position:absolute;top:6px;right:6px">в бою</span>':''}
+        ${i===8?`<span class="chip gold" style="position:absolute;top:6px;right:6px">${icon(0)} ур. 12</span>`:''}
+      </div>`).join('')}
+    </div>
+    <div class="note">Рамка и импульс — из NeonStyle::RarityAccent (общие для витрины и портрета на главном экране).</div>
+  </div>`;
+}
+
+function wallet(){
+  return `<div class="panel pad" style="flex:1; max-width:860px">
+    <h2>Кошелёк</h2>
+    <div class="row" style="gap:8px; margin-bottom:10px">
+      <span class="chip ok">${icon(16,'cyan')} кошелёк подключён</span>
+      <span class="muted">аккаунт 7Kq…p2 · ключ 3fA9…</span>
+    </div>
+    <div class="row"><div class="bar"><i style="width:64%"></i></div><span class="muted">эпоха закрыта на 64%</span></div>
+    <table style="margin-top:10px">
+      <tr><th>Статус</th><th>Микроскиллы</th><th>Лимиты</th><th></th></tr>
+      <tr><td>готово к заявке</td><td>12 480</td><td class="muted">день 4 000 · неделя 18 000</td><td><button class="btn small">Заявить</button></td></tr>
+      <tr><td>в обработке</td><td>2 100</td><td class="muted">идемпотентно по событию матча</td><td><button class="btn small ghost">ожидание</button></td></tr>
+    </table>
+    <div class="note" style="margin-top:10px">Кошелёк не обязателен для игры. Сид-фраза и приватные ключи клиенту недоступны. Выплаты не гарантированы.</div>
+  </div>`;
+}
+
+function leaders(){
+  return `<div class="panel pad" style="flex:1; max-width:900px">
+    <h2>Лидеры <span class="muted">· только верифицированные результаты гонок</span></h2>
+    ${[0,1,2].map(r=>`<div class="row" style="padding:6px 0;border-bottom:1px solid rgba(96,116,148,.18)">
+      <span style="width:28px;text-align:right;color:${['var(--gold)','var(--ice)','var(--dim)'][r]}">${r+1}</span>
+      ${icon(7, r===0?'pink':'cyan')}
+      <b style="width:150px">${['—','—','—'][r]}</b>
+      <span class="muted">ожидание верифицированных результатов</span></div>`).join('')}
+    <div class="note" style="margin-top:10px">Подиум = 3 ряда из <code>RenderLeaders</code>; иконки мест — атлас gamification_24.png.</div>
+  </div>`;
+}
+
+function settings(){
+  return `<div class="panel pad" style="flex:1; max-width:820px">
+    <h2>Настройки</h2>
+    <table>
+      <tr><th>Раздел</th><th></th></tr>
+      ${[['Язык',12],['Общие',23],['Игрок',1],['Персонаж',13],['Внешний вид',13],['Управление',21],['Графика',4],['Звук',17],['Neon Relay',19],['Ресурсы',3],['Кошелёк',5],['Авторы',7]]
+        .map(r=>`<tr><td>${r[0]}</td><td style="text-align:right">${icon(r[1],'cyan')}</td></tr>`).join('')}
+    </table>
+    <div class="note">Служебные иконки настроек остаются на Font Awesome: правило P8 — не смешивать атлас и шрифтовые глифы в одном заголовке.</div>
+  </div>`;
+}
+
+// Боевые листы движка: ровно та математика UV, что делают SelectSprite + CQuadItem.
+const GUI_ICONS = [['friend',1,0],['mute',5,0],['emoticon_mute',2,1]]; // движковые спрайты (красным)
+const GUI_ROWS = 3;
+const EMOTES = ['oop','exclamation','hearts','drop','dotdot','music','sorry','ghost'];
+function gridOverlay(){
+  const c=document.getElementById('gig'); if(!c) return; const x=c.getContext('2d');
+  x.strokeStyle='rgba(77,227,247,.45)'; x.lineWidth=1;
+  for(let i=1;i<12;i++){ x.beginPath(); x.moveTo(i*32+.5,0); x.lineTo(i*32+.5,96); x.stroke(); }
+  for(let j=1;j<3;j++){ x.beginPath(); x.moveTo(0,j*32+.5); x.lineTo(384,j*32+.5); x.stroke(); }
+  Object.entries(GUI_CELLS).forEach(([n,[col,row]])=>{
+    x.strokeStyle = GUI_ICONS.some(g=>g[0]===n) ? '#FF2E88' : 'rgba(255,200,87,.9)';
+    x.lineWidth=2; x.strokeRect(col*32+1,row*32+1,30,30);
+  });
+}
+function sheets(){
+  const gi = GUI_ICONS.map(([n,c,r])=>`<div style="text-align:center">
+      <div class="gbtn" style="background-image:url('../../data/gui_icons.png');background-size:192px 32px;background-position:${-c*16}px ${-r*16}px"></div>
+      <div class="micro">${n}<br>(${c},${r},1,1)</div></div>`).join('');
+  const em = EMOTES.map((n,i)=>`<div style="text-align:center">
+      <div class="emo" style="background-image:url('../../data/emoticons.png');background-size:128px 128px;background-position:${-(i%4)*32}px ${-Math.floor(i/4)*32}px"></div>
+      <div class="micro">${n}</div></div>`).join('');
+  return `<div class="panel pad" style="flex:1; max-width:900px">
+    <h2>Боевые листы <span class="muted">· data/*.png, выборка спрайтами из datasrc/content.py</span></h2>
+    <div class="sheetlabel">gui_icons.png 384×96 · сетка 12×3 по 32px → кнопка 16px и маркеры в чате/списке</div>
+    <div class="sheetrow" style="margin:8px 0 12px">${gi}</div>
+    <div class="sheetbox"><img src="../../data/gui_icons.png" width="384" height="96" style="display:block; image-rendering:pixelated">
+      <canvas id="gig" width="384" height="96"></canvas></div>
+    <div class="sheetlabel">emoticons.png 512×512 · сетка 4×4 по 128px → эмодзи над тэлом 32px</div>
+    <div class="sheetrow" style="margin:8px 0 12px">${em}</div>
+    <div class="note">Раньше rect'ы спрайтов остались от upstream-листов: mute выбирал 4×2 ячейки
+      (128×64 px = четыре иконы в кнопке 16px), а эмодзи рисовались с шагом 32px при ячейке 128px
+      (мозаика 4×4). Сейчас разметка объявлена один раз — в <code>scripts/build_neon_ui_art.py</code>
+      (<code>GUI_ICON_*</code>, <code>EMOTE_*</code>) — и сверяется с <code>datasrc/content.py</code>
+      тестом <code>scripts/test_ui_sheet_grids.py</code>.</div>
+  </div>`;
+}
+
+// Копия таблиц из src/game/client/neon_arsenal.h; цифры в клиенте сверяет
+// scripts/test_map_catalog.py (damage/delay из datasrc/content.py, карты — из build_neon_maps.py).
+const WEAPONS = [
+ ['Hammer','Молот','Ближний бой и выталкивание','Дуга удара, 3 урона и сильный отброс на обоих (character.cpp:553).','Очко за frag молотом не начисляется: удар считается административным.',3,125,'∞',true],
+ ['Pistol','Пистолет','Штатное оружие на старте','Снаряд живёт 2 с, 1 урон за попадание, скорость 2200 (content.py:596).','Патроны восстанавливаются сами: 10 в магазине, регенерация каждые 500 мс.',1,125,10,true],
+ ['Shotgun','Дробовик','Веер вблизи','5 дробин по 1 урону, разброс ±0.185 рад, снаряд живёт 0.25 с (character.cpp:595).','В deathmatch это веер; вне его тот же выстрел становится лучом — не путайся между режимами.',5,500,10,true],
+ ['Grenade','Граната','Взрыв и отскок от земли','Радиус 135 px, внутренний 48 px, урон падает с расстоянием (gamecontext.cpp:396).','Свой взрыв толкает так же, как чужой: им и разгоняются, и запрыгивают на полки.',2,500,10,true],
+ ['Laser','Лазер','Прямой луч на 800 px','5 урона, задержка 800 мс, одно отражение без штрафа (content.py:639, laser.cpp:100).','Бьёт ровно одного: второй tee за первым не получит ничего, целиться надо в ближнего.',5,800,10,true],
+ ['Ninja','Ниндзя','Меч и рывок','9 урона, 15 с усиления, +50 к скорости на 200 мс (content.py:649).','В NeonDM не выпадает: контроллер разрешает подбор только дробовика, гранат и лазера.',9,800,'∞',false],
+];
+// Каталог карт не печатается здесь руками: maps_data.js пишет тот же скрипт, что рисует
+// блюпринты (scripts/build_map_previews.py), а гейт --check и test_map_catalog.py следят за парой.
+const SECTIONS = [['races','Играть'],['maps','Карты'],['arsenal','Оружейная']];
+const sect = (id) => `<div class="sect">${SECTIONS.map(([k,l])=>
+  `<a data-go="${k}" class="${k===id?'on':''}">${l}</a>`).join('')}</div>`;
+const chips = (rows) => `<div class="chips">${rows.map(([l,v,c])=>`<span class="chip2 ${c||''}">${l}<b>${v}</b></span>`).join('')}</div>`;
+
+function arsenal(){
+  return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+  <div class="panel pad" style="flex:1; overflow:auto">
+    <div class="hd"><h2>Оружейная</h2><span class="note">шесть стволов, одна комната</span></div>
+    ${sect('arsenal')}
+    <div class="rules"><span>NeonDM: 10 HP и 10 брони</span><span>·</span>
+      <span>выпавшее оружие респавнится через 15 с</span><span>·</span>
+      <span>возрождение через 500 мс</span><span>·</span>
+      <span>фон = арена с шестью нишами, карточки — те же пиксели, что и иконки</span></div>
+    <div class="grid2">
+    ${WEAPONS.map((w,i)=>`<div class="wc ${w[8]?'':'off'}">
+        <div class="art" style="background-position:${(i%3)*50}% ${Math.floor(i/3)*100}%"></div>
+        <div class="b">
+          <h3><span class="wicon" style="background-position:-${i*26}px 0;${w[8]?'':'filter:saturate(.3) brightness(.7)'}"></span>${w[1]} <span class="muted" style="font-size:12px">${w[0]}</span></h3>
+          <div class="role">${w[2]}</div>
+          <div class="how">${w[3]}</div>
+          <div class="tip">${w[4]}</div>
+          ${chips([['урон',w[5]],['задержка',w[6]+' мс'],['магазин',w[7]],[ 'NeonDM', w[8]?'дроп':'не выпадает', w[8]?'ok':'no']])}
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="note" style="margin-top:10px">Молот и ниндзя показаны, хотя в пуле режима их нет: пустое
+      место в комнате надо объяснять, а не прятать.</div>
+  </div></div>`;
+}
+
+function maps(){
+  const mode = m => m.mode === 'race' ? ['заезд', 'ok'] : m.mode === 'ctf' ? ['флаги', '']
+      : m.mode === 'deathmatch' ? ['deathmatch', ''] : ['один спавн', 'warn'];
+  return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+  <div class="panel pad" style="flex:1; overflow:auto">
+    <div class="hd"><h2>Карты арены</h2><span class="note">${NEON_MAPS.length} карт в поставке · у каждой блюпринт
+      из её собственных данных</span></div>
+    ${sect('maps')}
+    <div class="rules"><span>таблица и превью — один проход scripts/build_map_previews.py</span><span>·</span>
+      <span>читает data/maps/*.map через scripts/neon_mapread.py</span><span>·</span>
+      <span>гейт --check в CI</span></div>
+    <table class="mapstat" style="margin:8px 0 4px">
+      <tr><th>#</th><th>карта</th><th>сетка</th><th>режим</th><th>спавнов</th><th>порода</th>
+          <th>смерть</th><th>no-hook</th><th>чекпойнтов</th><th>дропов</th><th>лицензия</th></tr>
+      ${NEON_MAPS.map(m=>`<tr>
+        <td class="muted">${m.cell}</td>
+        <td><b>${m.name}</b>${m.base?' <span class="muted">· база</span>':''}<div class="micro">${m.blurb}</div></td>
+        <td>${m.w}×${m.h}</td>
+        <td class="mode-${mode(m)[1]}">${mode(m)[0]}</td>
+        <td>${m.spawns}</td><td>${m.solid}</td><td>${m.death}</td><td>${m.nohook}</td>
+        <td>${m.checkpoints}</td><td>${m.pickups}</td>
+        <td class="muted">${m.tileset||m.license||'база'}</td></tr>`).join('')}
+    </table>
+    <div class="sheetlabel">Блюпринты 1600×960 · ${NEON_MAPS.length} ячеек 320×160, 5 в ряд</div>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px">
+    ${NEON_MAPS.map(m=>`<div class="mc" style="flex:0 0 320px">
+        <div class="mp" style="background-position:${(m.cell%5)*25}% ${Math.floor(m.cell/5)*20}%"></div>
+        <div class="b">
+          <h3 style="margin:0; font-size:16px">${m.name}</h3>
+          <div class="role" style="color:var(--cyan); font-size:13px">${m.blurb}</div>
+          ${chips([['сетка',m.w+'×'+m.h],['спавнов',m.spawns],['чекпойнтов',m.checkpoints],
+                   ['смерть',m.death],['no-hook',m.nohook]])}
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="note" style="margin-top:10px">Двадцать одна карта — базовый набор исходного проекта (dm*, ctf*,
+      Tutorial, LearnToPlay, четыре одиночные). Раньше они были перечислены словами и без цифр; теперь читаются
+      тем же ридером, что и наши, поэтому «сколько на карте спавнов» — ответ из файла, а не из макета.
+      Кредиты берутся из data/maps/license.txt.</div>
+  </div></div>`;
+}
+
+const GUI_CELLS = {'friend':[1,0],'mute':[5,0],'emoticon_mute':[2,1],'heart':[9,0],'star':[10,0],'dot_filled':[0,2],'dot_empty':[1,2]};
+const gi = (n) => `<span class="guiicon" style="background-position:-${GUI_CELLS[n][0]*16}px -${GUI_CELLS[n][1]*16}px"></span>`;
+function emoji(){
+  const chatRow = `<div class="row" style="gap:6px; align-items:center; background:rgba(16,26,48,.85);
+      border:1px solid rgba(96,116,148,.35); border-radius:8px; padding:6px 8px">
+      ${gi('heart')}<b style="color:#FF6B9C">Люма</b><span class="muted">: going to burn the flag zone</span></div>`;
+  return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+  <div class="panel pad" style="flex:1; overflow:auto">
+    <div class="hd"><h2>Иконки вместо эмодзи</h2><span class="note">data/gui_icons.png · 12×3 по 32px</span></div>
+    <div class="rules"><span>глиф ♥ в чате и ⬤/◯ в списке наблюдателя заменены спрайтами:
+      им не нужен кодпоинт в шрифте, и цвет приходит из конфига, а не из TextColor()</span></div>
+    <div class="grid2">
+      <div>
+        <h2>Чат: строка друга</h2>
+        ${chatRow}
+        <div class="note" style="margin:6px 0 12px">Отступ = ширина иконки + пробел (1.15 × размер шрифта).
+          Мера и отрисовка используют одну функцию, поэтому перенос строк не разъезжается.</div>
+        <h2>Список наблюдателя</h2>
+        <div class="row" style="gap:8px"><span>${gi('dot_filled')}</span><span class="muted">выбран в multiview · клиент красит в #1AFF1A</span></div>
+        <div class="row" style="gap:8px"><span>${gi('dot_empty')}</span><span class="muted">своя команда · красит в #FF1A1A</span></div>
+        <div class="row" style="gap:8px"><span>${gi('heart')}</span><span class="muted">друг · цвет из cl_message_friend_color</span></div>
+      </div>
+      <div>
+        <h2>Кнопки 16px (engine-спрайты)</h2>
+        <div class="row" style="gap:12px">
+          ${['friend','mute','emoticon_mute'].map(n=>`<span style="text-align:center">${gi(n)}<div class="mini">${n}<br>(${GUI_CELLS[n].join(',')},1,1)</div></span>`).join('')}
+        </div>
+        <h2 style="margin-top:14px">Готово, но не используется в UI</h2>
+        <div class="row" style="gap:12px">${['star','dot_filled','dot_empty','heart'].map(n=>`<span style="text-align:center">${gi(n)}<div class="mini">${n}</div></span>`).join('')}</div>
+        <div class="note" style="margin-top:8px">★/✰ рейтинга карт остаются глифами: на них завязан
+          регэксп в src/test/score_test.cpp, а спрайтов в скорборде нет.</div>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+const RENDER = {play:start, races:races, chars:chars, wallet:wallet, leaders:leaders, settings:settings, sheets:sheets, arsenal:arsenal, maps:maps, emoji:emoji};
+
+function render(){
+  const p = PAGES.find(x=>x.id===current) || {bg:'arena_night'};
+  document.getElementById('bg').style.backgroundImage = `url("../../data/ui/backgrounds/${p.bg}.png")`;
+  document.getElementById('tabs').innerHTML = PAGES.map(x=>
+    `<div class="tab ${x.id===current?'on':''}" data-id="${x.id}">${icon(x.icon, x.id===current?'cyan':'dim')}${x.label}</div>`).join('')
+    + `<div class="tab ${current==='play'?'on':''}" data-id="play">${icon(0, current==='play'?'cyan':'dim')}Экран запуска</div>`
+    + `<div class="tab ${current==='sheets'?'on':''}" data-id="sheets">${icon(19, current==='sheets'?'cyan':'dim')}Боевые листы</div>`
+    + `<div class="tab ${current==='emoji'?'on':''}" data-id="emoji">${icon(9, current==='emoji'?'cyan':'dim')}Иконки вместо эмодзи</div>`;
+  document.querySelectorAll('[data-go]').forEach(a=>a.onclick=()=>{current=a.dataset.go; render();});
+  gridOverlay();
+  document.getElementById('page').innerHTML = (RENDER[current]||races)();
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{current=t.dataset.id; render();});
+}
+current='races'; render();
+</script>
+</body>
+</html>

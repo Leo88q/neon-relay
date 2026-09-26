@@ -3,6 +3,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 python3 scripts/test_potato_assets.py
+python3 scripts/test_ui_sheet_grids.py
+python3 scripts/test_map_catalog.py
+python3 scripts/test_landing_pages.py
 python3 scripts/test_menu_contract.py
 python3 scripts/test_map_format.py
 python3 scripts/test_reference_maps.py
@@ -12,6 +15,8 @@ python3 scripts/test_warmup_server_contract.py
 python3 scripts/test_neon_dm.py
 python3 scripts/test_potato_assets.py
 python3 scripts/build_neon_ui_art.py --check
+python3 scripts/build_potato_arena_assets.py --check
+python3 scripts/build_map_previews.py --check
 ./scripts/check_assets.sh --licenses
 ./scripts/check_branding.sh --release --check-translations
 python3 scripts/check_secrets.py

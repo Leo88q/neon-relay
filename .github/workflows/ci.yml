@@ -39,6 +39,9 @@ jobs:
       - name: Potato assets and native catalog regression checks
         run: |
           python3 scripts/test_potato_assets.py
+          python3 scripts/test_ui_sheet_grids.py
+          python3 scripts/test_map_catalog.py
+          python3 scripts/test_landing_pages.py
           python3 scripts/test_menu_contract.py
           python3 scripts/test_map_format.py
           python3 scripts/test_reference_maps.py
@@ -55,6 +58,31 @@ jobs:
         run: python3 scripts/test_potato_assets.py
       - name: Generated UI art matches the generator (determinism)
         run: python3 scripts/build_neon_ui_art.py --check
+      - name: Potato Arena backdrops / icon atlas match the bake (determinism)
+        # The check explains itself (which pixels differ, on which versions). Capture it instead of
+        # piping it: `run:` executes with `set -e`, so a failing pipeline would abort the step before
+        # the diagnosis is reported. The report goes to the job summary and, line by line, to
+        # check-run annotations — both are readable from the API when the raw log is not.
+        run: |
+          status=0
+          python3 scripts/build_potato_arena_assets.py --check > /tmp/bake-check.log 2>&1 || status=$?
+          cat /tmp/bake-check.log
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "### Bake determinism mismatch"
+              echo '```'
+              cat /tmp/bake-check.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r line; do
+              case "$line" in
+                *DIFF*|*MISSING*|*environment*|*Traceback*|*Error*|*error*) echo "::warning::$line" ;;
+              esac
+            done < /tmp/bake-check.log
+            exit "$status"
+          fi
+      - name: Map blueprints match the map builders (determinism)
+        run: python3 scripts/build_map_previews.py --check
       - name: Asset manifest validation (coverage, hashes, license texts)
         run: ./scripts/check_assets.sh --licenses
       - name: Config variables unused-check

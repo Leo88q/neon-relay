@@ -34,6 +34,8 @@
 #include <game/client/components/menu_background.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
+#include <game/client/neon_progress.h>
+#include <game/client/neon_style.h>
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
@@ -554,13 +556,23 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 	{
 		const char *apLabels[] = {Localize("Play", "Start menu"), Localize("Characters"), Localize("Wallet"), Localize("Leaders"), Localize("Settings")};
 		const int aPages[] = {PAGE_RACES, PAGE_CHARACTERS, PAGE_WALLET, PAGE_LEADERS, PAGE_SETTINGS};
+		const int aIcons[] = {NeonStyle::ICON_TIMER, NeonStyle::ICON_STAR, NeonStyle::ICON_CHEST_PRIZE, NeonStyle::ICON_TROPHY, NeonStyle::ICON_GEAR};
 		static CButtonContainer s_aTabs[5];
 		const float Width = Box.w / 5.0f;
 		for(int i = 0; i < 5; ++i)
 		{
 			CUIRect Tab;
 			Box.VSplitLeft(Width, &Tab, &Box);
-			if(DoButton_MenuTab(&s_aTabs[i], apLabels[i], m_MenuPage == aPages[i], &Tab, IGraphics::CORNER_T))
+			// Maps and the armoury are sections of "Play": keep that tab lit while they are open, so
+			// the bar cannot show five inactive tabs on a page the user is looking at.
+			const bool Active = m_MenuPage == aPages[i] || (aPages[i] == PAGE_RACES && SectionFromPage(m_MenuPage) > 0);
+			// A 20px icon sits left of the label inside the same tab; the label keeps its own rect
+			// so the upstream button visuals and the hit area are unchanged.
+			CUIRect Icon = Tab;
+			Icon.VSplitLeft(Icon.h * 0.9f, &Icon, nullptr);
+			Icon.Margin(Icon.h * 0.2f, &Icon);
+			RenderIcon(aIcons[i], &Icon, Active ? NeonStyle::CYAN : NeonStyle::DIM, 1.0f);
+			if(DoButton_MenuTab(&s_aTabs[i], apLabels[i], Active, &Tab, IGraphics::CORNER_T))
 				SetMenuPage(aPages[i]);
 		}
 		return;
@@ -755,8 +767,12 @@ void CMenus::OnInit()
 
 	m_TextureBlob = Graphics()->LoadTexture("blob.png", IStorage::TYPE_ALL);
 
-	// Cyberpunk background photos – 8 varied space images
-	const char *apBgNames[] = {"ui/backgrounds/start_cyan_grid.png", "ui/backgrounds/play_races_blue.png", "ui/backgrounds/characters_magenta.png", "ui/backgrounds/wallet_gold.png", "ui/backgrounds/leaders_blue.png", "ui/backgrounds/settings_grid.png", "ui/backgrounds/browser_nodes.png", "ui/backgrounds/ingame_combat.png"};
+	// Potato Arena backdrops (docs/UI_POTATO_ARENA_REDESIGN_RU.md P2): one room, seven
+	// lighting states, plus the popup plate. Index order == CMenus::RenderBackground mapping.
+	static const char *const apBgNames[] = {
+		"ui/backgrounds/arena_night.png", "ui/backgrounds/arena_burn.png", "ui/backgrounds/arena_roster.png",
+		"ui/backgrounds/arena_vault.png", "ui/backgrounds/arena_podium.png", "ui/backgrounds/arena_control.png",
+		"ui/backgrounds/arena_combat.png", "ui/backgrounds/arena_popup.png", "ui/backgrounds/arena_armory.png"};
 	for(size_t i = 0; i < m_aBgTextures.size(); ++i)
 	{
 		CImageInfo Info;
@@ -765,22 +781,12 @@ void CMenus::OnInit()
 			m_aBgTextures[i] = Graphics()->LoadTextureRaw(Info, 0, apBgNames[i]);
 		}
 	}
-	// YIELDBLOOM industrial frames – 23 assets (no characters, only frames)
-	const char *apYieldNames[] = {
-		"ui/yieldbloom/frame_main_panel.png", "ui/yieldbloom/frame_small_card.png", "ui/yieldbloom/button_primary.png", "ui/yieldbloom/button_tab.png",
-		"ui/yieldbloom/character_card_frame.png", "ui/yieldbloom/top_header_bar.png", "ui/yieldbloom/left_menu_panel.png", "ui/yieldbloom/right_info_panel.png",
-		"ui/yieldbloom/bottom_action_bar.png", "ui/yieldbloom/rack_unit.png", "ui/yieldbloom/input_field.png", "ui/yieldbloom/window_large.png",
-		"ui/yieldbloom/connector_cyan.png", "ui/yieldbloom/chat_panel.png", "ui/yieldbloom/panel_races.png", "ui/yieldbloom/panel_wallet.png",
-		"ui/yieldbloom/panel_leaders.png", "ui/yieldbloom/panel_settings_block.png", "ui/yieldbloom/frame_transition.png", "ui/yieldbloom/button_small.png",
-		"ui/yieldbloom/progress_bar.png", "ui/yieldbloom/panel_tab_bar.png", "ui/yieldbloom/panel_notification.png"};
-	for(size_t i = 0; i < std::size(apYieldNames) && i < m_aYieldBloomFrames.size(); ++i)
-	{
-		CImageInfo Info;
-		if(Graphics()->LoadPng(Info, apYieldNames[i], IStorage::TYPE_ALL))
-		{
-			m_aYieldBloomFrames[i] = Graphics()->LoadTextureRaw(Info, 0, apYieldNames[i]);
-		}
-	}
+	// Style atlases: gamification icons (8x3 of 64px) and the six-weapon strip (6x128px).
+	m_IconAtlas = Graphics()->LoadTexture("ui/icons/gamification_24.png", IStorage::TYPE_ALL);
+	m_WeaponStrip = Graphics()->LoadTexture("ui/weapons/weapons_6_128.png", IStorage::TYPE_ALL);
+	// Arsenal cards and map blueprints (scripts/build_potato_arena_assets.py, build_map_previews.py).
+	m_ArsenalAtlas = Graphics()->LoadTexture("ui/arsenal/cards_6.png", IStorage::TYPE_ALL);
+	m_MapPreviews = Graphics()->LoadTexture("ui/maps/previews.png", IStorage::TYPE_ALL);
 	// Character portraits – original potato skins, NOT regenerated, keep original names
 	const char *apPortraitNames[] = {
 		"portraits/potato_cool_guy_1.png", "portraits/potato_cool_girl_1.png", "portraits/potato_guy_2.png",
@@ -1004,6 +1010,10 @@ void CMenus::Render()
 
 			if(m_MenuPage == PAGE_RACES)
 				RenderRaceLobby(MainView);
+			else if(m_MenuPage == PAGE_ARSENAL)
+				RenderArsenal(MainView);
+			else if(m_MenuPage == PAGE_MAPS)
+				RenderMaps(MainView);
 			else if(m_MenuPage == PAGE_CHARACTERS)
 				RenderCharacters(MainView);
 			else if(m_MenuPage == PAGE_WALLET)
@@ -2249,7 +2259,10 @@ void CMenus::OnShutdown()
 {
 	for(auto &Texture : m_aCharacterPortraits) Graphics()->UnloadTexture(&Texture);
 	for(auto &Texture : m_aBgTextures) Graphics()->UnloadTexture(&Texture);
-	for(auto &Texture : m_aYieldBloomFrames) Graphics()->UnloadTexture(&Texture);
+	Graphics()->UnloadTexture(&m_IconAtlas);
+	Graphics()->UnloadTexture(&m_WeaponStrip);
+	Graphics()->UnloadTexture(&m_ArsenalAtlas);
+	Graphics()->UnloadTexture(&m_MapPreviews);
 	m_CommunityIcons.Shutdown();
 }
 
@@ -2395,12 +2408,6 @@ void CMenus::UpdateColors()
 	ms_ColorTabbarInactiveIngame = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.90f);
 	ms_ColorTabbarActiveIngame = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.90f);
 	ms_ColorTabbarHoverIngame = ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.85f); // Violet
-}
-
-void CMenus::RenderYieldBloomFrame(CUIRect Rect, float Rounding, bool WithRivets)
-{
-	// Deprecated – now using Form A pure code, keep for compatibility – draw Form A panel
-	RenderFormAPanel(Rect, 16.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.96f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.85f), true, false, 0.0f, ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f));
 }
 
 void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, ColorRGBA BorderColor, bool WithGlow, bool WithImpulse, float ImpulseProgress, ColorRGBA ImpulseColor)
@@ -2561,36 +2568,50 @@ void CMenus::RenderFormAPanel(CUIRect Rect, float Chamfer, ColorRGBA BgColor, Co
 	}
 }
 
-void CMenus::RenderYieldBloomProgressBar(CUIRect Rect, float Progress, ColorRGBA FillColor)
+void CMenus::RenderIcon(int IconId, const CUIRect *pRect, ColorRGBA Color, float AlphaScale)
 {
-	Progress = std::clamp(Progress, 0.0f, 1.0f);
-	// Background Deck
-	RenderFormAPanel(Rect, 6.0f, ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.92f), ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.55f), false, false, 0.0f, ColorRGBA(0,0,0,0));
-	if(Progress > 0.0f)
-	{
-		CUIRect Fill = {Rect.x + 3.0f, Rect.y + 3.0f, (Rect.w - 6.0f) * Progress, Rect.h - 6.0f};
-		Graphics()->TextureClear();
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(FillColor.r, FillColor.g, FillColor.b, FillColor.a);
-		IGraphics::CQuadItem QuadFill(Fill.x, Fill.y, Fill.w, Fill.h);
-		Graphics()->QuadsDrawTL(&QuadFill, 1);
-		Graphics()->QuadsEnd();
-	}
+	if(!m_IconAtlas.IsValid() || IconId < 0 || IconId >= NeonStyle::ICON_COUNT)
+		return;
+	const int Cell = 64;
+	const int Columns = 8;
+	const float U0 = (IconId % Columns) * (float)Cell / 512.0f;
+	const float V0 = (IconId / Columns) * (float)Cell / 192.0f;
+	Graphics()->TextureSet(m_IconAtlas);
+	Graphics()->QuadsBegin();
+	Graphics()->QuadsSetSubset(U0, V0, U0 + (float)Cell / 512.0f, V0 + (float)Cell / 192.0f);
+	const float Alpha = Color.a * AlphaScale;
+	Graphics()->SetColor(Color.r * Alpha, Color.g * Alpha, Color.b * Alpha, Alpha);
+	IGraphics::CQuadItem Quad(pRect->x, pRect->y, pRect->w, pRect->h);
+	Graphics()->QuadsDrawTL(&Quad, 1);
+	Graphics()->QuadsEnd();
 }
 
-
+void CMenus::RenderWeaponIcon(int WeaponIndex, const CUIRect *pRect, float AlphaScale)
+{
+	if(!m_WeaponStrip.IsValid() || WeaponIndex < 0 || WeaponIndex >= NeonStyle::WEAPON_ICON_COUNT)
+		return;
+	const float U0 = WeaponIndex / (float)NeonStyle::WEAPON_ICON_COUNT;
+	Graphics()->TextureSet(m_WeaponStrip);
+	Graphics()->QuadsBegin();
+	Graphics()->QuadsSetSubset(U0, 0.0f, U0 + 1.0f / (float)NeonStyle::WEAPON_ICON_COUNT, 1.0f);
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, AlphaScale);
+	IGraphics::CQuadItem Quad(pRect->x, pRect->y, pRect->w, pRect->h);
+	Graphics()->QuadsDrawTL(&Quad, 1);
+	Graphics()->QuadsEnd();
+}
 
 void CMenus::RenderBackground()
 {
 	Ui()->MapScreen();
 	const CUIRect Screen = *Ui()->Screen();
-	// New design – Void #060A1C with neon grid, translucent for iOS effect
-	Screen.Draw(ColorRGBA(0.0235f, 0.0392f, 0.1098f, 1.0f), 0, 0);
+	Screen.Draw(NeonStyle::NIGHT_0, 0, 0);
 
+	// Fullscreen popups (quit, connect, language) read best on the darkest plate.
+	const bool Popup = m_Popup != POPUP_NONE;
 	int BgIndex = 0;
-	if(m_ShowStart)
-		BgIndex = 0;
-	else
+	if(Popup)
+		BgIndex = 7;
+	else if(!m_ShowStart)
 	{
 		switch(m_MenuPage)
 		{
@@ -2598,6 +2619,7 @@ void CMenus::RenderBackground()
 		case PAGE_CHARACTERS: BgIndex = 2; break;
 		case PAGE_WALLET: BgIndex = 3; break;
 		case PAGE_LEADERS: BgIndex = 4; break;
+		case PAGE_ARSENAL: BgIndex = 8; break; // the room the cards were photographed in
 		case PAGE_SETTINGS: BgIndex = 5; break;
 		default:
 			if(m_MenuPage >= PAGE_INTERNET && m_MenuPage <= PAGE_FAVORITE_COMMUNITY_5)
@@ -2607,42 +2629,27 @@ void CMenus::RenderBackground()
 			break;
 		}
 		if(Client()->State() == IClient::STATE_ONLINE)
-			BgIndex = 7;
+			BgIndex = 6;
 	}
 
 	if(BgIndex >= 0 && BgIndex < (int)m_aBgTextures.size() && m_aBgTextures[BgIndex].IsValid())
 	{
 		Graphics()->TextureSet(m_aBgTextures[BgIndex]);
 		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.38f);
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, NeonStyle::BACKDROP_ALPHA);
 		IGraphics::CQuadItem Quad(Screen.x, Screen.y, Screen.w, Screen.h);
 		Graphics()->QuadsDrawTL(&Quad, 1);
 		Graphics()->QuadsEnd();
-		Screen.Draw(ColorRGBA(0.0235f, 0.0392f, 0.1098f, 0.85f), 0, 0);
+		// Veil only: the masters already ship a dark left/bottom quiet zone, so a second
+		// full-screen wash is no longer needed and only flattens the art.
+		Screen.Draw(NeonStyle::Dim(NeonStyle::NIGHT_0, NeonStyle::BACKDROP_VEIL_ALPHA), 0, 0);
 	}
 
-	// Neon grid – subtle for iOS depth behind translucent panels
-	for(int i = 0; i < 40; ++i)
-	{
-		float y = Screen.y + i * Screen.h / 40.0f;
-		CUIRect Line = {Screen.x, y, Screen.w, 1.0f};
-		Line.Draw(ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.06f), 0, 0);
-	}
-	for(int i = 0; i < 60; ++i)
-	{
-		float x = Screen.x + i * Screen.w / 60.0f;
-		CUIRect Line = {x, Screen.y, 1.0f, Screen.h};
-		Line.Draw(ColorRGBA(0.6275f, 0.4667f, 1.0f, 0.04f), 0, 0);
-	}
-	// Top cyan beam
+	// Accent rules: cyan on top (safe/primary), pink below the tab bar, gold only for rewards.
 	CUIRect TopBeam = {Screen.x, Screen.y, Screen.w, 2.0f};
-	TopBeam.Draw(ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.35f), 0, 0);
-	// Bottom gold beam
-	CUIRect BottomGlow = {Screen.x, Screen.y + Screen.h - 2.0f, Screen.w, 2.0f};
-	BottomGlow.Draw(ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.25f), 0, 0);
-	// Side accent
-	CUIRect VAccent = {Screen.x + Screen.w * 0.75f, Screen.y, 1.5f, Screen.h};
-	VAccent.Draw(ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.12f), 0, 0);
+	TopBeam.Draw(NeonStyle::Dim(NeonStyle::CYAN, 0.35f), 0, 0);
+	CUIRect BottomBeam = {Screen.x, Screen.y + Screen.h - 2.0f, Screen.w, 2.0f};
+	BottomBeam.Draw(NeonStyle::Dim(NeonStyle::RARE_GOLD, 0.25f), 0, 0);
 }
 
 int CMenus::DoButton_CheckBox_Tristate(const void *pId, const char *pText, TRISTATE Checked, const CUIRect *pRect)
