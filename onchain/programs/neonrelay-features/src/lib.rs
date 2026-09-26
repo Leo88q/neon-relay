@@ -91,7 +91,8 @@ fn return_registration_stake(
 	)
 }
 
-fn require_safe_token_account(account: &TokenAccount) -> Result<()> {	require!(
+fn require_safe_token_account(account: &TokenAccount) -> Result<()> {
+	require!(
 		account.state == anchor_spl::token::spl_token::state::AccountState::Initialized &&
 		account.delegate.is_none() && account.is_native.is_none() && account.close_authority.is_none(),
 		FeaturesError::UnsafeTokenAccount

@@ -129,6 +129,17 @@ jobs:
             echo "::error::head-b64: $b64h"
             b64t=$(tail -n 12 "$LOG" | base64 -w0)
             echo "::error::tail-b64: $b64t"
+            # Per-error blocks: every `error[...]` / `error:` line with 14
+            # lines of context, base64'd into its own annotation, so each
+            # compiler error is individually readable through the Checks API
+            # (raw logs and artifact downloads are unreachable from some
+            # sandboxes; head/tail alone can hide the errors in the middle).
+            n=0
+            for ln in $(grep -n -E '^error(\[E[0-9]+\])?:' "$LOG" | cut -d: -f1); do
+              n=$((n+1))
+              blk=$(sed -n "$(( ln > 3 ? ln - 3 : 1 )),$(( ln + 14 ))p" "$LOG" | base64 -w0)
+              echo "::error::err${n}-b64: $blk"
+            done
             echo "::error::ctrl-B end"
           fi
           exit "$status"
