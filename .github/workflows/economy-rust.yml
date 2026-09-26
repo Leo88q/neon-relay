@@ -129,17 +129,29 @@ jobs:
             echo "::error::head-b64: $b64h"
             b64t=$(tail -n 12 "$LOG" | base64 -w0)
             echo "::error::tail-b64: $b64t"
-            # Per-error blocks: every `error[...]` / `error:` line with 14
-            # lines of context, base64'd into its own annotation, so each
-            # compiler error is individually readable through the Checks API
-            # (raw logs and artifact downloads are unreachable from some
-            # sandboxes; head/tail alone can hide the errors in the middle).
+            # Per-error blocks. Cargo colorizes output, so strip ANSI escape
+            # codes FIRST — a raw '^error' grep never matches the colored
+            # log (verified: round 1 of this loop matched zero lines). Each
+            # error line becomes its own ::error annotation (Actions caps
+            # them at 10 per step) with 18 lines of context, plus one
+            # ::warning digest with all of them concatenated, so every
+            # compiler error is readable through the Checks API (raw logs
+            # and artifact downloads are unreachable from some sandboxes;
+            # head/tail alone hides the errors in the middle).
+            LOGC="$LOG.clean"
+            sed 's/\x1b\[[0-9;]*m//g' "$LOG" > "$LOGC"
             n=0
-            for ln in $(grep -n -E '^error(\[E[0-9]+\])?:' "$LOG" | cut -d: -f1); do
+            : > "$LOGC.errs"
+            for ln in $(grep -n -E '^error(\[E[0-9]+\])?:' "$LOGC" | cut -d: -f1); do
               n=$((n+1))
-              blk=$(sed -n "$(( ln > 3 ? ln - 3 : 1 )),$(( ln + 14 ))p" "$LOG" | base64 -w0)
+              blk=$(sed -n "$(( ln > 3 ? ln - 3 : 1 )),$(( ln + 18 ))p" "$LOGC" | base64 -w0)
               echo "::error::err${n}-b64: $blk"
+              sed -n "$(( ln > 3 ? ln - 3 : 1 )),$(( ln + 18 ))p" "$LOGC" \
+                | sed "s/^/err${n}|" >> "$LOGC.errs"
             done
+            if [ -s "$LOGC.errs" ]; then
+              echo "::warning::digest errcount=$n b64: $(base64 -w0 "$LOGC.errs")"
+            fi
             echo "::error::ctrl-B end"
           fi
           exit "$status"
