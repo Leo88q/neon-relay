@@ -142,4 +142,43 @@ class EconomyTxBuilderTest {
         invalid { builder.parseConfig(data204.copyOf(203)) }
         invalid { builder.parseConfig(data204.copyOf(205)) }
     }
+
+    // ------------------------------------------------- SW-2026-AGI (82/T75)
+
+    @Test fun systemProgramIsNeverAValidInstructionProgram() {
+        // Durable-nonce advance (System Program, ix 4) and raw lamport moves
+        // must be unbuildable from the game transaction path.
+        val metas = listOf(
+            EconomyTxBuilder.AccountMeta(player, signer = true, writable = true),
+            EconomyTxBuilder.AccountMeta(ByteArray(32) { 1 }, signer = false, writable = true),
+        )
+        invalid {
+            builder.compileMessage(
+                player, metas, builder.SYSTEM_PROGRAM_ID,
+                builder.hexToBytes("0400000000000000"), intArrayOf(0, 1), blockhash,
+            )
+        }
+        // The audited program id still compiles.
+        val message = builder.compileMessage(
+            player, metas, program,
+            builder.payEntryData(ByteArray(32) { 2 }, 0), intArrayOf(0, 1), blockhash,
+        )
+        assertEquals(1, message[0].toInt())
+    }
+
+    @Test fun programPolicyIsFailClosedAndAllowlistDriven() {
+        ProgramPolicy.reset()
+        // Empty allowlist: everything is refused, including a plausible id.
+        invalid { ProgramPolicy.requireEconomyAllowed(program) }
+        ProgramPolicy.configure(
+            listOf(builder.base58Encode(program)),
+            listOf("Reward11111111111111111111111111111111111111"),
+        )
+        ProgramPolicy.requireEconomyAllowed(program)
+        ProgramPolicy.requireRewardsAllowed(builder.base58Decode("Reward11111111111111111111111111111111111111"))
+        invalid { ProgramPolicy.requireEconomyAllowed(builder.base58Decode("Ev1l11111111111111111111111111111111111111")) }
+        invalid { ProgramPolicy.requireRewardsAllowed(program) }
+        ProgramPolicy.reset()
+        invalid { ProgramPolicy.requireEconomyAllowed(program) }
+    }
 }

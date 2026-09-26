@@ -44,7 +44,7 @@ test("canonical /watchtower exporter routes are read-only and metadata-rich", ()
     assert.equal(health.json.data.health.writes, false);
     const config = await getJson(base, "/watchtower/config");
     assert.equal(config.status, 200);
-    assert.equal(config.json.parserVersion, "neonrelay-watchtower-v1");
+    assert.equal(config.json.parserVersion, "neonrelay-watchtower-v2");
     assert.ok((config.json.data.routes as { path: string }[]).some((route) => route.path === "/watchtower/events"));
   }));
 

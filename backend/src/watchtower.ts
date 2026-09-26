@@ -7,9 +7,16 @@
  * these stable interfaces. Secrets, wallet keys, and provider credentials are
  * never returned by the API.
  */
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import type { Config } from "./config.ts";
 import type { Db } from "./db.ts";
+import {
+  AI_GUARD_VERSION,
+  sanitizeTelemetryJsonValue,
+  sanitizeTelemetryText,
+  scanInjectionInstructions,
+  stripInvisibleUnicode,
+} from "./ai_guard.ts";
 
 export const WATCHTOWER_VERSION = "v3";
 export const WATCHTOWER_GAME_ID = "neonrelay";
@@ -17,7 +24,9 @@ export const WATCHTOWER_TENANT = "neonrelay";
 export const WATCHTOWER_NETWORK = "solana";
 export const WATCHTOWER_STAGE = "prototype";
 export const WATCHTOWER_SOURCE = "neonrelay-backend";
-export const WATCHTOWER_PARSER_VERSION = "neonrelay-watchtower-v1";
+// v2: ingest sanitization (SW-2026-AGI) — stored strings are stripped of
+// invisible/directional Unicode before digesting, and rows carry a memory MAC.
+export const WATCHTOWER_PARSER_VERSION = "neonrelay-watchtower-v2";
 
 /** Exactly 33 runtime components. Providers in one row are intentionally
  * deduplicated where they serve the same boundary (for example DAS/Sorada
@@ -77,7 +86,8 @@ export function ensureWatchtowerSchema(db: Db): void {
     result_json TEXT,
     metadata_json TEXT,
     occurred_at INTEGER NOT NULL,
-    received_at INTEGER NOT NULL
+    received_at INTEGER NOT NULL,
+    memory_mac TEXT
   ) STRICT;
   CREATE INDEX IF NOT EXISTS watchtower_events_time ON watchtower_events (event_type, occurred_at);
   CREATE INDEX IF NOT EXISTS watchtower_events_external ON watchtower_events (external_id, occurred_at);
@@ -89,6 +99,81 @@ export function ensureWatchtowerSchema(db: Db): void {
     first_seen_at INTEGER NOT NULL,
     last_seen_at INTEGER NOT NULL
   ) STRICT;`);
+  // Defensive upgrade for databases created by 0009 before SW-2026-AGI: the
+  // agent-memory MAC column is added in place (NULL = legacy unsigned row).
+  try {
+    db.exec("ALTER TABLE watchtower_events ADD COLUMN memory_mac TEXT");
+  } catch (err) {
+    if (!(err instanceof Error && err.message.includes("duplicate column name"))) throw err;
+  }
+}
+
+/**
+ * Agent-memory integrity (SW-2026-AGI T74): every row an exporter-reading
+ * agent treats as memory is MACed with a deployment-secret key. A poisoned
+ * row (direct DB write, restored backup, compromised ingest credential)
+ * fails verification on export instead of silently informing downstream AI.
+ * The MAC covers every stored column so no field can be edited in place.
+ */
+export function memoryMacRecord(row: {
+  id: string; idempotency_hash: string; event_type: string;
+  external_id: string | null; solana_wallet: string | null; wallet_id: string | null;
+  session_id: string | null; match_id: string | null; mode: string | null;
+  result_json: string | null; metadata_json: string | null;
+  occurred_at: number; received_at: number;
+}): unknown[] {
+  return [
+    row.id, row.idempotency_hash, row.event_type, row.external_id, row.solana_wallet,
+    row.wallet_id, row.session_id, row.match_id, row.mode, row.result_json,
+    row.metadata_json, row.occurred_at, row.received_at,
+  ];
+}
+
+export function computeMemoryMac(memoryKey: string, record: unknown[]): string {
+  return createHmac("sha256", memoryKey).update(JSON.stringify(record)).digest("hex");
+}
+
+export type MemoryIntegrity = "verified" | "tampered" | "unsigned";
+
+export function verifyMemoryMac(memoryKey: string | null, record: unknown[],
+  mac: string | null): MemoryIntegrity {
+  if (mac === null || memoryKey === null) return "unsigned";
+  const expected = computeMemoryMac(memoryKey, record);
+  const a = Buffer.from(expected, "hex");
+  const b = Buffer.from(mac, "hex");
+  if (a.length !== b.length) return "tampered";
+  return timingSafeEqual(a, b) ? "verified" : "tampered";
+}
+
+export interface MemoryIntegrityScan {
+  checked: number;
+  tampered: { id: string; idempotency_hash: string }[];
+  unsigned: number;
+}
+
+/**
+ * Verify the memory MAC over the most recent `limit` rows. Bounded scan:
+ * the exporter route calls this per security request, so the cost stays
+ * constant even as the store grows; older rows are covered by backups plus
+ * the `/watchtower/events` per-row verification.
+ */
+export function scanMemoryIntegrity(db: Db, memoryKey: string | null, limit = 5000): MemoryIntegrityScan {
+  const rows = db.all<{ id: string; idempotency_hash: string; event_type: string;
+    external_id: string | null; solana_wallet: string | null; wallet_id: string | null;
+    session_id: string | null; match_id: string | null; mode: string | null;
+    result_json: string | null; metadata_json: string | null;
+    occurred_at: number; received_at: number; memory_mac: string | null }>(
+    `SELECT id, idempotency_hash, event_type, external_id, solana_wallet, wallet_id,
+       session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at, memory_mac
+     FROM watchtower_events ORDER BY received_at DESC, id DESC LIMIT ?`, limit);
+  const tampered: { id: string; idempotency_hash: string }[] = [];
+  let unsigned = 0;
+  for (const row of rows) {
+    const verdict = verifyMemoryMac(memoryKey, memoryMacRecord(row), row.memory_mac);
+    if (verdict === "tampered") tampered.push({ id: row.id, idempotency_hash: row.idempotency_hash });
+    else if (verdict === "unsigned") unsigned += 1;
+  }
+  return { checked: rows.length, tampered, unsigned };
 }
 
 export const TELEMETRY_EVENT_TYPES = [
@@ -159,20 +244,18 @@ export function normalizeSolanaEvent(input: unknown): TelemetryInput {
 }
 
 const MAX_TEXT = 256;
-const text = (value: unknown, field: string, optional = true): string | null => {
-  if (value === undefined || value === null || value === "") {
-    if (optional) return null;
-    throw new Error(`${field} is required`);
-  }
-  if (typeof value !== "string" || value.length > MAX_TEXT) throw new Error(`${field} is invalid`);
-  return value;
-};
+// SW-2026-AGI: text() and jsonValue() sanitize BEFORE validation and the
+// digest is computed over the sanitized item — invisible-Unicode variants of
+// the same event collapse into duplicates instead of minting fresh memories.
+const text = (value: unknown, field: string, optional = true): string | null =>
+  sanitizeTelemetryText(value, field, MAX_TEXT, optional);
 
 const jsonValue = (value: unknown, field: string, max = 4096): string | null => {
-  if (value === undefined || value === null) return null;
+  const clean = sanitizeTelemetryJsonValue(value, field, max);
+  if (clean === null) return null;
   let encoded: string;
   try {
-    encoded = JSON.stringify(value) ?? "null";
+    encoded = JSON.stringify(clean) ?? "null";
   } catch {
     throw new Error(`${field} is not JSON serializable`);
   }
@@ -205,9 +288,37 @@ function normalized(input: TelemetryInput, now: number): {
 }
 
 /** Ingests at-least-once telemetry. The unique digest makes retries harmless. */
-export function ingestWatchtowerEvent(db: Db, input: TelemetryInput, now = Date.now()):
-  { id: string; idempotency_hash: string; status: "accepted" | "duplicate"; late_bound: boolean } {
+export function ingestWatchtowerEvent(db: Db, input: TelemetryInput, now = Date.now(),
+  options: { memoryKey?: string | null } = {}):
+  { id: string; idempotency_hash: string; status: "accepted" | "duplicate"; late_bound: boolean;
+    sanitized: boolean; suspicious: string[] } {
   const item = normalized(input, now);
+  // SW-2026-AGI: instruction-shaped phrases are reported on the RAW input —
+  // matching is a review signal, storage stays sanitized.
+  const rawTexts: string[] = [];
+  if (typeof input.external_id === "string") rawTexts.push(input.external_id);
+  if (typeof input.solana_wallet === "string") rawTexts.push(input.solana_wallet);
+  if (typeof input.session_id === "string") rawTexts.push(input.session_id);
+  if (typeof input.match_id === "string") rawTexts.push(input.match_id);
+  if (typeof input.mode === "string") rawTexts.push(input.mode);
+  for (const nested of [input.result, input.metadata]) {
+    if (nested !== undefined && nested !== null) {
+      try {
+        const encoded = JSON.stringify(nested);
+        if (typeof encoded === "string") rawTexts.push(encoded);
+      } catch { /* normalizer rejects non-serializable values itself */ }
+    }
+  }
+  // Scan the SANITIZED forms: the whole point of an invisible-character
+  // injection is that "ig\u200bnore" looks innocent raw; once the guard strips
+  // the separators the command becomes detectable and reportable.
+  const suspicious = [...new Set(rawTexts
+    .flatMap((t) => scanInjectionInstructions(stripInvisibleUnicode(t).text).map((m) => m.name)))];
+  const sanitized = rawTexts.some((t) => {
+    // Recomputing the strip on the encoded forms is enough to know whether
+    // the normalizer dropped anything; per-field exact counts stay internal.
+    return /[\u00ad\u061c\u180b-\u180f\u200b-\u200f\u202a-\u202e\u2060-\u2069\u2800\u3164\ufeff\uffa0]|\ud83c[\udcff-\udfff]|[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/.test(t);
+  });
   // An omitted occurred_at is filled for storage, but must not make a retry
   // hash differently a few milliseconds later. Preserve the distinction in
   // the digest while using the receive time as the stored occurrence time.
@@ -215,15 +326,27 @@ export function ingestWatchtowerEvent(db: Db, input: TelemetryInput, now = Date.
   const digest = createHash("sha256").update(JSON.stringify(digestItem)).digest("hex");
   const existing = db.get<{ id: string }>(
     "SELECT id FROM watchtower_events WHERE idempotency_hash = ?", digest);
-  if (existing) return { id: existing.id, idempotency_hash: digest, status: "duplicate", late_bound: false };
+  if (existing) {
+    return { id: existing.id, idempotency_hash: digest, status: "duplicate", late_bound: false, sanitized, suspicious };
+  }
   const id = randomUUID();
   const lateBound = item.wallet !== null && item.externalId !== null;
+  const memoryKey = options.memoryKey ?? null;
+  const memoryMac = memoryKey === null
+    ? null
+    : computeMemoryMac(memoryKey, memoryMacRecord({
+      id, idempotency_hash: digest, event_type: item.eventType,
+      external_id: item.externalId, solana_wallet: item.wallet, wallet_id: item.walletId,
+      session_id: item.sessionId, match_id: item.matchId, mode: item.mode,
+      result_json: item.result, metadata_json: item.metadata,
+      occurred_at: item.occurredAt, received_at: now,
+    }));
   db.run(`INSERT INTO watchtower_events
     (id, idempotency_hash, event_type, external_id, solana_wallet, wallet_id,
-     session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     session_id, match_id, mode, result_json, metadata_json, occurred_at, received_at, memory_mac)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   id, digest, item.eventType, item.externalId, item.wallet, item.walletId,
-  item.sessionId, item.matchId, item.mode, item.result, item.metadata, item.occurredAt, now);
+  item.sessionId, item.matchId, item.mode, item.result, item.metadata, item.occurredAt, now, memoryMac);
   if (item.externalId !== null && item.wallet !== null) {
     db.run(`UPDATE watchtower_events SET solana_wallet = ?, wallet_id = COALESCE(wallet_id, ?)
       WHERE external_id = ? AND solana_wallet IS NULL`, item.wallet, item.walletId, item.externalId);
@@ -244,7 +367,7 @@ export function ingestWatchtowerEvent(db: Db, input: TelemetryInput, now = Date.
         link.solana_wallet, link.wallet_id, item.externalId);
     }
   }
-  return { id, idempotency_hash: digest, status: "accepted", late_bound: lateBound };
+  return { id, idempotency_hash: digest, status: "accepted", late_bound: lateBound, sanitized, suspicious };
 }
 
 export function watchtowerConfig(config: Config): Record<string, unknown> {
@@ -299,11 +422,16 @@ export function watchtowerConfig(config: Config): Record<string, unknown> {
       depin: { worker_stake_sol: 10, escrow_sol_per_100_players: 0.1, policy: "operator-set; not transferred by this API" },
     },
     automation: {
-      magic_actions: ["harvest", "account_change", "level_up", "grant_reward", "match_end_settle"],
+      // SW-2026-AGI T75: `grant_reward` was removed from the autonomous set.
+      // Anything that moves value (rewards, epoch roots, treasury) goes
+      // through the two-person admin plane; automation may only propose.
+      magic_actions: ["harvest", "account_change", "level_up", "match_end_settle"],
+      grant_reward: "not autonomous: reward and epoch writes require operator proposal + superadmin approval",
       cron_every_minutes: 5,
       husks: "auto battle jobs",
       ritarena: "auto tournament jobs with retry",
       idempotency_required: true,
+      value_moving_actions: "human-approved only via the admin plane; no agent, automation job or ML signal can move funds",
     },
     telemetry: {
       event_types: TELEMETRY_EVENT_TYPES,
@@ -315,6 +443,44 @@ export function watchtowerConfig(config: Config): Record<string, unknown> {
       reward_eligibility_server_only: true,
       client_crash_is_observable_not_rewardable: true,
       audit_gates: ["Security Auditing Skill", "Sentio", "SolGuard", "SLAM"],
+    },
+    // SW-2026-AGI: agentic-AI threat mitigations. Exporter output is UNTRUSTED
+    // DATA for any consuming agent — re-authenticate and re-validate at every
+    // agent boundary; the output of one agent is never a command for another.
+    agentic_ai_guardrails: {
+      policy_reference: "docs/AGENTIC_THREAT_AUDIT_2026_09_26.md (threat items 71-82)",
+      content_sanitization: {
+        version: AI_GUARD_VERSION,
+        applies_to: ["telemetry text fields", "telemetry result/metadata JSON"],
+        invisible_unicode: "stripped before digest and storage; zero-width variants collapse in idempotency",
+        injection_signals: "instruction-shaped phrases are reported per ingest and by /watchtower/security",
+      },
+      agent_memory_integrity: {
+        mechanism: "HMAC-SHA256 over every stored telemetry row",
+        env: "NEONRELAY_WATCHTOWER_MEMORY_KEY",
+        verification: "each /watchtower/events row carries integrity: verified|tampered|unsigned",
+        fail_behavior: "tampered rows are flagged, never silently trusted",
+      },
+      tool_description_pins: {
+        route: "/api/os/tools/integrity",
+        policy: "tool/skill descriptions are pinned by SHA-256 at registration; drift fails closed",
+        rug_pull_protection: "a silently edited description cannot reach the model without a pinned-hash mismatch",
+      },
+      exporter_read_only: true,
+      ingestion_credential: "service bearer token; production refuses ingestion without one",
+      cross_agent_trust: "no agent output is a command for another agent without human re-authentication",
+      ownership_not_authentication: "NFT/token ownership is a signal, never an access right",
+      no_agent_value_movement: "value changes require the two-person admin plane; limits and allowlists live in code and chain, not in prompts",
+    },
+    // SW-2026-AGI W81: the AI-brand drainer defense contract. Scammers publish
+    // "build an AI arbitrage bot" tutorials that walk victims into deploying
+    // and funding their own drainer. The official answer is a contract, not a hope:
+    // no official channel ever asks a player to deploy or fund anything.
+    player_safety: {
+      official_contract_policy: "official program ids are published only on the official Neon Relay site; never hardcode or trust addresses from videos, chats or AI-generated tutorials",
+      never_ask_to_deploy: "Neon Relay never asks players to deploy contracts, create mints or fund 'AI bots' to earn rewards",
+      ownership_is_not_authentication: "holding a pass/badge NFT grants no admin, payout or feature-unlock rights",
+      report_channel: "report fake AI-bot content through the official support channel listed on the official site",
     },
   };
 }
@@ -347,7 +513,7 @@ export function routeL2(gameId: string, tps: string, ux: string): Record<string,
   };
 }
 
-const SDK_CONTRACTS: Record<string, { provider: string; free_tier: boolean; purpose: string; install: string }> = {
+export const SDK_CONTRACTS: Record<string, { provider: string; free_tier: boolean; purpose: string; install: string }> = {
   "godot-solana": { provider: "Godot SolanaClient / WalletAdapter / AnchorProgram", free_tier: true, purpose: "Godot identity, session keys and server-authoritative race actions", install: "copy integrations/godot/neonrelay_client.gd" },
   gamba: { provider: "Gamba", free_tier: true, purpose: "ticket/wager/prize epoch/jackpot adapter", install: "useGamba/usePlay/useWager + GambaUi" },
   preset: { provider: "Preset", free_tier: true, purpose: "official racing scaffold", install: "operator-selected preset; pin the version" },

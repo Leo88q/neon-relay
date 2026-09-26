@@ -52,6 +52,13 @@ jobs:
         run: |
           python3 scripts/check_secrets.py --self-test
           python3 scripts/check_secrets.py
+      # SW-2026-AGI (threat 76): the repository is what the Watchtower audit
+      # assistant reads — invisible Unicode and instruction-shaped comments
+      # are an audit-poisoning channel and gate every commit.
+      - name: AI-injection scan (self-test first, so a broken scanner cannot pass)
+        run: |
+          python3 scripts/check_ai_injection.py --self-test
+          python3 scripts/check_ai_injection.py
       - name: Branding scan (release mode) + translation lockstep
         run: ./scripts/check_branding.sh --release --check-translations
       - name: Generated skins match the generator (determinism)
@@ -226,6 +233,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Tool description pins match the registry (SW-2026-AGI V78)
+        run: cd backend && npm run check:tool-pins
       - name: Tests (zero runtime dependencies, no install step needed)
         run: cd backend && npm test
 

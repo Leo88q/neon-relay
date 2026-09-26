@@ -19,16 +19,23 @@ import {
 } from "./http.ts";
 import { authFailureStatus, buildRouter } from "./routes.ts";
 import { ensureWatchtowerSchema } from "./watchtower.ts";
+import { assertToolRegistryPinned } from "./tool_registry.ts";
 
 export interface App {
   server: Server;
   config: Config;
   db: Db;
+  /** Exposed for route-integrity tests (SW-2026-AGI: exporter stays GET-only). */
+  router: ReturnType<typeof buildRouter>;
   close: () => Promise<void>;
   listen: (port?: number) => Promise<number>;
 }
 
 export function createApp(config: Config = loadConfig()): App {
+  // SW-2026-AGI V78: refuse to serve when pinned tool descriptions drifted.
+  // A silent description edit must never reach an integrating model; the pin
+  // update has to be the reviewed `npm run gen:tool-pins` diff.
+  assertToolRegistryPinned();
   const db = new Db(config.dbPath);
   migrate(db);
   ensureWatchtowerSchema(db);
@@ -93,6 +100,7 @@ export function createApp(config: Config = loadConfig()): App {
     server,
     config,
     db,
+    router,
     close: () => new Promise((resolve) => {
       server.close(() => {
         db.close();

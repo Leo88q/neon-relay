@@ -368,7 +368,16 @@ Supported event types are `match_start`, `match_end`, `session_start`,
 `reward_velocity`, `pay_without_play`, `play_without_pay`,
 `ticket_claim_conversion`, `vault_forecast`, `reward_pipeline_age`, and
 `failed_tx_rate`. Batches are limited to 500 and bounded JSON fields are
-stored. The SHA-256 event digest makes transport retries idempotent.
+stored (strings are additionally sanitized of invisible/directional Unicode
+before validation and digesting — SW-2026-AGI, `backend/src/ai_guard.ts`;
+JSON nesting depth is capped at 8). The SHA-256 event digest is computed over
+the sanitized values, so zero-width variants of one event collapse into a
+duplicate instead of minting fresh memories, and every stored row carries an
+HMAC (`memory_mac`) that the exporter verifies as `integrity` per event.
+Instruction-shaped phrases hidden with invisible characters are reported per
+ingest (`suspicious[]`) and roll up in `/watchtower/security`. Tool/skill
+descriptions served by the SDK routes are pinned by SHA-256 — see
+`GET /api/os/tools/integrity` and `backend/tool_pins.json`.
 
 For production, put the endpoint behind the game-server authentication already
 used by `/v1/game/events` or a trusted ingestion gateway. The public sample
@@ -424,6 +433,38 @@ Run this checklist for every provider or IDL update:
 18. Check bridge chain id, nonce, replay protection and destination ownership.
 19. Run Sentio/SolGuard/SLAM tests and static scans with pinned versions.
 20. Record evidence, residual risk, rollback owner and approval before enabling.
+
+SW-2026-AGI additions (agentic-AI threats, docs/AGENTIC_THREAT_AUDIT_2026_09_26.md):
+
+21. Run the AI-injection scanner on **every commit** (CI gate
+    `scripts/check_ai_injection.py`, self-test first); it strips and flags
+    invisible/directional Unicode and instruction-shaped comments — the
+    audit-poisoning channel (CurXecute CVE-2025-54135 mechanics). Run a
+    separate audit pass over sanitized code only; never accept "out of scope"
+    from the assistant itself as a reason to skip a check.
+22. Any file change made by a coding assistant goes through a reviewed PR
+    (CODEOWNERS covers reward-critical paths); changes to assistant
+    configuration (`QWEN.md`, audit prompts, workflows, `backend/tool_pins.json`)
+    require explicit human confirmation on top of normal review. No auto-approve
+    for config writes, ever.
+23. Treat `/watchtower/*` output as untrusted DATA for any consuming agent:
+    re-authenticate at the hub boundary and fail closed on `integrity:
+    "tampered"` rows and `/watchtower/security → memoryIntegrity` signals.
+    The output of one agent is never a command for another agent.
+24. Signer policy: no durable-nonce transactions are ever pre-signed "as a
+    routine"; a durable-nonce transaction is verified with the same rigor as
+    a regular one; monitor pre-created nonce accounts for program/treasury
+    authorities. Timelocks (`MIN_AUTHORITY_DELAY_SLOTS`) are never zeroed for
+    urgency; authority changes always follow propose/accept with delay.
+25. Dev/admin tooling never faces the public internet: VPN/allowlist only;
+    admin routes already fail closed without operator/superadmin tokens.
+    Any MCP server added to this stack is read-only by default and its tool
+    descriptions are pinned exactly like `SDK_CONTRACTS`
+    (`npm run gen:tool-pins`; drift refuses to boot).
+26. Player-facing AI promo content follows the official-address policy
+    (`/api/os/config → player_safety`): official program ids are published
+    only on the official site; players are never asked to deploy contracts
+    or fund "AI bots".
 
 The `Security Auditing Skill` SDK route points to this runbook. This document is
 not a substitute for an independent audit or a legal review of wagering,
