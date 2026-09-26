@@ -123,12 +123,40 @@ jobs:
               tail -n 40 "$LOG"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::ctrl-A status=$status logbytes=$(wc -c < "$LOG")"
-            b64h=$(head -c 3000 "$LOG" | base64 -w0)
-            echo "::error::head-b64-len=${#b64h}::"
-            echo "::error::head-b64: $b64h"
+            # Error extraction. Cargo colorizes output, so strip ANSI escape
+            # codes FIRST (a raw '^error' grep never matches the colored
+            # log, verified the hard way). The runner silently DROPS large
+            # ::error annotations and everything past the first few per
+            # step, so the PRIMARY channel is one small gzip+base64 digest
+            # of every error block, emitted as a single annotation; the
+            # per-error annotations after it are best-effort extras.
+            LOGC="$LOG.clean"
+            sed 's/\x1b\[[0-9;]*m//g' "$LOG" > "$LOGC"
+            n=0
+            : > "$LOGC.errs"
+            for ln in $(grep -n -E '^error(\[E[0-9]+\])?:' "$LOGC" \
+                | grep -v 'could not compile' | grep -v 'aborting due to' \
+                | cut -d: -f1); do
+              n=$((n+1))
+              sed -n "$(( ln > 3 ? ln - 3 : 1 )),$(( ln + 18 ))p" "$LOGC" \
+                | sed "s/^/err${n}|/" >> "$LOGC.errs"
+            done
+            echo "::error::ctrl-A status=$status logbytes=$(wc -c < "$LOG") errcount=$n"
+            if [ -s "$LOGC.errs" ]; then
+              echo "::error::digest-gz-b64: $(gzip -c "$LOGC.errs" | base64 -w0)"
+            fi
             b64t=$(tail -n 12 "$LOG" | base64 -w0)
             echo "::error::tail-b64: $b64t"
+            # Best-effort per-error annotations (the digest above is the
+            # primary channel; the runner may drop some of these).
+            i=0
+            for ln in $(grep -n -E '^error(\[E[0-9]+\])?:' "$LOGC" \
+                | grep -v 'could not compile' | grep -v 'aborting due to' \
+                | cut -d: -f1); do
+              i=$((i+1))
+              blk=$(sed -n "$(( ln > 3 ? ln - 3 : 1 )),$(( ln + 18 ))p" "$LOGC" | base64 -w0)
+              echo "::error::err${i}-b64: $blk"
+            done
             echo "::error::ctrl-B end"
           fi
           exit "$status"

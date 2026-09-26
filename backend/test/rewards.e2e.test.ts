@@ -5,6 +5,10 @@ import {
 } from "./helpers.ts";
 import { verifyProofIndexed, leafHash } from "../src/merkle.ts";
 import type { Config } from "../src/config.ts";
+import { Db, migrate } from "../src/db.ts";
+import { WalletStore } from "../src/wallets.ts";
+import { RewardService, idempotencyHash, type IncomingEvent } from "../src/rewards.ts";
+import { testConfig } from "./helpers.ts";
 
 export function rewardConfig(serverKey: string): Partial<Config> {
   return {
@@ -16,6 +20,46 @@ export function rewardConfig(serverKey: string): Partial<Config> {
     capDailyMicro: 1_500,
     capWeeklyMicro: 5_000,
   };
+}
+
+/**
+ * Service-level harness for the wallet-dimension caps.
+ *
+ * Since CRIT-02 (2026-09-26) a client-supplied `wallet_binding_id` must itself
+ * be linked to the event's player, and `wallet_bindings_active_player_unique`
+ * (migration 0010) allows at most one active link per player id. The wallet
+ * dimension therefore cannot be provoked over HTTP with two live player names
+ * any more — it exists for ledger rows that already credit one wallet under a
+ * different player id (a revoked link, an operator backfill, or anything
+ * ingested before CRIT-02). Those rows are seeded straight into the ledger here
+ * so the defence stays under test.
+ */
+function ledgerService(serverKey: string, overrides: Partial<Config> = {}) {
+  const db = new Db(":memory:");
+  migrate(db);
+  const config = testConfig({ ...rewardConfig(serverKey), ...overrides });
+  const wallets = new WalletStore(db);
+  return { db, config, wallets, rewards: new RewardService(db, config, wallets) };
+}
+
+/**
+ * Credit `amount` to a wallet under a player id it is no longer linked to —
+ * the ledger shape the wallet-dimension caps exist for (re-link after revoke,
+ * operator backfill, or a row written before CRIT-02). Returns the binding id.
+ */
+function seedAccepted(db: Db, wallets: WalletStore, publicKey: string, linkedPlayerId: string,
+  event: Omit<IncomingEvent, "server_signature" | "wallet_binding_id">, now: number): string {
+  const binding = wallets.upsertBinding(publicKey, "seeded", now);
+  wallets.setPlayerLink(binding.id, linkedPlayerId);
+  const full = { ...event, wallet_binding_id: binding.id, server_signature: "seeded" } as IncomingEvent;
+  db.run(
+    `INSERT INTO reward_events
+       (id, idempotency_hash, match_id, player_id, wallet_binding_id, reward_epoch,
+        event_type, amount_micro, occurred_at, ingested_at, server_signature, status, reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'accepted', NULL)`,
+    crypto.randomUUID(), idempotencyHash(full), event.match_id, event.player_id, binding.id,
+    0, event.event_type, event.amount_micro, event.occurred_at, now, "seeded");
+  return binding.id;
 }
 
 test("ingestion is disabled without a configured server signing key", async () => {
@@ -347,48 +391,50 @@ test("reward ingestion rejects a single event above the per-match cap", async ()
   }
 });
 
-test("per-match cap is also enforced across the wallet dimension", async () => {
+test("per-match cap is also enforced across the wallet dimension", () => {
   const server = makeTestServer();
-  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  const { db, wallets, rewards } = ledgerService(server.publicKeyBase64);
   try {
     const wallet = makeWallet();
-    const auth = await authenticate(base, wallet);
-    const binding = auth.json.wallet_binding_id as string;
     const now = Date.now();
-    // Same wallet + same match, different players: each player stays under the
-    // 1_000 cap, the wallet total (1_200) does not.
-    const events = ["pA", "pB"].map((player) => server.signEvent({
-      match_id: "m9", player_id: player, wallet_binding_id: binding,
+    // The wallet already collected 600 in this match under its previous player
+    // id; the new event keeps the player dimension (600 <= 1_000) honest but
+    // pushes the wallet dimension to 1_200.
+    const binding = seedAccepted(db, wallets, wallet.publicKeyBase64, "pB", {
+      match_id: "m9", player_id: "old-link", event_type: "match_win",
+      amount_micro: 600, occurred_at: now,
+    }, now);
+    const event = server.signEvent({
+      match_id: "m9", player_id: "pB", wallet_binding_id: binding,
       event_type: "match_win", amount_micro: 600, occurred_at: now,
-    }));
-    const res = await postJson(base, "/v1/rewards/events", { events });
-    assert.equal(res.json.results[0].status, "accepted");
-    assert.equal(res.json.results[1].status, "rejected_caps");
-    assert.match(res.json.results[1].reason, /\(wallet\)/);
+    });
+    const [result] = rewards.ingestEvents([event], now);
+    assert.equal(result.status, "rejected_caps");
+    assert.match(result.reason as string, /per-match cap exceeded \(wallet\)/);
   } finally {
-    await app.close();
+    db.close();
   }
 });
 
-test("daily cap is also enforced across the wallet dimension", async () => {
+test("daily cap is also enforced across the wallet dimension", () => {
   const server = makeTestServer();
-  const { app, base } = await startTestApp(rewardConfig(server.publicKeyBase64));
+  const { db, wallets, rewards } = ledgerService(server.publicKeyBase64);
   try {
     const wallet = makeWallet();
-    const auth = await authenticate(base, wallet);
-    const binding = auth.json.wallet_binding_id as string;
     const now = Date.now();
-    const pairs: [string, string][] = [["pA", "m1"], ["pB", "m2"]];
-    const events = pairs.map(([player, match]) => server.signEvent({
-      match_id: match, player_id: player, wallet_binding_id: binding,
+    const binding = seedAccepted(db, wallets, wallet.publicKeyBase64, "pB", {
+      match_id: "m1", player_id: "old-link", event_type: "match_win",
+      amount_micro: 900, occurred_at: now,
+    }, now);
+    const event = server.signEvent({
+      match_id: "m2", player_id: "pB", wallet_binding_id: binding,
       event_type: "match_win", amount_micro: 900, occurred_at: now,
-    }));
-    const res = await postJson(base, "/v1/rewards/events", { events });
-    assert.equal(res.json.results[0].status, "accepted");
-    assert.equal(res.json.results[1].status, "rejected_caps");
-    assert.match(res.json.results[1].reason, /daily cap.*\(wallet\)/);
+    });
+    const [result] = rewards.ingestEvents([event], now);
+    assert.equal(result.status, "rejected_caps");
+    assert.match(result.reason as string, /daily cap exceeded \(wallet\)/);
   } finally {
-    await app.close();
+    db.close();
   }
 });
 
@@ -403,6 +449,8 @@ test("weekly player cap blocks earnings above the weekly budget", async () => {
     const wallet = makeWallet();
     const auth = await authenticate(base, wallet);
     const binding = auth.json.wallet_binding_id as string;
+    // CRIT-02: an explicit wallet_binding_id must belong to the event player.
+    await postJson(base, "/v1/wallet/link", { player_id: "p1" }, auth.json.session_token as string);
     const now = Date.now();
     const events = ["m1", "m2"].map((match) => server.signEvent({
       match_id: match, player_id: "p1", wallet_binding_id: binding,
@@ -417,29 +465,28 @@ test("weekly player cap blocks earnings above the weekly budget", async () => {
   }
 });
 
-test("weekly cap is also enforced across the wallet dimension", async () => {
+test("weekly cap is also enforced across the wallet dimension", () => {
   const server = makeTestServer();
-  const { app, base } = await startTestApp({
-    ...rewardConfig(server.publicKeyBase64),
-    capDailyMicro: 100_000,
+  const { db, wallets, rewards } = ledgerService(server.publicKeyBase64, {
+    capDailyMicro: 100_000, // daily stays out of the way; weekly binds first
     capWeeklyMicro: 1_500,
   });
   try {
     const wallet = makeWallet();
-    const auth = await authenticate(base, wallet);
-    const binding = auth.json.wallet_binding_id as string;
     const now = Date.now();
-    const pairs: [string, string][] = [["pA", "m1"], ["pB", "m2"]];
-    const events = pairs.map(([player, match]) => server.signEvent({
-      match_id: match, player_id: player, wallet_binding_id: binding,
+    const binding = seedAccepted(db, wallets, wallet.publicKeyBase64, "pB", {
+      match_id: "m1", player_id: "old-link", event_type: "match_win",
+      amount_micro: 900, occurred_at: now,
+    }, now);
+    const event = server.signEvent({
+      match_id: "m2", player_id: "pB", wallet_binding_id: binding,
       event_type: "match_win", amount_micro: 900, occurred_at: now,
-    }));
-    const res = await postJson(base, "/v1/rewards/events", { events });
-    assert.equal(res.json.results[0].status, "accepted");
-    assert.equal(res.json.results[1].status, "rejected_caps");
-    assert.match(res.json.results[1].reason, /weekly cap.*\(wallet\)/);
+    });
+    const [result] = rewards.ingestEvents([event], now);
+    assert.equal(result.status, "rejected_caps");
+    assert.match(result.reason as string, /weekly cap exceeded \(wallet\)/);
   } finally {
-    await app.close();
+    db.close();
   }
 });
 

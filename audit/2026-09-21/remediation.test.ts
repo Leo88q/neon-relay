@@ -97,9 +97,17 @@ test('FIX MED-01: Fake transaction confirmation is rejected in production withou
   const oldEnv = process.env.NODE_ENV;
   process.env.NODE_ENV = 'production';
   const server = makeTestServer();
-  const { app, base } = await startTestApp({ ...roles, serverSigningPublicKey: server.publicKeyBase64 });
+  // The config is built from an EMPTY env by test/helpers.ts, so NODE_ENV alone
+  // never reaches it: production mode has to be requested explicitly, otherwise
+  // this case silently exercises the development path (it was red for that
+  // reason on 2026-09-26).
+  const { app, base } = await startTestApp({ ...roles, environment: 'production',
+    serverSigningPublicKey: server.publicKeyBase64 });
   try {
     const auth = await authenticate(base, makeWallet());
+    // CRIT-02 (2026-09-26): an explicit wallet_binding_id must be linked to the
+    // event player, otherwise ingestion is rejected before the claim stage.
+    await postJson(base, '/v1/wallet/link', { player_id: 'p2' }, auth.json.session_token);
     const event = server.signEvent({
       match_id: 'fake-tx',
       player_id: 'p2',

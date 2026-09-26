@@ -140,10 +140,16 @@ CLUSTER=devnet ./scripts/deploy_prod.sh
 # features: initialize()
 # economy: initialize(rake_bps=1000, fee_match=50*dec, fee_tournament=100*dec)
 # economy v2: initialize_v2(rake_bps=1000) для каждого mint (SKR/POTATO)
-# assets: initialize() starts paused; create_collection records the internal
-# bounded collection descriptor. create_tree/mint_badge_compressed return
-# AssetPathNotConfigured in the verified default build and must not be enabled
-# without a separately reviewed upstream CPI implementation.
+# assets: initialize(features_authority=<OPERATOR>) starts paused and pins the
+# features operator it honors (SW-2026-09-26 F-04; ротация — только
+# set_features_authority, Pubkey::default() = все achievement-пути закрыты);
+# create_collection records the internal bounded collection descriptor.
+# create_tree/mint_badge_compressed return AssetPathNotConfigured in the
+# verified default build and must not be enabled without a separately
+# reviewed upstream CPI implementation.
+# ВАЖНО (SW-2026-09-26): features и assets деплоятся скоординированно —
+# AchievementRegistry получил поле config_authority (LEN 77 → 109), а
+# initialize/mint_badge_* в assets сменили аргументы/аккаунты.
 
 # 7. Фандинг vault (devnet!)
 spl-token mint $NEONRELAY_TEST_MINT 1000000 <vaultATA>  # или через Token-2022
@@ -213,6 +219,12 @@ spl-token --program-2022 display <mint> | grep -i delegate  # должен бы�
 - [ ] `propose_authority_change(new)` → `accept` до configured slot delay
   → `TimelockNotExpired`; measure wall-clock delay separately.
 - [ ] `set_paused(true)` → `mint_badge_core/compressed/pay_entry` → `Paused`.
+- [ ] SW-2026-09-26 F-04: `mint_badge_core` с реестром features, штампованным
+  «чужим» оператором (или после ротации features без set_features_authority) →
+  `FeatureAuthorityMismatch`.
+- [ ] SW-2026-09-26 F-01: `set_params_v2` с повышением рейка больше чем на 250
+  bps за вызов → `RakeStepTooLarge`; каждое принятое изменение эмитит
+  `ParamsChangedV2`.
 - [ ] `solana --version` на RPC >=3.0.14, иначе — не деплоить.
 - [ ] Operator-supplied asset proof/indexer latency and fallback RPC health
   are measured against the pinned deployment; no <500ms SLA is asserted here.

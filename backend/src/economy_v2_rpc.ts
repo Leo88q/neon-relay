@@ -8,6 +8,33 @@ import { configPdaV2, ticketPdaV2, keyHex, u64 } from "./economy_v2_codec.ts";
 export const TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const ATA_PROGRAM = base58Decode("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 export const V2_ACCOUNT_BYTES = Object.freeze({ config: 180, ticket: 139, mint: 82, token: 165 });
+
+// SW-2026-09-26 F-01: the program bounds every rake *increase* by this many
+// basis points per set_params / set_params_v2 call (decreases are
+// unrestricted). Mirrored here so an indexer or poller that observes two
+// successive config snapshots can flag a violation even if the program itself
+// was upgraded with the bound stripped.
+export const MAX_RAKE_BPS_V2 = 2000;
+export const MAX_RAKE_STEP_BPS = 250;
+
+/**
+ * Policy check for a config transition: null when the move is legal, else a
+ * stable error code for alerting. Defence in depth — the on-chain guard is
+ * authoritative, this catches what a patched program would try to sneak past
+ * an observer that only reads raw account bytes.
+ */
+export function rakeStepViolation(
+  prev: { rakeBps: number },
+  next: { rakeBps: number },
+): string | null {
+  if (!Number.isInteger(prev.rakeBps) || prev.rakeBps < 0 || prev.rakeBps > MAX_RAKE_BPS_V2) {
+    return "invalid-prev-rake";
+  }
+  if (!Number.isInteger(next.rakeBps) || next.rakeBps < 0) return "invalid-next-rake";
+  if (next.rakeBps > MAX_RAKE_BPS_V2) return "rake-above-cap";
+  if (next.rakeBps - prev.rakeBps > MAX_RAKE_STEP_BPS) return "rake-step-too-large";
+  return null;
+}
 export class V2AccountError extends Error {
   constructor(code: string) { super(code); this.name = "V2AccountError"; }
 }
@@ -57,7 +84,7 @@ function readConfig(account: unknown, program: Buffer, mint: Buffer) {
   check(vault.equals(vaultAddressV2(pda.address, mint)), "wrong-vault-address");
   check(!treasury.equals(vault), "aliased-treasury");
   const rakeBps = bytes.readUInt16LE(168);
-  check(rakeBps <= 2000, "invalid-rake");
+  check(rakeBps <= MAX_RAKE_BPS_V2, "invalid-rake");
   return { address: pda.address, authority, treasury, vault, rakeBps,
     fees: [136, 144, 152, 160].map((offset) => bytes.readBigUInt64LE(offset)),
     reserved: bytes.readBigUInt64LE(170), paused: bytes[178] === 1 };

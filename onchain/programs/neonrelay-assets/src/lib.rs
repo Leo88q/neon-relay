@@ -29,6 +29,8 @@ compile_error!("assets Bubblegum CPI is not production-pinned; build without fea
 declare_id!("F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc");
 
 /// PDA seeds — зеркалятся в `onchain/src/constants.ts` (ASSETS_SEEDS) и чекаются в `test/assets.test.ts`.
+// Byte order (SW-2026-09-26 F-10): the badge id enters the badge seed as a
+// u32 in big-endian order, like rewards/features and unlike economy.
 pub const CONFIG_SEED: &[u8] = b"neonrelay_assets_config";
 pub const COLLECTION_SEED: &[u8] = b"neonrelay_collection";
 pub const BADGE_SEED: &[u8] = b"neonrelay_badge_asset";
@@ -53,9 +55,27 @@ pub const MPL_CORE_PROGRAM_ID: &str = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNh
 /// Features registry program and seed used for the on-chain achievement proof.
 pub const FEATURES_PROGRAM_ID: Pubkey = pubkey!("4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP");
 pub const FEATURES_ACHIEVEMENTS_SEED: &[u8] = b"neonrelay_achievements";
+/// Features config seed — used when the caller also passes the live
+/// `FeaturesConfig` account (see `MintBadgeCore`) so the pinned operator can
+/// be matched against the features program's *current* authority, not just
+/// the one recorded inside the registry.
+pub const FEATURES_CONFIG_SEED: &[u8] = b"neonrelay_features_config";
 
+/// Validate the features achievement registry for `player` and the badge bit.
+///
+/// SW-2026-09-26 F-04: previously the only trust anchors were the registry's
+/// PDA derivation, its owner and its discriminator — i.e. "the features
+/// program wrote this". That is not enough, because the features and assets
+/// programs bootstrap independently: a features authority the assets authority
+/// never approved could grant itself achievement bits and mint badges here.
+/// Now every caller pins the accepted operator (`expected_features_authority`
+/// from `AssetsConfig`), the registry must name that same operator in its
+/// `config_authority` field, and when the live features config account is
+/// supplied (both `mint_badge_*` paths) it must agree too.
 fn require_achievement_registry(
     registry: &AccountInfo<'_>,
+    features_config: Option<&AccountInfo<'_>>,
+    expected_features_authority: &Pubkey,
     player: &Pubkey,
     badge_id: u32,
 ) -> Result<()> {
@@ -67,10 +87,41 @@ fn require_achievement_registry(
     require_keys_eq!(*registry.owner, FEATURES_PROGRAM_ID, AssetsError::InvalidAchievementRegistry);
     let data = registry.try_borrow_data()?;
     let discriminator = hashv(&[b"account:AchievementRegistry"]).to_bytes();
-    require!(data.len() >= 8 + 32 + 32 && data[..8] == discriminator[..8], AssetsError::InvalidAchievementRegistry);
+    // 8 disc + 32 player + 32 config_authority + 32 bits (count/bump after).
+    require!(data.len() >= 8 + 32 + 64 && data[..8] == discriminator[..8], AssetsError::InvalidAchievementRegistry);
     require!(&data[8..40] == player.as_ref(), AssetsError::InvalidAchievementRegistry);
+    // The operator the features program acted for when the bit was recorded.
+    let mut recorded_authority = [0u8; 32];
+    recorded_authority.copy_from_slice(&data[8 + 32..8 + 64]);
+    require!(
+        recorded_authority == expected_features_authority.to_bytes(),
+        AssetsError::FeatureAuthorityMismatch
+    );
+    // Stronger form (mint_badge_*): the features program's *current*
+    // operator is read straight from its config PDA, so an already-rotated
+    // features authority cannot keep minting against stale bits.
+    if let Some(config) = features_config {
+        let expected_config = Pubkey::find_program_address(
+            &[FEATURES_CONFIG_SEED],
+            &FEATURES_PROGRAM_ID,
+        ).0;
+        require_keys_eq!(config.key(), expected_config, AssetsError::FeatureAuthorityMismatch);
+        require_keys_eq!(*config.owner, FEATURES_PROGRAM_ID, AssetsError::FeatureAuthorityMismatch);
+        let config_data = config.try_borrow_data()?;
+        let config_discriminator = hashv(&[b"account:FeaturesConfig"]).to_bytes();
+        require!(
+            config_data.len() >= 8 + 32 && config_data[..8] == config_discriminator[..8],
+            AssetsError::FeatureAuthorityMismatch
+        );
+        let mut live_authority = [0u8; 32];
+        live_authority.copy_from_slice(&config_data[8..40]);
+        require!(
+            live_authority == recorded_authority,
+            AssetsError::FeatureAuthorityMismatch
+        );
+    }
     let word = usize::try_from(badge_id / 64).map_err(|_| error!(AssetsError::BadgeIdOutOfRange))?;
-    let offset = 8 + 32 + word * 8;
+    let offset = 8 + 32 + 32 + word * 8;
     require!(offset + 8 <= data.len(), AssetsError::InvalidAchievementRegistry);
     let mut bytes = [0u8; 8];
     bytes.copy_from_slice(&data[offset..offset + 8]);
@@ -122,7 +173,10 @@ pub mod neonrelay_assets {
     use super::*;
 
     /// One-time setup. Подписант становится authority. Немедленно паузим до аудита — оператор `set_paused(false)`.
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        features_authority: Pubkey,
+    ) -> Result<()> {
         verify_bootstrap_authority(&ctx.accounts.program_data.to_account_info(), &ctx.accounts.authority.key())?;
         let config = &mut ctx.accounts.config;
         config.authority = ctx.accounts.authority.key();
@@ -132,9 +186,18 @@ pub mod neonrelay_assets {
         config.collections_created = 0;
         config.badges_minted = 0;
         config.compressed_minted = 0;
+        // SW-2026-09-26 F-04: the features operator must be pinned explicitly,
+        // never inherited from whoever deploys the *other* program. An empty
+        // pubkey keeps achievement-gated minting disabled until the authority
+        // pins one deliberately.
+        config.features_authority = features_authority;
         config.bump = ctx.bumps.config;
         emit!(AssetsInitialized {
             authority: config.authority,
+        });
+        emit!(FeaturesAuthorityChanged {
+            old: Pubkey::default(),
+            new: features_authority,
         });
         Ok(())
     }
@@ -274,6 +337,8 @@ pub mod neonrelay_assets {
         require_safe_token_account(&ctx.accounts.player_badge_account)?;
         require_achievement_registry(
             &ctx.accounts.achievement_registry.to_account_info(),
+            Some(&ctx.accounts.features_config.to_account_info()),
+            &ctx.accounts.config.features_authority,
             &ctx.accounts.player.key(),
             badge_id,
         )?;
@@ -335,6 +400,8 @@ pub mod neonrelay_assets {
         require!(badge_id < 256, AssetsError::BadgeIdOutOfRange);
         require_achievement_registry(
             &ctx.accounts.achievement_registry.to_account_info(),
+            Some(&ctx.accounts.features_config.to_account_info()),
+            &ctx.accounts.config.features_authority,
             &ctx.accounts.player.key(),
             badge_id,
         )?;
@@ -482,6 +549,20 @@ pub mod neonrelay_assets {
         Ok(())
     }
 
+    /// SW-2026-09-26 F-04: pin (or re-pin, or clear) the features operator
+    /// whose achievement registries this program honors. Authority-only.
+    /// Clearing to `Pubkey::default()` fail-closes every achievement-gated
+    /// mint path until a new operator is pinned.
+    pub fn set_features_authority(
+        ctx: Context<AdminOnly>,
+        features_authority: Pubkey,
+    ) -> Result<()> {
+        let old = ctx.accounts.config.features_authority;
+        ctx.accounts.config.features_authority = features_authority;
+        emit!(FeaturesAuthorityChanged { old, new: features_authority });
+        Ok(())
+    }
+
     /// Propose an authority change with the configured slot-delay policy.
     pub fn propose_authority_change(
         ctx: Context<AdminOnly>,
@@ -539,6 +620,11 @@ pub struct AssetsConfig {
     pub collections_created: u64,
     pub badges_minted: u64,
     pub compressed_minted: u64,
+    /// Operator whose features achievement bits this program honors
+    /// (SW-2026-09-26 F-04). Pinned at bootstrap, rotatable by the authority
+    /// via `set_features_authority`. `Pubkey::default()` disables all
+    /// achievement-gated minting (fail-closed).
+    pub features_authority: Pubkey,
     pub bump: u8,
 }
 
@@ -694,14 +780,23 @@ pub struct MintBadgeCore<'info> {
         bump = config.bump,
     )]
     pub config: Account<'info, AssetsConfig>,
+    // SW-2026-09-26 F-05: the seeds and the authority constraint used to live
+    // in two separate account attributes, whose merge behaviour is
+    // Anchor-version-dependent. One merged attribute now; the handler keeps
+    // its own authority check as defence in depth.
     #[account(
         seeds = [COLLECTION_SEED, collection.name.as_bytes(), collection.authority.as_ref()],
         bump = collection.bump,
+        constraint = collection.authority == config.authority @ AssetsError::Unauthorized,
     )]
-    #[account(constraint = collection.authority == config.authority @ AssetsError::Unauthorized)]
     pub collection: Account<'info, Collection>,
     /// CHECK: owned and PDA-validated against the features achievement registry.
     pub achievement_registry: UncheckedAccount<'info>,
+    /// CHECK: the live features `FeaturesConfig` PDA — seeds, owner,
+    /// discriminator and operator are validated in the handler (SW-2026-09-26
+    /// F-04), so the pinned `AssetsConfig.features_authority` must match the
+    /// features program's *current* authority.
+    pub features_config: UncheckedAccount<'info>,
     #[account(
         init,
         payer = player,
@@ -733,14 +828,18 @@ pub struct MintBadgeCompressed<'info> {
         bump = config.bump,
     )]
     pub config: Account<'info, AssetsConfig>,
+    // SW-2026-09-26 F-05: merged from two attributes, same as MintBadgeCore.
     #[account(
         seeds = [COLLECTION_SEED, collection.name.as_bytes(), collection.authority.as_ref()],
         bump = collection.bump,
+        constraint = collection.authority == config.authority @ AssetsError::Unauthorized,
     )]
-    #[account(constraint = collection.authority == config.authority @ AssetsError::Unauthorized)]
     pub collection: Account<'info, Collection>,
     /// CHECK: owned and PDA-validated against the features achievement registry.
     pub achievement_registry: UncheckedAccount<'info>,
+    /// CHECK: the live features `FeaturesConfig` PDA — validated in the handler
+    /// (SW-2026-09-26 F-04), same as the classic path.
+    pub features_config: UncheckedAccount<'info>,
     /// CHECK: Merkle tree — validated against compression program + collection.
     #[account(mut)]
     pub merkle_tree: UncheckedAccount<'info>,
@@ -797,6 +896,14 @@ pub struct CreateTokenMintConfig<'info> {
 #[event]
 pub struct AssetsInitialized {
     pub authority: Pubkey,
+}
+
+// SW-2026-09-26 F-04: rotating (or clearing) the trusted features operator is
+// now an observable, on-chain event.
+#[event]
+pub struct FeaturesAuthorityChanged {
+    pub old: Pubkey,
+    pub new: Pubkey,
 }
 
 #[event]
@@ -908,6 +1015,8 @@ pub enum AssetsError {
     BootstrapAuthorityInvalid,
     #[msg("token account has unsupported delegate, native wrapper, or close authority")]
     UnsafeTokenAccount,
+    #[msg("features registry or config names an operator this program does not trust")]
+    FeatureAuthorityMismatch,
 }
 
 // ---------------------------------------------------------------- unit tests (cargo test -p neonrelay-assets, no chain)

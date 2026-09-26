@@ -85,8 +85,11 @@ test("authority gating, uniqueness and pause guards are present", () => {
 	assert.match(libRs, /tournament\.registered < tournament\.capacity/);
 	// Anti-sybil admission requires a minimum wallet balance in addition to the
 	// one-registration PDA and tournament capacity.
-	assert.match(libRs, /MIN_SYBIL_PLAYER_LAMPORTS: u64 = 10_000_000/);
-	assert.match(libRs, /player\.lamports\(\) >= MIN_SYBIL_PLAYER_LAMPORTS/);
+	// SW-2026-09-26 F-07: registration is secured by a refundable capital
+	// lock, not a bare balance check.
+	assert.match(libRs, /REGISTRATION_STAKE_LAMPORTS: u64 = 10_000_000/);
+	assert.match(libRs, /player\.lamports\(\) >= REGISTRATION_STAKE_LAMPORTS/);
+	assert.match(libRs, /system_program::transfer\([\s\S]{0,260}REGISTRATION_STAKE_LAMPORTS,/);
 	// pause blocks player actions
 	const pauseChecks = libRs.match(/require!\(!ctx\.accounts\.config\.paused, FeaturesError::Paused\)/g);
 	assert.ok(pauseChecks && pauseChecks.length >= 2, "badge minting and registration must check paused");

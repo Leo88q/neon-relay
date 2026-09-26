@@ -32,8 +32,12 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 // manifests. A live deployment still requires finalized RPC verification.
 declare_id!("2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj");
 
-/// PDA seeds. Mirrored by `onchain/src/pda.ts` and asserted equal by
-/// `onchain/test/program.test.ts` so the TS client cannot drift.
+/// PDA seeds. Mirrored by `onchain/src/constants.ts` (SEEDS) and asserted equal
+/// by `onchain/test/program.test.ts` so the TS client cannot drift.
+/// Byte order (SW-2026-09-26 F-10): the epoch id enters these seeds as a u64
+/// in big-endian order — mirrored by backend/src/reconcile.ts,
+/// backend/src/routes.ts and the Android RewardsTxBuilder. Changing it is a
+/// coordinated four-stack migration, not a local edit.
 pub const CONFIG_SEED: &[u8] = b"neonrelay_config";
 pub const EPOCH_SEED: &[u8] = b"neonrelay_epoch";
 pub const CLAIM_SEED: &[u8] = b"neonrelay_claim";
