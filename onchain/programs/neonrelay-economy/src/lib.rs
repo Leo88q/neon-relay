@@ -128,6 +128,13 @@ pub mod neonrelay_economy {
 		verify_bootstrap_authority(&ctx.accounts.program_data.to_account_info(), &ctx.accounts.authority.key())?;
 		require!(rake_bps <= MAX_RAKE_BPS, EconomyError::InvalidRake);
 		require!(fee_match > 0 && fee_tournament > 0, EconomyError::InvalidFee);
+		// SW-2026-09-26 F-20: `set_params` enforces MAX_ENTRY_FEE (F-01b) but
+		// the one-time bootstrap did not, so a mistyped or hostile initial
+		// fee could start above the ceiling the runtime refuses to raise to.
+		require!(
+			fee_match <= MAX_ENTRY_FEE && fee_tournament <= MAX_ENTRY_FEE,
+			EconomyError::FeeAboveCeiling
+		);
 		require!(ctx.accounts.mint.mint_authority.is_none(), EconomyError::MintAuthorityNotRevoked);
 		require!(ctx.accounts.mint.freeze_authority.is_none(), EconomyError::FreezeAuthorityNotRevoked);
 		let config = &mut ctx.accounts.config;
@@ -507,6 +514,16 @@ pub mod neonrelay_economy {
 		let rake = ctx.accounts.ticket.rake;
 		let prize = ctx.accounts.ticket.prize;
 		require!(rake.checked_add(prize) == Some(ctx.accounts.ticket.amount), EconomyError::InvalidAmount);
+		// SW-2026-09-26 F-21: the prize portion leaves the VAULT, which also
+		// collateralises every published epoch (`config.reserved`). A refund
+		// that eats into reserved funds would not steal anything today, but
+		// it would strand later Merkle claims behind an underfunded vault.
+		// The rake portion leaves the treasury (operator money) and needs no
+		// such guard.
+		let vault_after_prize = ctx.accounts.vault_ata.amount
+			.checked_sub(prize)
+			.ok_or(EconomyError::VaultUnderfunded)?;
+		require!(vault_after_prize >= ctx.accounts.config.reserved, EconomyError::VaultUnderfunded);
 		if rake > 0 {
 			token::transfer(CpiContext::new(ctx.accounts.token_program.to_account_info(), Transfer {
 				from: ctx.accounts.treasury_ata.to_account_info(),
@@ -648,6 +665,24 @@ pub mod neonrelay_economy {
 			new: config.authority,
 			treasury_ata: config.treasury_ata,
 		});
+		Ok(())
+	}
+
+	/// SW-2026-09-26 F-22: withdraw a mistaken or unwanted v2 authority
+	/// handover. `propose_authority_change_v2` creates the pending PDA with
+	/// `init`, so without an explicit abort the operator's only way out of a
+	/// proposal is to accept it — a permanently blocked rotation path (e.g.
+	/// proposed to a key the operator cannot sign with). The current
+	/// authority cancels; the pending PDA is closed back to them and the
+	/// event keeps the handover fully observable. Authority never changes
+	/// here, so no timelock applies.
+	pub fn cancel_authority_change_v2(ctx: Context<CancelAuthorityV2>) -> Result<()> {
+		emit!(AuthorityChangeCancelledV2 {
+			authority: ctx.accounts.authority.key(),
+			pending: ctx.accounts.pending_authority.new_authority,
+		});
+		// The pending PDA is closed by the `close = authority` constraint
+		// after the handler returns, so the proposal cannot be replayed.
 		Ok(())
 	}
 
@@ -919,6 +954,12 @@ pub struct AuthorityChangeProposedV2 {
 	pub authority: Pubkey,
 	pub pending: Pubkey,
 	pub slot: u64,
+}
+
+#[event]
+pub struct AuthorityChangeCancelledV2 {
+	pub authority: Pubkey,
+	pub pending: Pubkey,
 }
 
 #[event]
@@ -1254,6 +1295,30 @@ pub struct AcceptAuthorityV2<'info> {
 		constraint = new_treasury_ata.key() != config.vault_ata @ EconomyError::WrongTreasury,
 	)]
 	pub new_treasury_ata: Account<'info, TokenAccount>,
+}
+
+/// SW-2026-09-26 F-22: only the CURRENT authority may abort a pending v2
+/// handover, and only the pending PDA for their own mint namespace can be
+/// closed — the pending target's signature is neither required nor enough.
+#[derive(Accounts)]
+pub struct CancelAuthorityV2<'info> {
+	#[account(mut)]
+	pub authority: Signer<'info>,
+	#[account(
+		seeds = [CONFIG_V2_SEED, config.mint.as_ref()],
+		bump = config.bump,
+		has_one = authority @ EconomyError::Unauthorized,
+	)]
+	pub config: Box<Account<'info, EconomyConfigV2>>,
+	#[account(
+		mut,
+		seeds = [PENDING_V2_SEED, config.mint.as_ref()],
+		bump = pending_authority.bump,
+		constraint = pending_authority.mint == config.mint @ EconomyError::WrongMint,
+		constraint = authority.key() == config.authority @ EconomyError::Unauthorized,
+		close = authority,
+	)]
+	pub pending_authority: Account<'info, PendingAuthorityV2>,
 }
 
 #[account]

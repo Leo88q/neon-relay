@@ -35,6 +35,9 @@ test("production refuses to boot on a missing or placeholder domain", () => {
     NEONRELAY_RPC_FALLBACK_URL: "https://fallback.example.invalid",
     NEONRELAY_WATCHTOWER_INGEST_TOKEN: "watchtower-secret-0123456789abcdef",
     NEONRELAY_SERVER_SIGNING_PUBLIC_KEY: signingKey,
+    NEONRELAY_GAME_IDENTITY_PUBLIC_KEY: signingKey,
+    NEONRELAY_OPERATOR_TOKEN: "operator-token-0123456789abcdef-0123456789",
+    NEONRELAY_SUPERADMIN_TOKEN: "superadmin-token-0123456789abcdef-0123",
     NEONRELAY_REWARDS_PROGRAM_ID: "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
     NEONRELAY_FEATURES_PROGRAM_ID: "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP",
     NEONRELAY_ECONOMY_PROGRAM_ID: "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9",
@@ -47,6 +50,48 @@ test("production refuses to boot on a missing or placeholder domain", () => {
   });
   assert.equal(ok.authDomain, "relay.neonrelay.example.com");
   assert.equal(ok.environment, "production");
+  assert.equal(ok.playerLinkRequiresRegistration, true,
+    "production must always require operator-provisioned player links (F-11)");
+  // F-19: production boot fails fast when the two-person admin plane or the
+  // game identity signer is missing, weak, or malformed.
+  const productionEnv = {
+    NODE_ENV: "production",
+    NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com",
+    NEONRELAY_CLUSTER: "mainnet-beta",
+    NEONRELAY_RPC_URL: "https://rpc.example.invalid",
+    NEONRELAY_RPC_FALLBACK_URL: "https://fallback.example.invalid",
+    NEONRELAY_WATCHTOWER_INGEST_TOKEN: "watchtower-secret-0123456789abcdef",
+    NEONRELAY_SERVER_SIGNING_PUBLIC_KEY: signingKey,
+    NEONRELAY_REWARDS_PROGRAM_ID: "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
+    NEONRELAY_FEATURES_PROGRAM_ID: "4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP",
+    NEONRELAY_ECONOMY_PROGRAM_ID: "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9",
+    NEONRELAY_ASSETS_PROGRAM_ID: "F5VhZxGGEY61TNNexRwJVomMZtHeAZodqVHPMqoxq3oc",
+    NEONRELAY_SKR_MINT: "So11111111111111111111111111111111111111112",
+    NEONRELAY_REWARD_MINT: "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
+    NEONRELAY_EXPECTED_GENESIS_HASH: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    NEONRELAY_DEPLOYMENT_MANIFEST: "/etc/neonrelay/deployment.json",
+    NEONRELAY_MONETIZATION_ENABLED: "1",
+  };
+  assert.throws(() => loadConfig(productionEnv),
+    /NEONRELAY_GAME_IDENTITY_PUBLIC_KEY|NEONRELAY_OPERATOR_TOKEN|NEONRELAY_SUPERADMIN_TOKEN/);
+  assert.throws(() => loadConfig({
+    ...productionEnv,
+    NEONRELAY_GAME_IDENTITY_PUBLIC_KEY: signingKey,
+    NEONRELAY_OPERATOR_TOKEN: "short",
+    NEONRELAY_SUPERADMIN_TOKEN: "another-short-token",
+  }), /NEONRELAY_OPERATOR_TOKEN|NEONRELAY_SUPERADMIN_TOKEN/);
+  assert.throws(() => loadConfig({
+    ...productionEnv,
+    NEONRELAY_GAME_IDENTITY_PUBLIC_KEY: "not-a-canonical-key",
+    NEONRELAY_OPERATOR_TOKEN: "operator-token-0123456789abcdef-0123456789",
+    NEONRELAY_SUPERADMIN_TOKEN: "superadmin-token-0123456789abcdef-0123",
+  }), /NEONRELAY_GAME_IDENTITY_PUBLIC_KEY/);
+  assert.throws(() => loadConfig({
+    ...productionEnv,
+    NEONRELAY_GAME_IDENTITY_PUBLIC_KEY: signingKey,
+    NEONRELAY_OPERATOR_TOKEN: "same-token-0123456789abcdef-0123456789",
+    NEONRELAY_SUPERADMIN_TOKEN: "same-token-0123456789abcdef-0123456789",
+  }), /distinct/);
   assert.throws(() => loadConfig({
     NODE_ENV: "production",
     NEONRELAY_AUTH_DOMAIN: "relay.neonrelay.example.com",

@@ -62,8 +62,20 @@ export class WalletStore {
     return check?.consumed_at === now ? null : "replayed";
   }
 
+  /** Delete nonces that can no longer be verified (expired). SW-2026-09-26
+   * F-16: expired nonces are already unusable (`consumeNonce` rejects them),
+   * so they are purged at expiry instead of one day later — retention is
+   * bounded by the challenge TTL times the issuance rate, not by history. */
   purgeNonces(now: number = Date.now()): void {
-    this.db.run("DELETE FROM auth_nonces WHERE expires_at < ?", now - 86_400_000);
+    this.db.run("DELETE FROM auth_nonces WHERE expires_at < ?", now);
+  }
+
+  /** Outstanding (unconsumed, unexpired) nonce count — the growth metric the
+   * issuance cap in AuthService.issueChallenge enforces. */
+  pendingNonceCount(now: number = Date.now()): number {
+    return this.db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM auth_nonces WHERE consumed_at IS NULL AND expires_at >= ?", now,
+    )?.n ?? 0;
   }
 
   findBindingByPublicKey(publicKeyBase64: string): BindingRow | undefined {
@@ -110,5 +122,16 @@ export class WalletStore {
 
   setPlayerLink(bindingId: string, playerId: string | null): void {
     this.db.run("UPDATE wallet_bindings SET player_id = ? WHERE id = ?", playerId, bindingId);
+  }
+
+  /** SW-2026-09-26 F-18: unlink must clear the player link and revoke the
+   * binding in ONE statement — a half-applied unlink (link cleared, binding
+   * still active, or vice versa) is an observable inconsistent identity state
+   * under concurrent requests or a crash between the two writes. The
+   * `invalidate_game_identity` trigger fires on the combined update. */
+  unlinkAndRevoke(bindingId: string, now: number = Date.now()): void {
+    this.db.run(
+      "UPDATE wallet_bindings SET player_id = NULL, revoked_at = ? WHERE id = ?",
+      now, bindingId);
   }
 }

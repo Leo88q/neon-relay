@@ -57,6 +57,25 @@
 > (77 → 109 байт) и аргументы `initialize`/`mint_badge_*` в assets, а F-07
 > меняет поведение register/cancel и добавляет `reclaim_stake` в features —
 > программы features и assets должны обновляться **скоординированно**.
+>
+> **Обновление от 2026-09-26, итерация 5 — полный проход по чек-листу
+> 31–70 (Части 1–2).** Найдено и исправлено **12 дефектов** (F-11 … F-22;
+> 1 HIGH, 6 MEDIUM, 5 LOW), каждый закрыт регрессионным тестом. Самое
+> серьёзное — **F-11 (HIGH)**: `/v1/wallet/link` позволял любому кошельку
+> первым занять ещё не занятый `player_id` и получать его reward-листья при
+> сейле эпохи; в production линк теперь требует провижининга
+> `(player_id, wallet)` в `game_accounts`. Далее: rate-лимиты и валидация
+> всех `/v1/economy/*` маршрутов (F-12…F-14), сериализация админ-решений
+> (F-15), потолок живых auth-nonce'ов (F-16), атомарный unlink (F-18),
+> fail-fast производственного конфига — обязательные роль-токены и
+> identity-ключ (F-19), ончейн (только economy): потолок fees на
+> `initialize` (F-20), защита `reserved`-коллateral'а при рефандах (F-21),
+> отмена «застрявшего» v2-пропозала authority — `cancel_authority_change_v2`
+> (F-22; добавление инструкции не меняет layout существующих аккаунтов, но
+> требует перепиновки instruction-set — сделано). Итог по всем 70 пунктам
+> чек-листа — `docs/SOLANA_CHECKLIST_AUDIT_2026_09_26.md` (56 CLOSED,
+> 12 FIXED NOW, 8 MANAGED, открытых уязвимостей — 0). Сюиты:
+> backend **282/282**, onchain **110/110**, audit/2026-09-21 **10/10**.
 
 ---
 
@@ -544,11 +563,13 @@ treasury_ata обновлены; повтор → `missing-account` (pending PDA
 ## 10. Как воспроизвести
 
 ```bash
-# 45 тестов чек-листа (A1–E30 + X1–X12 + fuzz-паритет) и 11 тестов находок:
-cd onchain && npm test            # 107 passed
+# 45 тестов чек-листа (A1–E30 + X1–X12 + fuzz-паритет), 12 тестов находок
+# F-01…F-10 и 3 теста итерации 5 (F-20…F-22):
+cd onchain && npm test            # 110 passed
 
-# rate limiter / clientIp (включая F-08) + зеркальная политика рейка (F-01):
-cd backend && npm test            # 275 passed
+# rate limiter / clientIp (включая F-08), зеркальная политика рейка (F-01)
+# и сюита итерации 5 (F-11…F-16 + production-гейт F-19):
+cd backend && npm test            # 282 passed
 
 # Регрессии прошлого аудита (H-01, M-01…M-04):
 node --experimental-strip-types --test "audit/2026-09-21/*.test.ts"   # 10 passed

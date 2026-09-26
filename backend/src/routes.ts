@@ -239,6 +239,12 @@ export function buildRouter(deps: {
   const router = new Router();
   // ~5 challenge/verify attempts per minute per IP, burst 10
   const limiter = new RateLimiter(10, 5 / 60_000);
+  // Read-only economy routes (ticket status, proofs, epoch listings) are
+  // polled by live clients and may hit RPC. SW-2026-09-26 F-12: they used
+  // to run with no rate limit at all — `/v1/economy/ticket` amplified every
+  // request into a Solana RPC read. A generous read bucket (burst 60,
+  // 1/s sustained) bounds that amplification without throttling a normal UI.
+  const readLimiter = new RateLimiter(60, 60 / 60_000);
 
   // Dual-provider chain-read pool (docs/DEPLOYMENT_POLICY.md §6): every RPC
   // call below — tickets, vault pool, reconciliation, treasury — fails
@@ -572,10 +578,26 @@ export function buildRouter(deps: {
     return { alerts, lastVerifiedAt };
   };
 
-  const guard = (ctx: RequestContext, bucket: string) => {
-    if (!limiter.allow(`${bucket}:${ctx.ip}`)) {
+  const guardWith = (rl: RateLimiter, ctx: RequestContext, bucket: string) => {
+    if (!rl.allow(`${bucket}:${ctx.ip}`)) {
       throw new HttpError(429, "rate-limited", "too many requests, slow down");
     }
+  };
+  const guard = (ctx: RequestContext, bucket: string) => guardWith(limiter, ctx, bucket);
+  const guardRead = (ctx: RequestContext, bucket: string) => guardWith(readLimiter, ctx, bucket);
+
+  // SW-2026-09-26 F-15 (off-chain race, checklist §O): proposal decisions
+  // read `status = open`, then `approve` awaits async execution (RPC vault
+  // reads for economy close). Two concurrent decisions could both pass the
+  // status check and execute twice, or interleave approve/reject. The chain
+  // below serializes approve/reject in this process; admin traffic must be
+  // routed to a single backend instance (documented in docs/DATABASE.md) —
+  // SQLite alone cannot order two connections' check-then-act windows.
+  let decisionChain: Promise<unknown> = Promise.resolve();
+  const withDecisionLock = <T>(work: () => T | Promise<T>): Promise<T> => {
+    const run = decisionChain.then(work, work);
+    decisionChain = run.then(() => undefined, () => undefined);
+    return run;
   };
 
   const requireWatchtowerIngest = (ctx: RequestContext): void => {
@@ -1233,6 +1255,21 @@ export function buildRouter(deps: {
     const { binding } = requireSession(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const playerId = str(body["player_id"], "player_id", 128);
+    // SW-2026-09-26 F-11 (HIGH): a self-declared player id is an identity
+    // claim with no proof of control. Reward events resolve to the newest
+    // active binding of the event's player_id, so whoever links an
+    // unclaimed id first collects that player's sealed Merkle leaves.
+    // Production (and any staging that opts in) therefore only accepts ids
+    // the operator provisioned for THIS wallet in `game_accounts`.
+    if (config.playerLinkRequiresRegistration) {
+      const account = db.get<{ wallet: string; enabled: number }>(
+        "SELECT wallet, enabled FROM game_accounts WHERE player_id = ?", playerId);
+      if (!account || account.enabled !== 1 || account.wallet !== binding.public_key) {
+        throw new HttpError(403, "player-not-registered",
+          "player id must be operator-provisioned for this wallet "
+          + "(backend/scripts/register_game_account.ts)");
+      }
+    }
     try {
       wallets.setPlayerLink(binding.id, playerId);
     } catch (error) {
@@ -1247,8 +1284,9 @@ export function buildRouter(deps: {
   router.add("POST", "/v1/wallet/unlink", (ctx) => {
     guard(ctx, "wallet-unlink");
     const { binding } = requireSession(ctx);
-    wallets.setPlayerLink(binding.id, null);
-    wallets.revokeBinding(binding.id);
+    // SW-2026-09-26 F-18: single atomic statement clears the link and revokes
+    // the binding (the identity-invalidation trigger sees one consistent row).
+    wallets.unlinkAndRevoke(binding.id);
     sessions.revokeForBinding(binding.id);
     return { unlinked: true, wallet_binding_id: binding.id };
   });
@@ -1372,7 +1410,10 @@ export function buildRouter(deps: {
     const identity = requireAdmin(ctx, "superadmin");
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const id = str(body["proposal_id"], "proposal_id", 64);
-    return admin.approveProposal(identity, id, ctx.ip, executeProposal);
+    // F-15: serialized with reject so the open->terminal check and the
+    // execution window are one critical section (see withDecisionLock).
+    return withDecisionLock(() =>
+      admin.approveProposal(identity, id, ctx.ip, executeProposal));
   });
 
   router.add("POST", "/v1/admin/proposals/reject", (ctx) => {
@@ -1380,7 +1421,8 @@ export function buildRouter(deps: {
     const identity = requireAdmin(ctx, "superadmin");
     const body = (ctx.body ?? {}) as Record<string, unknown>;
     const id = str(body["proposal_id"], "proposal_id", 64);
-    return admin.rejectProposal(identity, id, body["reason"], ctx.ip);
+    return withDecisionLock(() =>
+      admin.rejectProposal(identity, id, body["reason"], ctx.ip));
   });
 
   router.add("GET", "/v1/admin/proposals", (ctx) => {
@@ -1814,23 +1856,43 @@ export function buildRouter(deps: {
     return Buffer.from(binding.public_key, "base64url");
   };
 
+  // SW-2026-09-26 F-14: entryReference() throws RangeError on a non-integer
+  // or out-of-u64 `epoch`/`extra` (BigInt/writeBigUInt64LE), which used to
+  // surface as an unhandled 500 — and `/v1/economy/ticket` validated nothing
+  // at all. One strict parser serves both query routes.
+  const entryQuery = (ctx: RequestContext): { kind: number; epoch: number; extra: number } => {
+    // Absent parameter → default; present-but-empty or malformed → 400.
+    // (Number("") is 0, which silently accepted `?kind=` before.)
+    const read = (name: string, fallback: number): number => {
+      const raw = ctx.url.searchParams.get(name);
+      if (raw === null) return fallback;
+      const value = raw === "" ? Number.NaN : Number(raw);
+      return value;
+    };
+    const kind = read("kind", 0);
+    const epoch = read("epoch", 0);
+    const extra = read("extra", 0);
+    if (![0, 1].includes(kind) || !Number.isSafeInteger(epoch) || epoch < 0 ||
+        !Number.isSafeInteger(extra) || extra < 0) {
+      throw new HttpError(400, "bad-request",
+        "kind must be 0|1 and epoch/extra must be non-negative safe integers");
+    }
+    return { kind, epoch, extra };
+  };
+
   router.add("GET", "/v1/economy/reference", (ctx) => {
     economyGuard();
-    const kind = Number(ctx.url.searchParams.get("kind") ?? "0");
-    const epoch = Number(ctx.url.searchParams.get("epoch") ?? "0");
-    const extra = Number(ctx.url.searchParams.get("extra") ?? "0");
-    if (![0, 1].includes(kind) || !Number.isInteger(epoch) || epoch < 0) {
-      throw new HttpError(400, "bad-request", "kind must be 0|1 and epoch a non-negative integer");
-    }
+    guardRead(ctx, "economy-ref");
+    const { kind, epoch, extra } = entryQuery(ctx);
     const raw = walletRawOf(ctx);
     return { reference: entryReference(kind, epoch, raw, extra).toString("hex") };
   });
 
   router.add("GET", "/v1/economy/ticket", async (ctx) => {
     economyGuard();
-    const kind = Number(ctx.url.searchParams.get("kind") ?? "0");
-    const epoch = Number(ctx.url.searchParams.get("epoch") ?? "0");
-    const extra = Number(ctx.url.searchParams.get("extra") ?? "0");
+    // F-12: every ticket read is one `getAccountInfo` against RPC — bound it.
+    guardRead(ctx, "economy-ticket");
+    const { kind, epoch, extra } = entryQuery(ctx);
     const raw = walletRawOf(ctx);
     const status = await ticketStatus(rpc, config.economyProgramId as string,
       entryReference(kind, epoch, raw, extra), raw);
@@ -1897,10 +1959,20 @@ export function buildRouter(deps: {
       throw new HttpError(409, "no-eligible-winners",
         "no ticketed winners in this epoch; the pool stays vaulted for the next epoch");
     }
-    db.run("INSERT INTO economy_epochs (epoch, root, total_micro, distribution, created_at, vault_ata, vault_balance, vault_reserved) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      epoch, result.root, result.totalMicro,
-      JSON.stringify(result.leaves.map((l) => ({ wallet: l.wallet, amount_micro: l.amountMicro, place: l.place }))),
-      Date.now(), pool.vault, pool.balance, pool.reserved);
+    try {
+      db.run("INSERT INTO economy_epochs (epoch, root, total_micro, distribution, created_at, vault_ata, vault_balance, vault_reserved) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        epoch, result.root, result.totalMicro,
+        JSON.stringify(result.leaves.map((l) => ({ wallet: l.wallet, amount_micro: l.amountMicro, place: l.place }))),
+        Date.now(), pool.vault, pool.balance, pool.reserved);
+    } catch (error) {
+      // F-15 defence in depth: even if a second backend instance races past
+      // the SELECT pre-check, the epoch primary key turns a duplicate close
+      // into a clean 409 instead of a 500.
+      if (String((error as Error).message).includes("UNIQUE")) {
+        throw new HttpError(409, "epoch-already-closed", `economy epoch ${epoch} is already closed`);
+      }
+      throw error;
+    }
     return { epoch, root: result.root, totalMicro: result.totalMicro,
       pool: { available: pool.available, vault: pool.vault, balance: pool.balance, reserved: pool.reserved },
       leaves: result.leaves.map((l) => ({ place: l.place, wallet: l.wallet, amountMicro: l.amountMicro })) };
@@ -1919,19 +1991,47 @@ export function buildRouter(deps: {
 
   router.add("GET", "/v1/economy/current-epoch", (ctx) => {
     economyGuard();
-    void ctx;
+    guardRead(ctx, "economy-epoch");
     return { epoch: Math.floor(Date.now() / config.epochMs) };
   });
 
   router.add("POST", "/v1/economy/match-intent", async (ctx) => {
     economyGuard();
+    // F-12/F-13: this route writes a DB row per call and its stored
+    // references become one RPC ticket read each at epoch close — bound both
+    // the request rate and the per-player inventory.
+    guard(ctx, "economy-match");
     const session = requireSession(ctx);
     const body = (ctx.body ?? {}) as Record<string, unknown>;
-    const epoch = Number(body.epoch ?? 0) || Math.floor(Date.now() / config.epochMs);
+    const currentEpoch = Math.floor(Date.now() / config.epochMs);
+    // Coerce numeric strings (legacy client behaviour) but reject anything
+    // that is not a safe integer; 0/null keeps its legacy "current epoch"
+    // meaning and is then window-checked like every other value.
+    const coerced = body.epoch === undefined ? currentEpoch : Number(body.epoch);
+    // Legacy clients signal "current epoch" with a missing/0/null value.
+    const epoch = coerced === 0 ? currentEpoch : coerced;
+    // SW-2026-09-26 F-13: the epoch used to be taken from the body
+    // unvalidated — negative/float/absurd values either crashed the
+    // reference derivation (RangeError 500) or polluted economy_matches for
+    // epochs that can never close. Accept only the current epoch and one of
+    // clock-skew slack in either direction.
+    if (!Number.isSafeInteger(epoch) || epoch < currentEpoch - 1 ||
+        epoch > currentEpoch + 1) {
+      throw new HttpError(400, "bad-epoch",
+        `epoch must be the current epoch (${currentEpoch}) or ±1`);
+    }
+    const bindingId = session.session.wallet_binding_id;
+    const intents = db.get<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM economy_matches WHERE wallet_binding_id = ? AND epoch = ?",
+      bindingId, epoch)?.n ?? 0;
+    if (intents >= config.maxMatchIntentsPerEpoch) {
+      throw new HttpError(429, "match-intent-cap",
+        `at most ${config.maxMatchIntentsPerEpoch} match intents per wallet and epoch`);
+    }
     const raw = walletRawOf(ctx);
     const id = db.runInsert(
       "INSERT INTO economy_matches (wallet_binding_id, epoch, reference, created_at) VALUES (?, ?, ?, ?)",
-      session.session.wallet_binding_id, epoch, "pending", Date.now());
+      bindingId, epoch, "pending", Date.now());
     const reference = entryReference(0, epoch, raw, id).toString("hex");
     db.run("UPDATE economy_matches SET reference = ? WHERE id = ?", reference, id);
     return { matchId: id, epoch, reference };
@@ -1939,6 +2039,7 @@ export function buildRouter(deps: {
 
   router.add("GET", "/v1/economy/epochs", (ctx) => {
     economyGuard();
+    guardRead(ctx, "economy-epochs");
     const page = parsePagination(ctx, 50, 200);
     if (!page.present) {
       return { epochs: db.all<{ epoch: number; root: string; total_micro: number }>(
@@ -2231,6 +2332,7 @@ export function buildRouter(deps: {
 
   router.add("GET", "/v1/economy/proof", (ctx) => {
     economyGuard();
+    guardRead(ctx, "economy-proof");
     const epoch = Number(ctx.url.searchParams.get("epoch") ?? "0");
     // Public by design: the wallet parameter only reveals the caller's own
     // leaf (amount + proof), both already committed in the published root;
@@ -2259,6 +2361,7 @@ export function buildRouter(deps: {
 
   router.add("GET", "/v2/economy/proof", (ctx) => {
     economyGuard();
+    guardRead(ctx, "economy-proof");
     const mintStr = ctx.url.searchParams.get("mint") ?? config.skrMint;
     if (!mintStr) throw new HttpError(400, "bad-request", "mint query parameter or skrMint config required");
     let mint: Buffer;
@@ -2299,6 +2402,7 @@ export function authFailureStatus(code: AuthFailure["code"]): number {
     case "bad-public-key": return 400;
     case "wrong-domain": return 422;
     case "challenge-expired": return 410;
+    case "challenge-cap": return 429;
     case "nonce-unknown": return 404;
     case "nonce-replayed": return 409;
     case "bad-signature": return 401;

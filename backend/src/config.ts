@@ -95,6 +95,28 @@ export interface Config {
   monetizationEnabled: boolean;
   /** Operator-supplied deployment manifest used by the production gate. */
   deploymentManifestPath: string | null;
+  /**
+   * SW-2026-09-26 F-11: when true, POST /v1/wallet/link only accepts a
+   * player id that the operator provisioned for this exact wallet in
+   * `game_accounts`. Always true in production — a self-declared link is an
+   * identity squatting vector: reward events resolve to the *newest active*
+   * binding of a player id, so whoever claims the id first collects the
+   * rewards. Non-production deployments may opt in early with
+   * NEONRELAY_REQUIRE_REGISTERED_PLAYER_LINK=1 (recommended for staging).
+   */
+  playerLinkRequiresRegistration: boolean;
+  /**
+   * Hard ceiling on outstanding (unconsumed, unexpired) wallet-auth nonces.
+   * SW-2026-09-26 F-16: bounds auth_nonces growth under distributed
+   * challenge spam even when per-IP rate limits are rotated.
+   */
+  authNonceCap: number;
+  /**
+   * Per (wallet binding, epoch) ceiling on stored match-intent rows.
+   * SW-2026-09-26 F-13: bounds the epoch-close RPC fan-out (one ticket read
+   * per stored reference) and the economy_matches table size.
+   */
+  maxMatchIntentsPerEpoch: number;
 }
 
 const num = (value: string | undefined, fallback: number): number => {
@@ -118,15 +140,19 @@ function mintAddress(value: string | undefined, name: string, noun = "public key
   return value;
 }
 
-function serverSigningKey(value: string | undefined): string | null {
+function base64UrlRawKey(value: string | undefined, name: string): string | null {
   if (value === undefined || value === "") return null;
   try {
     const raw = Buffer.from(value, "base64url");
     if (raw.length !== 32 || raw.toString("base64url") !== value) throw new Error();
   } catch {
-    throw new Error("NEONRELAY_SERVER_SIGNING_PUBLIC_KEY must be canonical base64url Ed25519 raw public key");
+    throw new Error(`${name} must be a canonical base64url Ed25519 raw public key`);
   }
   return value;
+}
+
+function serverSigningKey(value: string | undefined): string | null {
+  return base64UrlRawKey(value, "NEONRELAY_SERVER_SIGNING_PUBLIC_KEY");
 }
 
 function productionRpcUrl(value: string | undefined, name: string): string {
@@ -194,6 +220,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
   const cluster = clusterValue as "devnet" | "testnet" | "mainnet-beta";
   const monetizationEnabled = env.NEONRELAY_MONETIZATION_ENABLED === "1";
+  // F-11: player links are operator-provisioned in production, optionally in
+  // any other environment via an explicit opt-in flag (staging hardening).
+  const playerLinkRequiresRegistration =
+    production || env.NEONRELAY_REQUIRE_REGISTERED_PLAYER_LINK === "1";
+  const authNonceCap = num(env.NEONRELAY_AUTH_NONCE_CAP, 50_000);
+  const maxMatchIntentsPerEpoch = num(env.NEONRELAY_MAX_MATCH_INTENTS_PER_EPOCH, 64);
+  const gameIdentityPublicKey = base64UrlRawKey(
+    env.NEONRELAY_GAME_IDENTITY_PUBLIC_KEY, "NEONRELAY_GAME_IDENTITY_PUBLIC_KEY");
   if (production) {
     const missing: string[] = [];
     if (!watchtowerIngestToken) missing.push("NEONRELAY_WATCHTOWER_INGEST_TOKEN");
@@ -207,6 +241,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (!expectedGenesisHash) missing.push("NEONRELAY_EXPECTED_GENESIS_HASH");
     if (!deploymentManifestPath) missing.push("NEONRELAY_DEPLOYMENT_MANIFEST");
     if (!monetizationEnabled) missing.push("NEONRELAY_MONETIZATION_ENABLED=1");
+    // SW-2026-09-26 F-19: the two-person admin plane and the game identity
+    // signer are load-bearing in production (seal/close proposals, pairing,
+    // identity attestations) and previously failed *closed at runtime*
+    // instead of failing fast at boot. Fail-fast now: weak/missing role
+    // tokens and an unvalidated identity key are boot errors, not surprises.
+    if (!gameIdentityPublicKey) missing.push("NEONRELAY_GAME_IDENTITY_PUBLIC_KEY");
+    const operatorToken = env.NEONRELAY_OPERATOR_TOKEN;
+    const superadminToken = env.NEONRELAY_SUPERADMIN_TOKEN;
+    if (!operatorToken || operatorToken.length < 32) {
+      missing.push("NEONRELAY_OPERATOR_TOKEN (>= 32 characters)");
+    }
+    if (!superadminToken || superadminToken.length < 32) {
+      missing.push("NEONRELAY_SUPERADMIN_TOKEN (>= 32 characters)");
+    }
+    if (operatorToken && superadminToken && operatorToken === superadminToken) {
+      throw new Error("NEONRELAY_OPERATOR_TOKEN and NEONRELAY_SUPERADMIN_TOKEN must be distinct in production");
+    }
     if (missing.length > 0) throw new Error(`production configuration is incomplete: ${missing.join(", ")}`);
   }
   return {
@@ -217,7 +268,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     sessionTtlMs: num(env.NEONRELAY_SESSION_TTL_MS, 12 * 60 * 60 * 1000),
     version: env.npm_package_version ?? "0.1.0",
     serverSigningPublicKey: serverSigningKey(env.NEONRELAY_SERVER_SIGNING_PUBLIC_KEY),
-    gameIdentityPublicKey: env.NEONRELAY_GAME_IDENTITY_PUBLIC_KEY ?? null,
+    gameIdentityPublicKey,
     adminToken: env.NEONRELAY_ADMIN_TOKEN ?? null,
     operatorToken: env.NEONRELAY_OPERATOR_TOKEN ?? null,
     superadminToken: env.NEONRELAY_SUPERADMIN_TOKEN ?? null,
@@ -250,5 +301,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     cluster,
     monetizationEnabled,
     deploymentManifestPath,
+    playerLinkRequiresRegistration,
+    authNonceCap,
+    maxMatchIntentsPerEpoch,
   };
 }

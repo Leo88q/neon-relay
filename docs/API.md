@@ -116,6 +116,15 @@ Attach a game player id to the session's wallet binding. Bearer auth.
 
 Request `{ "player_id": "player-42" }` → `{ "wallet_binding_id": "uuid", "player_id": "player-42" }`
 
+**Production identity gate (SW-2026-09-26 F-11):** when
+`config.playerLinkRequiresRegistration` is on — always in production, opt-in
+elsewhere via `NEONRELAY_REQUIRE_REGISTERED_PLAYER_LINK=1` — the `player_id`
+must be operator-provisioned for **this exact wallet** in `game_accounts`
+(`backend/scripts/register_game_account.ts`), otherwise the route answers
+`403 player-not-registered`. A self-declared link is an identity claim with
+no proof of control and would let whoever claims an unclaimed id first
+collect that player's reward leaves at epoch seal.
+
 ### POST /v1/wallet/unlink
 Revoke the binding and every session belonging to it. Bearer auth.
 

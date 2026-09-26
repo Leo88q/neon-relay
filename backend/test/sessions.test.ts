@@ -65,14 +65,26 @@ test("absolute 30-day lifetime backstops even huge configured TTLs", () => {
   db.close();
 });
 
-test("purgeNonces deletes only nonces past expiry plus the grace day", () => {
+test("purgeNonces deletes at expiry and pendingNonceCount bounds live challenges (F-16)", () => {
   const db = fresh();
   const wallets = new WalletStore(db);
   const T0 = 1_700_000_000_000;
-  const ancient = wallets.issueNonce(1000, T0);
-  const recent = wallets.issueNonce(1000, T0 + 30 * 3_600_000);
-  wallets.purgeNonces(T0 + 2 * 86_400_000);
-  assert.equal(wallets.consumeNonce(ancient.nonce, T0 + 2 * 86_400_000), "unknown");
-  assert.equal(wallets.consumeNonce(recent.nonce, T0 + 2 * 86_400_000), "expired");
+  // Two nonces issued together: one short-lived, one long-lived.
+  wallets.issueNonce(1_000, T0); // expires T0 + 1_000
+  wallets.issueNonce(10_000, T0); // expires T0 + 10_000
+  assert.equal(wallets.pendingNonceCount(T0), 2);
+  // A purge past the first nonce's expiry removes exactly that one; the live
+  // nonce survives (no post-expiry retention — F-16 shrinks the table at
+  // expiry so challenge spam cannot accumulate history).
+  wallets.purgeNonces(T0 + 2_000);
+  assert.equal(wallets.pendingNonceCount(T0 + 2_000), 1);
+  // And once every nonce has expired the table is empty again.
+  wallets.purgeNonces(T0 + 20_000);
+  assert.equal(wallets.pendingNonceCount(T0 + 20_000), 0);
+  // An expired-but-not-yet-purged nonce still fails as "expired", not
+  // "unknown" — verification never accepts it either way.
+  const lingering = wallets.issueNonce(1_000, T0 + 50_000);
+  wallets.purgeNonces(T0 + 50_000); // nothing expired at this instant
+  assert.equal(wallets.consumeNonce(lingering.nonce, T0 + 55_000), "expired");
   db.close();
 });
