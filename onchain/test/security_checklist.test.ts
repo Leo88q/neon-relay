@@ -790,6 +790,9 @@ test("D24/D25 — typed deserialisation, documented CHECKs and stable discrimina
     "set_paused_v2", "pay_entry_v2", "refund_entry_v2", "publish_prizes_v2", "claim_prize_v2",
     "sweep_expired_prizes_v2", "set_params_v2", "propose_authority_change_v2",
     "accept_authority_change_v2",
+    // SW-2026-09-26 F-22: appended (never inserted) — Android/backend builders
+    // construct only pay_entry/claim_prize and do not enumerate this list.
+    "cancel_authority_change_v2",
   ];
   assert.deepEqual(instructionNames(SOURCE), pinned,
     "instruction set changed: discriminators and the Android/backend builders must be re-pinned");
@@ -844,9 +847,13 @@ test("E28 — close refunds go to an account bound by the instruction", () => {
       closes++;
       const target = struct.fields.find((f) => f.name === field.close);
       assert.ok(target, `${struct.name}: close target ${field.close} is not passed`);
-      // The destination must itself be pinned to the closed account's identity.
-      const bound = field.constraints.some((c) => c.includes(`${field.name}.player == ${target.name}.key()`)) ||
-        field.constraints.some((c) => c.includes(`${field.name}.new_authority == ${target.name}.key()`)) ||
+      // The destination must itself be pinned to the closed account's identity:
+      // a constraint on THIS field must reference the destination's key (or
+      // the destination must be derived from this account's seeds). This
+      // subsumes the previous per-name patterns (`<field>.player == player.key()`,
+      // `<field>.new_authority == new_authority.key()`) and also admits the
+      // F-22 cancel struct (`authority.key() == config.authority`).
+      const bound = field.constraints.some((c) => c.includes(`${target.name}.key()`)) ||
         (field.seeds ?? "").includes(`${target.name}.key().as_ref()`);
       assert.ok(bound,
         `${struct.name}.${field.name} closes into ${target.name}, which is not bound to the account`);

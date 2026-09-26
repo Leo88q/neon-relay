@@ -82,9 +82,20 @@ and issues a session.
 
 `wallet_bindings(public_key UNIQUE, label, player_id, revoked_at)` is the stable
 reward identity. `/v1/wallet/link` attaches a game `player_id` (stage 7 rewards
-reference the binding, never the raw key); `/v1/wallet/unlink` revokes it. A
-later successful verification *revives* a revoked binding under the same id, so
-historic rewards stay attributable while the revocation window blocks use.
+reference the binding, never the raw key); `/v1/wallet/unlink` revokes the link
+and the binding in one atomic statement. A later successful verification
+*revives* a revoked binding under the same id, so historic rewards stay
+attributable while the revocation window blocks use.
+
+**Player-id authority (SW-2026-09-26 F-11):** in production a link is only
+accepted when the operator has provisioned the `(player_id, wallet)` pair in
+`game_accounts` — reward events resolve to the newest *active* binding of the
+event's `player_id`, so a self-declared link would redirect sealed reward
+leaves to whoever claims the id first. Staging/devnet can enforce the same
+rule early with `NEONRELAY_REQUIRE_REGISTERED_PLAYER_LINK=1`; local tests run
+without it. The trusted alternative path is the server-attested flow
+(`POST /v2/identity/challenge|verify`), which checks `game_accounts` before it
+ever writes `player_id`.
 
 ## 3. Threat model
 
@@ -97,6 +108,8 @@ historic rewards stay attributable while the revocation window blocks use.
 | session token theft | TLS in deployment, 12 h sliding TTL, hash-only storage, revocation on unlink; tokens are never logged |
 | backend compromise leaks keys | impossible by construction: no private key, seed phrase or treasury key is ever present; only public keys, hashes and metadata |
 | brute force / DoS on verify | per-IP token bucket (10 burst, 5/min) on challenge+verify; Ed25519 verification is cheap and constant-work |
+| challenge spam growing `auth_nonces` | expired nonces purged at expiry and live challenges hard-capped (`authNonceCap`, default 50k → `429 challenge-cap`) — SW-2026-09-26 F-16 |
+| player-id squatting redirecting rewards | production links require an operator-provisioned `game_accounts(player_id, wallet)` pair — SW-2026-09-26 F-11 (see §2.5) |
 | SQL injection | parameterized statements only (node:sqlite prepared statements) |
 | JSON malleability | canonical re-serialization check before any crypto |
 | rate-limit bypass at scale | limiter is in-process by design; horizontal scale-out must enforce it at the edge (documented deployment requirement) |

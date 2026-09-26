@@ -33,7 +33,8 @@ import {
   plainWallet, programSource, tokenAccount, useConstants,
 } from "./helpers/rust_accounts.ts";
 import {
-  RULES, acceptAuthorityChangeV2, accountData, adminV2, balance, proposeAuthorityChangeV2,
+  RULES, acceptAuthorityChangeV2, accountData, adminV2, balance, cancelAuthorityChangeV2,
+  payEntryV2, proposeAuthorityChangeV2, refundEntryV2,
   seedPublishedEpoch, sweepExpiredPrizesV2, v2Market,
 } from "./helpers/economy_model.ts";
 import {
@@ -624,4 +625,116 @@ test("F-XX — the mitigations the findings rely on are still in place", () => {
   assert.equal(raised.ok, false, "a stranger raised the rake");
   const config = accountData(market.world, market.keys.config) as { rake_bps: number };
   assert.notEqual(config.rake_bps, MAX_RAKE_BPS);
+});
+
+// ============================================================ F-20 (MEDIUM)
+
+test("F-20 (FIXED) — the v1 bootstrap enforces the same fee ceiling as set_params", () => {
+  // Regression for SW-2026-09-26 F-20 (was MEDIUM). F-01b capped fees in
+  // set_params, but the one-time initialize() accepted any u64 > 0 — a
+  // mistyped initial fee could start above the ceiling every later call is
+  // refused at. The bootstrap now shares the ceiling.
+  const init = functionBody(ECONOMY, "initialize");
+  assert.match(init, /fee_match <= MAX_ENTRY_FEE && fee_tournament <= MAX_ENTRY_FEE/);
+  assert.match(init, /EconomyError::FeeAboveCeiling/);
+  // The ceiling constant itself is unchanged and still bounds the v2 tiers.
+  assert.match(ECONOMY, /pub const MAX_ENTRY_FEE: u64 = 2_000 \* 1_000_000_000;/);
+  // set_params keeps enforcing it too (F-01b must not regress).
+  assert.match(functionBody(ECONOMY, "set_params"), /EconomyError::FeeAboveCeiling/);
+});
+
+// ============================================================ F-21 (MEDIUM)
+
+test("F-21 (FIXED) — v2 refunds can never eat published-epoch reservations", () => {
+  // Regression for SW-2026-09-26 F-21 (was MEDIUM). refund_entry_v2 pulls
+  // the prize portion out of the VAULT, which also collateralises every
+  // published epoch through config.reserved. Without the guard an operator
+  // refund could leave a published Merkle root unpayable (claims fail until
+  // the vault is topped up) — a stranded-winner state, not a theft.
+  const prize = 45_000_000n; // tier 0 = 50 units @ 6 decimals, 10% rake
+
+  // Blocked case: the vault balance after the prize payout would fall below
+  // the aggregate reservation of a published epoch.
+  const blocked = v2Market({ playerBalance: 10n ** 9n });
+  const blockedRef = k("f21-blocked");
+  assert.equal(payEntryV2(blocked, { reference: blockedRef, tier: 0 }).ok, true);
+  assert.equal(balance(blocked.world, blocked.keys.vault), prize);
+  seedPublishedEpoch(blocked, {
+    epoch: 77n, leaves: [{ player: blocked.keys.player, amount: prize }], vaultBalance: prize,
+  });
+  const refused = refundEntryV2(blocked, { reference: blockedRef });
+  assert.equal(refused.ok, false, JSON.stringify(refused));
+  assert.match(JSON.stringify(refused), /VaultUnderfunded/);
+  assert.equal(balance(blocked.world, blocked.keys.vault), prize,
+    "a rejected refund still moved vault funds");
+  assert.equal(accountData(blocked.world, blocked.keys.config).reserved, prize,
+    "a rejected refund still consumed a reservation");
+
+  // Healthy case: reservations that leave room for the prize portion pass,
+  // and the invariant (balance >= reserved) still holds afterwards.
+  const healthy = v2Market({ playerBalance: 10n ** 9n });
+  const healthyRef = k("f21-healthy");
+  assert.equal(payEntryV2(healthy, { reference: healthyRef, tier: 0 }).ok, true);
+  // Top the vault up (operator funding) so balance = 2 * prize, then reserve
+  // one prize worth for a published epoch.
+  seedPublishedEpoch(healthy, {
+    epoch: 78n, leaves: [{ player: healthy.keys.player, amount: prize }],
+    vaultBalance: prize * 2n,
+  });
+  const accepted = refundEntryV2(healthy, { reference: healthyRef });
+  assert.equal(accepted.ok, true, JSON.stringify(accepted));
+  assert.equal(balance(healthy.world, healthy.keys.vault), prize);
+  assert.equal(accountData(healthy.world, healthy.keys.config).reserved, prize);
+  assert.ok(balance(healthy.world, healthy.keys.vault) >=
+    accountData(healthy.world, healthy.keys.config).reserved,
+    "the refund broke the vault >= reserved invariant");
+});
+
+// ============================================================ F-22 (LOW)
+
+test("F-22 (FIXED) — a mistaken v2 authority proposal can be cancelled", () => {
+  // Regression for SW-2026-09-26 F-22 (was LOW). propose_authority_change_v2
+  // creates the pending PDA with `init`; without an abort path a proposal to
+  // an uncontrolled key made the handover permanently un-re-proposeable —
+  // an operational lock-out of authority rotation.
+  assert.match(ECONOMY, /pub fn cancel_authority_change_v2/);
+  const cancel = functionBody(ECONOMY, "cancel_authority_change_v2");
+  assert.match(cancel, /emit!\(AuthorityChangeCancelledV2/);
+  // Cancellation must never move authority on its own — only accept does.
+  assert.doesNotMatch(cancel, /config\.authority =/);
+
+  const structs = parseAccountsStructs(ECONOMY);
+  const st = getStruct(structs, "CancelAuthorityV2");
+  const auth = st.fields.find((f) => f.name === "authority");
+  assert.equal(auth?.signer, true, "cancel must be signed");
+  const config = st.fields.find((f) => f.name === "config");
+  assert.deepEqual(config?.hasOne ?? [], ["authority"],
+    "cancel must be gated on the stored current authority");
+  const pending = st.fields.find((f) => f.name === "pending_authority");
+  assert.equal(pending?.close, "authority", "the pending PDA must close back to the canceller");
+
+  // Executable: propose to an uncontrolled key, cancel, re-propose cleanly.
+  const market = v2Market({});
+  const stray = k("f22-stray-target");
+  plainWallet(market.world, stray);
+  const treasury = ataAddress(stray, market.keys.mint);
+  tokenAccount(market.world, treasury, { mint: market.keys.mint, owner: stray, amount: 0n });
+  assert.equal(proposeAuthorityChangeV2(market, {
+    newAuthority: stray, newTreasuryAta: treasury }).ok, true);
+  // The pending target cannot cancel on the current authority's behalf…
+  const hijack = cancelAuthorityChangeV2(market, {
+    authority: stray, signers: [stray] });
+  assert.equal(hijack.ok, false, "the pending target cancelled the handover");
+  // …but the current authority can, and the pending PDA is gone afterwards.
+  const eventsBefore = market.world.events.length;
+  const cancelled = cancelAuthorityChangeV2(market, {});
+  assert.equal(cancelled.ok, true, JSON.stringify(cancelled));
+  const event = market.world.events[eventsBefore] as { name: string; fields: Record<string, unknown> };
+  assert.equal(event?.name, "AuthorityChangeCancelledV2");
+  assert.equal(event?.fields["pending"], stray);
+  // A second cancel has nothing to close.
+  assert.equal(cancelAuthorityChangeV2(market, {}).ok, false);
+  // And the operator can propose again — the rotation path is unblocked.
+  assert.equal(proposeAuthorityChangeV2(market, {
+    newAuthority: stray, newTreasuryAta: treasury }).ok, true);
 });

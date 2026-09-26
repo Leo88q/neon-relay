@@ -634,6 +634,12 @@ export function refundEntryV2(market: Market, args: RefundEntryV2Args): EvalResu
     requireSafeTokenAccount(world.accounts.get(keys.treasury), "treasury_ata");
     const ticketData = accountData(world, ticket) as { amount: bigint; rake: bigint; prize: bigint };
     if (ticketData.rake + ticketData.prize !== ticketData.amount) throw new ProgramError("InvalidAmount");
+    // SW-2026-09-26 F-21: the prize portion leaves the vault, which also
+    // collateralises published epochs through config.reserved — a refund
+    // may never eat into those reservations (the rake comes from treasury).
+    const cfg = accountData(world, keys.config) as { reserved: bigint };
+    const vaultBalance = balance(world, keys.vault);
+    if (vaultBalance - ticketData.prize < cfg.reserved) throw new ProgramError("VaultUnderfunded");
     if (ticketData.rake > 0n) transfer(world, keys.treasury, playerAta, ticketData.rake, "treasury_ata");
     if (ticketData.prize > 0n) transfer(world, keys.vault, playerAta, ticketData.prize, "vault_ata");
     world.events.push({
@@ -760,6 +766,36 @@ export function acceptAuthorityChangeV2(market: Market, args: AuthorityChangeV2A
   world.events.push({ name: "AuthorityChangedV2",
     fields: { old: oldAuthority, new: config.authority, treasury_ata: config.treasury_ata } });
   return commitTx(snap);
+}
+
+/** `cancel_authority_change_v2` (SW-2026-09-26 F-22): the current authority
+ * aborts a pending v2 handover; the pending PDA closes back to them. */
+export function cancelAuthorityChangeV2(market: Market, args: {
+  authority?: Key; pending?: Key; extraKeys?: Record<string, Key>; signers?: Key[];
+} = {}): EvalResult {
+  const { world, keys } = market;
+  const struct = getStruct(STRUCTS, "CancelAuthorityV2");
+  const snap = snapshot(world);
+  const authority = args.authority ?? keys.authority;
+  const pendingKey = args.pending ?? pendingPdaV2(market).address;
+  world.args["config.mint"] = keys.mint;
+  world.signers = new Set(args.signers ?? [authority]);
+  pass(world, struct, {
+    authority, config: keys.config, pending_authority: pendingKey,
+  }, args.extraKeys ?? {});
+  const result = runTx(struct, world, snap);
+  if (!result.ok) return result;
+  try {
+    const pending = accountData(world, pendingKey) as { new_authority: Key };
+    // Read the pending target BEFORE the close so the event can name it.
+    world.events.push({ name: "AuthorityChangeCancelledV2",
+      fields: { authority, pending: pending.new_authority } });
+    applyCloses(struct, world);
+    return commitTx(snap);
+  } catch (err) {
+    restore(world, snap);
+    return toFailure(err, "handler");
+  }
 }
 
 /** `initialize_v2`: the market must be bootstrapped by the legacy operator. */

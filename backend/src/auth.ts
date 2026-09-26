@@ -33,6 +33,7 @@ export type AuthFailureCode =
   | "bad-challenge"
   | "wrong-domain"
   | "challenge-expired"
+  | "challenge-cap"
   | "nonce-unknown"
   | "nonce-replayed"
   | "bad-signature"
@@ -68,9 +69,16 @@ export class AuthService {
   }
 
   issueChallenge(now: number = Date.now()): IssuedChallenge {
-    // Opportunistic retention: every issuance sweeps nonces that expired over
-    // a day ago, so auth_nonces cannot grow without bound.
+    // Opportunistic retention: every issuance sweeps expired nonces, so
+    // auth_nonces cannot grow with history (SW-2026-09-26 F-16).
     this.wallets.purgeNonces(now);
+    // Hard ceiling: even a botnet rotating source IPs past the per-IP rate
+    // limiter can only hold `authNonceCap` live challenges concurrently —
+    // beyond that, issuance fails closed until the oldest ones expire.
+    if (this.wallets.pendingNonceCount(now) >= this.config.authNonceCap) {
+      throw new AuthFailure("challenge-cap",
+        "too many outstanding auth challenges; retry after the current ones expire");
+    }
     const nonce = this.wallets.issueNonce(this.config.challengeTtlMs, now);
     const payload: ChallengePayload = {
       v: 1,

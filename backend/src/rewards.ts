@@ -136,8 +136,11 @@ export class RewardService {
     const index = Math.floor(now / this.config.epochMs);
     const existing = this.db.get<EpochRow>("SELECT * FROM reward_epochs WHERE id = ?", index);
     if (existing) return existing;
+    // SW-2026-09-26 F-17: INSERT OR IGNORE + re-read, so two processes racing
+    // on the same epoch boundary both land on the row the winner created
+    // instead of one failing the primary key with a 500.
     this.db.run(
-      "INSERT INTO reward_epochs (id, state, started_at, ended_at) VALUES (?, 'open', ?, ?)",
+      "INSERT OR IGNORE INTO reward_epochs (id, state, started_at, ended_at) VALUES (?, 'open', ?, ?)",
       index, index * this.config.epochMs, (index + 1) * this.config.epochMs);
     return this.db.get<EpochRow>("SELECT * FROM reward_epochs WHERE id = ?", index) as EpochRow;
   }
