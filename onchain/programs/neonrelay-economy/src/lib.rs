@@ -25,6 +25,10 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 declare_id!("FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9");
 
+// PDA seeds. The epoch id enters the prize/claim seeds as a u64 in
+// little-endian byte order (SW-2026-09-26 F-10) — economy is the only
+// little-endian program in the workspace (rewards/features/assets are
+// big-endian). Pinned by onchain/test/security_findings.test.ts (F-10).
 const CONFIG_SEED: &[u8] = b"neonrelay_economy_config";
 const ENTRY_SEED: &[u8] = b"neonrelay_entry";
 const PRIZES_SEED: &[u8] = b"neonrelay_prizes";
@@ -34,6 +38,27 @@ const CLAIM_SEED: &[u8] = b"neonrelay_prize_claim";
 pub const MAX_RAKE_BPS: u16 = 2000;
 /// Rake denominator (basis points).
 pub const RAKE_DENOM: u64 = 10_000;
+/// Largest rake *increase* a single `set_params`/`set_params_v2` call may make
+/// (2.5 percentage points). Decreases are unrestricted — lowering the rake is
+/// always player-friendly and must never be blocked during an incident.
+///
+/// SW-2026-09-26 F-01: `MAX_RAKE_BPS` alone still let the operator jump 0% -> 20%
+/// in one transaction, silently. A bounded step plus the `ParamsChanged` event
+/// makes every raise gradual and observable, which gives the Watchtower and the
+/// players a window to react. Deliberately a step cap and not a timelock: a
+/// timelock would need a stored "pending params" PDA, i.e. an account-layout
+/// change, and the deployed `EconomyConfig`/`EconomyConfigV2` sizes must stay
+/// byte-identical (the Android SDK and `backend/src/economy_v2_rpc.ts` read them
+/// by offset). Residual risk, stated explicitly: a determined operator can still
+/// reach the cap in `MAX_RAKE_BPS / MAX_RAKE_STEP_BPS` = 8 signed transactions —
+/// but each one is now logged on chain.
+pub const MAX_RAKE_STEP_BPS: u16 = 250;
+/// Absolute ceiling for the v1 entry fees, in token base units: the v2 top tier
+/// (2000 tokens) at the largest decimal count Solana allows. SW-2026-09-26
+/// F-01b: `set_params` only required `fee > 0`, so the authority could set
+/// `u64::MAX` and price out every player (an economic DoS that no pause is
+/// needed for). The ceiling rejects that without dictating policy.
+pub const MAX_ENTRY_FEE: u64 = 2_000 * 1_000_000_000;
 /// Entry kind: ranked match.
 pub const ENTRY_KIND_MATCH: u8 = 0;
 /// Entry kind: tournament.
@@ -123,6 +148,11 @@ pub mod neonrelay_economy {
 	}
 
 	/// Authority-only fee/rake update (rake stays capped at MAX_RAKE_BPS).
+	///
+	/// SW-2026-09-26 F-01/F-01b: a rake *increase* is bounded by
+	/// `MAX_RAKE_STEP_BPS` per call, the v1 fees have an absolute ceiling, and
+	/// every accepted change is emitted. No account-layout change: the step cap
+	/// compares against the value already stored in the config.
 	pub fn set_params(
 		ctx: Context<Admin>,
 		rake_bps: u16,
@@ -131,10 +161,33 @@ pub mod neonrelay_economy {
 	) -> Result<()> {
 		require!(rake_bps <= MAX_RAKE_BPS, EconomyError::InvalidRake);
 		require!(fee_match > 0 && fee_tournament > 0, EconomyError::InvalidFee);
+		require!(
+			fee_match <= MAX_ENTRY_FEE && fee_tournament <= MAX_ENTRY_FEE,
+			EconomyError::FeeAboveCeiling
+		);
+		// Captured before the mutable borrow so the event can name the signer.
+		let authority = ctx.accounts.authority.key();
 		let config = &mut ctx.accounts.config;
+		// `saturating_sub` makes any decrease (and any no-op) pass by construction.
+		require!(
+			rake_bps.saturating_sub(config.rake_bps) <= MAX_RAKE_STEP_BPS,
+			EconomyError::RakeStepTooLarge
+		);
+		let old_rake_bps = config.rake_bps;
+		let old_fee_match = config.fee_match;
+		let old_fee_tournament = config.fee_tournament;
 		config.rake_bps = rake_bps;
 		config.fee_match = fee_match;
 		config.fee_tournament = fee_tournament;
+		emit!(ParamsChanged {
+			authority,
+			old_rake_bps,
+			rake_bps,
+			old_fee_match,
+			fee_match,
+			old_fee_tournament,
+			fee_tournament,
+		});
 		Ok(())
 	}
 
@@ -147,9 +200,17 @@ pub mod neonrelay_economy {
 
 	pub fn propose_authority_change(ctx: Context<Admin>, new_authority: Pubkey) -> Result<()> {
 		require!(new_authority != Pubkey::default(), EconomyError::InvalidAuthority);
+		let authority = ctx.accounts.authority.key();
 		let config = &mut ctx.accounts.config;
 		config.pending_authority = new_authority;
 		config.authority_change_slot = Clock::get()?.slot;
+		// SW-2026-09-26 F-03: the handover was the only admin action with no
+		// on-chain trace; rewards/features/assets all emit theirs.
+		emit!(AuthorityChangeProposed {
+			authority,
+			pending: new_authority,
+			slot: config.authority_change_slot,
+		});
 		Ok(())
 	}
 
@@ -161,10 +222,16 @@ pub mod neonrelay_economy {
 				.checked_add(MIN_AUTHORITY_DELAY_SLOTS)
 				.ok_or(EconomyError::Overflow)?;
 			require!(current_slot >= deadline, EconomyError::TimelockNotExpired);
+		let old = config.authority;
 		config.authority = config.pending_authority;
 		config.treasury_ata = ctx.accounts.new_treasury_ata.key();
 		config.pending_authority = Pubkey::default();
 		config.authority_change_slot = 0;
+		emit!(AuthorityChanged {
+			old,
+			new: config.authority,
+			treasury_ata: config.treasury_ata,
+		});
 		Ok(())
 	}
 
@@ -330,6 +397,11 @@ pub mod neonrelay_economy {
 	/// treasury. This is the only recovery path for abandoned reservations and
 	/// is deliberately time-gated; it cannot sweep an active epoch.
 	pub fn sweep_expired_prizes(ctx: Context<SweepPrizes>, epoch: u64) -> Result<()> {
+		// SW-2026-09-26 F-02: the sweep moves the *entire* unclaimed vault
+		// remainder into the treasury, so a pause (incident freeze) must cover
+		// it too — otherwise a compromised authority key could still drain the
+		// vault while every player-facing path is frozen.
+		require!(!ctx.accounts.config.paused, EconomyError::Paused);
 		let now = Clock::get()?.unix_timestamp;
 		require!(
 			now >= ctx.accounts.prizes.published_at.checked_add(PRIZE_SWEEP_DELAY_SECONDS).ok_or(EconomyError::Overflow)?,
@@ -505,6 +577,9 @@ pub mod neonrelay_economy {
 	}
 
 		pub fn sweep_expired_prizes_v2(ctx: Context<SweepPrizesV2>, epoch: u64) -> Result<()> {
+			// SW-2026-09-26 F-02: same pause gate as every other money-moving
+			// instruction (see the v1 note above).
+			require!(!ctx.accounts.config.paused, EconomyError::Paused);
 			let now = Clock::get()?.unix_timestamp;
 			require!(
 				now >= ctx.accounts.prizes.published_at.checked_add(PRIZE_SWEEP_DELAY_SECONDS).ok_or(EconomyError::Overflow)?,
@@ -526,18 +601,33 @@ pub mod neonrelay_economy {
 
 		pub fn set_params_v2(ctx: Context<AdminV2>, rake_bps: u16) -> Result<()> {
 		require!(rake_bps <= MAX_RAKE_BPS, EconomyError::InvalidRake);
+		let authority = ctx.accounts.authority.key();
 		let config = &mut ctx.accounts.config;
+		// SW-2026-09-26 F-01: same per-call step bound as v1 `set_params`.
+		require!(
+			rake_bps.saturating_sub(config.rake_bps) <= MAX_RAKE_STEP_BPS,
+			EconomyError::RakeStepTooLarge
+		);
+		let old_rake_bps = config.rake_bps;
 		config.rake_bps = rake_bps;
+		emit!(ParamsChangedV2 { authority, old_rake_bps, rake_bps });
 		Ok(())
 	}
 
 	pub fn propose_authority_change_v2(ctx: Context<ProposeAuthorityV2>, new_authority: Pubkey) -> Result<()> {
 		require!(new_authority != Pubkey::default(), EconomyError::InvalidAuthority);
+		let authority = ctx.accounts.authority.key();
 		let pending = &mut ctx.accounts.pending_authority;
 		pending.mint = ctx.accounts.config.mint;
 		pending.new_authority = new_authority;
 		pending.change_slot = Clock::get()?.slot;
 		pending.bump = ctx.bumps.pending_authority;
+		// SW-2026-09-26 F-03: observable handover, same as the other programs.
+		emit!(AuthorityChangeProposedV2 {
+			authority,
+			pending: new_authority,
+			slot: pending.change_slot,
+		});
 		Ok(())
 	}
 
@@ -550,8 +640,14 @@ pub mod neonrelay_economy {
 				.ok_or(EconomyError::Overflow)?;
 			require!(current_slot >= deadline, EconomyError::TimelockNotExpired);
 		let config = &mut ctx.accounts.config;
+		let old = config.authority;
 		config.authority = pending.new_authority;
 		config.treasury_ata = ctx.accounts.new_treasury_ata.key();
+		emit!(AuthorityChangedV2 {
+			old,
+			new: config.authority,
+			treasury_ata: config.treasury_ata,
+		});
 		Ok(())
 	}
 
@@ -778,6 +874,60 @@ pub struct EntryRefundedV2 {
 	pub amount: u64,
 }
 
+// SW-2026-09-26 F-01: every accepted fee/rake change is now observable
+// on chain; Watchtower (backend/src/watchtower.ts) can alert on any raise.
+
+#[event]
+pub struct ParamsChanged {
+	pub authority: Pubkey,
+	pub old_rake_bps: u16,
+	pub rake_bps: u16,
+	pub old_fee_match: u64,
+	pub fee_match: u64,
+	pub old_fee_tournament: u64,
+	pub fee_tournament: u64,
+}
+
+#[event]
+pub struct ParamsChangedV2 {
+	pub authority: Pubkey,
+	pub old_rake_bps: u16,
+	pub rake_bps: u16,
+}
+
+// SW-2026-09-26 F-03: authority handovers are now observable. The treasury
+// rotation rides along with the accept event because that is the moment the
+// operator's payout address changes — the fact an incident responder needs
+// first.
+
+#[event]
+pub struct AuthorityChangeProposed {
+	pub authority: Pubkey,
+	pub pending: Pubkey,
+	pub slot: u64,
+}
+
+#[event]
+pub struct AuthorityChanged {
+	pub old: Pubkey,
+	pub new: Pubkey,
+	pub treasury_ata: Pubkey,
+}
+
+#[event]
+pub struct AuthorityChangeProposedV2 {
+	pub authority: Pubkey,
+	pub pending: Pubkey,
+	pub slot: u64,
+}
+
+#[event]
+pub struct AuthorityChangedV2 {
+	pub old: Pubkey,
+	pub new: Pubkey,
+	pub treasury_ata: Pubkey,
+}
+
 // -------------------------------------------------------------------- state
 
 #[account]
@@ -899,6 +1049,10 @@ pub enum EconomyError {
 	UnsafeTokenAccount,
 	#[msg("ticket amount does not equal its stored rake and prize split")]
 	InvalidAmount,
+	#[msg("fee exceeds the MAX_ENTRY_FEE ceiling")]
+	FeeAboveCeiling,
+	#[msg("rake increase exceeds the MAX_RAKE_STEP_BPS per-call bound")]
+	RakeStepTooLarge,
 }
 
 
@@ -1025,7 +1179,8 @@ pub struct ClaimPrizeV2<'info> {
 	pub config: Box<Account<'info, EconomyConfigV2>>,
 	#[account(mut, constraint = player_ata.mint == config.mint @ EconomyError::WrongMint,
 		constraint = player_ata.owner == player.key() @ EconomyError::NotPlayerAta,
-		constraint = player_ata.key() != config.vault_ata @ EconomyError::WrongVault)]
+		constraint = player_ata.key() != config.vault_ata @ EconomyError::WrongVault,
+		constraint = player_ata.key() != config.treasury_ata @ EconomyError::WrongTreasury)]
 	pub player_ata: Box<Account<'info, TokenAccount>>,
 	#[account(mut, address = config.vault_ata @ EconomyError::WrongVault,
 		constraint = vault_ata.mint == config.mint @ EconomyError::WrongMint,
@@ -1198,4 +1353,37 @@ pub fn verify_proof_v2(leaf: &[u8; 32], index: u32, proof: &[[u8; 32]], root: &[
 		return false;
 	}
 	verify_proof_indexed(leaf, index, proof, root)
+}
+
+// ---------------------------------------------------------------- unit tests
+// Pure arithmetic of the SW-2026-09-26 F-01 policy, runnable with
+// `cargo test -p neonrelay-economy` (no Rust toolchain in the audit sandbox;
+// the TS harness strips this module when parsing the source).
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn rake_step_cap_is_a_whole_number_of_steps() {
+		assert_eq!(MAX_RAKE_BPS % MAX_RAKE_STEP_BPS, 0);
+		// One legal step up is always within the bound…
+		for old in [0u16, 250, 1000, 1750, 2000 - MAX_RAKE_STEP_BPS] {
+			let next = old + MAX_RAKE_STEP_BPS;
+			assert!(next.saturating_sub(old) <= MAX_RAKE_STEP_BPS);
+		}
+		// …a full-range jump from anywhere below the cap never is…
+		assert!(MAX_RAKE_BPS.saturating_sub(0) > MAX_RAKE_STEP_BPS);
+		assert!(MAX_RAKE_BPS.saturating_sub(MAX_RAKE_BPS - 1) <= MAX_RAKE_STEP_BPS);
+		// …and decreases (including straight to zero) are unrestricted.
+		assert!(0u16.saturating_sub(MAX_RAKE_BPS) <= MAX_RAKE_STEP_BPS);
+	}
+
+	#[test]
+	fn fee_ceiling_equals_the_v2_top_tier_at_max_decimals() {
+		let fees = tier_fees_v2(9).expect("9 decimals are valid");
+		assert_eq!(fees[3], MAX_ENTRY_FEE);
+		// v1 fees are capped by the same number set_params enforces.
+		assert_eq!(MAX_ENTRY_FEE, 2_000u64 * 1_000_000_000);
+	}
 }

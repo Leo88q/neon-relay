@@ -73,6 +73,13 @@ export const MAX_LEADERBOARD_ENTRIES = 64;
 /** Tournament capacity cap. */
 export const MAX_TOURNAMENT_CAPACITY = 65535;
 
+/**
+ * Refundable registration stake in lamports (SW-2026-09-26 F-07): every
+ * registration locks it inside the registration PDA; cancel_registration
+ * and reclaim_stake return it in full. A capital lock, not a fee.
+ */
+export const REGISTRATION_STAKE_LAMPORTS = 10_000_000;
+
 /** --- neonrelay-economy program (stage 14) --- */
 
 /** PLACEHOLDER program id from Anchor.toml; replace with `anchor keys list` output on deployment. */
@@ -88,6 +95,16 @@ export const ECONOMY_SEEDS = {
 
 /** Rake cap in basis points (20%); deployed default is 1000 (10%). */
 export const MAX_RAKE_BPS = 2000;
+/**
+ * Largest rake increase a single set_params / set_params_v2 call may make
+ * (SW-2026-09-26 F-01). Decreases are unrestricted.
+ */
+export const MAX_RAKE_STEP_BPS = 250;
+/**
+ * Absolute ceiling for the v1 entry fees in token base units
+ * (SW-2026-09-26 F-01b): v2 top tier at the largest Solana decimal count.
+ */
+export const MAX_ENTRY_FEE = 2_000 * 1_000_000_000;
 /** Approved operator rake in basis points (10%). */
 export const DEFAULT_RAKE_BPS = 1000;
 /** Entry kinds accepted by `pay_entry`. */

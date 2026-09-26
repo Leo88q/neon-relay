@@ -216,6 +216,19 @@ export class RewardService {
         return { idempotency_hash: hash, status: "rejected_validation",
           reason: "wallet binding does not match player's active wallet" };
       }
+      // CRIT-02 (2026-09-26) fix: `wallet_binding_id` is client-supplied and is
+      // NOT covered by the game-server signature, so it carries no authority of
+      // its own. The checks above only bound a binding that already declares a
+      // player_id, which let any wallet that simply authenticated — without
+      // ever linking the event's player — attach itself to somebody else's
+      // signed finish and collect the sealed Merkle leaf. A binding may now
+      // receive an event only if it is itself linked to the event's player.
+      if (explicitBinding.player_id !== event.player_id) {
+        this.record(event, hash, epoch.id, "rejected_validation",
+          "wallet binding is not linked to the event player", now, null);
+        return { idempotency_hash: hash, status: "rejected_validation",
+          reason: "wallet binding is not linked to the event player" };
+      }
       resolvedBindingId = event.wallet_binding_id;
     } else {
       const activeBinding = this.wallets.findActiveByPlayerId(event.player_id);

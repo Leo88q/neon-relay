@@ -135,18 +135,66 @@ export class Router {
  * Fixed-window-free token bucket per IP. Deliberately in-process: a horizontal
  * scale-out would move this to the edge/reverse proxy (documented in
  * docs/WALLET_AUTH.md §rate limiting).
+ *
+ * SW-2026-09-26 F-08: buckets are evicted, so the map no longer grows with the
+ * number of distinct keys ever seen. Two mechanisms:
+ *   * a bucket idle for the full refill window (`capacity / refillPerMs`) is
+ *     indistinguishable from a brand-new one, so dropping it is invisible;
+ *   * if the map still exceeds `maxBuckets` (sustained pressure from many
+ *     active keys), the least-recently-updated buckets are dropped. A dropped
+ *     client simply gets fresh-bucket treatment on its next request — the same
+ *     allowance a brand-new key already receives, so eviction can never widen
+ *     an attacker's budget beyond "new key" behaviour.
+ * With `refillPerMs <= 0` buckets never recover, so idle eviction would change
+ * semantics (a permanently-denied key must not be reset); only the hard cap
+ * applies in that mode.
  */
 export class RateLimiter {
   private readonly buckets = new Map<string, { tokens: number; updated: number }>();
   private readonly capacity: number;
   private readonly refillPerMs: number;
+  private readonly maxBuckets: number;
+  private lastPrune = 0;
 
-  constructor(capacity: number, refillPerMs: number) {
+  constructor(capacity: number, refillPerMs: number, maxBuckets = 10_000) {
     this.capacity = capacity;
     this.refillPerMs = refillPerMs;
+    this.maxBuckets = maxBuckets;
+  }
+
+  /** Full-refill window in ms: idling this long makes a bucket fresh again. */
+  private get idleMs(): number {
+    return this.refillPerMs > 0 ? this.capacity / this.refillPerMs : Number.POSITIVE_INFINITY;
+  }
+
+  private maybePrune(now: number): void {
+    if (this.buckets.size <= this.maxBuckets && now - this.lastPrune < this.idleMs) return;
+    this.lastPrune = now;
+    if (this.refillPerMs > 0) {
+      for (const [key, bucket] of this.buckets) {
+        if (now - bucket.updated >= this.idleMs) this.buckets.delete(key);
+      }
+    }
+    if (this.buckets.size > this.maxBuckets) this.dropOldest(this.maxBuckets);
+  }
+
+  /** Keep the `limit` most recently updated buckets; drop the rest. */
+  private dropOldest(limit: number): void {
+    const ordered = [...this.buckets.entries()].sort((a, b) => a[1].updated - b[1].updated);
+    for (let i = 0; i < ordered.length - limit; i += 1) {
+      this.buckets.delete(ordered[i]![0]);
+    }
   }
 
   allow(key: string, now: number = Date.now()): boolean {
+    const allowed = this.spend(key, now);
+    // Prune after the decision: the freshly-touched bucket is never idle, so
+    // this keeps the hard cap exact without influencing the current call.
+    this.maybePrune(now);
+    return allowed;
+  }
+
+  private spend(key: string, now: number): boolean {
     const bucket = this.buckets.get(key);
     if (!bucket) {
       this.buckets.set(key, { tokens: this.capacity - 1, updated: now });

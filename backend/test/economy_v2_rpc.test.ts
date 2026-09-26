@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { RpcCaller } from "../src/economy.ts";
-import { readMarketV2, readTicketV2 } from "../src/economy_v2_rpc.ts";
+import { MAX_RAKE_BPS_V2, MAX_RAKE_STEP_BPS, rakeStepViolation, readMarketV2, readTicketV2 } from "../src/economy_v2_rpc.ts";
 import { U64_MAX } from "../src/economy_v2_codec.ts";
 import { v2Fixture } from "./v2_rpc_fixture.ts";
 
@@ -115,4 +115,43 @@ test("RPC or input failures never produce an accepted ticket", async () => {
   assert.equal(f.callCount(), 0);
   await assert.rejects(readMarketV2(async () => { throw new Error("RPC down"); }, f.program, f.mint), /RPC down/);
   await assert.rejects(readMarketV2(async () => null, f.program, f.mint), /invalid-rpc-object/);
+});
+
+// SW-2026-09-26 F-01: the backend mirrors the on-chain rake policy, so two
+// observed config snapshots can be checked for a jump even if the program was
+// upgraded with the on-chain bound stripped.
+test("rake step policy mirrors the program: raises are bounded, decreases are free", () => {
+  const legal: [number, number][] = [
+    [1000, 1250],  // exactly one step
+    [1250, 1000],  // decrease, any size
+    [0, 0],        // no-op
+    [1750, 0],     // to zero in one call
+    [2000, 2000],  // sitting at the cap
+  ];
+  for (const [prev, next] of legal) {
+    assert.equal(rakeStepViolation({ rakeBps: prev }, { rakeBps: next }), null,
+      `legal transition ${prev} -> ${next} rejected`);
+  }
+  const illegal: [number, number, string][] = [
+    [0, 251, "rake-step-too-large"],
+    [1000, 2000, "rake-step-too-large"],   // the pre-fix 0%->20% jump in one call
+    [1000, 1251, "rake-step-too-large"],   // even 1 bps over the step
+    [1000, 2001, "rake-above-cap"],
+    [0, 5000, "rake-above-cap"],           // the absolute cap fires before the step check
+    [-1, 100, "invalid-prev-rake"],
+    [100, -1, "invalid-next-rake"],
+    [100, 1.5, "invalid-next-rake"],
+  ];
+  for (const [prev, next, code] of illegal) {
+    assert.equal(rakeStepViolation({ rakeBps: prev }, { rakeBps: next }), code,
+      `illegal transition ${prev} -> ${next} not flagged`);
+  }
+  // The gradual path stays legal end to end: 0 -> cap in 8 steps.
+  let rake = 0;
+  for (let i = 0; i < 8; i++) {
+    assert.equal(rakeStepViolation({ rakeBps: rake }, { rakeBps: rake + 250 }), null);
+    rake += 250;
+  }
+  assert.equal(rake, MAX_RAKE_BPS_V2);
+  assert.equal(MAX_RAKE_STEP_BPS, 250);
 });

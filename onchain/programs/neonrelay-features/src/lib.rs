@@ -30,6 +30,8 @@ declare_id!("4PH1dHVBRbfoydBx3SuRjAS46zRRjHvRxWCNcrFBDqYP");
 
 /// PDA seeds. Mirrored by `onchain/src/constants.ts` (FEATURES_SEEDS) and
 /// asserted equal by `onchain/test/features.test.ts`.
+// Byte order (SW-2026-09-26 F-10): every u64 id in these seeds (achievement,
+// epoch, tournament) is big-endian, like rewards/assets and unlike economy.
 pub const CONFIG_SEED: &[u8] = b"neonrelay_features_config";
 pub const ACHIEVEMENTS_SEED: &[u8] = b"neonrelay_achievements";
 pub const BADGE_SEED: &[u8] = b"neonrelay_badge";
@@ -43,11 +45,53 @@ pub const ACHIEVEMENT_BITS: usize = 256;
 pub const MAX_LEADERBOARD_ENTRIES: usize = 64;
 /// Tournament capacity cap (account-space bound).
 pub const MAX_TOURNAMENT_CAPACITY: u32 = 65_535;
-/// Anti-sybil minimum player balance required to register (0.01 SOL).
-pub const MIN_SYBIL_PLAYER_LAMPORTS: u64 = 10_000_000;
+/// Registration stake (SW-2026-09-26 F-07): every registration locks this
+/// many lamports inside the registration PDA. It is a refundable capital
+/// lock, NOT a fee — `cancel_registration` (while the window is open) and
+/// `reclaim_stake` (after the tournament ends) return it in full, and the
+/// operator has no instruction that can take it. Filling every slot of a
+/// MAX_TOURNAMENT_CAPACITY tournament therefore binds 655.35 SOL of the
+/// attacker's capital concurrently, which is the anti-sybil property the old
+/// bare balance check could not provide (a wallet could register every slot
+/// "for free" as long as it held 0.01 SOL once).
+pub const REGISTRATION_STAKE_LAMPORTS: u64 = 10_000_000;
 
-fn require_safe_token_account(account: &TokenAccount) -> Result<()> {
-	require!(
+/// Return a registration's stake to its owner (SW-2026-09-26 F-07). Shared by
+/// `cancel_registration` and `reclaim_stake`. The PDA keeps its rent so the
+/// one-slot-per-wallet tombstone survives; an account that never held a stake
+/// (pre-upgrade) is rejected instead of being dropped below rent-exemption —
+/// an under-funded tombstone could be garbage-collected, which would break
+/// the one-way registration rule.
+fn return_registration_stake(
+	registration: &AccountInfo<'_>,
+	player: &AccountInfo<'_>,
+	system_program: &AccountInfo<'_>,
+	rent: &Rent,
+	tournament_id: u64,
+	bump: u8,
+) -> Result<()> {
+	let keep = rent.minimum_balance(8 + Registration::INIT_SPACE);
+	let needed = keep.checked_add(REGISTRATION_STAKE_LAMPORTS).ok_or(FeaturesError::Overflow)?;
+	require!(registration.lamports() >= needed, FeaturesError::RegistrationStakeMissing);
+	// Bound before the seeds so no temporary is borrowed past its statement
+	// (same pattern as the rewards program's claim signer seeds).
+	let tournament_id_bytes = tournament_id.to_be_bytes();
+	let signer_seeds: &[&[&[u8]]] =
+		&[&[REGISTRATION_SEED, &tournament_id_bytes, player.key().as_ref(), &[bump]]];
+	anchor_lang::system_program::transfer(
+		CpiContext::new_with_signer(
+			system_program.clone(),
+			anchor_lang::system_program::Transfer {
+				from: registration.clone(),
+				to: player.clone(),
+			},
+			signer_seeds,
+		),
+		REGISTRATION_STAKE_LAMPORTS,
+	)
+}
+
+fn require_safe_token_account(account: &TokenAccount) -> Result<()> {	require!(
 		account.state == anchor_spl::token::spl_token::state::AccountState::Initialized &&
 		account.delegate.is_none() && account.is_native.is_none() && account.close_authority.is_none(),
 		FeaturesError::UnsafeTokenAccount
@@ -101,6 +145,9 @@ pub mod neonrelay_features {
 	pub fn create_registry(ctx: Context<CreateRegistry>) -> Result<()> {
 		let registry = &mut ctx.accounts.registry;
 		registry.player = ctx.accounts.player.key();
+		// SW-2026-09-26 F-04: stamp the operator so downstream consumers
+		// (neonrelay-assets) can pin which features authority they trust.
+		registry.config_authority = ctx.accounts.config.authority;
 		registry.bits = [0u64; 4];
 		registry.count = 0;
 		registry.bump = ctx.bumps.registry;
@@ -114,6 +161,14 @@ pub mod neonrelay_features {
 		require!(
 			(achievement_id as usize) < ACHIEVEMENT_BITS,
 			FeaturesError::AchievementIdOutOfRange
+		);
+		// SW-2026-09-26 F-04: after an authority rotation, stale registries are
+		// rejected until the new operator re-vouches for them. Fail-closed: a
+		// rotated-out operator cannot keep minting achievements against
+		// registries it stamped itself.
+		require!(
+			ctx.accounts.registry.config_authority == ctx.accounts.config.authority,
+			FeaturesError::RegistryAuthorityMismatch
 		);
 		let registry = &mut ctx.accounts.registry;
 		let word = (achievement_id / 64) as usize;
@@ -132,6 +187,24 @@ pub mod neonrelay_features {
 			player: registry.player,
 			achievement_id,
 			count: registry.count,
+		});
+		Ok(())
+	}
+
+	/// Operator-only: re-vouch for an existing registry under the *current*
+	/// authority (SW-2026-09-26 F-04). After an authority rotation every
+	/// existing registry keeps the stamp of the old operator and is rejected by
+	/// `record_achievement` (and by the assets program) until the new operator
+	/// deliberately re-stamps it. `create_registry` cannot do this — its PDA
+	/// `init` fails on an existing account.
+	pub fn restamp_registry(ctx: Context<RecordAchievement>) -> Result<()> {
+		if ctx.accounts.registry.config_authority == ctx.accounts.config.authority {
+			return Ok(()); // already vouched for by the current operator
+		}
+		ctx.accounts.registry.config_authority = ctx.accounts.config.authority;
+		emit!(RegistryRestamped {
+			player: ctx.accounts.registry.player,
+			authority: ctx.accounts.config.authority,
 		});
 		Ok(())
 	}
@@ -232,17 +305,35 @@ pub mod neonrelay_features {
 		Ok(())
 	}
 
-	/// Player-only: free registration, inside the window, within capacity.
-	/// One registration per (tournament, wallet) — the PDA `init` enforces it.
+	/// Player-only: registration inside the window, within capacity, secured
+	/// by a refundable stake. One registration per (tournament, wallet) — the
+	/// PDA `init` enforces it.
 	pub fn register(ctx: Context<Register>, tournament_id: u64) -> Result<()> {
 		require!(!ctx.accounts.config.paused, FeaturesError::Paused);
-		require!(ctx.accounts.player.lamports() >= MIN_SYBIL_PLAYER_LAMPORTS, FeaturesError::InsufficientPlayerBalance);
+		require!(
+			ctx.accounts.player.lamports() >= REGISTRATION_STAKE_LAMPORTS,
+			FeaturesError::InsufficientPlayerBalance
+		);
 		let tournament = &mut ctx.accounts.tournament;
 		let now = Clock::get()?.unix_timestamp;
 		require!(now >= tournament.starts_at, FeaturesError::TournamentNotStarted);
 		require!(now < tournament.ends_at, FeaturesError::TournamentAlreadyOver);
 		require!(tournament.registered < tournament.capacity, FeaturesError::TournamentFull);
 		tournament.registered = tournament.registered.checked_add(1).ok_or(FeaturesError::Overflow)?;
+		// SW-2026-09-26 F-07: lock, don't just look — the stake sits in the
+		// registration PDA for the lifetime of the registration and is fully
+		// refundable (cancel while the window is open, reclaim after the end).
+		// Placed before the `registration` mutable borrow below.
+		anchor_lang::system_program::transfer(
+			CpiContext::new(
+				ctx.accounts.system_program.to_account_info(),
+				anchor_lang::system_program::Transfer {
+					from: ctx.accounts.player.to_account_info(),
+					to: ctx.accounts.registration.to_account_info(),
+				},
+			),
+			REGISTRATION_STAKE_LAMPORTS,
+		)?;
 		let registration = &mut ctx.accounts.registration;
 		registration.tournament_id = tournament_id;
 		registration.player = ctx.accounts.player.key();
@@ -257,18 +348,56 @@ pub mod neonrelay_features {
 		Ok(())
 	}
 
-	/// Player-only: cancel a registration, freeing the slot. One-way per
-	/// (tournament, wallet): re-registration after cancellation is not
-	/// supported (documented in docs/SOLANA_ARCHITECTURE.md §7).
+	/// Player-only: cancel a registration, freeing the slot and returning the
+	/// stake. One-way per (tournament, wallet): re-registration after
+	/// cancellation is not supported (documented in docs/SOLANA_ARCHITECTURE.md).
 	pub fn cancel_registration(ctx: Context<CancelRegistration>, tournament_id: u64) -> Result<()> {
+		require!(ctx.accounts.registration.active, FeaturesError::RegistrationNotActive);
+		return_registration_stake(
+			&ctx.accounts.registration.to_account_info(),
+			&ctx.accounts.player.to_account_info(),
+			&ctx.accounts.system_program.to_account_info(),
+			&ctx.accounts.rent,
+			tournament_id,
+			ctx.accounts.registration.bump,
+		)?;
 		let registration = &mut ctx.accounts.registration;
-		require!(registration.active, FeaturesError::RegistrationNotActive);
 		registration.active = false;
 		let tournament = &mut ctx.accounts.tournament;
 		tournament.registered = tournament.registered.saturating_sub(1);
 		emit!(RegistrationCancelled {
 			tournament_id,
 			player: registration.player,
+		});
+		emit!(RegistrationStakeReturned {
+			tournament_id,
+			player: registration.player,
+			amount: REGISTRATION_STAKE_LAMPORTS,
+		});
+		Ok(())
+	}
+
+	/// Player-only: after the tournament ends, take the registration stake
+	/// back (SW-2026-09-26 F-07). The tombstone stays, so re-registration for
+	/// the same (tournament, wallet) remains impossible.
+	pub fn reclaim_stake(ctx: Context<ReclaimStake>, tournament_id: u64) -> Result<()> {
+		require!(ctx.accounts.registration.active, FeaturesError::RegistrationNotActive);
+		let now = Clock::get()?.unix_timestamp;
+		require!(now >= ctx.accounts.tournament.ends_at, FeaturesError::TournamentNotEnded);
+		return_registration_stake(
+			&ctx.accounts.registration.to_account_info(),
+			&ctx.accounts.player.to_account_info(),
+			&ctx.accounts.system_program.to_account_info(),
+			&ctx.accounts.rent,
+			tournament_id,
+			ctx.accounts.registration.bump,
+		)?;
+		let registration = &mut ctx.accounts.registration;
+		registration.active = false;
+		emit!(RegistrationStakeReturned {
+			tournament_id,
+			player: registration.player,
+			amount: REGISTRATION_STAKE_LAMPORTS,
 		});
 		Ok(())
 	}
@@ -328,6 +457,13 @@ pub const MIN_AUTHORITY_DELAY_SLOTS: u64 = 432_000;
 #[account]
 pub struct AchievementRegistry {
 	pub player: Pubkey,
+	/// Operator the registry was created (and is last vouched) for — the
+	/// features `FeaturesConfig.authority` at the time of the last state
+	/// change. SW-2026-09-26 F-04: consumed by the neonrelay-assets program,
+	/// which pins the features operator it honors and rejects registries
+	/// naming a different one. Layout change: requires a coordinated upgrade
+	/// with the assets program (its guard reads this field at offset 8+32).
+	pub config_authority: Pubkey,
 	/// Bitmap of earned achievement ids (256 bits).
 	pub bits: [u64; 4],
 	pub count: u32,
@@ -335,7 +471,8 @@ pub struct AchievementRegistry {
 }
 
 impl AchievementRegistry {
-	pub const LEN: usize = 8 + 32 + 4 * 8 + 4 + 1;
+	/// 8 disc + 32 player + 32 config_authority + 32 bits + 4 count + 1 bump.
+	pub const LEN: usize = 8 + 32 + 32 + 4 * 8 + 4 + 1;
 }
 
 #[account]
@@ -593,7 +730,36 @@ pub struct CancelRegistration<'info> {
 		has_one = player @ FeaturesError::Unauthorized,
 	)]
 	pub registration: Account<'info, Registration>,
+	// SW-2026-09-26 F-07: the player is `mut` (stake destination) and the
+	// system program + rent sysvar are needed to return the stake safely.
+	#[account(mut)]
 	pub player: Signer<'info>,
+	pub system_program: Program<'info, System>,
+	pub rent: Sysvar<'info, Rent>,
+}
+
+/// `reclaim_stake`: same shape as CancelRegistration, but the tournament is
+/// read-only (it has ended — no counter changes) and the window check is the
+/// mirror image of `register`'s.
+#[derive(Accounts)]
+#[instruction(tournament_id: u64)]
+pub struct ReclaimStake<'info> {
+	#[account(
+		seeds = [TOURNAMENT_SEED, &tournament_id.to_be_bytes()],
+		bump = tournament.bump,
+	)]
+	pub tournament: Account<'info, Tournament>,
+	#[account(
+		mut,
+		seeds = [REGISTRATION_SEED, &tournament_id.to_be_bytes(), player.key().as_ref()],
+		bump = registration.bump,
+		has_one = player @ FeaturesError::Unauthorized,
+	)]
+	pub registration: Account<'info, Registration>,
+	#[account(mut)]
+	pub player: Signer<'info>,
+	pub system_program: Program<'info, System>,
+	pub rent: Sysvar<'info, Rent>,
 }
 
 // -------------------------------------------------------------------- events
@@ -606,6 +772,23 @@ pub struct FeaturesInitialized {
 #[event]
 pub struct RegistryCreated {
 	pub player: Pubkey,
+}
+
+/// SW-2026-09-26 F-04: the current operator explicitly re-vouched for an
+/// existing registry (after an authority rotation).
+#[event]
+pub struct RegistryRestamped {
+	pub player: Pubkey,
+	pub authority: Pubkey,
+}
+
+/// SW-2026-09-26 F-07: a registration stake went home to its owner (via
+/// cancel_registration or reclaim_stake). Emitted on every stake transfer.
+#[event]
+pub struct RegistrationStakeReturned {
+	pub tournament_id: u64,
+	pub player: Pubkey,
+	pub amount: u64,
 }
 
 #[event]
@@ -699,7 +882,7 @@ pub enum FeaturesError {
 	TournamentFull,
 	#[msg("registration is not active")]
 	RegistrationNotActive,
-	#[msg("insufficient player lamports: anti-sybil minimum balance required")]
+	#[msg("insufficient player lamports for the registration stake")]
 	InsufficientPlayerBalance,
 	#[msg("arithmetic overflow")]
 	Overflow,
@@ -707,6 +890,12 @@ pub enum FeaturesError {
 	BootstrapAuthorityInvalid,
 	#[msg("token account has unsupported delegate, native wrapper, or close authority")]
 	UnsafeTokenAccount,
+	#[msg("registry was created for a different operator authority")]
+	RegistryAuthorityMismatch,
+	#[msg("tournament has not ended yet")]
+	TournamentNotEnded,
+	#[msg("registration holds no stake to return")]
+	RegistrationStakeMissing,
 }
 
 // ---------------------------------------------------------------- unit tests
@@ -730,7 +919,7 @@ mod tests {
 
 	#[test]
 	fn registry_len_fits_the_struct() {
-		// discriminator + player + bits(4*u64) + count + bump
-		assert_eq!(AchievementRegistry::LEN, 8 + 32 + 32 + 4 + 1);
+		// discriminator + player + config_authority + bits(4*u64) + count + bump
+		assert_eq!(AchievementRegistry::LEN, 8 + 32 + 32 + 4 * 8 + 4 + 1);
 	}
 }
