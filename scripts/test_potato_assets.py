@@ -113,15 +113,24 @@ class Assets(unittest.TestCase):
         before = hashes()
         with tempfile.TemporaryDirectory() as tmp:
             originals = {}
-            for i, p in enumerate(pngs):
-                dst = Path(tmp) / f'{i:03d}.png'
+            for i, p in enumerate([*pngs, *texts]):
+                dst = Path(tmp) / f'{i:03d}{p.suffix}'
                 shutil.copyfile(p, dst)
                 originals[p] = dst
-            for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'build_potato_effects.py', 'gen_potato_catalog.py', 'build_neon_skins.py']:
-                subprocess.run([sys.executable, str(ROOT / 'scripts' / script)], check=True, stdout=subprocess.DEVNULL)
-            self.assertEqual(before, hashes())
-            for p, dst in originals.items():
-                self.assertTrue(same_art(dst, p), f'{p} changed by the rebuild')
+            try:
+                for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'build_potato_effects.py', 'gen_potato_catalog.py', 'build_neon_skins.py']:
+                    subprocess.run([sys.executable, str(ROOT / 'scripts' / script)], check=True, stdout=subprocess.DEVNULL)
+                self.assertEqual(before, hashes())
+                for p, dst in originals.items():
+                    if p.suffix == '.png':
+                        self.assertTrue(same_art(dst, p), f'{p} changed by the rebuild')
+            finally:
+                # The scripts rebuild in place; put the shipped bytes back so the
+                # working tree stays clean even when this machine's encoder writes
+                # different bytes — downstream gates hash the files against
+                # docs/ASSET_MANIFEST.csv and must see exactly what git ships.
+                for p, dst in originals.items():
+                    shutil.copyfile(dst, p)
 
 if __name__ == '__main__':
     unittest.main()
