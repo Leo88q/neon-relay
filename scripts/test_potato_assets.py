@@ -3,8 +3,10 @@
 import hashlib
 import io
 from pathlib import Path
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 
 import numpy as np
@@ -13,6 +15,7 @@ from build_potato_skins import POTATOES
 from build_potato_weapon_sheet import RECTS
 from build_potato_effects import EFFECT_RECTS
 from build_neon_skins import SPECS, GHOST
+from build_potato_arena_assets import same_art
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -91,18 +94,34 @@ class Assets(unittest.TestCase):
         self.assertTrue(np.array_equal(a[~mask], b[~mask]))
 
     def test_rebuild_idempotent(self):
-        paths = list((ROOT / 'assets-src/potato').rglob('*.png'))
-        paths += list((ROOT / 'assets-src/weapons').rglob('*.png'))
-        paths += list((ROOT / 'data/skins').glob('potato_*.png'))
-        paths += [ROOT / 'data/skins' / f'{spec.name}.png' for spec in SPECS]
-        paths += [ROOT / 'data/skins' / f'{GHOST.name}.png']
-        paths += [ROOT / 'data/game.png', ROOT / 'src/game/client/potato_catalog.h']
+        pngs = list((ROOT / 'assets-src/potato').rglob('*.png'))
+        pngs += list((ROOT / 'assets-src/weapons').rglob('*.png'))
+        pngs += list((ROOT / 'data/skins').glob('potato_*.png'))
+        pngs += [ROOT / 'data/skins' / f'{spec.name}.png' for spec in SPECS]
+        pngs += [ROOT / 'data/skins' / f'{GHOST.name}.png']
+        pngs += [ROOT / 'data/game.png']
+        texts = [ROOT / 'src/game/client/potato_catalog.h']
+
         def hashes():
-            return {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+            return {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in texts}
+
+        # PNG container bytes belong to the encoder: a rebuild on another machine
+        # (different Pillow/zlib build, e.g. macOS arm64) legitimately produces
+        # byte-different files with identical pixels, so the art gate is pixel
+        # comparison via same_art(), the same rule build_potato_arena_assets
+        # already uses. Generated text stays byte-checked.
         before = hashes()
-        for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'build_potato_effects.py', 'gen_potato_catalog.py', 'build_neon_skins.py']:
-            subprocess.run([sys.executable, str(ROOT / 'scripts' / script)], check=True, stdout=subprocess.DEVNULL)
-        self.assertEqual(before, hashes())
+        with tempfile.TemporaryDirectory() as tmp:
+            originals = {}
+            for i, p in enumerate(pngs):
+                dst = Path(tmp) / f'{i:03d}.png'
+                shutil.copyfile(p, dst)
+                originals[p] = dst
+            for script in ['build_potato_skins.py', 'build_potato_weapon_sheet.py', 'build_potato_effects.py', 'gen_potato_catalog.py', 'build_neon_skins.py']:
+                subprocess.run([sys.executable, str(ROOT / 'scripts' / script)], check=True, stdout=subprocess.DEVNULL)
+            self.assertEqual(before, hashes())
+            for p, dst in originals.items():
+                self.assertTrue(same_art(dst, p), f'{p} changed by the rebuild')
 
 if __name__ == '__main__':
     unittest.main()
