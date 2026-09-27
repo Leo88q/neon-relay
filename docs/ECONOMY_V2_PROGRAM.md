@@ -210,7 +210,8 @@ Rust host tests and both native runtime scenarios passed at `b5da216`:
 https://github.com/Leo88q/neon-relay/actions/runs/35305779544
 General CI passed at the same source revision:
 https://github.com/Leo88q/neon-relay/actions/runs/35305779545
-The current local suites are reported in `docs/PRODUCTION_READY_SUMMARY_RU.md`; they
+The current local suites are reported in `docs/SECURITY_REVIEW_2026_09_26.md`
+(iteration 5: backend, onchain and the `audit/2026-09-21` regression run); they
 must be rerun after every source change. They do not replace Rust/Anchor or
 validator evidence.
 

@@ -166,7 +166,7 @@ in order of strength:
 
 | Signal | Location | Use for rewards |
 | --- | --- | --- |
-| **Player finish** (race time recorded by the server) | `CGameContext::TeehistorianRecordPlayerFinish(int ClientId, int TimeTicks)` → `src/game/server/gamecontext.cpp:1952`, emitted from `src/game/server/gamemodes/ddrace.cpp` / `entities/character.cpp` | Primary event: proves the server observed a finish at a tick time |
+| **Player finish** (race time recorded by the server) | `CGameContext::TeehistorianRecordPlayerFinish(int ClientId, int TimeTicks)` → `src/game/server/gamecontext.cpp:1981`, emitted from `src/game/server/gamemodes/ddnet.cpp` / `entities/character.cpp` | Primary event: proves the server observed a finish at a tick time |
 | **Team finish** | `CGameContext::TeehistorianRecordTeamFinish(int TeamId, int TimeTicks)` (`gamecontext.cpp:1960`) | Team reward splitting |
 | **Score/records worker** (SQL-backed ranks, `sv_use_sql`) | `src/game/server/score.cpp`, `scoreworker.cpp`, `src/engine/server/databases/` | Cross-check that a finish was persisted, dedupe per (map, player, time) |
 | **Teehistorian stream** | `src/game/server/teehistorian.cpp` (+ `teehistorian_ex.cpp`) | Tamper-evident replay log; can be hashed per match and used as evidence |

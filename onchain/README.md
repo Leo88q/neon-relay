@@ -72,8 +72,9 @@ claim-intent {leaf_hash,   ──▶  claim(epoch_id, amount_micro,   ──▶ 
 Verified in this sandbox (no Solana toolchain needed):
 
 ```bash
-cd onchain && npm test        # 12/12 passing on Node v22 (merkle parity + conformance)
-cd backend && npm test        # 30/30 passing — backend side of the same vectors
+cd onchain && npm test        # full offline suite on Node v22 (merkle parity, conformance, security checklist)
+cd backend && npm test        # backend side of the same vectors — the latest recorded run counts are in
+                              # docs/SECURITY_REVIEW_2026_09_26.md
 ```
 
 **Not** verified here — `cargo build`, `anchor build`, `anchor test` and any

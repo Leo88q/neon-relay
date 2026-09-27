@@ -28,17 +28,21 @@ Kotlin wallet layer and unit tests in `android/` are therefore **uncompiled** he
 No Rust/Solana/Anchor toolchain and no crates.io route, so the stage-9 program in `onchain/`
 was **written but never compiled** here: `cargo test`, `anchor build`, `anchor test` and the
 devnet deployment are a documented runbook (`onchain/README.md`), not executed procedures.
-What *is* executed offline: `cd onchain && npm test` (50/50 — 6 Merkle-parity/tamper tests
-against the backend mirror, 8 program-conformance tests binding `lib.rs`/`Anchor.toml` to the
-TS constants, 8 rewards-claim client-contract tests spec-pinning the Kotlin builder, plus the
-economy (15), features (6) and asset-manifest (7) suites) and a golden leaf vector pinned
+What *is* executed offline: `cd onchain && npm test` (Merkle-parity/tamper tests against the
+backend mirror, program-conformance tests binding `lib.rs`/`Anchor.toml` to the TS constants,
+rewards-claim client-contract tests spec-pinning the Kotlin builder, plus the economy, features,
+asset-manifest and security suites) and a golden leaf vector pinned
 identically for the Rust unit test, the backend and the TS client.
-The source manifests now pin `anchor-lang`/`anchor-spl` to 0.31.1, but the
-checked-in `Cargo.lock` still contains the prior 0.30.1 resolution and cannot be
-refreshed without the unavailable Rust/crates toolchain. `onchain/scripts/
-verify_toolchain_pin.mjs` therefore fails closed; this is an explicit unresolved
-locked-build gate, not a production approval. Source IDs are pinned and drift-
-checked, while live program IDs still require finalized RPC verification.
+The source manifests pin `anchor-lang`/`anchor-spl` to 0.31.1 and the checked-in
+`Cargo.lock` now resolves to the same 0.31.1 versions: `onchain/scripts/
+verify_toolchain_pin.mjs` passes with `toolchain-pin-consistent`, and the
+refreshed lock is proven against the Rust host suite run recorded in
+`docs/ECONOMY_V2_PROGRAM.md` (`b5da216`). The resolved 0.30.1→0.31.1 migration
+notes were retired with the completed instruction document (git history keeps
+them). What remains open under this blocker is exactly the sandbox half:
+`anchor build`/`anchor deploy` and finalized RPC verification of live program
+IDs must run on a connected release machine; source IDs are pinned and
+drift-checked, but no live ID is claimed verified here.
 
 ### BL-06 — dependency coordinates pinned but unverifiable offline
 `android/gradle/libs.versions.toml` pins `com.solana:mobile-wallet-adapter-clientlib:2.2.0`

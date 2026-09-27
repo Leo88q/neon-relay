@@ -4,8 +4,13 @@ Base URL (deployment): `https://<host>/v1`. Local dev: `http://127.0.0.1:8787/v1
 All requests and responses are JSON (`content-type: application/json`).
 Authentication, where required, is `Authorization: Bearer <session_token>`.
 
-Implemented in stage 6. Stage 7 adds `/v1/rewards/*`; until then those paths
-return `404 not-found` (never a stub).
+This document covers the wallet-auth and reward-ledger surface (`/v1/auth/*`,
+`/v1/wallet*`, `/v1/rewards/*`, `/v1/admin/*`) and the Watchtower exporter.
+The later-route families live in their own contract docs: economy v1/v2
+(`PLAY_ECONOMY.md`, `ECONOMY_V2_PROGRAM.md`, `DUAL_CURRENCY_LOBBY.md`), game
+identity and pairing (`GAME_IDENTITY_V2.md`), and the Watchtower ingest/OS
+routes (`../WATCHTOWER_INTEGRATION.md`). An unknown path is a `404 not-found`,
+never a silent stub.
 
 ## Error model
 

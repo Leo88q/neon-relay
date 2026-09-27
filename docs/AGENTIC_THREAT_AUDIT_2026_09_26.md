@@ -120,8 +120,10 @@ memory key export unsigned rows honestly».
   «out of scope of the audit», «silently modify…» и т.п.). Self-test сначала
   (сломанный сканер не может тихо пройти), allowlist — по точному SHA-256
   строки с документированной причиной (конвенция `check_secrets.py`).
-  Live-fire проверка: подброшенный файл с «ig​nore all previous instructions»
-  ловится по обоим носителям.
+  Live-fire проверка: подброшенный файл с «ig<U+200B>nore all previous
+  instructions» (zero-width пробел внутри слова) ловится по обоим носителям;
+  сам raw-кодпоинт в этом отчёте намеренно записан видимым escape-обозначением —
+  невидимых символов в аудируемом дереве оставаться не должно.
 * Репозиторий на момент аудита **чист**: единственные легитимные вхождения —
   персидские ZWNJ в переводах, emoji-VS16 в документации, BOM в vendored
   манифесте, ZWSP в upstream-тесте строк (`src/test/str_test.cpp`) — все
@@ -262,3 +264,23 @@ cd onchain && npm test
 # слот-задержка смены авторити (82) — в исходнике программы
 grep -n "MIN_AUTHORITY_DELAY_SLOTS" onchain/programs/neonrelay-economy/src/lib.rs
 ```
+
+---
+
+## 10. Постскриптум (гигиена-проход 2026-09-27)
+
+Описанные в §0 каналы «репозиторий как промпт-канал» сокращены: из корня
+удалены оставшиеся session-артефакты `PROMPT_AUDIT_FULL_STACK_V2.md`
+(экосистемный промпт, владелец которого — хаб `Games-watchtower`, а не игра)
+и `QWEN.md` (stub-инструкция с несуществующими путями), а также помеченные
+superseded отчёты `FULL_AUDIT_2026_09_20`, `FULL_INDEPENDENT_AUDIT_2026_09_21`,
+`SOLANA_2026_PRODUCTION_RESEARCH`, `PRODUCTION_READY_SUMMARY_RU`,
+`BL16_PROGRESS` — все доступны в git-истории. Актуальный аудиторский след:
+этот отчёт, `SECURITY_REVIEW_2026_09_26.md`, `SOLANA_CHECKLIST_AUDIT_2026_09_26.md`,
+регрессии `audit/2026-09-21/` и `docs/KNOWN_LIMITATIONS.md`. Попутно закрыт
+реальный дефект, найденный при проходе: гейт `check_ai_injection.py` падал на
+собственном дереве (кавычки этого отчёта и негативные фикстуры
+`agentic_guard.test.ts` совпадали с детектируемыми паттернами; CI никогда не
+исполнялся из-за BL-12, поэтому поломку не видели) — строки закрваны
+документированным allowlist-механизмом самого сканера, живой zero-width
+пример в §U заменён видимым escape-обозначением.

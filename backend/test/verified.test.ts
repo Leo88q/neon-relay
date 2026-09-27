@@ -8,8 +8,10 @@ import { createHash } from "node:crypto";
 import {
   authenticate, getJson, makeWallet, postJson, startTestApp, makeTestServer,
 } from "./helpers.ts";
+import { readFileSync } from "node:fs";
 import { base58Decode, base58Encode, findProgramAddress } from "../src/economy.ts";
 import {
+  ACHIEVEMENT_REGISTRY_LEN, ACHIEVEMENT_REGISTRY_OFFSETS,
   readAchievementRegistry, FeaturesReadError, FEATURES_ACHIEVEMENTS_SEED,
 } from "../src/features_read.ts";
 import type { Config } from "../src/config.ts";
@@ -30,19 +32,49 @@ function rewardConfig(serverKey: string): Partial<Config> {
 
 // ---------------------------------------------------------------- registry decode
 
+/**
+ * Build a registry account exactly as `neonrelay-features` serializes
+ * `AchievementRegistry` (SW-2026-09-26 F-04 layout: player @8,
+ * config_authority @40, bits @72, count @104, bump @108).
+ */
 function makeRegistryBytes(player: Buffer, ids: number[], bump: number,
-  countOverride?: number): Buffer {
-  const b = Buffer.alloc(81);
+  countOverride?: number, authority?: Buffer): Buffer {
+  const b = Buffer.alloc(ACHIEVEMENT_REGISTRY_LEN);
   createHash("sha256").update("account:AchievementRegistry", "utf8")
     .digest().subarray(0, 8).copy(b, 0);
   player.copy(b, 8);
+  (authority ?? Buffer.alloc(32, 5)).copy(b, ACHIEVEMENT_REGISTRY_OFFSETS.configAuthority);
   const words = [0n, 0n, 0n, 0n];
   for (const id of ids) words[Math.floor(id / 64)]! |= 1n << BigInt(id % 64);
-  words.forEach((w, i) => b.writeBigUInt64LE(w, 40 + i * 8));
-  b.writeUInt32LE(countOverride ?? ids.length, 72);
-  b[80] = bump;
+  words.forEach((w, i) => b.writeBigUInt64LE(w, ACHIEVEMENT_REGISTRY_OFFSETS.bits + i * 8));
+  b.writeUInt32LE(countOverride ?? ids.length, ACHIEVEMENT_REGISTRY_OFFSETS.count);
+  b[ACHIEVEMENT_REGISTRY_OFFSETS.bump] = bump;
   return b;
 }
+
+/**
+ * The layout drift guard: the backend decoder and the features program must
+ * agree field-by-field with the Rust struct. Reordering or inserting a field
+ * in `AchievementRegistry` without updating `features_read.ts` fails here
+ * instead of silently mis-decoding every registry on the showcase route.
+ */
+test("features_read.ts layout matches the AchievementRegistry Rust struct", () => {
+  const lib = readFileSync(new URL("../../onchain/programs/neonrelay-features/src/lib.rs", import.meta.url), "utf8");
+  const body = lib.slice(lib.indexOf("pub struct AchievementRegistry"));
+  const fields = [...body.matchAll(/pub (\w+):/g)].map((m) => m![1]!)
+    .filter((f) => f !== "AchievementRegistry").slice(0, 5);
+  assert.deepEqual(fields, ["player", "config_authority", "bits", "count", "bump"],
+    "AchievementRegistry field order changed; features_read.ts must be updated with it");
+  // LEN = 8 (disc) + 32 (player) + 32 (config_authority) + 32 (bits) + 4 (count) + 1 (bump)
+  assert.equal(ACHIEVEMENT_REGISTRY_LEN, 109, "registry LEN drifted from the Rust struct");
+  assert.equal(ACHIEVEMENT_REGISTRY_OFFSETS.configAuthority, 40);
+  assert.equal(ACHIEVEMENT_REGISTRY_OFFSETS.bits, 72);
+  assert.equal(ACHIEVEMENT_REGISTRY_OFFSETS.count, 104);
+  assert.equal(ACHIEVEMENT_REGISTRY_OFFSETS.bump, 108);
+  // The assets program parses the same struct at raw offsets; keep it pinned.
+  const assets = readFileSync(new URL("../../onchain/programs/neonrelay-assets/src/lib.rs", import.meta.url), "utf8");
+  assert.match(assets, /recorded_authority\.copy_from_slice\(&data\[8 \+ 32\.\.8 \+ 64\]\);/);
+});
 
 function registryFixture(playerPub: Buffer) {
   const program = base58Decode(TEST_PROGRAM_ID);
@@ -70,6 +102,8 @@ test("readAchievementRegistry decodes ids, count and bump from the PDA", async (
   assert.equal(view.bump, bump);
   assert.equal(view.count, 3);
   assert.deepEqual(view.ids, [0, 64, 255]);
+  // F-04: the operator stamp rides along so the showcase can name the vouching authority.
+  assert.equal(view.configAuthority, base58Encode(Buffer.alloc(32, 5)));
 });
 
 test("readAchievementRegistry returns null when the registry does not exist", async () => {
