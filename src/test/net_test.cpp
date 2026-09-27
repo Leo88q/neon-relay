@@ -16,10 +16,30 @@ TEST(Net, Ipv4AndIpv6Work)
 
 	Bindaddr.type = NETTYPE_IPV4 | NETTYPE_IPV6;
 	Socket2 = net_udp_create(Bindaddr);
-	do
+	// The random port must be free for both address families: on a busy
+	// machine one family can bind while the other hits EADDRINUSE, and
+	// net_udp_create only returns nullptr when neither bound, so a partial
+	// socket would silently drop the IPv4 leg of this test. Retry until both
+	// families are up instead of accepting the first non-null socket.
+	Socket1 = nullptr;
+	for(int Attempts = 0; Attempts < 64 && Socket1 == nullptr; Attempts++)
 	{
 		Bindaddr.port = secure_rand_below(65535 - 1024) + 1024;
-	} while(!(Socket1 = net_udp_create(Bindaddr)));
+		NETSOCKET Candidate = net_udp_create(Bindaddr);
+		if(Candidate == nullptr)
+		{
+			continue;
+		}
+		if((net_socket_type(Candidate) & (NETTYPE_IPV4 | NETTYPE_IPV6)) == (NETTYPE_IPV4 | NETTYPE_IPV6))
+		{
+			Socket1 = Candidate;
+		}
+		else
+		{
+			net_udp_close(Candidate);
+		}
+	}
+	ASSERT_TRUE(Socket1 != nullptr) << "could not bind a free dual-stack UDP port";
 
 	NETADDR LocalhostV4;
 	NETADDR LocalhostV6;

@@ -3195,6 +3195,10 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     COMMAND $<TARGET_FILE:${TARGET_TESTRUNNER}> --gtest_brief=1 ${TESTRUNNER_ARGS}
     COMMENT Running unit tests
     DEPENDS ${TARGET_TESTRUNNER}
+    # The testrunner resolves data/ (e.g. data/maps/coverage.map) relative to
+    # the working directory; without this, running from the build directory
+    # fails FindDataDirectory and asserts in datafile.cpp.
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     USES_TERMINAL
   )
   add_custom_target(run_tests
@@ -3204,6 +3208,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     COMMAND $<TARGET_FILE:${TARGET_TESTRUNNER}> --no-capture ${TESTRUNNER_ARGS}
     COMMENT Running unit tests
     DEPENDS ${TARGET_TESTRUNNER}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     USES_TERMINAL
   )
   add_custom_target(run_tests_verbose

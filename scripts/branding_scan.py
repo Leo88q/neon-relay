@@ -52,6 +52,8 @@ EXCLUDE_PATHS = (
 	"build/",
 	"dist/",
 	".gradle/",
+	"target/",  # cargo build output (gitignored); the CI gates job never runs cargo
+	"ddnet-libs/",  # upstream vendored submodule; the CI gates job never checks it out
 	"docs/branding-scan.csv",  # this tool's own output
 	"scripts/branding_scan.py",  # this tool
 	"scripts/check_branding.sh",
