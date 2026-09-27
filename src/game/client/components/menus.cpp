@@ -1821,7 +1821,7 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 			char *pDst = aMotd + str_length(aMotd);
 			str_escape(&pDst, Localize("You're playing on a local server because no online Tutorial server could be found.\n\nYour record will only be saved locally."), aMotd + sizeof(aMotd) - 1);
 			str_append(aMotd, "\"");
-			if(GameClient()->m_LocalServer.RunServer({"sv_register 0", "sv_map Tutorial", aMotd}))
+			if(GameClient()->m_LocalServer.RunServer({"sv_register 0", "sv_map LearnToPlay", aMotd}))
 			{
 				m_JoinTutorial.m_LocalServerState = CJoinTutorial::ELocalServerState::WAITING_START;
 				m_JoinTutorial.m_StateChange = time_get_nanoseconds();

@@ -14,7 +14,9 @@ from chrome_dm_geometry import extend, front_layer, change_mask, JUNCTIONS, NEW_
 from chrome_dm_materials import textures
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / 'data/maps/dm7.map'
+# dm7 left the shipped pool in the classic-trim (docs/CLASSIC_MAP_REMOVAL_PLAN_RU.md);
+# it lives on as the pinned, non-shipped build input for the Chrome DM derivative.
+SOURCE = ROOT / 'docs/dm/upstream/dm7.map'
 SOURCE_SHA = '5a2875e5232fa21faccc16e48ccc42eecca5e5f32ce39bd73f0657bbb58d2e2f'
 ENTITIES = {192:'spawn',197:'armor',198:'health',199:'shotgun',200:'grenade',201:'ninja',202:'laser'}
 
