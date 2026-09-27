@@ -8,10 +8,13 @@
  *   POST /v1/wallet/unlink         revoke binding and its sessions
  *   GET  /v1/health                liveness + migration count
  *
- * Reward routes (/v1/rewards/…) arrive in stage 7 and are intentionally absent:
- * an unknown path is a 404, never a silent stub. The one exception is the
+ * Reward routes (/v1/rewards/…, stage 7) are registered here as well, plus the
  * read-only GET /v1/rewards/verified (stage 12): server-confirmed results for
- * the client's "verified" showcase, no writes, no admin surface.
+ * the client's "verified" showcase. Later stages extend the table with the
+ * economy (v1 + v2), identity, pairing, game-event and Watchtower surfaces;
+ * an unknown path is a 404, never a silent stub. The GET-only invariant of the
+ * exporter surface is asserted against the live router table (route-integrity
+ * tests), not against a documented list.
  *
  * Tranche A: direct seal/close execution was replaced by the two-person
  * proposal workflow (POST /v1/admin/proposals → approve/reject); the old

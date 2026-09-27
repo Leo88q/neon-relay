@@ -47,9 +47,19 @@ upstream tree at a pinned commit and has been diverging since — see
 ## Project status
 
 The project is delivered in stages; each stage is a separate, reviewable commit. This
-snapshot is complete through **stage 12** (including the requested extensions: the
-non-simulation features program and the original neon gameplay art); the final audit is
-[`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md).
+snapshot is complete through **stage 17** (including the requested extensions: the
+non-simulation features program, the SKR economy stack and the original neon art).
+The stage-0…12 delivery evidence — executed commands, blockers, mock-vs-production
+statements — is recorded in [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md). The current
+security state is the 2026-09-26 review set:
+[`docs/SECURITY_REVIEW_2026_09_26.md`](docs/SECURITY_REVIEW_2026_09_26.md),
+[`docs/SOLANA_CHECKLIST_AUDIT_2026_09_26.md`](docs/SOLANA_CHECKLIST_AUDIT_2026_09_26.md)
+and [`docs/AGENTIC_THREAT_AUDIT_2026_09_26.md`](docs/AGENTIC_THREAT_AUDIT_2026_09_26.md),
+with the executed regression suites in [`audit/2026-09-21/`](audit/2026-09-21) and the
+open blockers in [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md). Earlier
+superseded audit snapshots (2026-09-20/21 reports and status summaries) were removed
+from the tree during the 2026-09-27 hygiene pass and remain available in the git
+history; nothing in the current docs depends on them.
 
 | Stage | Content | Status |
 | --- | --- | --- |
@@ -66,6 +76,7 @@ non-simulation features program and the original neon gameplay art); the final a
 | 10 | In-game Wallet UI, CI (blocked by account billing — BL-12), threat model, release checklist, Solana architecture + devnet runbook, final report | ✅ committed |
 | 11 | Non-simulation features program: achievements, unique badges, leaderboards, tournaments | ✅ committed |
 | 12 | Original neon skins in code-referenced slots + neon UI accent, manifest + CI gates | ✅ committed |
+| 13 | Vendoring-gap restore: `cmake/checksummed_extra.txt` with fork-local identity strings (docs/KNOWN_LIMITATIONS.md BL-15) | ✅ committed |
 | 14 | SKR pay-to-play economy program: entry tickets, rake, prize vault, top-10 Merkle claims (docs/PLAY_ECONOMY.md) | ✅ committed |
 | 15 | Economy backend (ticket PDA reads, epoch close top-10, proof routes) + Wallet→Economy UI panel | ✅ committed |
 | 16 | Procedural neon UI art over all visible upstream sheets (emoticons, particles, gui icons, HUD, cursor, blob, flags, noise) | ✅ committed |
@@ -156,7 +167,7 @@ each job mirrors a command that is evidenced locally in `docs/baseline/` and
 
 Full native, Android and Solana builds are deliberately **not** CI jobs: those
 toolchains are documented blockers (`docs/KNOWN_LIMITATIONS.md` BL-01/02/03) and
-the runbooks live in `docs/BUILDING*.md`, `android/README.md` and
+the runbooks live in `docs/BUILDING*.md`, `docs/ANDROID_SEEKER.md` and
 `onchain/README.md`. The upstream workflows are kept, disabled, under
 `ci/upstream-reference/`.
 
@@ -176,7 +187,8 @@ the runbooks live in `docs/BUILDING*.md`, `android/README.md` and
 | [`docs/API.md`](docs/API.md) | backend REST contract |
 | [`docs/SOLANA_ARCHITECTURE.md`](docs/SOLANA_ARCHITECTURE.md), [`docs/DEVNET_RUNBOOK.md`](docs/DEVNET_RUNBOOK.md) | Anchor program design and devnet procedure |
 | [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md), [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md), [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) | risk assessment, release gating, honest blocker log |
-| [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md) | final audit: executed evidence, blockers, exact reproduction commands, mock-vs-production statements |
+| [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md) | stage-0…12 delivery evidence: executed evidence, blockers, exact reproduction commands, mock-vs-production statements |
+| [`docs/SECURITY_REVIEW_2026_09_26.md`](docs/SECURITY_REVIEW_2026_09_26.md), [`docs/SOLANA_CHECKLIST_AUDIT_2026_09_26.md`](docs/SOLANA_CHECKLIST_AUDIT_2026_09_26.md), [`docs/AGENTIC_THREAT_AUDIT_2026_09_26.md`](docs/AGENTIC_THREAT_AUDIT_2026_09_26.md) | current security reviews (2026-09-26): findings, fixes, machine-checked checklist, agentic-threat pass |
 | [`docs/baseline/`](docs/baseline) | raw build/probe logs recorded before and after edits |
 
 ## License and attribution

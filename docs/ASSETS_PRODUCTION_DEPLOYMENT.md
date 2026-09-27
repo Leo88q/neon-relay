@@ -4,7 +4,9 @@
 В текущем checkout Bubblegum/MPL Core CPI paths compile-time disabled до pinning
 upstream ABI/account metas и validator coverage. Ниже не следует считать
 доказательством цены, совместимости или безопасности live-контракта. Основан
-на ресерче `SOLANA_2026_PRODUCTION_RESEARCH.md`.
+на историческом ресерче `SOLANA_2026_PRODUCTION_RESEARCH.md`, удалённом из
+дерева как superseded (git-история); любые rent/CU/USD-числа перед деплоем
+переснимаются с live RPC, а не берутся из старых заметок.
 
 ---
 
@@ -29,7 +31,7 @@ real IDs, custody approval и finalized RPC verification. Код —
 
 ```
 Rust 1.89 (rustup toolchain install 1.89.0)
-Anchor 0.31.1 (checked-in lockfile refresh remains a connected release gate; см. docs/ANCHOR_MIGRATION_0_31.md)
+Anchor 0.31.1 (миграция 0.30.1 → 0.31.1 выполнена: Cargo.lock резолвится на 0.31.1, `onchain/scripts/verify_toolchain_pin.mjs` = toolchain-pin-consistent; финальная проверка — `cargo test --locked` / `anchor build --verifiable` на release-машине)
 Agave validator >=3.0.14  (критический патч Jan 2026, иначе delegation Foundation снимается)
 Firedancer mainnet 26.08.2 или Frankendancer 0.808.30014 (dual-RPC fallback обязателен)
 Node 22, docker (для --verifiable)
@@ -89,7 +91,7 @@ validator/CPI rehearsal после pinning upstream ABI; `create_tree` не яв
   В этом checkout custody, signer quorum и wall-clock timelock не
   подтверждены; `--final`/renounce не выполнять без отдельного approval.
 - `anchor keys list` → compare live program accounts with the pinned
-  `Anchor.toml`, `lib.rs declare_id!` and `src/constants.ts` IDs; record the
+  `Anchor.toml`, `lib.rs declare_id!` and `backend/src/constants.ts` IDs; record the
   finalized comparison in the external deployment manifest. The conformance
   tests fail if source files drift.
 - `anchor build --verifiable` (docker) → `sha256sum target/verifiable/*.so` → записать в релиз-ноты. Никогда не деплоить `target/deploy/*.so` без верификации.
@@ -117,8 +119,8 @@ npm --version # 22
 # 1. Оффлайн гейты (должны пройти до деплоя)
 ./scripts/local_syntax_probe.sh
 ./scripts/neonrelay_signer_test.sh
-(cd backend && npm test)   # 257/257
-(cd onchain && npm test)   # 50/50
+(cd backend && npm test)   # full suite green (latest recorded run:
+(cd onchain && npm test)   # docs/SECURITY_REVIEW_2026_09_26.md)
 
 # 2. Генерите ключи программ (один раз)
 cd onchain
@@ -243,4 +245,4 @@ approval.
 
 ---
 
-*Связанные доки: `SOLANA_2026_PRODUCTION_RESEARCH.md`, `ASSETS_SECURITY_AUDIT_CHECKLIST.md`, `REWARD_SECURITY.md`, `SOLANA_ARCHITECTURE.md`, `DEVNET_RUNBOOK.md`.*
+*Связанные доки: `ASSETS_SECURITY_AUDIT_CHECKLIST.md`, `REWARD_SECURITY.md`, `SOLANA_ARCHITECTURE.md`, `DEVNET_RUNBOOK.md`.*

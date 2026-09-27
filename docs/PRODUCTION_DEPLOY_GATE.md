@@ -59,11 +59,12 @@ deployment.
 `onchain/scripts/deploy_prod.sh` по умолчанию завершается до любого RPC write.
 Намеренный запуск требует одновременно `ALLOW_LIVE_DEPLOY=1`, concrete
 manifest/authority, согласованный production toolchain pin, verifiable Docker
-build и соответствующие operator gates. В текущем checkout `Anchor.toml` и program manifests pinned на 0.31.1, но
-`Cargo.lock` ещё содержит 0.30.1 и Rust/crates toolchain недоступен в sandbox.
-Поэтому `verify_toolchain_pin.mjs` намеренно блокирует live deploy до
-перегенерации lockfile и успешных `cargo test`/`anchor build` в release-среде.
-Исходное изменение manifests не считается выполненным locked build.
+build и соответствующие operator gates. В текущем checkout `Anchor.toml`,
+program manifests и `Cargo.lock` сведены к 0.31.1 и `verify_toolchain_pin.mjs`
+проходит (`toolchain-pin-consistent`); это снимает stale-lockfile блокировку,
+но не заменяет release-среду: verifiable `anchor build` и успешные
+`cargo test --locked` на подключённой машине по-прежнему обязательны (BL-03),
+а исходное изменение manifests не считается выполненным locked build.
 
 Для mainnet дополнительно требуется `CONFIRM_MAINNET=YES`. В текущей
 sandbox-сессии этот режим не запускался.

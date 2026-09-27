@@ -65,8 +65,8 @@ limitation.
 - [ ] ✅ Backend: `cd backend && npm test` (257/257 incl. Tranche-B
       reconcile/stuck/game-events/metrics/alerts suites + dual-RPC
       failover (10 rpc + 2 config) + rewards PDA goldens (4), Node 22).
-- [ ] ✅ On-chain offline suite: `cd onchain && npm test` (50/50 incl.
-      the rewards-claim client contract suite (8)).
+- [ ] ✅ On-chain offline suite: `cd onchain && npm test` all green, incl.
+      the rewards-claim client-contract suite and the security checklist.
 - [ ] ✅ Hygiene: `check_config_variables.py`, `check_header_guards.py`,
       `tidy_alphabetical.py`, `check_standard_headers.py`.
 
@@ -82,7 +82,7 @@ limitation.
 - [ ] ⛔ Anchor program (BL-03): `cd onchain && cargo test -p
       neonrelay-rewards && anchor build && anchor test --provider.cluster
       devnet`; compare the live program accounts with the pinned IDs in
-      `Anchor.toml`, `lib.rs` and `src/constants.ts`, then record the finalized
+      `Anchor.toml`, `lib.rs` and `backend/src/constants.ts`, then record the finalized
       result in an external deployment manifest (the conformance test enforces
       source agreement).
 

@@ -14,9 +14,26 @@ import { base58Decode, base58Encode, findProgramAddress } from "./economy.ts";
 /** Mirrors ACHIEVEMENTS_SEED in onchain/programs/neonrelay-features/src/lib.rs. */
 export const FEATURES_ACHIEVEMENTS_SEED = Buffer.from("neonrelay_achievements", "utf8");
 
-/** Account size: 8 (discriminator) + 32 (player) + 32 ([u64; 4]) + 4 (count) + 1 (bump). */
-export const ACHIEVEMENT_REGISTRY_LEN = 81;
+/**
+ * Account size, byte-identical to `AchievementRegistry::LEN` in
+ * onchain/programs/neonrelay-features/src/lib.rs:
+ * 8 (discriminator) + 32 (player) + 32 (config_authority, SW-2026-09-26 F-04)
+ * + 4*8 (bits [u64; 4]) + 4 (count u32) + 1 (bump u8) = 109.
+ * verified.test.ts pins this constant against the Rust source, so a layout
+ * change on either side fails the suite instead of silently degrading the
+ * achievements showcase.
+ */
+export const ACHIEVEMENT_REGISTRY_LEN = 109;
 export const ACHIEVEMENT_BITS = 256;
+
+/** Field offsets, absolute positions inside the account data. */
+export const ACHIEVEMENT_REGISTRY_OFFSETS = {
+  player: 8,
+  configAuthority: 40,
+  bits: 72,
+  count: 104,
+  bump: 108,
+} as const;
 
 export interface AchievementRegistryView {
   address: string;
@@ -24,6 +41,13 @@ export interface AchievementRegistryView {
   count: number;
   /** Set achievement ids, ascending. */
   ids: number[];
+  /**
+   * Features `config.authority` the registry was last vouched for
+   * (SW-2026-09-26 F-04), base58. `neonrelay-assets` refuses to mint badges
+   * against registries stamped by a different operator, so surfacing the
+   * stamp lets the showcase report which operator the on-chain bits came from.
+   */
+  configAuthority: string;
 }
 
 export class FeaturesReadError extends Error {
@@ -101,10 +125,15 @@ export async function readAchievementRegistry(
   if (!bytes.subarray(8, 40).equals(player)) {
     throw new FeaturesReadError("registry-player-mismatch", "registry belongs to another wallet");
   }
-  const count = bytes.readUInt32LE(72);
+  // SW-2026-09-26 F-04: the registry carries the features operator it was
+  // last vouched for; the assets program refuses every other stamp.
+  const configAuthority = base58Encode(bytes.subarray(
+    ACHIEVEMENT_REGISTRY_OFFSETS.configAuthority,
+    ACHIEVEMENT_REGISTRY_OFFSETS.configAuthority + 32));
+  const count = bytes.readUInt32LE(ACHIEVEMENT_REGISTRY_OFFSETS.count);
   const ids: number[] = [];
   for (let word = 0; word < 4; word += 1) {
-    const bits = bytes.readBigUInt64LE(40 + word * 8);
+    const bits = bytes.readBigUInt64LE(ACHIEVEMENT_REGISTRY_OFFSETS.bits + word * 8);
     for (let bit = 0; bit < 64; bit += 1) {
       if ((bits >> BigInt(bit)) & 1n) ids.push(word * 64 + bit);
     }
@@ -113,8 +142,8 @@ export async function readAchievementRegistry(
     throw new FeaturesReadError("registry-count-mismatch",
       `bitmap holds ${ids.length} ids but count says ${count}`);
   }
-  if (bytes[80] !== pda.bump) {
+  if (bytes[ACHIEVEMENT_REGISTRY_OFFSETS.bump] !== pda.bump) {
     throw new FeaturesReadError("registry-bump-mismatch", "registry bump does not match the PDA");
   }
-  return { address, bump: pda.bump, count, ids };
+  return { address, bump: pda.bump, count, ids, configAuthority };
 }

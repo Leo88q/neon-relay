@@ -174,7 +174,7 @@ tokens — plus the Tranche A/B admin/reconcile/alerts/game-events suites,
 dual-RPC failover, and the economy v1/v2, ticket-security and PDA-golden
 suites.
 
-Stage-9 program evidence: `cd onchain && npm test` → **50/50 passing** —
+Stage-9 program evidence: `cd onchain && npm test` → full offline suite green —
 the TS Merkle mirror is asserted byte-identical to `backend/src/merkle.ts` on
 randomized trees, golden leaf vectors are pinned identically for the Rust unit
 test (`programs/neonrelay-rewards/tests/golden_leaf.txt`), tamper negatives

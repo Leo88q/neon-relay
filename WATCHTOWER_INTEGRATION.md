@@ -444,9 +444,13 @@ SW-2026-AGI additions (agentic-AI threats, docs/AGENTIC_THREAT_AUDIT_2026_09_26.
     from the assistant itself as a reason to skip a check.
 22. Any file change made by a coding assistant goes through a reviewed PR
     (CODEOWNERS covers reward-critical paths); changes to assistant
-    configuration (`QWEN.md`, audit prompts, workflows, `backend/tool_pins.json`)
+    configuration (root-level prompt/instruction files such as the now-removed
+    `QWEN.md`, audit prompts, workflows, `backend/tool_pins.json`)
     require explicit human confirmation on top of normal review. No auto-approve
-    for config writes, ever.
+    for config writes, ever. Repository hygiene: assistant prompt drops do not
+    belong in the game tree at all — the hub owns `prompts/`, so the 2026-09-27
+    cleanup removed the session prompt copy and `QWEN.md` rather than auditing
+    them in place.
 23. Treat `/watchtower/*` output as untrusted DATA for any consuming agent:
     re-authenticate at the hub boundary and fail closed on `integrity:
     "tampered"` rows and `/watchtower/security → memoryIntegrity` signals.

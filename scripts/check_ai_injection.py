@@ -66,6 +66,15 @@ ALLOWED_LINES: dict[tuple[str, str], str] = {
     ("backend/src/watchtower.ts",
      "ee32f261e0f7e2f8b7edb689b6a04502f91a3344c4a7cb58544d1218e6de0847"):
         "defensive statement about the pin gate itself (V78 rug-pull protection)",
+    # The agentic-threat audit report quotes the detector's own pattern list
+    # while describing the gate it added (threat 76). Prose, not payload;
+    # any edit of these two lines must be re-reviewed, like every pin above.
+    ("docs/AGENTIC_THREAT_AUDIT_2026_09_26.md",
+     "3f53af339125f8d4aee2a9d350151e9091508bda926b10a73e9e2272b8dc0787"):
+        "audit report enumerating the scanner's instruction-pattern classes",
+    ("docs/AGENTIC_THREAT_AUDIT_2026_09_26.md",
+     "5e22e985feed70e3ab0ab209bf4bc2aef97c4003a6c0fe57686e70c23a6038a9"):
+        "audit report enumerating the scanner's instruction-pattern classes",
 }
 
 # name -> (codepoints/ranges, description)
