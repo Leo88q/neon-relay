@@ -52,7 +52,10 @@ void CMenus::RenderProgressStrip(CUIRect Rect)
 
 	CUIRect Left = Icons, Right = Icons;
 	Left.VSplitLeft(Icons.w * 0.5f, &Left, nullptr);
-	Right.VSplitRight(150.0f, &Right, nullptr);
+	// VSplitRight(Cut, pLeft, pRight): the rightmost piece goes into the second
+	// pointer. The old argument order stored the row *remainder* in Right, so
+	// the streak label drew on top of the Level label on the left.
+	Right.VSplitRight(150.0f, nullptr, &Right);
 
 	CUIRect LevelIcon = Left;
 	LevelIcon.VSplitLeft(20.0f, &LevelIcon, &Left);
@@ -520,12 +523,16 @@ void CMenus::RenderCharacters(CUIRect MainView)
 		CUIRect Portrait = CardTop;
 		Portrait.Margin(2.0f, &Portrait);
 		RenderCharacterPortrait(Portrait, i);
-		// Card now is bottom part already
-		Card.HSplitTop(20.0f, &Row, &Card);
+		// Name / rarity / price belong in the card's bottom text zone.
+		// HSplitTop does not mutate the receiver, so the old splits from Card
+		// started at the card's top edge and drew the labels over the portrait
+		// while CardBottom stayed empty.
+		CUIRect TextZone = CardBottom;
+		TextZone.HSplitTop(20.0f, &Row, &TextZone);
 		Ui()->DoLabel(&Row, Russian ? Entry.m_pNameRu : Entry.m_pName, 13.0f, TEXTALIGN_MC);
-		Card.HSplitTop(18.0f, &Row, &Card);
+		TextZone.HSplitTop(18.0f, &Row, &TextZone);
 		Ui()->DoLabel(&Row, Entry.m_pRarity, 10.0f, TEXTALIGN_MC);
-		Card.HSplitTop(20.0f, &Row, &Card);
+		TextZone.HSplitTop(20.0f, &Row, &TextZone);
 		char aPrice[32];
 		str_format(aPrice, sizeof(aPrice), "%d SKR", Entry.m_PriceSkr);
 		Ui()->DoLabel(&Row, aPrice, 13.0f, TEXTALIGN_MC);
