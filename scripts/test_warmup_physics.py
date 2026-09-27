@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from datafile_v4 import read
 
@@ -41,11 +42,13 @@ def main():
         header=tmp/'warmup_fixture.h'
         fixture(ROOT/'data/maps/Neon Relay Warmup.map',header)
         executable=tmp/'warmup-core'
+        # GNU ld wants --gc-sections; Apple's ld64 (macOS) rejects it and uses -dead_strip.
+        dead_code='-Wl,-dead_strip' if sys.platform=='darwin' else '-Wl,--gc-sections'
         command=[os.environ.get('CXX','g++'),'-std=c++20','-O0' if args.sanitize else '-O1','-g','-ffunction-sections','-fdata-sections',
             '-Isrc','-I'+str(tmp),'tests/warmup/physics.cpp',
             'src/game/gamecore.cpp','src/game/collision.cpp','src/game/layers.cpp',
             'src/game/teamscore.cpp','src/game/prng.cpp','src/base/mem.cpp',
-            '-Wl,--gc-sections','-o',str(executable)]
+            dead_code,'-o',str(executable)]
         if args.sanitize:command[1:1]=['-fsanitize=address,undefined','-fno-omit-frame-pointer']
         subprocess.run(command,cwd=ROOT,check=True,timeout=180)
         run_env={**os.environ,'UBSAN_OPTIONS':'halt_on_error=1:print_stacktrace=1','ASAN_OPTIONS':'detect_leaks=1:halt_on_error=1'}
