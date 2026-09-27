@@ -51,7 +51,10 @@ def main():
             dead_code,'-o',str(executable)]
         if args.sanitize:command[1:1]=['-fsanitize=address,undefined','-fno-omit-frame-pointer']
         subprocess.run(command,cwd=ROOT,check=True,timeout=180)
-        run_env={**os.environ,'UBSAN_OPTIONS':'halt_on_error=1:print_stacktrace=1','ASAN_OPTIONS':'detect_leaks=1:halt_on_error=1'}
+        # LeakSanitizer does not exist on macOS and ASan errors out on
+        # detect_leaks=1 there; keep leak checking on every other platform.
+        asan_options='detect_leaks=1:halt_on_error=1' if sys.platform!='darwin' else 'halt_on_error=1'
+        run_env={**os.environ,'UBSAN_OPTIONS':'halt_on_error=1:print_stacktrace=1','ASAN_OPTIONS':asan_options}
         positive=subprocess.run([str(executable)],env=run_env,capture_output=True,text=True,timeout=30)
         print(positive.stdout,end='')
         assert positive.returncode==0,positive.stderr
