@@ -375,6 +375,8 @@ docs/DATABASE.md,17,historical-documentation,document that describes the upstrea
 docs/DATABASE.md,18,historical-documentation,document that describes the upstream derivation,"add_sqlserver w teeworlds record teeworlds ""PW2"" ""localhost"" ""3306"""
 docs/DATABASE.md,21,historical-documentation,document that describes the upstream derivation,$ cmake --build build --target DDNet-Server
 docs/DATABASE.md,22,historical-documentation,document that describes the upstream derivation,$ build/DDNet-Server -f mine.cfg
+docs/DB_TEST_LOAD_SECURITY_RU.md,38,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"опционально MySQL (`sv_use_sql`, `data` — импорт рекордов DDNet)."
+docs/DB_TEST_LOAD_SECURITY_RU.md,109,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,опыт апстрим-DDNet (64–80 игроков на публичных серверах) к этому коду применим
 docs/DEBUGGING.md,15,historical-documentation,document that describes the upstream derivation,UBSAN_OPTIONS=log_path=./SAN:print_stacktrace=1:halt_on_errors=0 ASAN_OPTIONS=log_path=./SAN:print_stacktrace=1:check_initialization_order=1:detect_leaks=1:halt_on_errors=0:handle_abort=1 ./DDNet
 docs/DEBUGGING.md,23,historical-documentation,document that describes the upstream derivation,DYLD_LIBRARY_PATH=$(brew --prefix sdl3)/lib ./DDNet
 docs/DEBUGGING.md,26,historical-documentation,document that describes the upstream derivation,For valgrind's memcheck compile a normal Debug build and run with: `valgrind --tool=memcheck ./DDNet`
@@ -625,8 +627,8 @@ other/icons/license.txt,10,legal-attribution,upstream/third-party license notice
 other/neonrelay.desktop,12,comment,"source comment, not shown to users",# Neon Relay is a standalone derivative of the upstream DDNet project.
 scripts/android/cmake_android.sh,271,comment,"source comment, not shown to users",# rebrand (upstream: org/ddnet/client)
 scripts/android/cmake_android.sh,273,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),cp -R ../ddnet-libs/sdl/java/org src/main/java/
-scripts/build_chrome_dm.py,39,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
-scripts/build_chrome_dm.py,40,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
+scripts/build_chrome_dm.py,41,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
+scripts/build_chrome_dm.py,42,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
 scripts/build_neon_mapres.py,41,code/api-identifier,brand appears only inside code identifiers,"# (ddnet_*, freeze, _0.7 variants, spare backgrounds, water, round/mixed"
 scripts/build_neon_skins_all.py,505,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",The 128x128 sheet is the standard DDNet 0.7 eye layout: each cell is a
 scripts/build_warmup.py,41,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
