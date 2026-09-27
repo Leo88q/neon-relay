@@ -375,8 +375,6 @@ docs/DATABASE.md,17,historical-documentation,document that describes the upstrea
 docs/DATABASE.md,18,historical-documentation,document that describes the upstream derivation,"add_sqlserver w teeworlds record teeworlds ""PW2"" ""localhost"" ""3306"""
 docs/DATABASE.md,21,historical-documentation,document that describes the upstream derivation,$ cmake --build build --target DDNet-Server
 docs/DATABASE.md,22,historical-documentation,document that describes the upstream derivation,$ build/DDNet-Server -f mine.cfg
-docs/DB_TEST_LOAD_SECURITY_RU.md,38,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,"опционально MySQL (`sv_use_sql`, `data` — импорт рекордов DDNet)."
-docs/DB_TEST_LOAD_SECURITY_RU.md,109,user-facing,NOT CLASSIFIED — must be rebranded or explicitly allowed,опыт апстрим-DDNet (64–80 игроков на публичных серверах) к этому коду применим
 docs/DEBUGGING.md,15,historical-documentation,document that describes the upstream derivation,UBSAN_OPTIONS=log_path=./SAN:print_stacktrace=1:halt_on_errors=0 ASAN_OPTIONS=log_path=./SAN:print_stacktrace=1:check_initialization_order=1:detect_leaks=1:halt_on_errors=0:handle_abort=1 ./DDNet
 docs/DEBUGGING.md,23,historical-documentation,document that describes the upstream derivation,DYLD_LIBRARY_PATH=$(brew --prefix sdl3)/lib ./DDNet
 docs/DEBUGGING.md,26,historical-documentation,document that describes the upstream derivation,For valgrind's memcheck compile a normal Debug build and run with: `valgrind --tool=memcheck ./DDNet`
