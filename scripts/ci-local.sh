@@ -29,4 +29,6 @@ python3 scripts/test_warmup_physics.py --sanitize
 ./scripts/check_menu_syntax.sh
 ./scripts/neonrelay_signer_test.sh
 (cd backend && npm test)
+(cd backend && npm run load:smoke)
+python3 scripts/mutation_test.py --smoke
 (cd onchain && npm test)

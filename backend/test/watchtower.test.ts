@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getJson, postJson, startTestApp } from "./helpers.ts";
-import { WATCHTOWER_COMPONENTS, TELEMETRY_EVENT_TYPES } from "../src/watchtower.ts";
+import { WATCHTOWER_COMPONENTS, TELEMETRY_EVENT_TYPES, normalizeSolanaEvent } from "../src/watchtower.ts";
 
 async function withApp(fn: (base: string, db: any) => Promise<void>): Promise<void> {
   const { app, base } = await startTestApp();
@@ -122,20 +122,54 @@ test("telemetry is idempotent and late-binds earlier external events", () =>
     assert.equal(retry.json.results[0].status, "duplicate");
   }));
 
+test("normalizeSolanaEvent rejects non-object inputs outright", () => {
+  assert.throws(() => normalizeSolanaEvent(null), /must be an object/);
+  assert.throws(() => normalizeSolanaEvent(42), /must be an object/);
+  assert.throws(() => normalizeSolanaEvent("x"), /must be an object/);
+});
+
+test("normalizeSolanaEvent tolerates a null payload and rejects bad occurred_at", () => {
+  const noPayload = normalizeSolanaEvent({ eventType: "RaceStarted", payload: null });
+  assert.equal(noPayload.external_id, null);
+  assert.equal(noPayload.match_id, null);
+  const nullAt = normalizeSolanaEvent({ eventType: "RaceStarted", payload: { occurredAt: 1.5 } });
+  assert.equal(nullAt.occurred_at, 1.5);
+});
+
+test("ingest rejects fractional occurred_at instead of storing it", () =>
+  withApp(async (base) => {
+    const bad = await postJson(base, "/api/ingest/solana",
+      { event_type: "match_end", occurred_at: 1.5 });
+    assert.equal(bad.status, 400);
+    // Pin the specific message: the STRICT schema is a second enforcement layer,
+    // so only the message distinguishes the validator from a raw SQLite reject.
+    assert.match(bad.json?.error?.message ?? "", /occurred_at is invalid/);
+    const good = await postJson(base, "/api/ingest/solana",
+      { event_type: "match_end", occurred_at: 1_770_000_000_000 });
+    assert.equal(good.status, 200);
+  }));
+
 test("Solana indexer envelopes map into session telemetry", () =>
   withApp(async (base, db) => {
     const response = await postJson(base, "/api/ingest/solana", {
       cluster: "devnet", slot: 1, signature: "test-neon-1",
       programId: "NEONRELAY_REWARDS_PROGRAM_ID", eventType: "RaceStarted",
-      payload: { gameId: "neonrelay", playerKey: "test" },
+      payload: { gameId: "neonrelay", playerKey: "test", matchId: "match-1", sessionId: "sess-1", solana_wallet: "WalletEnvelopeTest111111111111111111111" },
     });
     assert.equal(response.status, 200);
     assert.equal(response.json.accepted, 1);
     assert.equal(response.json.results[0].status, "accepted");
     const row = db.get(
-      "SELECT event_type, metadata_json FROM watchtower_events WHERE id = ?", response.json.results[0].id) as { event_type: string; metadata_json: string } | undefined;
+      "SELECT event_type, metadata_json, match_id, session_id, external_id, solana_wallet FROM watchtower_events WHERE id = ?", response.json.results[0].id) as
+      { event_type: string; metadata_json: string; match_id: string | null; session_id: string | null; external_id: string | null; solana_wallet: string | null } | undefined;
     assert.equal(row?.event_type, "match_start");
     assert.match(row?.metadata_json ?? "", /test-neon-1/);
+    // Envelope payload fields map through typed extraction: a string match id
+    // survives, a non-string one must never leak into the match_id column.
+    assert.equal(row?.match_id, "match-1");
+    assert.equal(row?.session_id, "sess-1");
+    assert.equal(row?.external_id, "test");
+    assert.equal(row?.solana_wallet, "WalletEnvelopeTest111111111111111111111");
     const canonical = await getJson(base, "/watchtower/events/test-neon-1");
     assert.equal(canonical.status, 200);
     assert.equal(canonical.json.data.signature, "test-neon-1");

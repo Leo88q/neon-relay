@@ -97,6 +97,13 @@ test("oversized and over-nested metadata are rejected, not stored", () =>
     assert.equal(nested.status, 400);
   }));
 
+test("containsInjectionVectors flags hidden override and control characters", () => {
+  assert.equal(containsInjectionVectors("clean text 123"), false);
+  assert.equal(containsInjectionVectors("hello\u202Eworld"), true); // RLO override
+  assert.equal(containsInjectionVectors("a\u200Bb"), true); // zero-width space
+  assert.equal(containsInjectionVectors("a\u0000b"), true); // NUL
+});
+
 test("sanitizeTelemetryText and the JSON guard behave at the unit level", () => {
   assert.throws(() => sanitizeTelemetryText("ab\u200bc", "field", 3), TextTooLargeError);
   assert.equal(sanitizeTelemetryText("ab\u200bc", "field", 4), "abc");
