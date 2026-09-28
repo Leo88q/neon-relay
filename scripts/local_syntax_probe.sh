@@ -133,8 +133,12 @@ src/engine/client/updater.cpp
 src/game/client/gameclient.cpp
 src/game/client/components/chat.cpp
 src/game/client/components/hud.cpp
+src/game/client/components/important_alert.cpp
 src/game/client/components/menus_arsenal.cpp
 src/game/client/components/menus.cpp
+src/game/client/neon_window.cpp
+src/game/client/ui.cpp
+src/game/client/ui_popups.cpp
 src/game/client/components/menus_browser.cpp
 src/game/client/components/menus_ingame.cpp
 src/game/client/components/menus_settings.cpp

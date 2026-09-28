@@ -251,6 +251,134 @@ void NeonWindow::DrawFilmFrame(IGraphics *pGraphics, const CUIRect &Area, ColorR
 	}
 }
 
+void NeonWindow::DrawStamp(IGraphics *pGraphics, const CUIRect &Area, EStampState State, ColorRGBA Ink)
+{
+	const float X = Area.x, Y = Area.y, W = Area.w, H = Area.h;
+	const bool Hot = State == STAMP_HOT;
+	const bool Active = State == STAMP_ACTIVE;
+
+	// Оттиск: у наведённого штампа вокруг плиты проступают чернила.
+	if(Hot)
+		FillRect(pGraphics, X - 3.0f, Y - 3.0f, W + 6.0f, H + 6.0f, Dim(Ink, 0.10f));
+
+	// Плита: выбранная залита чернилами целиком, остальные — ночная плёнка.
+	if(Active)
+		FillRect(pGraphics, X, Y, W, H, Dim(Ink, 0.85f));
+	else
+		FillRect(pGraphics, X, Y, W, H, Dim(NIGHT_2, Hot ? 0.85f : 0.72f));
+
+	// Двойная рамка штампа: внешний контур по кромке и внутренний со сдвигом.
+	const float OuterA = Active ? 1.0f : (Hot ? 0.95f : 0.55f);
+	const float InnerA = Active ? 0.6f : (Hot ? 0.55f : 0.3f);
+	const IGraphics::CLineItem aOuter[] = {
+		IGraphics::CLineItem(X, Y, X + W, Y),
+		IGraphics::CLineItem(X + W, Y, X + W, Y + H),
+		IGraphics::CLineItem(X + W, Y + H, X, Y + H),
+		IGraphics::CLineItem(X, Y + H, X, Y),
+	};
+	DrawLines(pGraphics, aOuter, std::size(aOuter), Dim(Ink, OuterA));
+	const float In = 3.0f;
+	if(W > 2.0f * In + 4.0f && H > 2.0f * In + 4.0f)
+	{
+		const IGraphics::CLineItem aInner[] = {
+			IGraphics::CLineItem(X + In, Y + In, X + W - In, Y + In),
+			IGraphics::CLineItem(X + W - In, Y + In, X + W - In, Y + H - In),
+			IGraphics::CLineItem(X + W - In, Y + H - In, X + In, Y + H - In),
+			IGraphics::CLineItem(X + In, Y + H - In, X + In, Y + In),
+		};
+		DrawLines(pGraphics, aInner, std::size(aInner), Dim(Ink, InnerA));
+	}
+}
+
+void NeonWindow::DrawFolderTab(IGraphics *pGraphics, const CUIRect &Area, EStampState State, ColorRGBA Accent, int Index)
+{
+	const float X = Area.x, Y = Area.y, W = Area.w, H = Area.h;
+	const bool Hot = State == STAMP_HOT;
+	const bool Active = State == STAMP_ACTIVE;
+	// Ярлык папки: нижняя часть — обычная плита, верхняя — трапеция со
+	// срезанными углами (8px катет), как вырез на картотеке.
+	const float Cut = 8.0f;
+
+	pGraphics->TextureClear();
+	pGraphics->QuadsBegin();
+	pGraphics->SetColor(Dim(Active ? NIGHT_2 : NIGHT_1, Active ? 0.92f : (Hot ? 0.85f : 0.72f)));
+	IGraphics::CQuadItem Body(X, Y + Cut, W, H - Cut);
+	pGraphics->QuadsDrawTL(&Body, 1);
+	IGraphics::CFreeformItem Top(X + Cut, Y, X + W - Cut, Y, X + W, Y + Cut, X, Y + Cut);
+	pGraphics->QuadsDrawFreeform(&Top, 1);
+	pGraphics->QuadsEnd();
+
+	// Контур ярлыка: у активной вкладки кромка акцентная и толще.
+	const ColorRGBA Edge = Dim(Accent, Active ? 0.95f : (Hot ? 0.6f : 0.3f));
+	const IGraphics::CLineItem aEdges[] = {
+		IGraphics::CLineItem(X + Cut, Y, X + W - Cut, Y),
+		IGraphics::CLineItem(X + W - Cut, Y, X + W, Y + Cut),
+		IGraphics::CLineItem(X + W, Y + Cut, X + W, Y + H),
+		IGraphics::CLineItem(X + W, Y + H, X, Y + H),
+		IGraphics::CLineItem(X, Y + H, X, Y + Cut),
+		IGraphics::CLineItem(X, Y + Cut, X + Cut, Y),
+	};
+	DrawLines(pGraphics, aEdges, std::size(aEdges), Edge);
+	if(Active)
+	{
+		const IGraphics::CLineItem aTop[] = {
+			IGraphics::CLineItem(X + Cut, Y - 2.0f, X + W - Cut, Y - 2.0f),
+		};
+		DrawLines(pGraphics, aTop, 1, Dim(Accent, 0.5f));
+	}
+
+	// Номер ярлыка: кодовая гарнитура в правом верхнем углу.
+	if(Index > 0)
+	{
+		char aTag[8];
+		str_format(aTag, sizeof(aTag), "%02d", Index % 100);
+		DrawCounter(pGraphics, aTag, X + W - Cut - 4.0f, Y + 4.0f, 1.8f, Dim(Accent, Active ? 0.9f : 0.5f));
+	}
+}
+
+void NeonWindow::DrawFilmScrap(IGraphics *pGraphics, const CUIRect &Area, ColorRGBA Accent, float Alpha)
+{
+	Alpha = std::clamp(Alpha, 0.0f, 1.0f);
+	if(Alpha <= 0.0f)
+		return;
+	const float X = Area.x, Y = Area.y, W = Area.w, H = Area.h;
+
+	// Рваные кромки: обрывок собирается из вертикальных ломтиков, у каждого
+	// своя высота. Детерминированная синусоида вместо случайных чисел, чтобы
+	// рваный край не дрожал между кадрами.
+	const float Slice = 6.0f;
+	const size_t MaxSlices = 256;
+	IGraphics::CFreeformItem aSlices[MaxSlices];
+	size_t NumSlices = 0;
+	for(float X0 = X; X0 < X + W && NumSlices < MaxSlices; X0 += Slice)
+	{
+		const float X1 = std::min(X0 + Slice, X + W);
+		const int I = (int)((X0 - X) / Slice);
+		const float JagTop = 1.6f * std::sin(I * 2.3f) + 0.9f * std::sin(I * 5.1f + 1.3f);
+		const float JagBottom = 1.6f * std::sin(I * 1.7f + 2.0f) + 0.9f * std::sin(I * 4.3f);
+		aSlices[NumSlices++] = IGraphics::CFreeformItem(
+			X0, Y + JagTop, X1, Y + 1.6f * std::sin((I + 1) * 2.3f) + 0.9f * std::sin((I + 1) * 5.1f + 1.3f),
+			X1, Y + H + 1.6f * std::sin((I + 1) * 1.7f + 2.0f) + 0.9f * std::sin((I + 1) * 4.3f),
+			X0, Y + H + JagBottom);
+	}
+	pGraphics->TextureClear();
+	pGraphics->QuadsBegin();
+	pGraphics->SetColor(Dim(NIGHT_1, 0.88f * Alpha));
+	pGraphics->QuadsDrawFreeform(aSlices, NumSlices);
+	pGraphics->QuadsEnd();
+
+	// Проколы перфорации: по одному с каждого конца обрывка.
+	const float HoleX0 = X + 5.0f;
+	const float HoleX1 = X + W - 5.0f - FILM_HOLE_W;
+	const float HoleY = Y + (H - FILM_HOLE_H) * 0.5f;
+	FillRect(pGraphics, HoleX0, HoleY, FILM_HOLE_W, FILM_HOLE_H, Dim(NIGHT_0, Alpha));
+	FillRect(pGraphics, HoleX1, HoleY, FILM_HOLE_W, FILM_HOLE_H, Dim(NIGHT_0, Alpha));
+
+	// Короткая несущая риска под обрывком: акцент тревоги.
+	const IGraphics::CLineItem Under(X + 18.0f, Y + H + 4.0f, X + W - 18.0f, Y + H + 4.0f);
+	DrawLines(pGraphics, &Under, 1, Dim(Accent, 0.55f * Alpha));
+}
+
 void NeonWindow::DrawFilmPlate(IGraphics *pGraphics, const CUIRect &Area, ColorRGBA Border, ColorRGBA Fill)
 {
 	const float X = Area.x, Y = Area.y, W = Area.w, H = Area.h;

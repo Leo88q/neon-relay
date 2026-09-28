@@ -203,11 +203,42 @@
   .filmwin.alarm .rm{border-color:rgba(255,46,136,.55)}
   .filmwin.alarm .rm::before,.filmwin.alarm .rm::after{border-color:rgba(255,46,136,.55)}
   .filmwin.alarm .rm.bl,.filmwin.alarm .rm.br{border-color:rgba(96,116,148,.55)}
-  .stamp{display:inline-block; border:1px solid rgba(77,227,247,.6); color:var(--ice);
-    padding:7px 16px; letter-spacing:.1em; font-size:13px; transform:rotate(-.4deg);
-    background:rgba(16,26,48,.6)}
-  .stamp.hot{border-color:rgba(255,46,136,.65); color:var(--pink)}
-  .stampbox{display:flex; gap:18px; justify-content:center; margin-top:16px}
+  /* Кнопка-штамп: двойная рамка, без наклона и мигания. Состояния зеркалят
+     NeonWindow::DrawStamp в клиенте. */
+  .stamp{display:inline-block; position:relative; border:1px solid rgba(77,227,247,.55);
+    box-shadow:inset 0 0 0 1px rgba(77,227,247,.2); color:var(--ice);
+    padding:7px 16px; letter-spacing:.1em; font-size:13px; background:rgba(16,26,48,.6)}
+  .stamp.hot{border-color:rgba(255,46,136,.7); box-shadow:inset 0 0 0 1px rgba(255,46,136,.35),
+    0 0 14px rgba(255,46,136,.28); color:var(--pink)}
+  .stamp.active{background:rgba(77,227,247,.92); color:#08131f;
+    border-color:rgba(77,227,247,.9); box-shadow:inset 0 0 0 1px rgba(8,19,31,.55)}
+  .stamp.gold{border-color:rgba(255,205,110,.7); box-shadow:inset 0 0 0 1px rgba(255,205,110,.35);
+    color:#ffcd6e}
+  .stamp.ghost{opacity:.45}
+  .stampbox{display:flex; gap:18px; justify-content:center; margin-top:16px; flex-wrap:wrap}
+  /* Ярлык архивной папки (вкладка): срезанные верхние углы 8px, у активной —
+     циановая кромка и номер ярлыка. Зеркалит DrawFolderTab. */
+  .filmfolder{display:inline-flex; align-items:baseline; gap:8px; padding:7px 14px 6px;
+    background:rgba(16,26,48,.85); border:1px solid rgba(96,116,148,.45);
+    clip-path:polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%, 0 8px);
+    font-size:13px; letter-spacing:.06em; color:rgba(214,226,240,.8)}
+  .filmfolder.active{background:rgba(19,32,58,.95); border-color:rgba(77,227,247,.65);
+    color:var(--ice); box-shadow:inset 0 2px 0 0 rgba(77,227,247,.9); transform:translateY(-2px)}
+  .filmfolder b{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-weight:400;
+    font-size:10px; color:rgba(96,116,148,.9)}
+  .filmfolder.active b{color:var(--cyan)}
+  /* Обрывок плёнки для тревог: рваные кромки (клип-путь), проколы перфорации
+     по концам. Зеркалит DrawFilmScrap. */
+  .filmscrap{position:relative; padding:14px 34px; background:rgba(10,14,30,.94);
+    clip-path:polygon(0 14%, 5% 6%, 11% 16%, 18% 4%, 26% 13%, 34% 5%, 42% 15%, 50% 6%,
+      58% 14%, 66% 4%, 74% 13%, 82% 6%, 90% 15%, 96% 5%, 100% 12%, 100% 86%, 95% 95%,
+      88% 85%, 80% 96%, 72% 87%, 64% 95%, 56% 86%, 48% 96%, 40% 87%, 32% 95%, 24% 86%,
+      16% 96%, 9% 87%, 4% 95%, 0 88%)}
+  .filmscrap::before,.filmscrap::after{content:""; position:absolute; top:50%;
+    width:8px; height:11px; margin-top:-5px; background:rgba(4,7,16,.95)}
+  .filmscrap::before{left:9px}.filmscrap::after{right:9px}
+  .filmscrap .ttl{color:#ff5c5c; font-size:14px; letter-spacing:.08em}
+  .filmscrap .msg{color:rgba(214,226,240,.85); font-size:12px; margin-top:3px}
 </style>
 </head>
 <body>
@@ -562,7 +593,8 @@ function emoji(){
 }
 
 // «Кадр плёнки» — витрина фирменного оконного хрома. Тот же рисунок в клиенте
-// исполняет src/game/client/neon_window.cpp (DrawFilmFrame/DrawFilmPlate),
+// исполняет src/game/client/neon_window.cpp (DrawFilmFrame/DrawFilmPlate,
+// кнопки DrawStamp, вкладки DrawFolderTab, тревоги DrawFilmScrap),
 // паритет токенов --film-* ↔ FILM_* сверяет scripts/test_film_window.py.
 function filmwin(){
   const win = (cls, frm, body) => `<div class="filmwin ${cls}">
@@ -585,10 +617,38 @@ function filmwin(){
         <div class="stampbox"><span class="stamp">ОСТАТЬСЯ</span><span class="stamp hot">ВЫЙТИ</span></div>`)}
       ${win('', '0112', `<div style="text-align:center; font-size:15px">Сохранить скин «ночная картошка»?<br>
         <span class="note">Если имя занято, старый кадр будет перезаписан.</span></div>
-        <div class="stampbox"><span class="stamp">СОХРАНИТЬ</span><span class="stamp">ОТМЕНА</span></div>`)}
+        <div class="stampbox"><span class="stamp active">СОХРАНИТЬ</span><span class="stamp">ОТМЕНА</span></div>`)}
       ${win('alarm', '0103', `<div style="text-align:center; font-size:15px">Соединение потеряно.<br>
         <span class="note">Сервер не отвечает; повторное подключение через 5 с.</span></div>
         <div class="stampbox"><span class="stamp hot">ПОНЯТНО</span></div>`)}
+    </div>
+    <div class="hd" style="margin-top:26px"><h2>Кнопки-штампы</h2><span class="note">меню и всплывающие списки</span></div>
+    <div class="note" style="margin-bottom:12px">Двойная рамка вместо скошенных «форм А»: обычная,
+      наведение (растекание чернил), активная (залитая), редкая золотая и приглушённая.
+      В клиенте — <code>NeonWindow::DrawStamp</code>, кириллица не срезается.</div>
+    <div class="panel pad"><div class="stampbox">
+      <span class="stamp">ОБЫЧНАЯ</span><span class="stamp hot">НАВЕДЕНИЕ</span>
+      <span class="stamp active">АКТИВНА</span><span class="stamp gold">РЕДКАЯ</span>
+      <span class="stamp ghost">ГОСТЬ</span>
+    </div></div>
+    <div class="hd" style="margin-top:26px"><h2>Ярлыки архива</h2><span class="note">вкладки папок</span></div>
+    <div class="note" style="margin-bottom:12px">Срезанные верхние углы и номер ярлыка кодовой
+      гарнитурой; активный ярлык получает циановую кромку и приподнимается.
+      В клиенте — <code>NeonWindow::DrawFolderTab</code>.</div>
+    <div class="panel pad" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+      <span class="filmfolder"><b>01</b>ДЕМО</span>
+      <span class="filmfolder active"><b>02</b>ЗАПИСИ</span>
+      <span class="filmfolder"><b>03</b>АРХИВ</span>
+    </div>
+    <div class="hd" style="margin-top:26px"><h2>Обрывки плёнки</h2><span class="note">тревоги и тосты</span></div>
+    <div class="note" style="margin-bottom:12px">Срочное сообщение лежит на коротком обрывке с
+      рваными кромками и проколами перфорации. В клиенте — <code>NeonWindow::DrawFilmScrap</code>
+      под важным алертом.</div>
+    <div class="panel pad" style="display:flex; justify-content:center">
+      <div class="filmscrap" style="min-width:min(420px,90%)">
+        <div class="ttl">СОЕДИНЕНИЕ ПОТЕРЯНО</div>
+        <div class="msg">Сервер не отвечает; повторное подключение через 5 секунд.</div>
+      </div>
     </div>
   </div></div>`;
 }

@@ -26,6 +26,7 @@ NEON_WINDOW = ROOT / "src" / "game" / "client" / "neon_window.cpp"
 MENUS = ROOT / "src" / "game" / "client" / "components" / "menus.cpp"
 UI_POPUPS = ROOT / "src" / "game" / "client" / "ui_popups.cpp"
 STAND = ROOT / "design" / "potato-arena" / "index.html"
+LANDING_CSS = ROOT / "design" / "landing" / "landing.css"
 SPEC = ROOT / "docs" / "FILM_WINDOW_RU.md"
 
 # C++ token -> CSS custom property. Adding a geometry token means adding both
@@ -48,17 +49,24 @@ class Tokens(unittest.TestCase):
             r"inline constexpr float (FILM_[A-Z_]+) = ([0-9.]+)f;", STYLE.read_text(encoding="utf-8"))}
         cls.css = {m.group(1): float(m.group(2)) for m in re.finditer(
             r"(--film-[a-z-]+):\s*([0-9.]+)px", STAND.read_text(encoding="utf-8"))}
+        cls.landing = {m.group(1): float(m.group(2)) for m in re.finditer(
+            r"(--film-[a-z-]+):\s*([0-9.]+)px", LANDING_CSS.read_text(encoding="utf-8"))}
 
     def test_every_token_has_a_mirror(self):
         for token, prop in TOKENS.items():
             self.assertIn(token, self.cpp, f"{token} disappeared from neon_style.h")
             self.assertIn(prop, self.css, f"{prop} disappeared from the stand's :root")
+            self.assertIn(prop, self.landing, f"{prop} disappeared from landing.css")
 
     def test_numbers_match(self):
         for token, prop in TOKENS.items():
             if token in self.cpp and prop in self.css:
                 self.assertEqual(self.cpp[token], self.css[prop],
                                  f"{token}={self.cpp[token]} but the site says {prop}={self.css[prop]}: "
+                                 "edit both sides together")
+            if token in self.cpp and prop in self.landing:
+                self.assertEqual(self.cpp[token], self.landing[prop],
+                                 f"{token}={self.cpp[token]} but the landing says {prop}={self.landing[prop]}: "
                                  "edit both sides together")
 
     def test_no_orphan_tokens(self):
@@ -111,6 +119,11 @@ class SiteChrome(unittest.TestCase):
         self.assertIn("filmwin-counter", self.stand)
         self.assertIn("FRM", self.stand, "the showcase must show the frame counter")
         self.assertIn("Кадры плёнки", self.stand, "the showcase tab is missing")
+
+    def test_landing_carries_the_component(self):
+        css = LANDING_CSS.read_text(encoding="utf-8")
+        self.assertIn(".filmwin{", css, "landing.css must carry the film-window component")
+        self.assertIn("filmwin-counter", css)
 
     def test_spec_exists(self):
         self.assertTrue(SPEC.is_file(), "docs/FILM_WINDOW_RU.md is the spec; it must exist")
