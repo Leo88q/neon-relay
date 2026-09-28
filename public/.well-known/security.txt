@@ -1,0 +1,6 @@
+Contact: mailto:security@neonrelay.example
+Expires: 2027-09-28T00:00:00.000Z
+Acknowledgments: https://neonrelay.example/.well-known/security.txt
+Preferred-Languages: en, ru
+Canonical: https://neonrelay.example/.well-known/security.txt
+Policy: https://github.com/Leo88q/neon-relay/blob/main/docs/SECURITY_REVIEW_2026_09_26.md

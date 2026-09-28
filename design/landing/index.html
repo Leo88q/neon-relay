@@ -42,7 +42,7 @@
     </div>
     <div class="facts">
       <span><b>6</b>стволов, они же иконки в HUD</span>
-      <span><b>27</b>действующих карт</span>
+      <span><b>11</b>действующих карт</span>
       <span><b>9</b>фонов одной комнаты</span>
       <span><b>0</b>внешних запросов со страницы</span>
     </div>
@@ -171,7 +171,7 @@
 <section id="maps">
   <div class="wrap">
     <span class="eyebrow">карты</span>
-    <h2>Действующие карты: все 27, у каждой — блюпринт из её же данных</h2>
+    <h2>Действующие карты: все 11, у каждой — блюпринт из её же данных</h2>
     <p class="lede">Превью нарисованы не «вдохновением», а по данным карты: порода, смерть, no-hook,
       чекпойнты, спавны. Тот же генератор кормит и страницу «Карты» в клиенте.</p>
     <div class="grid g2">
@@ -384,9 +384,40 @@
   <div class="wrap row">
     <span>Neon Relay 0.1 · самостоятельная вилка открытого движка: свой режим, скины и витрина</span>
     <span style="margin-left:auto"><a href="https://github.com/Leo88q/neon-relay">репозиторий</a></span>
+    <span><a href="../../docs/PRIVACY_POLICY.md">Конфиденциальность</a> · <a href="../../docs/TERMS.md">Условия</a> · <a href="../../docs/COOKIE_POLICY.md">Cookies</a> · <a href="../../docs/RISK_DISCLOSURE.md">Риски</a></span>
+    <span><a href="../../.well-known/security.txt">security.txt</a> · <a href="#" onclick="document.getElementById('cookie-settings').style.display='block';return false;">Настройки cookies</a></span>
     <span><a href="en.html">English version</a></span>
-    <span class="muted">эта страница — макет лендинга; все изображения взяты из файлов проекта</span>
   </div>
 </footer>
+<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;background:#0A0E1E;color:#D8F6FF;padding:16px 20px;display:none;z-index:9999;border-top:2px solid #4DE3F7;font-family:system-ui,sans-serif;font-size:14px">
+  <div style="max-width:900px;margin:0 auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <span style="flex:1;min-width:240px">Мы используем только необходимые cookies. Аналитика/маркетинг — только с вашего согласия. <a href="../../docs/COOKIE_POLICY.md" style="color:#4DE3F7">Подробнее</a></span>
+    <button onclick="localStorage.setItem('neonrelay-cookie','necessary');this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Отклонить</button>
+    <button onclick="localStorage.setItem('neonrelay-cookie','all');this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Принять</button>
+    <a href="#" onclick="document.getElementById('cookie-banner').style.display='none';return false;" style="color:#8A9CC2">×</a>
+  </div>
+</div>
+<div id="cookie-settings" style="display:none;position:fixed;inset:0;background:rgba(5,6,14,0.85);z-index:10000;padding:40px 20px;overflow:auto">
+  <div style="max-width:560px;margin:40px auto;background:#0A0E1E;border:1px solid #4DE3F7;border-radius:16px;padding:24px;color:#D8F6FF">
+    <h3 style="margin:0 0 12px">Настройки cookies</h3>
+    <p style="color:#8A9CC2;font-size:14px">Необходимые всегда включены. Остальные — по согласию.</p>
+    <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" checked disabled> Строго необходимые (сессия, безопасность)</label>
+    <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" id="ck-analytics"> Аналитика (анонимная)</label>
+    <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" id="ck-marketing"> Маркетинг</label>
+    <div style="display:flex;gap:12px;margin-top:18px">
+      <button onclick="localStorage.setItem('neonrelay-cookie', JSON.stringify({necessary:true,analytics:document.getElementById('ck-analytics').checked,marketing:document.getElementById('ck-marketing').checked,ts:Date.now()}));document.getElementById('cookie-settings').style.display='none';document.getElementById('cookie-banner').style.display='none'" style="flex:1;background:#4DE3F7;color:#05060E;border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:600">Сохранить</button>
+      <button onclick="document.getElementById('cookie-settings').style.display='none'" style="flex:1;background:transparent;color:#D8F6FF;border:1px solid #4DE3F7;padding:10px;border-radius:8px;cursor:pointer">Закрыть</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  try{
+    var v = localStorage.getItem('neonrelay-cookie');
+    if(!v) document.getElementById('cookie-banner').style.display='block';
+    if(navigator.globalPrivacyControl) console.log('GPC detected — treat as reject');
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

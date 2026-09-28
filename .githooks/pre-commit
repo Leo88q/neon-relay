@@ -1,0 +1,13 @@
+#!/bin/sh
+# Neon Relay pre-commit hook — checklist 1.3.6
+# Runs secret scan + AI injection scan + branding gate. Fail = block commit.
+set -e
+echo "pre-commit: secret scan self-test..."
+python3 scripts/check_secrets.py --self-test
+python3 scripts/check_secrets.py
+echo "pre-commit: AI injection scan self-test..."
+python3 scripts/check_ai_injection.py --self-test
+python3 scripts/check_ai_injection.py
+# Optional: fast branding check (release mode heavy — skip in pre-commit unless --release)
+# ./scripts/check_branding.sh --release --check-translations
+echo "pre-commit: all gates passed"

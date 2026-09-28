@@ -175,6 +175,38 @@ venv/
 # JS type-gate deps (installed locally by scripts/macbook_release.sh; never shipped)
 node_modules/
 
+# ── Secrets and credentials — never commit real values (checklist 1.3.1) ─────
+# Allow only the documented example; every real env file is ignored.
+.env
+.env.*
+!.env.example
+!backend/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id.json
+keypair*.json
+wallet*.json
+serviceAccount*.json
+credentials*.json
+secrets*.json
+# Database dumps — migrations under backend/migrations/ stay tracked
+*.dump
+*.bak
+!backend/migrations/*.sql
+# Local SQLite live databases (migrations are tracked, var/*.db is ignored below)
+var/
+*.sqlite-shm
+*.sqlite-wal
+# Build outputs that must never be deployed as static assets
+dist/
+build/
+.next/
+out/
+coverage/
+
 # Operator-generated deployment manifests (the example stays tracked)
 onchain/deployment.*.json
 !onchain/deployment.example.json

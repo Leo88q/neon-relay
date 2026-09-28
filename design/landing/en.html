@@ -43,7 +43,7 @@
     </div>
     <div class="facts">
       <span><b>6</b>weapons, same art as the HUD</span>
-      <span><b>27</b>maps shipped</span>
+      <span><b>11</b>maps shipped</span>
       <span><b>9</b>backdrops of one room</span>
       <span><b>0</b>external requests on this page</span>
     </div>
@@ -174,7 +174,7 @@
 <section id="maps">
   <div class="wrap">
     <span class="eyebrow">maps</span>
-    <h2>Every shipped map: all 27, each with a blueprint from its own data</h2>
+    <h2>Every shipped map: all 11, each with a blueprint from its own data</h2>
     <p class="lede">The previews are not "inspired by" the maps — they are drawn from the map data: rock, death,
       no-hook, checkpoints, spawns. The same generator feeds the Maps page inside the client.</p>
     <div class="grid g2">
@@ -389,9 +389,42 @@
   <div class="wrap row">
     <span>Neon Relay 0.1 · a standalone build on an open-source engine, with its own mode, skins and storefront</span>
     <span style="margin-left:auto"><a href="https://github.com/Leo88q/neon-relay">repository</a></span>
+    <span><a href="../../docs/PRIVACY_POLICY.md">Privacy</a> · <a href="../../docs/TERMS.md">Terms</a> · <a href="../../docs/COOKIE_POLICY.md">Cookies</a> · <a href="../../docs/RISK_DISCLOSURE.md">Risk</a></span>
+    <span><a href="../../.well-known/security.txt">security.txt</a> · <a href="#" onclick="document.getElementById('cookie-settings').style.display='block';return false;">Cookie settings</a></span>
     <span><a href="index.html">Русская версия</a></span>
-    <span class="muted">this page is a landing mock-up; every image is a file from this repository</span>
   </div>
 </footer>
+<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;background:#0A0E1E;color:#D8F6FF;padding:16px 20px;display:none;z-index:9999;border-top:2px solid #4DE3F7;font-family:system-ui,sans-serif;font-size:14px">
+  <div style="max-width:900px;margin:0 auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <span style="flex:1;min-width:240px">We use only necessary cookies. Analytics/marketing cookies are off until you allow them. <a href="../../docs/COOKIE_POLICY.md" style="color:#4DE3F7">Learn more</a></span>
+    <button onclick="localStorage.setItem('neonrelay-cookie','necessary');this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Reject non-essential</button>
+    <button onclick="localStorage.setItem('neonrelay-cookie','all');this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Accept</button>
+    <a href="#" onclick="document.getElementById('cookie-banner').style.display='none';return false;" style="color:#8A9CC2">×</a>
+  </div>
+</div>
+<div id="cookie-settings" style="display:none;position:fixed;inset:0;background:rgba(5,6,14,0.85);z-index:10000;padding:40px 20px;overflow:auto">
+  <div style="max-width:560px;margin:40px auto;background:#0A0E1E;border:1px solid #4DE3F7;border-radius:16px;padding:24px;color:#D8F6FF">
+    <h3 style="margin:0 0 12px">Cookie settings</h3>
+    <p style="color:#8A9CC2;font-size:14px">Necessary cookies are always on. Enable others only if you agree.</p>
+    <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" checked disabled> Strictly necessary (session, security)</label>
+    <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" id="ck-analytics"> Analytics (anonymous, cookieless if possible)</label>
+    <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" id="ck-marketing"> Marketing</label>
+    <div style="display:flex;gap:12px;margin-top:18px">
+      <button onclick="localStorage.setItem('neonrelay-cookie', JSON.stringify({necessary:true,analytics:document.getElementById('ck-analytics').checked,marketing:document.getElementById('ck-marketing').checked,ts:Date.now()}));document.getElementById('cookie-settings').style.display='none';document.getElementById('cookie-banner').style.display='none'" style="flex:1;background:#4DE3F7;color:#05060E;border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:600">Save</button>
+      <button onclick="document.getElementById('cookie-settings').style.display='none'" style="flex:1;background:transparent;color:#D8F6FF;border:1px solid #4DE3F7;padding:10px;border-radius:8px;cursor:pointer">Close</button>
+    </div>
+  </div>
+</div>
+<script>
+// Checklist 4.3: prior consent — no non-essential script loads before consent; banner shown if no choice yet.
+(function(){
+  try{
+    var v = localStorage.getItem('neonrelay-cookie');
+    if(!v) document.getElementById('cookie-banner').style.display='block';
+    // honour GPC (Global Privacy Control) as opt-out for marketing/analytics
+    if(navigator.globalPrivacyControl) console.log('GPC signal detected — treat as reject for marketing');
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

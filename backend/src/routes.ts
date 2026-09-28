@@ -680,6 +680,22 @@ export function buildRouter(deps: {
     return identity;
   };
 
+  // Checklist 7.2 — responsible disclosure endpoint (RFC 9116)
+  router.add("GET", "/.well-known/security.txt", () => {
+    return [
+      "Contact: mailto:security@neonrelay.example",
+      "Expires: 2027-09-28T00:00:00.000Z",
+      "Acknowledgments: https://neonrelay.example/.well-known/security.txt",
+      "Preferred-Languages: en, ru",
+      "Canonical: https://neonrelay.example/.well-known/security.txt",
+      "Policy: https://neonrelay.example/docs/SECURITY_REVIEW_2026_09_26.md",
+    ].join("\n") + "\n";
+  });
+
+  router.add("GET", "/robots.txt", () =>
+    "User-agent: *\nDisallow: /v1/admin/\nDisallow: /watchtower/\nAllow: /\n",
+  );
+
   router.add("GET", "/v1/health", () => ({
     status: "ok",
     service: "neonrelay-backend",

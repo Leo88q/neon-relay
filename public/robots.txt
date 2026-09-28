@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /v1/admin/
+Disallow: /watchtower/
+Disallow: /.well-known/
+Allow: /

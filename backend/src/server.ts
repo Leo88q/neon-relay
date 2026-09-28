@@ -14,7 +14,7 @@ import { RewardService, RewardsError } from "./rewards.ts";
 import { SessionStore } from "./sessions.ts";
 import { WalletStore } from "./wallets.ts";
 import {
-  bearerToken, clientIp, HttpError, readJsonBody, sendJson,
+  bearerToken, clientIp, corsHeaders, HttpError, readJsonBody, sendJson, sendNoContent, sendText,
   type RequestContext,
 } from "./http.ts";
 import { authFailureStatus, buildRouter } from "./routes.ts";
@@ -52,6 +52,19 @@ export function createApp(config: Config = loadConfig()): App {
   async function dispatch(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://localhost");
     const path = url.pathname.replace(/\/+$/, "") || "/";
+    // Checklist 3.4.1: CORS — allowlist from NEONRELAY_CORS_ORIGINS; no wildcard + credentials.
+    const origin = req.headers.origin as string | undefined;
+    const cors = corsHeaders(origin, config.corsOrigins);
+    // Preflight: OPTIONS is handled at dispatch level (no route needed).
+    if (req.method === "OPTIONS") {
+      if (cors) {
+        sendNoContent(res, 204, cors);
+      } else {
+        // No CORS — still answer OPTIONS with security headers but no AC-Allow-Origin
+        sendNoContent(res, 204);
+      }
+      return;
+    }
     try {
       const resolved = router.resolve(req.method ?? "GET", path);
       if (!resolved) {
@@ -69,29 +82,34 @@ export function createApp(config: Config = loadConfig()): App {
         params: resolved.params,
       };
       const result = await resolved.handler(ctx);
+      if (typeof result === "string") {
+        sendText(res, 200, result, "text/plain; charset=utf-8", cors ?? {});
+        return;
+      }
       // Kubernetes-style readiness must be non-2xx while blocked. Liveness
       // remains a separate endpoint (`/watchtower/health`).
       const readinessBlocked = path === "/watchtower/readyz" &&
         typeof result === "object" && result !== null &&
         typeof (result as { data?: { ready?: unknown } }).data?.ready === "boolean" &&
         (result as { data: { ready: boolean } }).data.ready === false;
-      sendJson(res, readinessBlocked ? 503 : 200, result);
+      sendJson(res, readinessBlocked ? 503 : 200, result, cors ?? {});
     } catch (err) {
+      const corsErr = cors ?? {};
       if (err instanceof HttpError) {
-        sendJson(res, err.status, { error: { code: err.code, message: err.message } });
+        sendJson(res, err.status, { error: { code: err.code, message: err.message } }, corsErr);
       } else if (err instanceof AuthFailure) {
         sendJson(res, authFailureStatus(err.code),
-          { error: { code: err.code, message: err.message } });
+          { error: { code: err.code, message: err.message } }, corsErr);
       } else if (err instanceof RewardsError) {
-        sendJson(res, err.status, { error: { code: err.code, message: err.message } });
+        sendJson(res, err.status, { error: { code: err.code, message: err.message } }, corsErr);
       } else if (err instanceof AdminError) {
-        sendJson(res, err.status, { error: { code: err.code, message: err.message } });
+        sendJson(res, err.status, { error: { code: err.code, message: err.message } }, corsErr);
       } else if (err instanceof GameEventsError) {
-        sendJson(res, err.status, { error: { code: err.code, message: err.message } });
+        sendJson(res, err.status, { error: { code: err.code, message: err.message } }, corsErr);
       } else {
         // never leak internals; the message goes to the log only
         console.error("unhandled error", err);
-        sendJson(res, 500, { error: { code: "internal", message: "internal server error" } });
+        sendJson(res, 500, { error: { code: "internal", message: "internal server error" } }, corsErr);
       }
     }
   }

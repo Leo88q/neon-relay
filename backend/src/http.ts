@@ -45,14 +45,109 @@ export async function readJsonBody(req: IncomingMessage, limitBytes = 64 * 1024)
   }
 }
 
-export function sendJson(res: ServerResponse, status: number, payload: unknown): void {
+export const SECURITY_HEADERS: Record<string, string> = {
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  "cross-origin-opener-policy": "same-origin",
+  "cross-origin-resource-policy": "same-site",
+  "x-dns-prefetch-control": "off",
+  "cache-control": "no-store",
+};
+
+export function cspHeader(): string {
+  return [
+    "default-src 'none'",
+    "base-uri 'none'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'none'",
+    "connect-src 'self' https://api.devnet.solana.com https://api.testnet.solana.com https://api.mainnet-beta.solana.com",
+    "script-src 'none'",
+    "style-src 'none'",
+    "img-src 'none'",
+    "font-src 'none'",
+  ].join("; ");
+}
+
+export function corsHeaders(
+  origin: string | undefined,
+  allowedOrigins: string[],
+): Record<string, string> | null {
+  if (!origin) return null;
+  const allowed = allowedOrigins.includes("*")
+    ? "*"
+    : allowedOrigins.includes(origin)
+      ? origin
+      : null;
+  if (!allowed) return null;
+  const h: Record<string, string> = {
+    "access-control-allow-origin": allowed,
+    "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "access-control-allow-headers": "Content-Type, Authorization",
+    "access-control-max-age": "600",
+  };
+  if (allowed !== "*") h["access-control-allow-credentials"] = "false";
+  h["vary"] = "Origin";
+  return h;
+}
+
+export function sendJson(
+  res: ServerResponse,
+  status: number,
+  payload: unknown,
+  extraHeaders: Record<string, string> = {},
+): void {
   const body = JSON.stringify(payload);
-  res.writeHead(status, {
+  const headers: Record<string, string> = {
     "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store",
-    "x-content-type-options": "nosniff",
-  });
+    ...SECURITY_HEADERS,
+    "content-security-policy": cspHeader(),
+    "strict-transport-security": "max-age=31536000; includeSubDomains",
+    "server": "NeonRelay",
+    ...extraHeaders,
+  };
+  // Node may emit a default Server header; our explicit value wins via writeHead.
+  res.writeHead(status, headers);
   res.end(body);
+}
+
+export function sendText(
+  res: ServerResponse,
+  status: number,
+  body: string,
+  contentType = "text/plain; charset=utf-8",
+  extraHeaders: Record<string, string> = {},
+): void {
+  const headers: Record<string, string> = {
+    "content-type": contentType,
+    ...SECURITY_HEADERS,
+    "content-security-policy": cspHeader(),
+    "strict-transport-security": "max-age=31536000; includeSubDomains",
+    "server": "NeonRelay",
+    ...extraHeaders,
+  };
+  const buf = Buffer.from(body, "utf8");
+  headers["content-length"] = String(buf.length);
+  res.writeHead(status, headers);
+  res.end(buf);
+}
+
+export function sendNoContent(
+  res: ServerResponse,
+  status = 204,
+  extraHeaders: Record<string, string> = {},
+): void {
+  const headers: Record<string, string> = {
+    ...SECURITY_HEADERS,
+    "content-security-policy": cspHeader(),
+    "strict-transport-security": "max-age=31536000; includeSubDomains",
+    "server": "NeonRelay",
+    ...extraHeaders,
+  };
+  res.writeHead(status, headers);
+  res.end();
 }
 
 export function bearerToken(req: IncomingMessage): string | null {
