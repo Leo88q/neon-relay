@@ -1,6 +1,7 @@
 package com.leo88q.neonrelay.wallet
 
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -35,6 +36,15 @@ class RewardsTxBuilderTest {
             } while (b and 128 != 0)
             return value
         }
+    }
+
+    @Before fun allowlistOfficialPrograms() {
+        // Catalog item 114: buildClaimMessage enforces the operator allowlist
+        // itself; the suite configures it the way a release build does.
+        ProgramPolicy.configure(
+            listOf(tx.base58Encode(program)),
+            listOf(tx.base58Encode(program)),
+        )
     }
 
     private fun invalid(block: () -> Unit) {
@@ -209,6 +219,22 @@ class RewardsTxBuilderTest {
         assertEquals(1, txBytes[0].toInt())
         assertArrayEquals(ByteArray(64), txBytes.copyOfRange(1, 65))
         assertArrayEquals(message, txBytes.copyOfRange(65, txBytes.size))
+    }
+
+    @Test fun buildRefusesProgramsOutsideTheAllowlist() {
+        val root = tx.hexToBytes("beabab895b91754cc53b68c5e9de7e4f59fd787f8cd72a43cde36dc211457493")
+        val proof = listOf(
+            tx.hexToBytes("8d4ae284eb918c4af0acc58867b8ece221a13f63b2e76e3031ee4d576e18ac6e"),
+            tx.hexToBytes("67c0382c46a2d79724ca3b7604b739279b6026d9fcd3cdbb72fa71d6fb90369d"),
+        )
+        val wallet = ByteArray(32) { 2 }
+        val build = { amount: Long ->
+            builder.buildClaimMessage(wallet, config, epochState(root, 3), program, 7, amount, 1, proof, blockhash)
+        }
+        build(250) // allowlisted program compiles
+        ProgramPolicy.reset()
+        invalid { build(250) }
+        ProgramPolicy.configure(listOf(tx.base58Encode(program)), listOf(tx.base58Encode(program)))
     }
 
     @Test fun unverifiableClaimsAreRejectedBeforeCompilation() {

@@ -1,0 +1,21 @@
+{
+  "_comment": "Example preflight batch (catalog item 127). Replace batchId, amounts and fingerprints at execution time; decodedText and signedIntentHash are recomputed by the operator tooling, never hand-edited.",
+  "batchId": "sweep-2026-09-28-a",
+  "createdAt": 1790553600000,
+  "transfers": [
+    {
+      "chain": "solana-mainnet",
+      "mint": "SKR1111111111111111111111111111111111111111",
+      "recipient": "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9",
+      "amountMicro": 750000000,
+      "purpose": "cold-storage",
+      "reason": "weekly sweep of game fees to cold storage",
+      "origin": "human",
+      "approvals": [
+        "ops-fingerprint-a"
+      ],
+      "decodedText": "chain=solana-mainnet mint=SKR1111111111111111111111111111111111111111 to=FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9 amount_micro=750000000 purpose=cold-storage",
+      "signedIntentHash": "b7fca7641a70cb3d1bba89f80d239f75e14426ca99f0e5be7caebcd8c2b552c2"
+    }
+  ]
+}

@@ -51,8 +51,11 @@ snapshot is complete through **stage 17** (including the requested extensions: t
 non-simulation features program, the SKR economy stack and the original neon art).
 The stage-0…12 delivery evidence — executed commands, blockers, mock-vs-production
 statements — is recorded in [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md). The current
-security state is the 2026-09-26 review set:
-[`docs/SECURITY_REVIEW_2026_09_26.md`](docs/SECURITY_REVIEW_2026_09_26.md),
+security state is the 2026-09-28 incident-catalog set:
+[`docs/INCIDENT_CATALOG_AUDIT_2026_09_28.md`](docs/INCIDENT_CATALOG_AUDIT_2026_09_28.md)
+(items 94–130 of the June–September 2026 review, plus
+[`docs/OPERATOR_SECURITY.md`](docs/OPERATOR_SECURITY.md) for the operational half),
+on top of [`docs/SECURITY_REVIEW_2026_09_26.md`](docs/SECURITY_REVIEW_2026_09_26.md),
 [`docs/SOLANA_CHECKLIST_AUDIT_2026_09_26.md`](docs/SOLANA_CHECKLIST_AUDIT_2026_09_26.md)
 and [`docs/AGENTIC_THREAT_AUDIT_2026_09_26.md`](docs/AGENTIC_THREAT_AUDIT_2026_09_26.md),
 with the executed regression suites in [`audit/2026-09-21/`](audit/2026-09-21) and the
@@ -109,7 +112,7 @@ per-commit AI-injection gate) is documented in
 | `src/engine`, `src/game`, `src/rust-bridge`, `src/mastersrv`, `src/masterping`, `src/tools`, `src/test` | upstream C++/Rust client, server, protocol, tools and tests |
 | `src/neonrelay/` | **new** server-side modules: wallet event bridge (stage 5), Ed25519 match-event signer (stage 8; vendored public-domain `ed25519-donna` in `src/engine/external/ed25519`, signed events emitted by `src/game/server/neonrelay_events.cpp`, CLI helper `src/tools/neonrelay_match_sign.cpp`) |
 | `android/` | **new** Gradle module for Android / Solana Mobile: wallet adapter, JNI bridge, UI (stage 5) |
-| `backend/` | **new** TypeScript (Node 22) API: wallet auth, reward ledger, epochs, claim intents (stages 6–7) |
+| `backend/` | **new** TypeScript (Node 22) API: wallet auth, reward ledger, epochs, claim intents (stages 6–7) + out-of-band guards `tx_policy.ts` (transfer policy), `rpc_quorum.ts` (multi-provider money-path reads), `oracle_guard.ts` (price/depth gate) with the preflight CLI `backend/scripts/transfer_preflight.ts` |
 | `onchain/` | **new** Anchor programs: rewards (epochs, Merkle roots, claim PDAs, pause, devnet test mints only) and features (achievements, unique supply-1 badges, leaderboards, tournaments) + dependency-free TS mirrors and offline tests (stages 9/11; not compilable in the sandbox — BL-03) |
 | `licenses/` | verbatim third-party license texts referenced by `docs/THIRD_PARTY_NOTICES.md` (stage 4) |
 | `scripts/android/files/**` | upstream Android template, superseded by `android/` |
@@ -117,6 +120,7 @@ per-commit AI-injection gate) is documented in
 | `other/` | packaging helpers: icons, desktop entry, Docker, emscripten shell, vim syntax, Xcode project |
 | `docs/` | all project documentation (index below) |
 | `ci/upstream-reference/` | the upstream GitHub Actions workflows, kept for reference only |
+| `ops/` | operator examples checked by the key-provenance and transfer-policy gates (`key_provenance.example.json`, `transfer_policy.example.json`, `transfer_batch.example.json`) |
 
 ## Building
 

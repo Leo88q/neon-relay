@@ -59,6 +59,28 @@ jobs:
         run: |
           python3 scripts/check_ai_injection.py --self-test
           python3 scripts/check_ai_injection.py
+      # Catalog 2026 §AH/§AJ (items 107, 115, 128, 130): release profiles keep
+      # overflow checks, the Rust toolchain stays pinned, lockfiles carry
+      # integrity hashes, no package runs install scripts, CI never installs
+      # without --ignore-scripts.
+      - name: Supply-chain gates (self-test first)
+        run: |
+          python3 scripts/check_supply_chain.py --self-test
+          python3 scripts/check_supply_chain.py
+      # Catalog 2026 §AE/AI (items 99, 120, 121, 125, 126): every privileged
+      # key has a provenance record — vendor, firmware, entropy source,
+      # custody, location, rotation date — and the record passes rules.
+      - name: Key-provenance gate (self-test first)
+        run: |
+          python3 scripts/check_key_provenance.py --self-test
+          python3 scripts/check_key_provenance.py
+      # Catalog 2026 §AD (items 104, 105, 119): the landing origin stays
+      # same-origin and strictly CSP'd, and the served bundle hashes are
+      # pinned so any change is visible in review.
+      - name: Landing integrity (self-test first)
+        run: |
+          python3 scripts/check_landing_integrity.py --self-test
+          python3 scripts/check_landing_integrity.py
       - name: Branding scan (release mode) + translation lockstep
         run: ./scripts/check_branding.sh --release --check-translations
       - name: Generated skins match the generator (determinism)

@@ -1,6 +1,7 @@
 package com.leo88q.neonrelay.wallet
 
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 
 /** Pure JVM tests; no RPC, Android runtime or private signing keys. */
@@ -27,6 +28,15 @@ class EconomyTxBuilderTest {
             } while (b and 128 != 0)
             return value
         }
+    }
+
+    @Before fun allowlistOfficialPrograms() {
+        // Catalog item 114: the builders themselves enforce the operator
+        // program allowlist, so the suite configures it like a deployment does.
+        ProgramPolicy.configure(
+            listOf(builder.base58Encode(program)),
+            listOf("Reward11111111111111111111111111111111111111"),
+        )
     }
 
     private fun invalid(block: () -> Unit) {
@@ -164,6 +174,19 @@ class EconomyTxBuilderTest {
             builder.payEntryData(ByteArray(32) { 2 }, 0), intArrayOf(0, 1), blockhash,
         )
         assertEquals(1, message[0].toInt())
+    }
+
+    @Test fun buildersRefuseProgramsOutsideTheAllowlist() {
+        // Catalog item 114/T75: the defence must run on the build path, not in
+        // a test that calls the policy object by hand.
+        ProgramPolicy.reset()
+        invalid { builder.buildPayEntryMessage(player, config, program, ByteArray(32) { 2 }, 0, blockhash) }
+        invalid { builder.buildClaimPrizeMessage(player, config, program, 7, 100, 0, emptyList(), blockhash) }
+        ProgramPolicy.configure(listOf(builder.base58Encode(builder.base58Decode("Ev1l11111111111111111111111111111111111111"))), emptyList())
+        invalid { builder.buildPayEntryMessage(player, config, program, ByteArray(32) { 2 }, 0, blockhash) }
+        ProgramPolicy.configure(listOf(builder.base58Encode(program)), listOf("Reward11111111111111111111111111111111111111"))
+        val message = builder.buildPayEntryMessage(player, config, program, ByteArray(32) { 2 }, 0, blockhash)
+        assertTrue(message.isNotEmpty())
     }
 
     @Test fun programPolicyIsFailClosedAndAllowlistDriven() {

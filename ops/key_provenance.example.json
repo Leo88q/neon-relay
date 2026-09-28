@@ -1,0 +1,70 @@
+{
+  "_comment": "Example only — copy to a private operator store, fill in real fingerprints and locations, and run scripts/check_key_provenance.py before every release and after every key ceremony. This file contains no secrets: fingerprints are sha256 identifiers chosen by the operator, never derived from the key material itself. The example passes the gate on purpose; edit it and the gate is what tells you which rule you broke.",
+  "schema_version": 1,
+  "known_bad_firmware": [
+    {
+      "id": "CODECARD-2026-01",
+      "vendor": "Coldcard",
+      "model_regex": "Mk[2345].*|Q.*",
+      "firmware_below": "5.6.0",
+      "reason": "seed generation could fall back to a weak software PRNG (~40/72-bit effective entropy); keys generated in this range must be migrated (catalog item 126)"
+    }
+  ],
+  "keys": [
+    {
+      "id": "treasury-squads-signer-a",
+      "role": "treasury-signer",
+      "fingerprint": "sha256:example-signer-a-0001",
+      "scheme": "multisig-member",
+      "multisig": { "name": "Squads mainnet treasury", "threshold": 3, "total": 5 },
+      "device": { "vendor": "Coldcard", "model": "Mk4", "firmware": "5.6.1", "os": "firmware" },
+      "entropy": { "source": "hardware-csprng" },
+      "generated_at": "2026-06-01",
+      "rotation_due": "2027-06-01",
+      "location": "safe-eu-west",
+      "status": "active",
+      "notes": "Signs only from an air-gapped machine; never connected to a build host."
+    },
+    {
+      "id": "treasury-squads-signer-b",
+      "role": "treasury-signer",
+      "fingerprint": "sha256:example-signer-b-0002",
+      "scheme": "multisig-member",
+      "multisig": { "name": "Squads mainnet treasury", "threshold": 3, "total": 5 },
+      "device": { "vendor": "Trezor", "model": "Safe 3", "firmware": "2.8.1", "os": "firmware" },
+      "entropy": { "source": "csprng+external-dice" },
+      "generated_at": "2026-06-01",
+      "rotation_due": "2027-06-01",
+      "location": "safe-eu-north",
+      "status": "active",
+      "notes": "Different vendor and different country than signer A on purpose."
+    },
+    {
+      "id": "treasury-squads-signer-c",
+      "role": "treasury-signer",
+      "fingerprint": "sha256:example-signer-c-0003",
+      "scheme": "multisig-member",
+      "multisig": { "name": "Squads mainnet treasury", "threshold": 3, "total": 5 },
+      "device": { "vendor": "Ledger", "model": "Stax", "firmware": "1.5.0", "os": "firmware" },
+      "entropy": { "source": "hardware-csprng" },
+      "generated_at": "2026-06-15",
+      "rotation_due": "2027-06-15",
+      "location": "safe-us-east",
+      "status": "active",
+      "notes": "Third vendor; clear-signing display required for every authority change."
+    },
+    {
+      "id": "devnet-only-program-authority",
+      "role": "devnet-test",
+      "fingerprint": "sha256:example-devnet-0004",
+      "scheme": "single",
+      "device": { "vendor": "Software", "model": "solana-keygen on an ephemeral container", "firmware": "n/a", "os": "linux-container" },
+      "entropy": { "source": "software-prng" },
+      "generated_at": "2026-08-01",
+      "rotation_due": "2026-12-01",
+      "location": "ci-ephemeral",
+      "status": "active",
+      "notes": "Devnet only. Never funded, never reused, deleted with the container."
+    }
+  ]
+}

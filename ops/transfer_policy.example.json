@@ -1,0 +1,40 @@
+{
+  "_comment": "Example transfer policy (catalog item 127). Copy to a private operator store, review the limits against the treasury's actual size, and run backend/scripts/transfer_preflight.ts with it before every multisig proposal. Nothing here is a secret. Bars are in base units (micro) of the mint named in `mints`.",
+  "version": 1,
+  "halted": false,
+  "chains": ["solana-mainnet"],
+  "mints": {
+    "SKR": "SKR1111111111111111111111111111111111111111"
+  },
+  "recipients": [
+    {
+      "label": "cold-vault",
+      "address": "FZcLDdUrs6i1HYFFK2NhqNrbVaP6KTvrqzhyoDGT6CV9",
+      "chains": ["solana-mainnet"],
+      "purposes": ["cold-storage", "sweep"],
+      "custody": "multisig"
+    },
+    {
+      "label": "payout-runner",
+      "address": "2RaaXKUutemHtSZUsmnEv41ytWMkaXD6rcoziHGLRtmj",
+      "chains": ["solana-mainnet"],
+      "purposes": ["payout", "refund"],
+      "limitMicro": 2000000000,
+      "custody": "warm"
+    }
+  ],
+  "limits": {
+    "perTxMicro": 5000000000,
+    "perRecipientDayMicro": 8000000000,
+    "perHourMicro": 10000000000,
+    "perDayMicro": 20000000000,
+    "warmWalletCapMicro": 5000000000
+  },
+  "approval": {
+    "dualAboveMicro": 2000000000,
+    "offProtocolAlwaysDual": true,
+    "delayAboveMicro": 1000000000,
+    "delayMs": 86400000
+  },
+  "simulationRequired": false
+}
