@@ -1,0 +1,36 @@
+{
+  // Catalog 2026 §AE/AJ (items 106, 107, 130): third-party code, IDE tasks and
+  // package scripts must never run where keys live. This container is the
+  // "disposable machine": toolchains only, no wallet, no keypair, no .env,
+  // no host home directory mounted, capabilities dropped. Use it for
+  // recruitment test tasks, "partner" repositories and AI-agent/plugin work.
+  "name": "Neon Relay dev (no keys)",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.12" },
+    "ghcr.io/devcontainers/features/rust:1": { "version": "1.83.0" }
+  },
+  "runArgs": ["--cap-drop=ALL", "--security-opt=no-new-privileges"],
+  "containerEnv": {
+    "NEONRELAY_DEV_CONTAINER": "1",
+    "NPM_CONFIG_IGNORE_SCRIPTS": "true",
+    "GIT_CONFIG_COUNT": "1",
+    "GIT_CONFIG_KEY_0": "core.hooksPath",
+    "GIT_CONFIG_VALUE_0": ".githooks"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // Workspace Trust stays on; tasks are not auto-run for untrusted folders.
+        "security.workspace.trust.enabled": true,
+        "security.workspace.trust.startupPrompt": "always",
+        "task.allowAutomaticTasks": "off",
+        "terminal.integrated.confirmOnExit": "never"
+      },
+      "extensions": []
+    }
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "npm ci --ignore-scripts --prefix backend || true"
+}

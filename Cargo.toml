@@ -19,6 +19,15 @@ panic = "abort"
 [profile.release]
 lto = "thin"
 panic = "abort"
+# Catalog 2026 §AH item 115 (Truebit, 8 Jan 2026 — integer overflow in a
+# five-year-old price-curve contract): Rust release builds disable overflow
+# checks by default, so arithmetic wraps silently in exactly the profile that
+# reaches players. Enable them for the whole workspace; the rust-bridge surface
+# is small and the hot paths are C++ (which is compiled with its own checks
+# and sanitizers in CI), so the cost is bounded and the failure mode is a
+# panic instead of a wrong number. `relwithdebinfo` and `minsizerel` inherit
+# this profile. scripts/check_supply_chain.py enforces this line in CI.
+overflow-checks = true
 
 [profile.relwithdebinfo]
 inherits = "release"

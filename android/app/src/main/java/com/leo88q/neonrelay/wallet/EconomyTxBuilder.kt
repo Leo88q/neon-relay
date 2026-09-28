@@ -279,6 +279,11 @@ object EconomyTxBuilder {
         kind: Int,
         blockhash: ByteArray,
     ): ByteArray {
+        // Catalog 2026 §AD item 114 / T75: the fake-program drainer defence is
+        // only a defence if it runs on the build path, before any bytes reach
+        // the wallet. Fail-closed by construction: with no operator allowlist
+        // configured this throws and nothing is signed.
+        ProgramPolicy.requireEconomyAllowed(programId)
         val playerAta = associatedTokenAddress(player, config.mint)
         val metas = listOf(
             AccountMeta(player, signer = true, writable = true),
@@ -304,6 +309,7 @@ object EconomyTxBuilder {
         proof: List<ByteArray>,
         blockhash: ByteArray,
     ): ByteArray {
+        ProgramPolicy.requireEconomyAllowed(programId)
         val playerAta = associatedTokenAddress(player, config.mint)
         val metas = listOf(
             AccountMeta(player, signer = true, writable = true),

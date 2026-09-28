@@ -55,6 +55,27 @@ build is the verification step; CI (stage 10) must fail loudly if a coordinate m
 (`https://update.neonrelay.example/%s`) so nothing can resolve accidentally. Real
 infrastructure (update server, info service, master server) is a deployment task.
 
+### BL-16 — quorum reads are implemented but not yet the default read path
+`backend/src/rpc_quorum.ts` (catalog item 103) is written and tested, and the operator runbook
+requires it, but the existing callers (`backend/src/rpc.ts` failover pool, reconcile/indexer)
+still use the dual-provider pool. Wiring `quorumRead` into the money-path reads — plus
+configuring at least two independent providers and a self-hosted node — is a release gate;
+until then a single provider is still a single verifier. Tracked in
+[`docs/INCIDENT_CATALOG_AUDIT_2026_09_28.md`](INCIDENT_CATALOG_AUDIT_2026_09_28.md) §5.
+
+### BL-17 — Kotlin changes for item 114 are source-pinned, not compiled
+`ProgramPolicy.requireEconomyAllowed` / `requireRewardsAllowed` are now called by the builders
+themselves (`EconomyTxBuilder.kt`, `RewardsTxBuilder.kt`) and the Kotlin suites configure the
+allowlist in `@Before`, but no Kotlin was compiled here (BL-02). The gate that *does* run in
+this environment is the source-level conformance suite
+`onchain/test/client_policy.test.ts`; the first Android CI run must confirm the JUnit suites.
+
+### BL-18 — operator gates added by the 2026-09-28 pass
+Not executable from the sandbox, listed so they cannot be forgotten: the real key-provenance
+manifest (`ops/key_provenance.json`), `verify_deployment.sh` against a finalized RPC, git
+history scanning (gitleaks/trufflehog) with push protection, domain registry/transfer locks,
+and incident drills. See [`docs/OPERATOR_SECURITY.md`](OPERATOR_SECURITY.md).
+
 ## Product / legal gates
 
 ### BL-04 — upstream Android template still load-bearing

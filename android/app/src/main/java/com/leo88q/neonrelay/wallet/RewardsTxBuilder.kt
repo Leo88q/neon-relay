@@ -215,6 +215,7 @@ object RewardsTxBuilder {
         proof: List<ByteArray>,
         blockhash: ByteArray,
     ): ByteArray {
+        ProgramPolicy.requireRewardsAllowed(programId)
         verifyClaim(player, config, epochState, epoch, amount, leafIndex, proof)
         val playerAta = EconomyTxBuilder.associatedTokenAddress(player, config.mint)
         val metas = listOf(
