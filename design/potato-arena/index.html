@@ -15,6 +15,10 @@
     --cyan:#4DE3F7; --pink:#FF2E88; --indigo:#6C60FF; --ice:#D8F6FF; --dim:#607494;
     --rare:#A077FF; --gold:#FFC857; --mint:#59E6BF;
     --panel-r:16px; --card-r:12px;
+    /* «Кадр плёнки» — зеркало токенов FILM_* из src/game/client/neon_style.h.
+       Паритет чисел проверяет scripts/test_film_window.py — править парой. */
+    --film-sprocket:18px; --film-hole-w:8px; --film-hole-h:11px; --film-hole-step:20px;
+    --film-header:38px; --film-mark-r:5px; --film-edge:10px;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
@@ -159,6 +163,82 @@
   .mc .mp{border-radius:0; border:none; border-right:1px solid rgba(77,227,247,.2)}
   .mc .b{padding:10px 12px; display:flex; flex-direction:column; gap:5px}
   @media (max-width:880px){ .quests{grid-template-columns:1fr} .body{flex-direction:column} .mc{grid-template-columns:1fr} }
+  /* «Кадр плёнки» (зеркало оконного хрома клиента, см. neon_window.cpp). Плёнка
+     тянется перфорацией по краям, в заголовке счётчик кадра, по углам рамы
+     регистрационные метки ⊕, сверху краевой код. Числа — токены --film-*. */
+  .filmwin{position:relative; background:rgba(10,14,30,.97); border:1px solid rgba(77,227,247,.4);
+    padding:0 calc(var(--film-sprocket) + 12px) 16px; margin:0 auto; max-width:560px}
+  .filmwin-strip{position:absolute; top:0; bottom:0; width:var(--film-sprocket);
+    background:rgba(5,6,14,.85); border-inline:1px solid rgba(96,116,148,.3)}
+  .filmwin-strip.left{left:0}.filmwin-strip.right{right:0}
+  .filmwin-strip::before{content:""; position:absolute; top:0; bottom:0; left:50%;
+    width:var(--film-hole-w); transform:translateX(-50%);
+    background:repeating-linear-gradient(180deg, #05060E 4px calc(4px + var(--film-hole-h)),
+      transparent calc(4px + var(--film-hole-h)) var(--film-hole-step))}
+  .filmwin-hd{height:var(--film-header); display:flex; align-items:center; gap:12px;
+    border-bottom:1px solid rgba(77,227,247,.45)}
+  .filmwin-code{flex:1; height:2px;
+    background:repeating-linear-gradient(90deg, rgba(96,116,148,.55) 0 var(--film-edge),
+      transparent var(--film-edge) calc(var(--film-edge) + 6px),
+      rgba(96,116,148,.55) calc(var(--film-edge) + 6px) calc(var(--film-edge) + 10px),
+      transparent calc(var(--film-edge) + 10px) calc(var(--film-edge) + 16px))}
+  .filmwin-counter{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px;
+    letter-spacing:.14em; color:var(--ice); white-space:nowrap}
+  .filmwin-body{padding:22px 8px 6px; position:relative}
+  .filmwin .rm{position:absolute; width:calc(var(--film-mark-r)*2); height:calc(var(--film-mark-r)*2);
+    border:1px solid rgba(77,227,247,.55); border-radius:50%}
+  .filmwin .rm::before{content:""; position:absolute; left:-4px; right:-4px; top:50%;
+    border-top:1px solid rgba(77,227,247,.55)}
+  .filmwin .rm::after{content:""; position:absolute; top:-4px; bottom:-4px; left:50%;
+    border-left:1px solid rgba(77,227,247,.55)}
+  .filmwin .rm.tl{left:calc(var(--film-sprocket) + 8px); top:calc(var(--film-header) + 8px)}
+  .filmwin .rm.tr{right:calc(var(--film-sprocket) + 8px); top:calc(var(--film-header) + 8px)}
+  .filmwin .rm.bl{left:calc(var(--film-sprocket) + 8px); bottom:8px; border-color:rgba(96,116,148,.55)}
+  .filmwin .rm.br{right:calc(var(--film-sprocket) + 8px); bottom:8px; border-color:rgba(96,116,148,.55)}
+  .filmwin .rm.bl::before,.filmwin .rm.br::before{border-color:rgba(96,116,148,.55)}
+  .filmwin .rm.bl::after,.filmwin .rm.br::after{border-color:rgba(96,116,148,.55)}
+  .filmwin.alarm{border-color:rgba(255,46,136,.5)}
+  .filmwin.alarm .filmwin-hd{border-color:rgba(255,46,136,.55)}
+  .filmwin.alarm .filmwin-counter{color:var(--pink)}
+  .filmwin.alarm .rm{border-color:rgba(255,46,136,.55)}
+  .filmwin.alarm .rm::before,.filmwin.alarm .rm::after{border-color:rgba(255,46,136,.55)}
+  .filmwin.alarm .rm.bl,.filmwin.alarm .rm.br{border-color:rgba(96,116,148,.55)}
+  /* Кнопка-штамп: двойная рамка, без наклона и мигания. Состояния зеркалят
+     NeonWindow::DrawStamp в клиенте. */
+  .stamp{display:inline-block; position:relative; border:1px solid rgba(77,227,247,.55);
+    box-shadow:inset 0 0 0 1px rgba(77,227,247,.2); color:var(--ice);
+    padding:7px 16px; letter-spacing:.1em; font-size:13px; background:rgba(16,26,48,.6)}
+  .stamp.hot{border-color:rgba(255,46,136,.7); box-shadow:inset 0 0 0 1px rgba(255,46,136,.35),
+    0 0 14px rgba(255,46,136,.28); color:var(--pink)}
+  .stamp.active{background:rgba(77,227,247,.92); color:#08131f;
+    border-color:rgba(77,227,247,.9); box-shadow:inset 0 0 0 1px rgba(8,19,31,.55)}
+  .stamp.gold{border-color:rgba(255,205,110,.7); box-shadow:inset 0 0 0 1px rgba(255,205,110,.35);
+    color:#ffcd6e}
+  .stamp.ghost{opacity:.45}
+  .stampbox{display:flex; gap:18px; justify-content:center; margin-top:16px; flex-wrap:wrap}
+  /* Ярлык архивной папки (вкладка): срезанные верхние углы 8px, у активной —
+     циановая кромка и номер ярлыка. Зеркалит DrawFolderTab. */
+  .filmfolder{display:inline-flex; align-items:baseline; gap:8px; padding:7px 14px 6px;
+    background:rgba(16,26,48,.85); border:1px solid rgba(96,116,148,.45);
+    clip-path:polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%, 0 8px);
+    font-size:13px; letter-spacing:.06em; color:rgba(214,226,240,.8)}
+  .filmfolder.active{background:rgba(19,32,58,.95); border-color:rgba(77,227,247,.65);
+    color:var(--ice); box-shadow:inset 0 2px 0 0 rgba(77,227,247,.9); transform:translateY(-2px)}
+  .filmfolder b{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-weight:400;
+    font-size:10px; color:rgba(96,116,148,.9)}
+  .filmfolder.active b{color:var(--cyan)}
+  /* Обрывок плёнки для тревог: рваные кромки (клип-путь), проколы перфорации
+     по концам. Зеркалит DrawFilmScrap. */
+  .filmscrap{position:relative; padding:14px 34px; background:rgba(10,14,30,.94);
+    clip-path:polygon(0 14%, 5% 6%, 11% 16%, 18% 4%, 26% 13%, 34% 5%, 42% 15%, 50% 6%,
+      58% 14%, 66% 4%, 74% 13%, 82% 6%, 90% 15%, 96% 5%, 100% 12%, 100% 86%, 95% 95%,
+      88% 85%, 80% 96%, 72% 87%, 64% 95%, 56% 86%, 48% 96%, 40% 87%, 32% 95%, 24% 86%,
+      16% 96%, 9% 87%, 4% 95%, 0 88%)}
+  .filmscrap::before,.filmscrap::after{content:""; position:absolute; top:50%;
+    width:8px; height:11px; margin-top:-5px; background:rgba(4,7,16,.95)}
+  .filmscrap::before{left:9px}.filmscrap::after{right:9px}
+  .filmscrap .ttl{color:#ff5c5c; font-size:14px; letter-spacing:.08em}
+  .filmscrap .msg{color:rgba(214,226,240,.85); font-size:12px; margin-top:3px}
 </style>
 </head>
 <body>
@@ -179,6 +259,7 @@
 <script>
 // Одна и та же комната, семь состояний света — ровно как в клиенте (CMenus::RenderBackground).
 const PAGES = [
+  {id:'filmwin', label:'Кадры плёнки', icon:8, bg:'arena_popup'},
   {id:'races', label:'Играть · выжигание', icon:20, bg:'arena_burn'},
   {id:'maps', label:'Карты арены', icon:21, bg:'arena_night'},
   {id:'arsenal', label:'Оружейная', icon:11, bg:'arena_armory'},
@@ -467,9 +548,10 @@ function maps(){
         </div>
       </div>`).join('')}
     </div>
-    <div class="note" style="margin-top:10px">Двадцать одна карта — базовый набор исходного проекта (dm*, ctf*,
-      Tutorial, LearnToPlay, четыре одиночные). Раньше они были перечислены словами и без цифр; теперь читаются
-      тем же ридером, что и наши, поэтому «сколько на карте спавнов» — ответ из файла, а не из макета.
+    <div class="note" style="margin-top:10px">Остаток базового пула — Gold Mine и LearnToPlay (плюс две наши
+      производные Sound/Heights); coverage — служебная фикстура тестов. Классический набор (dm*, ctf*, Tutorial,
+      Tsunami, Sunny Side Up) убран из поставки в Этапе B (docs/CLASSIC_MAP_REMOVAL_PLAN_RU.md). Все строки
+      читаются тем же ридером, что и наши, поэтому «сколько на карте спавнов» — ответ из файла, а не из макета.
       Кредиты берутся из data/maps/license.txt.</div>
   </div></div>`;
 }
@@ -510,7 +592,68 @@ function emoji(){
   </div></div>`;
 }
 
-const RENDER = {play:start, races:races, chars:chars, wallet:wallet, leaders:leaders, settings:settings, sheets:sheets, arsenal:arsenal, maps:maps, emoji:emoji};
+// «Кадр плёнки» — витрина фирменного оконного хрома. Тот же рисунок в клиенте
+// исполняет src/game/client/neon_window.cpp (DrawFilmFrame/DrawFilmPlate,
+// кнопки DrawStamp, вкладки DrawFolderTab, тревоги DrawFilmScrap),
+// паритет токенов --film-* ↔ FILM_* сверяет scripts/test_film_window.py.
+function filmwin(){
+  const win = (cls, frm, body) => `<div class="filmwin ${cls}">
+    <div class="filmwin-strip left"></div><div class="filmwin-strip right"></div>
+    <div class="filmwin-hd"><span class="filmwin-code"></span><span class="filmwin-counter">FRM ${frm}</span></div>
+    <i class="rm tl"></i><i class="rm tr"></i><i class="rm bl"></i><i class="rm br"></i>
+    <div class="filmwin-body">${body}</div>
+  </div>`;
+  return `<div style="flex:1; display:flex; flex-direction:column; gap:10px; min-width:0">
+  <div class="panel pad" style="flex:1; overflow:auto">
+    <div class="hd"><h2>Оконный язык «Кадр плёнки»</h2><span class="note">все окна игры и сайта</span></div>
+    <div class="note" style="margin-bottom:14px">Окно — кадр проявленной плёнки из архива записей:
+      демки и записи матчей это и есть архив. Перфорация по краям, счётчик кадра в заголовке,
+      регистрационные метки ⊕ по углам рамы, краевой код сверху. Появление — протяжка кадра в
+      ворота дискретными подшагами (в клиенте: <code>neon_window.cpp</code>). Аварийные окна
+      (разрыв связи, неверный пароль) проявляются розовым.</div>
+    <div style="display:grid; gap:22px">
+      ${win('', '0107', `<div style="text-align:center; font-size:15px">Покинуть арену?<br>
+        <span class="note">Прогресс разминки сохранён, серия дней не сгорит.</span></div>
+        <div class="stampbox"><span class="stamp">ОСТАТЬСЯ</span><span class="stamp hot">ВЫЙТИ</span></div>`)}
+      ${win('', '0112', `<div style="text-align:center; font-size:15px">Сохранить скин «ночная картошка»?<br>
+        <span class="note">Если имя занято, старый кадр будет перезаписан.</span></div>
+        <div class="stampbox"><span class="stamp active">СОХРАНИТЬ</span><span class="stamp">ОТМЕНА</span></div>`)}
+      ${win('alarm', '0103', `<div style="text-align:center; font-size:15px">Соединение потеряно.<br>
+        <span class="note">Сервер не отвечает; повторное подключение через 5 с.</span></div>
+        <div class="stampbox"><span class="stamp hot">ПОНЯТНО</span></div>`)}
+    </div>
+    <div class="hd" style="margin-top:26px"><h2>Кнопки-штампы</h2><span class="note">меню и всплывающие списки</span></div>
+    <div class="note" style="margin-bottom:12px">Двойная рамка вместо скошенных «форм А»: обычная,
+      наведение (растекание чернил), активная (залитая), редкая золотая и приглушённая.
+      В клиенте — <code>NeonWindow::DrawStamp</code>, кириллица не срезается.</div>
+    <div class="panel pad"><div class="stampbox">
+      <span class="stamp">ОБЫЧНАЯ</span><span class="stamp hot">НАВЕДЕНИЕ</span>
+      <span class="stamp active">АКТИВНА</span><span class="stamp gold">РЕДКАЯ</span>
+      <span class="stamp ghost">ГОСТЬ</span>
+    </div></div>
+    <div class="hd" style="margin-top:26px"><h2>Ярлыки архива</h2><span class="note">вкладки папок</span></div>
+    <div class="note" style="margin-bottom:12px">Срезанные верхние углы и номер ярлыка кодовой
+      гарнитурой; активный ярлык получает циановую кромку и приподнимается.
+      В клиенте — <code>NeonWindow::DrawFolderTab</code>.</div>
+    <div class="panel pad" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap">
+      <span class="filmfolder"><b>01</b>ДЕМО</span>
+      <span class="filmfolder active"><b>02</b>ЗАПИСИ</span>
+      <span class="filmfolder"><b>03</b>АРХИВ</span>
+    </div>
+    <div class="hd" style="margin-top:26px"><h2>Обрывки плёнки</h2><span class="note">тревоги и тосты</span></div>
+    <div class="note" style="margin-bottom:12px">Срочное сообщение лежит на коротком обрывке с
+      рваными кромками и проколами перфорации. В клиенте — <code>NeonWindow::DrawFilmScrap</code>
+      под важным алертом.</div>
+    <div class="panel pad" style="display:flex; justify-content:center">
+      <div class="filmscrap" style="min-width:min(420px,90%)">
+        <div class="ttl">СОЕДИНЕНИЕ ПОТЕРЯНО</div>
+        <div class="msg">Сервер не отвечает; повторное подключение через 5 секунд.</div>
+      </div>
+    </div>
+  </div></div>`;
+}
+
+const RENDER = {play:start, races:races, chars:chars, wallet:wallet, leaders:leaders, settings:settings, sheets:sheets, arsenal:arsenal, maps:maps, emoji:emoji, filmwin:filmwin};
 
 function render(){
   const p = PAGES.find(x=>x.id===current) || {bg:'arena_night'};
@@ -519,7 +662,8 @@ function render(){
     `<div class="tab ${x.id===current?'on':''}" data-id="${x.id}">${icon(x.icon, x.id===current?'cyan':'dim')}${x.label}</div>`).join('')
     + `<div class="tab ${current==='play'?'on':''}" data-id="play">${icon(0, current==='play'?'cyan':'dim')}Экран запуска</div>`
     + `<div class="tab ${current==='sheets'?'on':''}" data-id="sheets">${icon(19, current==='sheets'?'cyan':'dim')}Боевые листы</div>`
-    + `<div class="tab ${current==='emoji'?'on':''}" data-id="emoji">${icon(9, current==='emoji'?'cyan':'dim')}Иконки вместо эмодзи</div>`;
+    + `<div class="tab ${current==='emoji'?'on':''}" data-id="emoji">${icon(9, current==='emoji'?'cyan':'dim')}Иконки вместо эмодзи</div>`
+    + `<div class="tab ${current==='filmwin'?'on':''}" data-id="filmwin">${icon(8, current==='filmwin'?'cyan':'dim')}Кадры плёнки</div>`;
   document.querySelectorAll('[data-go]').forEach(a=>a.onclick=()=>{current=a.dataset.go; render();});
   gridOverlay();
   document.getElementById('page').innerHTML = (RENDER[current]||races)();

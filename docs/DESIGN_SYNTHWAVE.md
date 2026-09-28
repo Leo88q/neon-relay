@@ -44,6 +44,9 @@ lethal/risk**. Hazards never use cyan; safe platforms never use pink.
 
 ## Implementation points
 
+- Window chrome «Кадр плёнки»: `src/game/client/neon_window.cpp` +
+  `FILM_*`-токены здесь; зеркало `--film-*` в `design/potato-arena/index.html`,
+  паритет — `scripts/test_film_window.py`, макет — `docs/FILM_WINDOW_RU.md`.
 - UI sheets & blob: `scripts/build_neon_ui_art.py` (tokens at top of file).
 - Skins: `scripts/build_neon_skins.py` (`BRAND_CYAN`, `BRAND_MAGENTA`, specs).
 - Default interface accent: `UiColor` default `0xE64DE3F7`

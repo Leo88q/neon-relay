@@ -14,6 +14,8 @@
 
 #include <game/client/components/menus.h>
 #include <game/client/gameclient.h>
+#include <game/client/neon_style.h>
+#include <game/client/neon_window.h>
 #include <game/localization.h>
 
 #include <algorithm>
@@ -85,6 +87,34 @@ void CImportantAlert::RenderImportantAlert()
 		Cursor.m_LineWidth = Width;
 		TextRender()->CreateTextContainer(m_TitleTextContainerIndex, &Cursor, m_aTitleText);
 	}
+
+	if(!m_MessageTextContainerIndex.Valid())
+	{
+		CTextCursor Cursor;
+		Cursor.m_FontSize = MessageFontSize;
+		Cursor.m_LineWidth = Width;
+		TextRender()->CreateTextContainer(m_MessageTextContainerIndex, &Cursor, m_aMessageText);
+	}
+
+	// Неоновое окно: тревога лежит не на голом экране, а на обрывке плёнки —
+	// короткой полосе с рваными кромками и проколами перфорации.
+	{
+		float Top = 40.0f - 10.0f;
+		float Bottom = 40.0f + TitleFontSize + 10.0f;
+		float TextWidth = 120.0f;
+		if(m_TitleTextContainerIndex.Valid())
+			TextWidth = std::max(TextWidth, TextRender()->GetBoundingBoxTextContainer(m_TitleTextContainerIndex).m_W);
+		if(m_MessageTextContainerIndex.Valid())
+		{
+			TextWidth = std::max(TextWidth, TextRender()->GetBoundingBoxTextContainer(m_MessageTextContainerIndex).m_W);
+			Bottom = 40.0f + TitleFontSize + 10.0f + TextRender()->GetBoundingBoxTextContainer(m_MessageTextContainerIndex).m_H;
+		}
+		Bottom += 10.0f;
+		const float ScrapWidth = TextWidth + 2.0f * (NeonStyle::FILM_SPROCKET_W + 26.0f);
+		const CUIRect Scrap(Width / 2.0f - ScrapWidth / 2.0f, Top, ScrapWidth, Bottom - Top);
+		NeonWindow::DrawFilmScrap(Graphics(), Scrap, NeonStyle::PINK, Alpha);
+	}
+
 	if(m_TitleTextContainerIndex.Valid())
 	{
 		TextRender()->RenderTextContainer(m_TitleTextContainerIndex,
@@ -94,13 +124,6 @@ void CImportantAlert::RenderImportantAlert()
 			40.0f);
 	}
 
-	if(!m_MessageTextContainerIndex.Valid())
-	{
-		CTextCursor Cursor;
-		Cursor.m_FontSize = MessageFontSize;
-		Cursor.m_LineWidth = Width;
-		TextRender()->CreateTextContainer(m_MessageTextContainerIndex, &Cursor, m_aMessageText);
-	}
 	if(m_MessageTextContainerIndex.Valid())
 	{
 		TextRender()->RenderTextContainer(m_MessageTextContainerIndex,

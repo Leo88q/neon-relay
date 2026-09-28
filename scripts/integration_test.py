@@ -789,7 +789,7 @@ def smoke_test(test_env):
 
 	game_uuid = str(UUID(server.teehistorian_filename.removeprefix("teehistorian/").removesuffix(".teehistorian")))
 
-	client1.command("rcon sv_map Tutorial")
+	client1.command("rcon sv_map \"Neon Relay Basin\"")
 
 	for _ in range(2):
 		server.wait_for_log_prefix("server: player has entered the game", timeout=10)
@@ -859,7 +859,7 @@ def server_can_register(test_env):
 	server.wait_for_log_suffix("successfully registered", timeout=5)
 	server.wait_for_log_suffix("successfully registered", timeout=5)
 	servers_json = mastersrv.servers_json()
-	if len(servers_json["servers"]) != 1 or servers_json["servers"][0]["info"]["map"]["name"] != "Tutorial" or len(servers_json["servers"][0]["addresses"]) != 2:
+	if len(servers_json["servers"]) != 1 or servers_json["servers"][0]["info"]["map"]["name"] != "Neon Relay Basin" or len(servers_json["servers"][0]["addresses"]) != 2:
 		raise AssertionError(f"unexpected servers.json\n{servers_json}")
 	server.exit()
 	mastersrv.wait_for_log_prefix("mastersrv: successfully removed", timeout=5)
@@ -882,7 +882,7 @@ def server_can_register_protocol(test_env, protocol_config, protocol_log, protoc
 	wait_for_startup([server])
 	server.wait_for_log_exact(f"register/{protocol_log}: successfully registered", timeout=5)
 	servers_json = mastersrv.servers_json()
-	if len(servers_json["servers"]) != 1 or servers_json["servers"][0]["info"]["map"]["name"] != "Tutorial" or len(servers_json["servers"][0]["addresses"]) != 1 or not servers_json["servers"][0]["addresses"][0].startswith(f"{protocol_scheme}://[::1]:"):
+	if len(servers_json["servers"]) != 1 or servers_json["servers"][0]["info"]["map"]["name"] != "Neon Relay Basin" or len(servers_json["servers"][0]["addresses"]) != 1 or not servers_json["servers"][0]["addresses"][0].startswith(f"{protocol_scheme}://[::1]:"):
 		raise AssertionError(f"unexpected servers.json\n{servers_json}")
 	server.exit()
 	mastersrv.wait_for_log_prefix(f"mastersrv: successfully removed {protocol_scheme}://[::1]:", timeout=5)
@@ -937,7 +937,7 @@ ddvc_6DnZq51fypqX9ldrEFCF9aJdpi6wjgh6YA = "ddnet"
 	wait_for_startup([server])
 	server.wait_for_log_suffix("successfully registered", timeout=5)
 	servers_json = mastersrv.servers_json()
-	if len(servers_json["servers"]) != 1 or servers_json["servers"][0]["info"]["map"]["name"] != "Tutorial" or len(servers_json["servers"][0]["addresses"]) != 1:
+	if len(servers_json["servers"]) != 1 or servers_json["servers"][0]["info"]["map"]["name"] != "Neon Relay Basin" or len(servers_json["servers"][0]["addresses"]) != 1:
 		raise AssertionError(f"unexpected servers.json\n{servers_json}")
 	if servers_json["servers"][0]["community"] != "ddnet":
 		raise AssertionError(f'servers.json didn\'t have "community" key\n{servers_json}')

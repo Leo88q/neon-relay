@@ -15,6 +15,15 @@
   --mint: #59E6BF;
   --panel-r: 16px;
   --card-r: 12px;
+  /* «Кадр плёнки» — зеркало токенов FILM_* из src/game/client/neon_style.h
+     (числа обязаны совпадать со стендом: гейт scripts/test_film_window.py). */
+  --film-sprocket: 18px;
+  --film-hole-w: 8px;
+  --film-hole-h: 11px;
+  --film-hole-step: 20px;
+  --film-header: 38px;
+  --film-mark-r: 5px;
+  --film-edge: 10px;
   --pad: clamp(16px, 3.2vw, 34px);
   --maxw: 1180px;
 }
@@ -170,3 +179,44 @@ table.cat td { font-size: 13px; }
 table.cat tr.base td { color: #9fb0c9; }
 table.cat tr.base td b { color: #c9d8ea; }
 table.cat .note { font-size: 12px; }
+
+/* «Кадр плёнки» — оконный язык клиента (см. src/game/client/neon_window.cpp и
+   docs/FILM_WINDOW_RU.md). Компонент доступен обеим языковым версиям; числа —
+   те же токены --film-*, что на стенде, паритет сверяет test_film_window.py. */
+.filmwin{position:relative; background:rgba(10,14,30,.97); border:1px solid rgba(77,227,247,.4);
+  padding:0 calc(var(--film-sprocket) + 12px) 16px; margin:0 auto; max-width:560px}
+.filmwin-strip{position:absolute; top:0; bottom:0; width:var(--film-sprocket);
+  background:rgba(5,6,14,.85); border-inline:1px solid rgba(96,116,148,.3)}
+.filmwin-strip.left{left:0}.filmwin-strip.right{right:0}
+.filmwin-strip::before{content:""; position:absolute; top:0; bottom:0; left:50%;
+  width:var(--film-hole-w); transform:translateX(-50%);
+  background:repeating-linear-gradient(180deg, #05060E 4px calc(4px + var(--film-hole-h)),
+    transparent calc(4px + var(--film-hole-h)) var(--film-hole-step))}
+.filmwin-hd{height:var(--film-header); display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid rgba(77,227,247,.45)}
+.filmwin-code{flex:1; height:2px;
+  background:repeating-linear-gradient(90deg, rgba(96,116,148,.55) 0 var(--film-edge),
+    transparent var(--film-edge) calc(var(--film-edge) + 6px),
+    rgba(96,116,148,.55) calc(var(--film-edge) + 6px) calc(var(--film-edge) + 10px),
+    transparent calc(var(--film-edge) + 10px) calc(var(--film-edge) + 16px))}
+.filmwin-counter{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px;
+  letter-spacing:.14em; color:var(--ice); white-space:nowrap}
+.filmwin-body{padding:22px 8px 6px; position:relative}
+.filmwin .rm{position:absolute; width:calc(var(--film-mark-r)*2); height:calc(var(--film-mark-r)*2);
+  border:1px solid rgba(77,227,247,.55); border-radius:50%}
+.filmwin .rm::before{content:""; position:absolute; left:-4px; right:-4px; top:50%;
+  border-top:1px solid rgba(77,227,247,.55)}
+.filmwin .rm::after{content:""; position:absolute; top:-4px; bottom:-4px; left:50%;
+  border-left:1px solid rgba(77,227,247,.55)}
+.filmwin .rm.tl{left:calc(var(--film-sprocket) + 8px); top:calc(var(--film-header) + 8px)}
+.filmwin .rm.tr{right:calc(var(--film-sprocket) + 8px); top:calc(var(--film-header) + 8px)}
+.filmwin .rm.bl{left:calc(var(--film-sprocket) + 8px); bottom:8px; border-color:rgba(96,116,148,.55)}
+.filmwin .rm.br{right:calc(var(--film-sprocket) + 8px); bottom:8px; border-color:rgba(96,116,148,.55)}
+.filmwin .rm.bl::before,.filmwin .rm.br::before{border-color:rgba(96,116,148,.55)}
+.filmwin .rm.bl::after,.filmwin .rm.br::after{border-color:rgba(96,116,148,.55)}
+.filmwin.alarm{border-color:rgba(255,46,136,.5)}
+.filmwin.alarm .filmwin-hd{border-color:rgba(255,46,136,.55)}
+.filmwin.alarm .filmwin-counter{color:var(--pink)}
+.filmwin.alarm .rm{border-color:rgba(255,46,136,.55)}
+.filmwin.alarm .rm::before,.filmwin.alarm .rm::after{border-color:rgba(255,46,136,.55)}
+.filmwin.alarm .rm.bl,.filmwin.alarm .rm.br{border-color:rgba(96,116,148,.55)}

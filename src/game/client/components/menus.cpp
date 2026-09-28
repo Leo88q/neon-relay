@@ -36,6 +36,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/neon_progress.h>
 #include <game/client/neon_style.h>
+#include <game/client/neon_window.h>
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
@@ -128,11 +129,14 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	CUIRect Text = *pRect;
 	bool IsActive = Checked != 0;
 	bool IsHot = Ui()->HotItem() == pButtonContainer;
-	float skew = 8.0f; // reduced from 12 to fix broken shape on large buttons
+	// Кнопка-штамп (п. 1 раскатки «Кадра плёнки», docs/FILM_WINDOW_RU.md):
+	// прямая плита с двойной рамкой, чернила циан; наградные кнопки (вызов
+	// с золотым цветом) получают золотые чернила. Скосы и мигание прежнего
+	// «стекла» убраны вместе с ним.
 	float x = pRect->x;
 	float y = pRect->y;
-	float w = pRect->w;
-	float h = pRect->h;
+	const float w = pRect->w;
+	const float h = pRect->h;
 
 	if(IsActive)
 	{
@@ -140,72 +144,21 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 		y += 1.0f;
 	}
 
-	// iOS translucent buttons – not fully opaque
-	ColorRGBA BgColor = ColorRGBA(0.047f, 0.0745f, 0.2039f, 0.62f); // Deck translucent
-	ColorRGBA BorderColor = ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.75f);
-	ColorRGBA TextColor = ColorRGBA(0.902f, 0.9647f, 1.0f, 1.0f);
-
-	if(Color.r > 0.9f && Color.g > 0.7f && Color.b < 0.5f)
+	const bool Gold = Color.r > 0.9f && Color.g > 0.7f && Color.b < 0.5f;
+	ColorRGBA Ink = Gold ? NeonStyle::RARE_GOLD : NeonStyle::CYAN;
+	if(Color.a < 0.5f)
+		Ink.a *= 0.5f; // «призрачные» кнопки (сброс и т.п.) ставятся полупустым штампом
+	ColorRGBA TextColor = NeonStyle::ICE;
+	NeonWindow::EStampState State = NeonWindow::STAMP_NORMAL;
+	if(IsActive)
 	{
-		BgColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.72f);
-		BorderColor = ColorRGBA(1.0f, 0.7843f, 0.3412f, 0.95f);
-		TextColor = ColorRGBA(0.0235f, 0.0392f, 0.1098f, 1.0f);
-	}
-	else if(IsActive)
-	{
-		BgColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.78f);
-		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f);
+		State = NeonWindow::STAMP_ACTIVE;
 		TextColor = ColorRGBA(0.0235f, 0.0392f, 0.1098f, 1.0f);
 	}
 	else if(IsHot)
-	{
-		float t = (time_get() / (float)time_freq());
-		float blink = 0.5f + 0.5f * std::sin(t * 2.0f * 3.14159f / 0.7f);
-		BgColor = ColorRGBA(0.047f + blink * 0.08f, 0.0745f + blink * 0.12f, 0.2039f + blink * 0.20f, 0.72f);
-		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.85f + blink * 0.15f);
-	}
-
-	// iOS blur behind button
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.0235f, 0.0392f, 0.1098f, 0.18f);
-	IGraphics::CQuadItem Blur(x - 4, y - 4, w + 8, h + 8);
-	Graphics()->QuadsDrawTL(&Blur, 1);
-	Graphics()->QuadsEnd();
-
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, BgColor.a);
-	IGraphics::CFreeformItem FreeBtn(x + skew, y, x + w, y, x + w - skew, y + h, x, y + h);
-	Graphics()->QuadsDrawFreeform(&FreeBtn, 1);
-	Graphics()->QuadsEnd();
-
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a);
-	IGraphics::CQuadItem Top(x + skew, y, w - skew, 2.0f);
-	IGraphics::CQuadItem Bottom(x, y + h - 2.0f, w - skew, 2.0f);
-	Graphics()->QuadsDrawTL(&Top, 1);
-	Graphics()->QuadsDrawTL(&Bottom, 1);
-	IGraphics::CFreeformItem LeftEdge(x + skew, y, x + skew, y + 2.0f, x, y + h, x, y + h - 2.0f);
-	IGraphics::CFreeformItem RightEdge(x + w, y, x + w, y + 2.0f, x + w - skew, y + h, x + w - skew, y + h - 2.0f);
-	Graphics()->QuadsDrawFreeform(&LeftEdge, 1);
-	Graphics()->QuadsDrawFreeform(&RightEdge, 1);
-	Graphics()->QuadsEnd();
-
-	if(Color.a < 0.5f)
-	{
-		Graphics()->TextureClear();
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0.047f, 0.0745f, 0.2039f, 0.35f);
-		for(int i = 0; i < (int)(w / 8.0f); ++i)
-		{
-			float hx = x + i * 12.0f;
-			IGraphics::CFreeformItem Hatch(hx, y, hx + 6.0f, y, hx + 6.0f - skew, y + h, hx - skew, y + h);
-			Graphics()->QuadsDrawFreeform(&Hatch, 1);
-		}
-		Graphics()->QuadsEnd();
-	}
+		State = NeonWindow::STAMP_HOT;
+	const CUIRect StampRect = {x, y, w, h};
+	NeonWindow::DrawStamp(Graphics(), StampRect, State, Ink);
 
 	if(pImageName)
 	{
@@ -234,7 +187,7 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, Flags);
 }
 
-int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners, SUIAnimator *pAnimator, const ColorRGBA *pDefaultColor, const ColorRGBA *pActiveColor, const ColorRGBA *pHoverColor, float EdgeRounding, const CCommunityIcon *pCommunityIcon)
+int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners, SUIAnimator *pAnimator, const ColorRGBA *pDefaultColor, const ColorRGBA *pActiveColor, const ColorRGBA *pHoverColor, float EdgeRounding, const CCommunityIcon *pCommunityIcon, int FolderIndex)
 {
 	const bool MouseInside = Ui()->HotItem() == pButtonContainer;
 	CUIRect Rect = *pRect;
@@ -259,79 +212,16 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 		pAnimator->m_Time = Time;
 	}
 
-	// Form A iOS tab – slanted, translucent, active Gold/Cyan, with glow and impulse
-	float skew = 10.0f; // reduced to fix yellow broken tabs
-	float x = Rect.x;
-	float y = Rect.y;
-	float w = Rect.w;
-	float h = Rect.h;
-
-	ColorRGBA BgColor = ms_ColorTabbarInactive;
-	BgColor.a = 0.68f; // iOS translucent
-	ColorRGBA BorderColor = ColorRGBA(0.1647f, 0.5294f, 0.5922f, 0.65f);
-	if(Checked)
+	// Вкладка-ярлык архивной папки (п. 2 раскатки «Кадра плёнки»,
+	// docs/FILM_WINDOW_RU.md): скошенные табы и бегущий импульс прежнего
+	// «стекла» заменены картотечным ярлыком с номером.
 	{
-		BgColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.78f); // Cyan active, not gold
-		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 1.0f);
-	}
-	else if(MouseInside)
-	{
-		BgColor = ms_ColorTabbarHover;
-		BgColor.a = 0.72f;
-		BorderColor = ColorRGBA(0.3725f, 0.8902f, 0.9608f, 0.9f);
-	}
-
-	// iOS blur behind tab
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0.0235f, 0.0392f, 0.1098f, 0.20f);
-	IGraphics::CQuadItem Blur(x - 6, y - 4, w + 12, h + 8);
-	Graphics()->QuadsDrawTL(&Blur, 1);
-	Graphics()->QuadsEnd();
-
-	if(Checked)
-	{
-		Graphics()->TextureClear();
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, 0.25f);
-		IGraphics::CQuadItem Glow(x - 8, y - 6, w + 16, h + 12);
-		Graphics()->QuadsDrawTL(&Glow, 1);
-		Graphics()->QuadsEnd();
-	}
-
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(BgColor.r, BgColor.g, BgColor.b, BgColor.a);
-	IGraphics::CFreeformItem FreeTab(x + skew, y, x + w, y, x + w - skew, y + h, x, y + h);
-	Graphics()->QuadsDrawFreeform(&FreeTab, 1);
-	Graphics()->QuadsEnd();
-
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(BorderColor.r, BorderColor.g, BorderColor.b, BorderColor.a);
-	IGraphics::CQuadItem Top(x + skew, y, w - skew, 2.0f);
-	IGraphics::CQuadItem Bottom(x, y + h - 2.0f, w - skew, 2.0f);
-	Graphics()->QuadsDrawTL(&Top, 1);
-	Graphics()->QuadsDrawTL(&Bottom, 1);
-	Graphics()->QuadsEnd();
-
-	if(Checked)
-	{
-		float t = (time_get() / (float)time_freq());
-		float prog = std::fmod(t, 5.0f) / 5.0f;
-		float total = 2.0f * (w + h);
-		float pos = prog * total;
-		float ix = x, iy = y;
-		if(pos < w) { ix = x + pos; iy = y; }
-		else if(pos < w + h) { ix = x + w; iy = y + (pos - w); }
-		else if(pos < 2*w + h) { ix = x + w - (pos - w - h); iy = y + h; }
-		else { ix = x; iy = y + h - (pos - 2*w - h); }
-		Graphics()->TextureClear();
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0.3725f, 0.8902f, 0.9608f, 0.95f);
-		IGraphics::CQuadItem QuadImp(ix - 5, iy - 5, 10, 10);
-		Graphics()->QuadsDrawTL(&QuadImp, 1);
-		Graphics()->QuadsEnd();
+		NeonWindow::EStampState State = NeonWindow::STAMP_NORMAL;
+		if(Checked)
+			State = NeonWindow::STAMP_ACTIVE;
+		else if(MouseInside)
+			State = NeonWindow::STAMP_HOT;
+		NeonWindow::DrawFolderTab(Graphics(), Rect, State, NeonStyle::CYAN, FolderIndex);
 	}
 
 	if(pAnimator != nullptr)
@@ -358,7 +248,6 @@ int CMenus::DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pTe
 	{
 		CUIRect Label;
 		Rect.HMargin(2.0f, &Label);
-		Label.x += skew * 0.5f;
 		Ui()->DoLabel(&Label, pText, Label.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
 	}
 
@@ -572,7 +461,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			Icon.VSplitLeft(Icon.h * 0.9f, &Icon, nullptr);
 			Icon.Margin(Icon.h * 0.2f, &Icon);
 			RenderIcon(aIcons[i], &Icon, Active ? NeonStyle::CYAN : NeonStyle::DIM, 1.0f);
-			if(DoButton_MenuTab(&s_aTabs[i], apLabels[i], Active, &Tab, IGraphics::CORNER_T))
+			if(DoButton_MenuTab(&s_aTabs[i], apLabels[i], Active, &Tab, IGraphics::CORNER_T, nullptr, nullptr, nullptr, nullptr, 10.0f, nullptr, i + 1))
 				SetMenuPage(aPages[i]);
 		}
 		return;
@@ -586,7 +475,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 	{
 		CUIRect Tab;
 		Box.VSplitLeft(Width, &Tab, &Box);
-		if(DoButton_MenuTab(&s_aMatchTabs[i], apLabels[i], m_GamePage == aPages[i], &Tab, IGraphics::CORNER_T))
+		if(DoButton_MenuTab(&s_aMatchTabs[i], apLabels[i], m_GamePage == aPages[i], &Tab, IGraphics::CORNER_T, nullptr, nullptr, nullptr, nullptr, 10.0f, nullptr, i + 1))
 		{
 			m_GamePage = aPages[i];
 			if(aPages[i] == PAGE_CALLVOTE)
@@ -630,8 +519,8 @@ void CMenus::RenderLoadingDirect(const char *pCaption, const char *pContent, std
 	CUIRect Box;
 	Ui()->Screen()->Margin(160.0f, &Box);
 
-	Graphics()->TextureClear();
-	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	// Film-frame chrome instead of a rounded plate (docs/FILM_WINDOW_RU.md).
+	NeonWindow::DrawFilmFrame(Graphics(), Box, NeonStyle::CYAN, 1.0f, 1);
 	Box.Margin(20.0f, &Box);
 
 	CUIRect Label;
@@ -1135,8 +1024,6 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	const char *pButtonText = "";
 	bool TopAlign = false;
 
-	// Dark neon panel – deep space with cyan tint
-	ColorRGBA BgColor = ColorRGBA(0.04f, 0.06f, 0.11f, 1.0f);
 	if(m_Popup == POPUP_MESSAGE || m_Popup == POPUP_CONFIRM)
 	{
 		pTitle = m_aPopupTitle;
@@ -1218,7 +1105,6 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	}
 	else if(m_Popup == POPUP_WARNING)
 	{
-		BgColor = ColorRGBA(0.08f, 0.06f, 0.12f, 1.0f);
 		pTitle = m_aMessageTopic;
 		pExtraText = m_aMessageBody;
 		pButtonText = m_aMessageButton;
@@ -1238,9 +1124,22 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 		Box.HMargin(std::min(150.0f, Screen.h * 0.16f), &Box);
 	}
 
-	// Dim the page, then render a readable opaque dialog.
+	// Dim the page, then render the film-frame window. The plate colour is
+	// token-driven (night-1) and the accent separates normal (cyan) from
+	// alarm (pink) popups — see docs/FILM_WINDOW_RU.md.
 	Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.07f, 0.82f), 0, 0.0f);
-	Box.Draw(BgColor, IGraphics::CORNER_ALL, 15.0f);
+	{
+		ColorRGBA Accent = NeonStyle::CYAN;
+		if(m_Popup == POPUP_WARNING || m_Popup == POPUP_DISCONNECTED || m_Popup == POPUP_PASSWORD)
+			Accent = NeonStyle::PINK;
+		if(m_WindowChromeSeen != m_Popup)
+		{
+			m_WindowChromeSeen = m_Popup;
+			m_WindowChromeOpenedAt = time_get();
+		}
+		const float AdvanceT = std::min(1.0f, (float)(time_get() - m_WindowChromeOpenedAt) / ((float)time_freq() * NeonStyle::FILM_ADVANCE_SECONDS));
+		NeonWindow::DrawFilmFrame(Graphics(), Box, Accent, AdvanceT, 100 + m_Popup);
+	}
 
 	// Title
 	{
@@ -2027,7 +1926,7 @@ void CMenus::RenderPopupConnecting(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	NeonWindow::DrawFilmFrame(Graphics(), Box, NeonStyle::CYAN, 1.0f, 1);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);
@@ -2158,7 +2057,7 @@ void CMenus::RenderPopupLoading(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	NeonWindow::DrawFilmFrame(Graphics(), Box, NeonStyle::CYAN, 1.0f, 1);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);

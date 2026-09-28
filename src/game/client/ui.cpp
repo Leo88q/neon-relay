@@ -1,5 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include "neon_style.h"
+#include "neon_window.h"
 #include "ui.h"
 
 #include "ui_scrollregion.h"
@@ -1273,7 +1275,19 @@ int CUi::DoButton_FontIcon(CButtonContainer *pButtonContainer, const char *pText
 int CUi::DoButton_PopupMenu(CButtonContainer *pButtonContainer, const char *pText, const CUIRect *pRect, float Size, int Align, float Padding, bool TransparentInactive, bool Enabled, const std::optional<ColorRGBA> ButtonColor)
 {
 	if(!TransparentInactive || CheckActiveItem(pButtonContainer) || HotItem() == pButtonContainer)
-		pRect->Draw(ButtonColor.value_or(Enabled ? ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f * ButtonColorMul(pButtonContainer)) : ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f)), IGraphics::CORNER_ALL, 3.0f);
+	{
+		// Film-frame stamp button (docs/FILM_WINDOW_RU.md): callers may still
+		// override the ink colour, the default is the cyan stamp.
+		ColorRGBA Ink = ButtonColor.value_or(NeonStyle::CYAN);
+		if(!Enabled)
+			Ink = NeonStyle::DIM;
+		NeonWindow::EStampState State = NeonWindow::STAMP_NORMAL;
+		if(CheckActiveItem(pButtonContainer))
+			State = NeonWindow::STAMP_ACTIVE;
+		else if(HotItem() == pButtonContainer)
+			State = NeonWindow::STAMP_HOT;
+		NeonWindow::DrawStamp(Graphics(), *pRect, State, Ink);
+	}
 
 	CUIRect Label;
 	pRect->Margin(Padding, &Label);

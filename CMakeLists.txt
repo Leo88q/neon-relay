@@ -2474,6 +2474,8 @@ if(CLIENT)
     lineinput.cpp
     lineinput.h
     multiview.cpp
+    neon_window.cpp
+    neon_window.h
     pickup_data.cpp
     pickup_data.h
     practice_course.h
