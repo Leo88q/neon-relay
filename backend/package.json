@@ -13,6 +13,9 @@
     "test": "node --experimental-strip-types --test \"test/**/*.test.ts\"",
     "typecheck": "node --experimental-strip-types scripts/typecheck.ts",
     "watchtower:smoke": "node --experimental-strip-types scripts/watchtower_smoke.ts",
+    "load": "node --experimental-strip-types scripts/load_test.ts --assert",
+    "load:smoke": "node --experimental-strip-types scripts/load_test.ts --profile smoke --assert",
+    "load:soak": "node --experimental-strip-types scripts/load_test.ts --profile soak --assert",
     "gen:tool-pins": "node --experimental-strip-types scripts/gen_tool_pins.ts",
     "check:tool-pins": "node --experimental-strip-types scripts/gen_tool_pins.ts --check"
   }

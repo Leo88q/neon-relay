@@ -625,8 +625,8 @@ other/icons/license.txt,10,legal-attribution,upstream/third-party license notice
 other/neonrelay.desktop,12,comment,"source comment, not shown to users",# Neon Relay is a standalone derivative of the upstream DDNet project.
 scripts/android/cmake_android.sh,271,comment,"source comment, not shown to users",# rebrand (upstream: org/ddnet/client)
 scripts/android/cmake_android.sh,273,code/api-identifier,identifier kept for protocol/build compatibility (ddnet-libs),cp -R ../ddnet-libs/sdl/java/org src/main/java/
-scripts/build_chrome_dm.py,39,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
-scripts/build_chrome_dm.py,40,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
+scripts/build_chrome_dm.py,41,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')
+scripts/build_chrome_dm.py,42,legal-attribution,"derived map author, modification notice or pinned source",m.info.author='Teeworlds / Neon Relay'
 scripts/build_neon_mapres.py,41,code/api-identifier,brand appears only inside code identifiers,"# (ddnet_*, freeze, _0.7 variants, spare backgrounds, water, round/mixed"
 scripts/build_neon_skins_all.py,505,code/api-identifier,"brand appears only as a variable/type name, not in a string literal",The 128x128 sheet is the standard DDNet 0.7 eye layout: each cell is a
 scripts/build_warmup.py,41,code/api-identifier,brand appears only inside code identifiers,m=twmap.Map.empty('DDNet06')

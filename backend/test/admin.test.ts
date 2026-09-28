@@ -15,9 +15,22 @@ import {
 import type { App } from "../src/server.ts";
 import type { Config } from "../src/config.ts";
 import { Db } from "../src/db.ts";
+import { parseProposalParams } from "../src/admin.ts";
 
 const OPERATOR = "operator-token-abc";
 const SUPERADMIN = "superadmin-token-xyz";
+
+test("proposal params are strictly integers (no floats, no negatives, no strings)", () => {
+  assert.deepEqual(parseProposalParams("seal-reward-epoch", { epoch_id: 3 }), { epoch_id: 3 });
+  assert.throws(() => parseProposalParams("seal-reward-epoch", { epoch_id: 1.5 }), /integer/);
+  assert.throws(() => parseProposalParams("seal-reward-epoch", { epoch_id: "3" }), /integer/);
+  assert.throws(() => parseProposalParams("seal-reward-epoch", {}), /integer/);
+  assert.deepEqual(parseProposalParams("close-economy-epoch", { epoch: 1 }), { epoch: 1 });
+  assert.throws(() => parseProposalParams("close-economy-epoch", { epoch: 1.5 }), /positive integer/);
+  assert.throws(() => parseProposalParams("close-economy-epoch", { epoch: -1 }), /positive integer/);
+  assert.throws(() => parseProposalParams("close-economy-epoch", { epoch: 0 }), /positive integer/);
+  assert.throws(() => parseProposalParams("close-economy-epoch", { epoch: "1" }), /positive integer/);
+});
 
 async function withApp<T>(
   overrides: Partial<Config>,
@@ -164,6 +177,16 @@ test("split roles reject self-approval; legacy single token allows it flagged", 
     const rejected = await postJson(base, "/v1/admin/proposals/reject",
       { proposal_id: own.json.id, reason: "wrong epoch" }, SUPERADMIN);
     assert.equal(rejected.json.status, "rejected");
+    // A custom reason is preserved verbatim; the length clamp (512) is part of
+    // the audit contract, so an over-long reason must fall back, not truncate.
+    assert.match(JSON.stringify(rejected.json), /wrong epoch/);
+    const second = await postJson(base, "/v1/admin/proposals",
+      { type: "seal-reward-epoch", params: { epoch_id: epochId } }, OPERATOR);
+    const longReason = await postJson(base, "/v1/admin/proposals/reject",
+      { proposal_id: second.json.id, reason: "x".repeat(600) }, SUPERADMIN);
+    assert.equal(longReason.json.status, "rejected");
+    assert.match(JSON.stringify(longReason.json), /rejected by superadmin/);
+    assert.ok(!JSON.stringify(longReason.json).includes("xxxxxx"), "over-long reason must not be stored");
     const afterReject = await postJson(base, "/v1/admin/proposals/approve",
       { proposal_id: own.json.id }, SUPERADMIN);
     assert.equal(afterReject.status, 409);

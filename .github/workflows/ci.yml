@@ -237,6 +237,10 @@ jobs:
         run: cd backend && npm run check:tool-pins
       - name: Tests (zero runtime dependencies, no install step needed)
         run: cd backend && npm test
+      - name: Load smoke — rate limiters shed, nothing breaks (load_test.ts)
+        run: cd backend && npm run load:smoke
+      - name: Mutation smoke — tests pin the guards (scripts/mutation_test.py)
+        run: python3 scripts/mutation_test.py --smoke
 
   onchain:
     name: anchor program offline checks (node 22)
