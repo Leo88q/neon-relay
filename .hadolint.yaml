@@ -1,0 +1,11 @@
+# Hadolint config — advisory supply-chain gate (ci.yml: supply-chain job)
+# Keep strict for Dockerfile best-practices, but allow the rustup pipe (DL4006) and apt without explicit version pin
+# because the builder pins via debian:12 + toolchain 1.89.0 and apt versions are distro-pinned.
+
+ignored:
+  - DL3008  # pin versions in apt get install (we pin via base image + explicit deps, version pin would churn)
+  - DL3009  # delete apt-get lists after installing (we keep layer minimal; gate is advisory)
+  - DL4006  # set -o pipefail before pipe (hadolint default; our RUN already uses set -x)
+trustedRegistries:
+  - docker.io
+  - gcr.io

@@ -5,6 +5,8 @@
 <title>Neon Relay — картошечная арена на шесть стволов</title>
 <meta name="description" content="Neon Relay: картошечная арена на движке с крюком. Режим «выжигание», шесть стволов, 27 карт, локальный прогресс без обещаний заработка.">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#05060E">
 <link rel="stylesheet" href="landing.css">
 <link rel="alternate" hreflang="en" href="en.html">
@@ -392,8 +394,8 @@
 <div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;background:#0A0E1E;color:#D8F6FF;padding:16px 20px;display:none;z-index:9999;border-top:2px solid #4DE3F7;font-family:system-ui,sans-serif;font-size:14px">
   <div style="max-width:900px;margin:0 auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
     <span style="flex:1;min-width:240px">Мы используем только необходимые cookies. Аналитика/маркетинг — только с вашего согласия. <a href="../../docs/COOKIE_POLICY.md" style="color:#4DE3F7">Подробнее</a></span>
-    <button onclick="localStorage.setItem('neonrelay-cookie','necessary');this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Отклонить</button>
-    <button onclick="localStorage.setItem('neonrelay-cookie','all');this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Принять</button>
+    <button onclick="localStorage.setItem('neonrelay-cookie', JSON.stringify({necessary:true,analytics:false,marketing:false,ts:Date.now()})); window.__neonUpdateConsent && window.__neonUpdateConsent({analytics:false,marketing:false}); this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Отклонить</button>
+    <button onclick="localStorage.setItem('neonrelay-cookie', JSON.stringify({necessary:true,analytics:true,marketing:true,ts:Date.now()})); window.__neonUpdateConsent && window.__neonUpdateConsent({analytics:true,marketing:true}); this.closest('#cookie-banner').style.display='none'" style="background:#4DE3F7;color:#05060E;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-weight:600">Принять</button>
     <a href="#" onclick="document.getElementById('cookie-banner').style.display='none';return false;" style="color:#8A9CC2">×</a>
   </div>
 </div>
@@ -405,17 +407,49 @@
     <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" id="ck-analytics"> Аналитика (анонимная)</label>
     <label style="display:flex;gap:10px;margin:12px 0"><input type="checkbox" id="ck-marketing"> Маркетинг</label>
     <div style="display:flex;gap:12px;margin-top:18px">
-      <button onclick="localStorage.setItem('neonrelay-cookie', JSON.stringify({necessary:true,analytics:document.getElementById('ck-analytics').checked,marketing:document.getElementById('ck-marketing').checked,ts:Date.now()}));document.getElementById('cookie-settings').style.display='none';document.getElementById('cookie-banner').style.display='none'" style="flex:1;background:#4DE3F7;color:#05060E;border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:600">Сохранить</button>
+      <button onclick="var _n={necessary:true,analytics:document.getElementById('ck-analytics').checked,marketing:document.getElementById('ck-marketing').checked,ts:Date.now()}; localStorage.setItem('neonrelay-cookie', JSON.stringify(_n)); window.__neonUpdateConsent && window.__neonUpdateConsent(_n); document.getElementById('cookie-settings').style.display='none';document.getElementById('cookie-banner').style.display='none'" style="flex:1;background:#4DE3F7;color:#05060E;border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:600">Сохранить</button>
       <button onclick="document.getElementById('cookie-settings').style.display='none'" style="flex:1;background:transparent;color:#D8F6FF;border:1px solid #4DE3F7;padding:10px;border-radius:8px;cursor:pointer">Закрыть</button>
     </div>
   </div>
 </div>
 <script>
+// Checklist 4.3/4.8: prior consent, GPC, Consent Mode v2 stub. No non-essential script loads before consent.
 (function(){
   try{
-    var v = localStorage.getItem('neonrelay-cookie');
-    if(!v) document.getElementById('cookie-banner').style.display='block';
-    if(navigator.globalPrivacyControl) console.log('GPC detected — treat as reject');
+    var k='neonrelay-cookie';
+    var raw = localStorage.getItem(k);
+    var gpc = !!navigator.globalPrivacyControl;
+    if(gpc) console.log('GPC signal detected — treat as reject for marketing/analytics');
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    var hasChoice = !!raw;
+    var consent = { analytics: false, marketing: false };
+    try{ var p = raw && JSON.parse(raw); if(p && typeof p==='object'){ consent.analytics = !!p.analytics; consent.marketing = !!p.marketing; } else if(raw==='all'){ consent={analytics:true,marketing:true}; } }catch(e){}
+    if(gpc){ consent.analytics=false; consent.marketing=false; }
+    gtag('consent','default', {
+      'ad_storage': consent.marketing ? 'granted' : 'denied',
+      'analytics_storage': consent.analytics ? 'granted' : 'denied',
+      'ad_user_data': consent.marketing ? 'granted' : 'denied',
+      'ad_personalization': consent.marketing ? 'granted' : 'denied',
+      'functionality_storage': 'granted',
+      'security_storage': 'granted'
+    });
+    if(!hasChoice){
+      if(gpc) localStorage.setItem(k, JSON.stringify({necessary:true,analytics:false,marketing:false,ts:Date.now(),gpc:true}));
+      else document.getElementById('cookie-banner').style.display='block';
+    }
+    window.__neonUpdateConsent = function(next){
+      try{
+        var n = (typeof next==='string' ? (next==='all'?{analytics:true,marketing:true}:{analytics:false,marketing:false}) : next) || {};
+        if(gpc){ n.analytics=false; n.marketing=false; }
+        gtag('consent','update', {
+          'ad_storage': n.marketing ? 'granted' : 'denied',
+          'analytics_storage': n.analytics ? 'granted' : 'denied',
+          'ad_user_data': n.marketing ? 'granted' : 'denied',
+          'ad_personalization': n.marketing ? 'granted' : 'denied'
+        });
+      }catch(e){}
+    };
   }catch(e){}
 })();
 </script>

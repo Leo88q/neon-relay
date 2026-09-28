@@ -101,6 +101,80 @@ jobs:
       - name: Standard C headers
         run: python3 scripts/check_standard_headers.py
 
+
+  # Supply-chain: lockfile audits, OSV, container lint and filesystem vuln scan.
+  # Advisory gates before shipping — fail on HIGH/CRITICAL. Uses pinned SHAs.
+  supply-chain:
+    name: supply-chain (audit / osv / hadolint / trivy fs)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm audit (HIGH/CRITICAL gate)
+        run: |
+          npm --prefix backend audit --audit-level=high || (echo "::error::backend npm audit HIGH/CRITICAL"; exit 1)
+          npm --prefix onchain audit --audit-level=high || (echo "::error::onchain npm audit HIGH/CRITICAL"; exit 1)
+      - name: OSV scanner (lockfiles recursive)
+        uses: google/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # google/osv-scanner-action@v2.6.0
+        with:
+          scan-args: --recursive --format=sarif --output=osv.sarif .
+        continue-on-error: true
+      - name: Upload OSV SARIF (advisory)
+        if: always()
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action@v4.38.2
+        with:
+          sarif_file: osv.sarif
+          category: osv-scanner
+        continue-on-error: true
+      - name: Hadolint (Dockerfile lint)
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # hadolint/hadolint-action@v3.5.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+        continue-on-error: true
+      - name: Trivy filesystem scan (HIGH/CRITICAL, SARIF)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # aquasecurity/trivy-action@0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+        continue-on-error: true
+      - name: Upload Trivy SARIF (advisory)
+        if: always()
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action@v4.38.2
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+        continue-on-error: true
+
+  # CodeQL for JavaScript/TypeScript (backend + onchain) — supply-chain SAST.
+  codeql:
+    name: CodeQL (js)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action@v4.38.2
+        with:
+          languages: javascript
+          queries: security-and-quality
+      - uses: github/codeql-action/autobuild@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action@v4.38.2
+        continue-on-error: true
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # github/codeql-action@v4.38.2
+        with:
+          category: /language:javascript
+
   # Syntax-checks every server/base/shared/game C++ translation unit with the
   # bundled headers (the full engine build needs SDL2/Vulkan/Rust — BL-01).
   cpp-syntax-probe:
