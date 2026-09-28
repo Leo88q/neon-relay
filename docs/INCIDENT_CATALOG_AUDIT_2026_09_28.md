@@ -428,6 +428,13 @@ Runbook «зачистка класса» (`docs/INCIDENT_RESPONSE.md` §6.4): �
 | `node --experimental-strip-types backend/scripts/transfer_preflight.ts …` | `AUTHORISED`, exit 0 на примере; `REFUSED/hour-budget-exceeded` на нарушении |
 | `node --experimental-strip-types onchain/scripts/safe_harbor_memo.ts …` | мемо 299 байт из 566, exit 0; `--verify` подтверждает мемо |
 
+**После первого прогона CI выяснилось** (и это отдельная находка того же класса, что п. 110 —
+«предохранитель, который не исполняется, не предохранитель»): гейты жили в job `gates` **после**
+шага «Potato assets and native catalog regression checks», который падает на main по причинам,
+не связанным с этим проходом, — из-за чего все шаги безопасности молча получали статус
+`skipped`. Гейты вынесены в отдельный job `security-gates` (только stdlib, без pip) и теперь
+исполняются независимо от состояния asset-пайплайна.
+
 ## 5. Гейты оператора (то, что нельзя проверить в песочнице)
 
 1. **`check_key_provenance.py` на реальном манифесте** — заполнить `ops/key_provenance.json`
