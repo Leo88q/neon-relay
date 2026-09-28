@@ -39,6 +39,21 @@ inline constexpr ColorRGBA PANEL_ACCENT{0.3725f, 0.8902f, 0.9608f, 1.0f};  // it
 inline constexpr ColorRGBA TEXT_SOFT{0.7490f, 0.8275f, 0.9490f, 1.0f};     // explanatory paragraphs
 inline constexpr ColorRGBA TEXT_FAINT{0.6784f, 0.7686f, 0.8902f, 1.0f};    // footnotes, secondary rows
 
+// «Кадр плёнки» — фирменный оконный хром (полный макет: docs/FILM_WINDOW_RU.md,
+// зеркало на сайте: CSS-переменные --film-* в design/potato-arena/index.html,
+// паритет проверяет scripts/test_film_window.py). Окно — кадр проявленной
+// плёнки из архива записей: перфорация по краям, счётчик кадра в заголовке,
+// регистрационные метки ⊕ по углам рамы и протяжка кадра при появлении —
+// демки и записи матчей это и есть архив плёнки.
+inline constexpr float FILM_SPROCKET_W = 18.0f; // ширина полосы перфорации
+inline constexpr float FILM_HOLE_W = 8.0f; // ширина отверстия перфорации
+inline constexpr float FILM_HOLE_H = 11.0f; // высота отверстия перфорации
+inline constexpr float FILM_HOLE_STEP = 20.0f; // шаг кадра (расстояние между отверстиями)
+inline constexpr float FILM_HEADER_H = 38.0f; // высота кадровой полосы со счётчиком
+inline constexpr float FILM_MARK_R = 5.0f; // радиус регистрационной метки ⊕
+inline constexpr float FILM_EDGE_CODE = 10.0f; // длина штриха краевого кода
+inline constexpr float FILM_ADVANCE_SECONDS = 0.22f; // длительность протяжки кадра
+
 // Geometry (rule P7 of docs/UI_POTATO_ARENA_REDESIGN_RU.md)
 inline constexpr float PANEL_RADIUS = 16.0f;
 inline constexpr float CARD_RADIUS = 12.0f;

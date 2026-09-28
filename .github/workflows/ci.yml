@@ -105,6 +105,7 @@ jobs:
           python3 scripts/test_twmap_pipeline.py
           python3 scripts/test_warmup.py
           python3 scripts/test_warmup_server_contract.py
+          python3 scripts/test_film_window.py
       - if: ${{ !cancelled() }}
         name: Branding scan (release mode) + translation lockstep
         run: ./scripts/check_branding.sh --release --check-translations

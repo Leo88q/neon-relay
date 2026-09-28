@@ -218,6 +218,10 @@ protected:
 	};
 	char m_aPopupTitle[128];
 	char m_aPopupMessage[IO_MAX_PATH_LENGTH + 256];
+	// Протяжка кадра фирменного окна: какой попоп сейчас показан и когда он
+	// открылся — от этого считается ступенчатая анимация появления.
+	int m_WindowChromeSeen = POPUP_NONE;
+	int64_t m_WindowChromeOpenedAt = 0;
 	struct
 	{
 		char m_aLabel[64];

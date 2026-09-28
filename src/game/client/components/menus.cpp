@@ -36,6 +36,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/neon_progress.h>
 #include <game/client/neon_style.h>
+#include <game/client/neon_window.h>
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
@@ -630,8 +631,8 @@ void CMenus::RenderLoadingDirect(const char *pCaption, const char *pContent, std
 	CUIRect Box;
 	Ui()->Screen()->Margin(160.0f, &Box);
 
-	Graphics()->TextureClear();
-	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	// Film-frame chrome instead of a rounded plate (docs/FILM_WINDOW_RU.md).
+	NeonWindow::DrawFilmFrame(Graphics(), Box, NeonStyle::CYAN, 1.0f, 1);
 	Box.Margin(20.0f, &Box);
 
 	CUIRect Label;
@@ -1135,8 +1136,6 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	const char *pButtonText = "";
 	bool TopAlign = false;
 
-	// Dark neon panel – deep space with cyan tint
-	ColorRGBA BgColor = ColorRGBA(0.04f, 0.06f, 0.11f, 1.0f);
 	if(m_Popup == POPUP_MESSAGE || m_Popup == POPUP_CONFIRM)
 	{
 		pTitle = m_aPopupTitle;
@@ -1218,7 +1217,6 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 	}
 	else if(m_Popup == POPUP_WARNING)
 	{
-		BgColor = ColorRGBA(0.08f, 0.06f, 0.12f, 1.0f);
 		pTitle = m_aMessageTopic;
 		pExtraText = m_aMessageBody;
 		pButtonText = m_aMessageButton;
@@ -1238,9 +1236,22 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 		Box.HMargin(std::min(150.0f, Screen.h * 0.16f), &Box);
 	}
 
-	// Dim the page, then render a readable opaque dialog.
+	// Dim the page, then render the film-frame window. The plate colour is
+	// token-driven (night-1) and the accent separates normal (cyan) from
+	// alarm (pink) popups — see docs/FILM_WINDOW_RU.md.
 	Screen.Draw(ColorRGBA(0.02f, 0.03f, 0.07f, 0.82f), 0, 0.0f);
-	Box.Draw(BgColor, IGraphics::CORNER_ALL, 15.0f);
+	{
+		ColorRGBA Accent = NeonStyle::CYAN;
+		if(m_Popup == POPUP_WARNING || m_Popup == POPUP_DISCONNECTED || m_Popup == POPUP_PASSWORD)
+			Accent = NeonStyle::PINK;
+		if(m_WindowChromeSeen != m_Popup)
+		{
+			m_WindowChromeSeen = m_Popup;
+			m_WindowChromeOpenedAt = time_get();
+		}
+		const float AdvanceT = std::min(1.0f, (float)(time_get() - m_WindowChromeOpenedAt) / ((float)time_freq() * NeonStyle::FILM_ADVANCE_SECONDS));
+		NeonWindow::DrawFilmFrame(Graphics(), Box, Accent, AdvanceT, 100 + m_Popup);
+	}
 
 	// Title
 	{
@@ -2027,7 +2038,7 @@ void CMenus::RenderPopupConnecting(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	NeonWindow::DrawFilmFrame(Graphics(), Box, NeonStyle::CYAN, 1.0f, 1);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);
@@ -2158,7 +2169,7 @@ void CMenus::RenderPopupLoading(CUIRect Screen)
 
 	CUIRect Box, Label;
 	Screen.Margin(150.0f, &Box);
-	Box.Draw(ColorRGBA(0.11f, 0.12f, 0.14f, 0.96f), IGraphics::CORNER_ALL, 6.0f);
+	NeonWindow::DrawFilmFrame(Graphics(), Box, NeonStyle::CYAN, 1.0f, 1);
 	Box.Margin(20.0f, &Box);
 
 	Box.HSplitTop(24.0f, &Label, &Box);

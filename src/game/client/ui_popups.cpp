@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include "neon_window.h"
 #include "ui.h"
 #include "ui_scrollregion.h"
 
@@ -72,10 +73,11 @@ void CUi::RenderPopupMenus()
 		}
 
 		CUIRect PopupRect = PopupMenu.m_Rect;
-		PopupRect.Draw(PopupMenu.m_Props.m_BorderColor, PopupMenu.m_Props.m_Corners, 3.0f);
-		PopupRect.Margin(SPopupMenu::POPUP_BORDER, &PopupRect);
-		PopupRect.Draw(PopupMenu.m_Props.m_BackgroundColor, PopupMenu.m_Props.m_Corners, 3.0f);
-		PopupRect.Margin(SPopupMenu::POPUP_MARGIN, &PopupRect);
+		// Film-cell plate: the perforated silhouette replaces the rounded glass
+		// so even the engine popups read as Neon Relay windows
+		// (docs/FILM_WINDOW_RU.md). Colours still come from the popup props.
+		NeonWindow::DrawFilmPlate(Graphics(), PopupRect, PopupMenu.m_Props.m_BorderColor, PopupMenu.m_Props.m_BackgroundColor);
+		PopupRect.Margin(SPopupMenu::POPUP_BORDER + SPopupMenu::POPUP_MARGIN, &PopupRect);
 
 		// The popup render function can open/close popups, which may resize the vector and thus
 		// invalidate the variable PopupMenu. We therefore store pId in a separate variable.
