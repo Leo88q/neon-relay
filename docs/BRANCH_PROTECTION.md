@@ -18,7 +18,8 @@ GitHub → Settings → Branches → Add classic branch protection rule (Branch 
 
 - [ ] **Require a pull request before merging** → Required approvals: `1`, Dismiss stale PR approvals: ✅, Require review from CODEOWNERS: ✅
 - [ ] **Require status checks before merging** → Require branches to be up to date: ✅, checks:
-  - `gates` (branding / assets / secrets / hygiene)
+  - `security gates (secrets / supply chain / keys / landing)`
+  - `gates` (branding / assets / hygiene)
   - `supply-chain (audit / osv / hadolint / trivy fs)`
   - `CodeQL (js)` (advisory, can be non-required initially)
   - `C++ syntax probe`

@@ -90,8 +90,9 @@ enforced by `scripts/check_assets.sh --release`.
 2. **`other/icons/`** — author named (Ravie) but **no license grant** in the file. Not safe
    to redistribute commercially. Replaced.
 3. **CC-BY-SA 3.0 content with no named author** (`data/shader/`;
-   `data/maps/ctf*.map`, `data/maps/dm*.map`, `data/maps/coverage.map`;
-   `assets-src/maps/warm-workshops/`).
+   `data/maps/coverage.map`; `assets-src/maps/warm-workshops/`). The
+   unattributed classic pool (`data/maps/ctf*.map`, `data/maps/dm*.map`) was
+   removed from the release tree in stage B (`docs/CLASSIC_MAP_REMOVAL_PLAN_RU.md`).
    CC-BY-SA 3.0 §4(b) requires attribution of the original author and a copy of the license;
    upstream does not name these authors. Either (a) obtain the author list from upstream
    contributors, (b) replace the assets, or (c) ship with a good-faith attribution page +

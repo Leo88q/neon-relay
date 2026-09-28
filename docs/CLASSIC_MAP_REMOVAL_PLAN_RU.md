@@ -19,7 +19,10 @@
 * `src/game/client/components/menus.cpp` — fallback JoinTutorial: `sv_map LearnToPlay`.
 
 Каскад (§3, §4.1) — превью/таблички, описания, `integration_test.py`, манифест,
-гейты — выполняется по чек-листу ниже.
+гейты — выполнен по чек-листу ниже (чекбоксы §3 проставлены). Каталог, лендинг,
+превью, манифест и все гейты пересобраны под 11 карт; `docs/MAPS.md`,
+`docs/THIRD_PARTY_NOTICES.md`, `docs/KNOWN_LIMITATIONS.md` и
+`docs/UPSTREAM_AUDIT.md` приведены к новому составу.
 
 ## 1. Состав
 
@@ -87,7 +90,7 @@
 
 ### 3.1 Генерация и таблички (ваш список ✓)
 
-* [ ] `scripts/build_map_previews.py`:
+* [x] `scripts/build_map_previews.py`:
   * вырезать из `BLURBS`/`BLURBS_EN` записи `Sunny Side Up`, `Tsunami`, `Tutorial`
     (ctf/dm шли через `_fallback` — после удаления он станет мёртвым кодом, можно
     почистить);
@@ -99,45 +102,45 @@
 
 ### 3.2 Описания карт / документация (ваш список ✓, но точки шире)
 
-* [ ] `docs/MAPS.md` — счётчик «25 maps» (уже расходится с фактическими 27 → станет 11),
+* [x] `docs/MAPS.md` — счётчик «25 maps» (уже расходится с фактическими 27 → станет 11),
   строки таблицы shipped set, матрица внешних артов (исчезает исключение `ctf4` /
   `jungle_doodads_old`), список sixup-пострадавших → остаётся только `coverage`.
-* [ ] `design/potato-arena/index.html:471` — рукописная проза «Tutorial, LearnToPlay, …».
-* [ ] `docs/THIRD_PARTY_NOTICES.md` — строки таблиц §6 и нарратив §7:
+* [x] `design/potato-arena/index.html:471` — рукописная проза «Tutorial, LearnToPlay, …».
+* [x] `docs/THIRD_PARTY_NOTICES.md` — строки таблиц §6 и нарратив §7:
   14 block-release карт → 1 (`coverage`); удалённые оформить по прецеденту
   «removed from the release tree» (как `data/maps7/*` в §6).
-* [ ] `docs/KNOWN_LIMITATIONS.md:74` — «14 maps» → только `coverage`.
-* [ ] `docs/UPSTREAM_AUDIT.md:93` — список файлов.
-* [ ] `data/maps/license.txt` — вырезать стазы `Sunny Side Up`, `Tsunami`, `Tutorial`;
+* [x] `docs/KNOWN_LIMITATIONS.md:74` — «14 maps» → только `coverage`.
+* [x] `docs/UPSTREAM_AUDIT.md:93` — список файлов.
+* [x] `data/maps/license.txt` — вырезать стазы `Sunny Side Up`, `Tsunami`, `Tutorial`;
   блок `ctf1…dm9, coverage` переписать в одиночный станс `coverage` (block-release
   логику сохранить).
-* [ ] `docs/branding-scan.csv` — перегенерируется сама при прогоне
+* [x] `docs/branding-scan.csv` — перегенерируется сама при прогоне
   `./scripts/check_branding.sh --release --check-translations`.
 
 ### 3.3 `integration_test.py` (ваш список ✓ — но ссылок **4**, не 3)
 
-* [ ] `scripts/integration_test.py:792` — `rcon sv_map Tutorial` в `smoke_test`
+* [x] `scripts/integration_test.py:792` — `rcon sv_map Tutorial` в `smoke_test`
   (смена карты перед демо) → наша карта. Должна отличаться от `coverage`, иначе
   не будет ребуста и ожидание двух «entered the game» зависнет.
-* [ ] `:862`, `:885`, `:940` — три утверждения `map.name != "Tutorial"` в
+* [x] `:862`, `:885`, `:940` — три утверждения `map.name != "Tutorial"` в
   mastersrv-тестах. **Они уже устарели**: дефолт `sv_map` в репозитории —
   «Neon Relay Basin» (`config_variables.h:471` и `data/autoexec_server.cfg:35`).
   Меняем на имя новой карты по умолчанию (= «Neon Relay Basin», если не выберем иное).
 
 ### 3.4 Провенанс в `ASSET_MANIFEST` (ваш список ✓)
 
-* [ ] `scripts/gen_asset_manifest.py`:
+* [x] `scripts/gen_asset_manifest.py`:
   * `MAP_INFO` (стр. 81) — вырезать `Sunny Side Up.map`, `Tsunami.map`, `Tutorial.map`
     (остаются `Gold Mine.map`, `LearnToPlay.map`);
   * кортеж classics (стр. 364) — оставить только `coverage.map`;
-* [ ] `./scripts/check_assets.sh --regenerate` → `docs/ASSET_MANIFEST.csv`;
-* [ ] `./scripts/check_assets.sh --licenses` — гейт чистый.
+* [x] `./scripts/check_assets.sh --regenerate` → `docs/ASSET_MANIFEST.csv`;
+* [x] `./scripts/check_assets.sh --licenses` — гейт чистый.
   После удаления block-release остаётся ровно один: `coverage` (гейт `--release`
   по-прежнему заблокирован им — осознанно, не трогаем).
 
 ### 3.5 Прогон всех гейтов (ваш список ✓)
 
-* [ ] `bash scripts/ci-local.sh` целиком; ключевые: `test_map_catalog.py`,
+* [x] `bash scripts/ci-local.sh` целиком; ключевые: `test_map_catalog.py`,
   `test_landing_pages.py`, `test_map_format.py`, `test_twmap_pipeline.py`,
   `build_map_previews.py --check`, `check_assets.sh --licenses`,
   `check_branding.sh --release --check-translations`, `test_neon_dm.py`.

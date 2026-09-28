@@ -87,15 +87,16 @@ template was planned with the stage-10 CI rework, but that CI has no Android job
 blocks any execution anyway), so the removal awaits a verified Android build pipeline that
 no longer needs the template.
 
-### BL-05 — 48 vendored assets are `block-release`
+### BL-05 — 35 vendored assets are `block-release`
 The original-art pass cut the gated set from 250 to 48: 173 files deleted,
 the rest repainted or regenerated as originals (full account in
-[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7). What remains is
-unattributed CC-BY-SA 3.0 content — `data/shader/*` (32 files),
-`data/maps/ctf*.map`, `data/maps/dm*.map`, `data/maps/coverage.map` (14 maps
-with no author named anywhere in the tree) and the `warm-workshops` prototype
-(2 files) — so the attribution required by CC-BY-SA 3.0 §4(b) cannot be
-produced from the tree. They are vendored for development and gated by
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7). The stage-B classic-map
+removal then deleted 13 more (the `ctf*`/`dm*` pool; `dm7` survives only as
+the Chrome DM study source under `docs/dm/upstream/`), leaving 35. What
+remains is unattributed CC-BY-SA 3.0 content — `data/shader/*` (32 files),
+`data/maps/coverage.map` (1 test fixture with no author named anywhere in the
+tree) and the `warm-workshops` prototype (2 files) — so the attribution
+required by CC-BY-SA 3.0 §4(b) cannot be produced from the tree. They are vendored for development and gated by
 `./scripts/check_assets.sh --release`, which fails until the rights review in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) §7 chooses: obtain authors,
 replace the assets, or ship a good-faith attribution page plus the full license

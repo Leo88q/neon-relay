@@ -61,9 +61,6 @@ BLURBS = {
     "Aurora Ascent": "лесенка под полосой авроры, самая длинная разметка заезда после Warmup",
     "Neon Relay Warmup": "разминка: 35 стартовых площадок, без дропов и без очков",
     "Gold Mine": "закрытая арена с укрытиями: 10 спавнов, 986 тайлов no-hook, есть ниндзя",
-    "Sunny Side Up": "широкая 1200x200 карта с 594 квадами декора — площадка для больших составов",
-    "Tsunami": "самая плотная арена поставки: 105 101 тайл породы и 14 спавнов",
-    "Tutorial": "обучающий маршрут на 2210 тайлов: 24 финишных площадки, лицензия CC-BY-SA",
     "LearnToPlay": "тренировочный полигон базы с 56 щитами и 12 ловушками",
     "LearnToPlay Sound": "тот же полигон с звуковым слоем: 55 слоёв, 20 289 квадов",
     "LearnToPlay Sound Heights": "вариант Sound с другим декором: те же 56 щитов и 12 ловушек",
@@ -77,9 +74,6 @@ BLURBS_EN = {
     "Aurora Ascent": "staircase under an aurora band, the longest race marking outside Warmup",
     "Neon Relay Warmup": "warm-up: 35 start pads, no drops and no score",
     "Gold Mine": "enclosed arena with cover: 10 spawns, 986 no-hook tiles, a ninja pickup",
-    "Sunny Side Up": "wide 1200x200 map with 594 decorative quads for large lobbies",
-    "Tsunami": "the densest arena in the box: 105,101 solid tiles and 14 spawns",
-    "Tutorial": "learning route over 2,210 tiles: 24 finish pads, CC-BY-SA licensed",
     "LearnToPlay": "the base game's practice ground: 56 shields and 12 hazards",
     "LearnToPlay Sound": "the same ground with a sound layer: 55 layers, 20,289 quads",
     "LearnToPlay Sound Heights": "Sound variant with different decor: same 56 shields and 12 hazards",
@@ -87,15 +81,13 @@ BLURBS_EN = {
 }
 
 
-def _fallback(name, en=False):
-    """Maps without editorial text (the base-game pool) get a line derived from their own facts."""
-    if name.startswith("dm"):
-        return ("enclosed base-game deathmatch arena: spawns around the rim, full pickup set" if en
-                else "закрытая deathmatch-арена базы: спавны по кругу и полный набор дропов")
-    if name.startswith("ctf"):
-        return ("base-game flag map: two flags, plenty of shields and health" if en
-                else "флаговая карта базы: два флага, много щитов и здоровья")
-    raise SystemExit(f"no blurb for shipped map {name!r}: add it to BLURBS/BLURBS_EN")
+def _blurb(name, en=False):
+    """Editorial text is mandatory: a shipped map without a blurb fails the build on purpose."""
+    table = BLURBS_EN if en else BLURBS
+    try:
+        return table[name]
+    except KeyError:
+        raise SystemExit(f"no blurb for shipped map {name!r}: add it to BLURBS/BLURBS_EN")
 
 
 def attribution():
@@ -233,8 +225,8 @@ def catalogue():
         name = path.stem
         row = {
             "name": name,
-            "blurb": BLURBS.get(name) or _fallback(name),
-            "blurbEn": BLURBS_EN.get(name) or _fallback(name, en=True),
+            "blurb": _blurb(name),
+            "blurbEn": _blurb(name, en=True),
             "cell": cell,
             "w": facts["width"],
             "h": facts["height"],

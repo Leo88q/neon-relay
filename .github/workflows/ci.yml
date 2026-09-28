@@ -67,8 +67,16 @@ jobs:
 
   # Branding scan, asset manifest validation and the repository hygiene checks.
   # Pure Python stdlib + bash; no system packages needed.
+  #
+  # Same lesson as security-gates, one level down: the asset-regression step below
+  # can go red for asset-pipeline reasons, and while it is red everything after it
+  # in this job would be *skipped* — including the asset-manifest hash/license gate
+  # and the branding scan. That is the catalog item 110 class of failure ("a fuse
+  # that never trips is not a fuse"), so every later step carries
+  # `if: ${{ !cancelled() }}`: it runs after a failure too, and only a cancelled
+  # run may skip it. The job still reports red; nothing is masked.
   gates:
-    name: branding / assets / secrets / hygiene
+    name: branding / assets / hygiene
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
@@ -97,13 +105,17 @@ jobs:
           python3 scripts/test_twmap_pipeline.py
           python3 scripts/test_warmup.py
           python3 scripts/test_warmup_server_contract.py
-      - name: Branding scan (release mode) + translation lockstep
+      - if: ${{ !cancelled() }}
+        name: Branding scan (release mode) + translation lockstep
         run: ./scripts/check_branding.sh --release --check-translations
-      - name: Generated skins match the generator (determinism)
+      - if: ${{ !cancelled() }}
+        name: Generated skins match the generator (determinism)
         run: python3 scripts/test_potato_assets.py
-      - name: Generated UI art matches the generator (determinism)
+      - if: ${{ !cancelled() }}
+        name: Generated UI art matches the generator (determinism)
         run: python3 scripts/build_neon_ui_art.py --check
-      - name: Potato Arena backdrops / icon atlas match the bake (determinism)
+      - if: ${{ !cancelled() }}
+        name: Potato Arena backdrops / icon atlas match the bake (determinism)
         # The check explains itself (which pixels differ, on which versions). Capture it instead of
         # piping it: `run:` executes with `set -e`, so a failing pipeline would abort the step before
         # the diagnosis is reported. The report goes to the job summary and, line by line, to
@@ -126,17 +138,23 @@ jobs:
             done < /tmp/bake-check.log
             exit "$status"
           fi
-      - name: Map blueprints match the map builders (determinism)
+      - if: ${{ !cancelled() }}
+        name: Map blueprints match the map builders (determinism)
         run: python3 scripts/build_map_previews.py --check
-      - name: Asset manifest validation (coverage, hashes, license texts)
+      - if: ${{ !cancelled() }}
+        name: Asset manifest validation (coverage, hashes, license texts)
         run: ./scripts/check_assets.sh --licenses
-      - name: Config variables unused-check
+      - if: ${{ !cancelled() }}
+        name: Config variables unused-check
         run: python3 scripts/check_config_variables.py
-      - name: Header guards
+      - if: ${{ !cancelled() }}
+        name: Header guards
         run: python3 scripts/check_header_guards.py
-      - name: CMake tidy-alphabetical lists
+      - if: ${{ !cancelled() }}
+        name: CMake tidy-alphabetical lists
         run: python3 scripts/tidy_alphabetical.py --dry-run
-      - name: Standard C headers
+      - if: ${{ !cancelled() }}
+        name: Standard C headers
         run: python3 scripts/check_standard_headers.py
 
 
@@ -157,8 +175,12 @@ jobs:
         run: |
           npm --prefix backend audit --audit-level=high || (echo "::error::backend npm audit HIGH/CRITICAL"; exit 1)
           npm --prefix onchain audit --audit-level=high || (echo "::error::onchain npm audit HIGH/CRITICAL"; exit 1)
+      # NB: google/osv-scanner-action is a monorepo — the runnable action lives in the
+      # osv-scanner-action/ subdirectory. Pinning the repo root without the path makes
+      # "Set up job" fail (no top-level `runs:`), which silently kills the whole job
+      # before npm audit even starts. That happened on main for days; keep the path.
       - name: OSV scanner (lockfiles recursive)
-        uses: google/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # google/osv-scanner-action@v2.6.0
+        uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # google/osv-scanner-action@v2.6.0
         with:
           scan-args: --recursive --format=sarif --output=osv.sarif .
         continue-on-error: true

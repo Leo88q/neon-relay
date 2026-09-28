@@ -71,7 +71,7 @@ class Numbers(unittest.TestCase):
 
     def test_map_grids_match_the_generated_table(self):
         rows = re.findall(r'\{"([^"]+)", "([^"]+)", (\d+), (\d+), (\d+),', MAPGEN)
-        self.assertEqual(len(rows), 27, "the generated catalogue lost rows")
+        self.assertEqual(len(rows), 11, "the generated catalogue lost rows")
         for name, _blurb, _cell, w, h in rows:
             if name not in {"Neon Relay Basin", "Chromatic Canyon", "Vector Spire", "Midnight Circuit",
                             "Aurora Ascent", "Neon Relay Warmup"}:
@@ -112,7 +112,7 @@ class Features(unittest.TestCase):
         skins = json.loads((ROOT / "data" / "skins" / "potato_catalog.json").read_text(encoding="utf-8"))["skins"]
         weapons = len(re.findall(r'\{"\w+",.*?\d+, \d+, -?\d+, (?:true|false)\}', HEADER, re.S))
         maps = len(re.findall(r'\{"[^"]+", "[^"]+", \d+, \d+, \d+,', MAPGEN))
-        self.assertEqual((len(skins), weapons, maps), (10, 6, 27))
+        self.assertEqual((len(skins), weapons, maps), (10, 6, 11))
         for f in FILES:
             text = read(f)
             for value, what in ((len(skins), "skins"), (weapons, "weapons"), (maps, "maps")):

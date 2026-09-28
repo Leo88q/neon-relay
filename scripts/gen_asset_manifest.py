@@ -78,15 +78,11 @@ FONT_INFO = {
     ),
 }
 
+# Stage B (docs/CLASSIC_MAP_REMOVAL_PLAN_RU.md) removed the classic pool from
+# data/maps/; only these two upstream maps still ship.
 MAP_INFO = {
     "Gold Mine.map": ("<BµmM>", "Copyright <BµmM>", "CC-BY-SA-3.0"),
     "LearnToPlay.map": ("Tridemy & Cøke", "Copyright Tridemy & Cøke", "CC-BY-SA-3.0"),
-    "Sunny Side Up.map": (
-        "Ravie", "Copyright Ravie", "CC-BY-SA-3.0",
-        "grass_main is redrawn from the original Teeworlds grass_main mapres (Apache-2.0)",
-    ),
-    "Tsunami.map": ("louis", "Copyright louis", "CC-BY-SA-3.0"),
-    "Tutorial.map": ("unique2 & Alisa", "Copyright unique2 & Alisa", "CC-BY-SA-3.0"),
 }
 
 
@@ -358,12 +354,9 @@ def main() -> int:
             add(rel, path, info[0], info[1], info[2], UPSTREAM_URL + rel,
                 "Original upstream map; named in data/maps/license.txt", "ship")
             continue
-        if rel.startswith("data/maps/") and path.name in (
-                "ctf1.map", "ctf2.map", "ctf3.map", "ctf4.map", "ctf5.map",
-                "ctf6.map", "ctf7.map", "dm1.map", "dm2.map", "dm6.map",
-                "dm7.map", "dm8.map", "dm9.map", "coverage.map"):
+        if rel == "data/maps/coverage.map":
             add(rel, path, unnamed, unnamed_cc, "CC-BY-SA-3.0", UPSTREAM_URL + rel,
-                "classic-map/test-fixture file with no author named anywhere in the tree (empty map info, no data/maps/license.txt stanza, not a generator output); treated as unattributed upstream content, see docs/MAPS.md", "block-release")
+                "test-fixture file with no author named anywhere in the tree (empty map info, no data/maps/license.txt attribution stanza, not a generator output); treated as unattributed upstream content, see docs/MAPS.md", "block-release")
             continue
         if rel in ("data/maps/Neon Relay Basin.map", "data/maps/Chromatic Canyon.map",
                    "data/maps/Vector Spire.map", "data/maps/Midnight Circuit.map",
