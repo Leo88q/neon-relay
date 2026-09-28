@@ -108,6 +108,14 @@ HISTORICAL_PATH_RES = [
 	re.compile(r"^docs/RELEASE_CHECKLIST\.md$"),
 	# the final audit report describes the derivation and blockers by name
 	re.compile(r"^docs/FINAL_REPORT\.md$"),
+	re.compile(r"^docs/PROD_READINESS_AUDIT.*\.md$"),
+	re.compile(r"^docs/PRIVACY_POLICY\.md$"),
+	re.compile(r"^docs/TERMS\.md$"),
+	re.compile(r"^docs/COOKIE_POLICY\.md$"),
+	re.compile(r"^docs/RISK_DISCLOSURE\.md$"),
+	re.compile(r"^docs/KEY_ROTATION\.md$"),
+	re.compile(r"^docs/CLIENT_DATA_HANDLING\.md$"),
+	re.compile(r"^docs/SECURITY_HEADERS\.md$"),
 	re.compile(r"^ci/upstream-reference/"),
 	re.compile(r"^docs/upstream/"),
 	# upstream developer documentation, kept as reference until rewritten

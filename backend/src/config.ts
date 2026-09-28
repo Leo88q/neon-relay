@@ -123,6 +123,8 @@ export interface Config {
    * per stored reference) and the economy_matches table size.
    */
   maxMatchIntentsPerEpoch: number;
+  /** Allowed CORS origins for browser clients (checklist 3.4.1). "*" allows any origin with no credentials. */
+  corsOrigins: string[];
 }
 
 const num = (value: string | undefined, fallback: number): number => {
@@ -243,6 +245,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     production || env.NEONRELAY_REQUIRE_REGISTERED_PLAYER_LINK === "1";
   const authNonceCap = num(env.NEONRELAY_AUTH_NONCE_CAP, 50_000);
   const maxMatchIntentsPerEpoch = num(env.NEONRELAY_MAX_MATCH_INTENTS_PER_EPOCH, 64);
+  const corsOrigins = (env.NEONRELAY_CORS_ORIGINS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
   const gameIdentityPublicKey = base64UrlRawKey(
     env.NEONRELAY_GAME_IDENTITY_PUBLIC_KEY, "NEONRELAY_GAME_IDENTITY_PUBLIC_KEY");
   if (production) {
@@ -322,5 +325,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     playerLinkRequiresRegistration,
     authNonceCap,
     maxMatchIntentsPerEpoch,
+    corsOrigins,
   };
 }

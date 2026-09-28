@@ -154,7 +154,7 @@
 
 Без правки этих чисел гейт лендинга упадёт сразу после регенерации.
 
-### 4.2 `dm7` — источник пайплайна Chrome DM ⚠️
+### 4.2 `dm7` — источник пайплайна Chrome DM ⚠
 
 * `scripts/build_chrome_dm.py:17–31` — `SOURCE = data/maps/dm7.map`, SHA
   закреплён assert'ом; из dm7 собирается `docs/dm/Neon Relay Chrome DM Study.map`;
@@ -171,7 +171,7 @@
 3. Удалить везде: заморозить пересборку Chrome DM (геометрию dm7 зафиксировать
    в `chrome_dm_geometry.py`), удалить `test_chrome_dm.py`.
 
-### 4.3 Клиентская фича JoinTutorial ⚠️
+### 4.3 Клиентская фича JoinTutorial ⚠
 
 * `src/game/client/components/menus.cpp:1679` — кнопка «Join Tutorial Server»;
 * `:1824` — fallback локального сервера: `sv_map Tutorial` — **после удаления
